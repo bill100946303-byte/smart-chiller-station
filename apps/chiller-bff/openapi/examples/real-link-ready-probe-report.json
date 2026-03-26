@@ -1,0 +1,497 @@
+{
+  "generatedAt": "2026-03-24T17:23:54.091Z",
+  "ready": false,
+  "exampleReady": false,
+  "exampleReadyLine": "example-ready=false",
+  "runtimeReady": false,
+  "runtimeReadyLine": "runtime-ready=false",
+  "baselineSampleReady": true,
+  "reasons": [
+    "dashboardOverview.sourceStatus.overall=partial (expected ok)",
+    "dashboardOverview.sourceStatus has 2 source(s) with ok=false",
+    "dashboardTrends.sourceStatus.overall=partial (expected ok)",
+    "dashboardTrends.sourceStatus has 2 source(s) with ok=false",
+    "anomaliesSummary.sourceStatus.overall=partial (expected ok)",
+    "anomaliesSummary.sourceStatus has 2 source(s) with ok=false",
+    "recommendations.sourceStatus.overall=partial (expected ok)",
+    "recommendations.sourceStatus has 7 source(s) with ok=false",
+    "recommendations.ruleEvaluation.skippedRuleDetails has 4 degraded item(s)"
+  ],
+  "exampleReasons": [
+    "dashboardOverview.sourceStatus.overall=partial (expected ok)",
+    "dashboardOverview.sourceStatus has 2 source(s) with ok=false",
+    "dashboardTrends.sourceStatus.overall=partial (expected ok)",
+    "dashboardTrends.sourceStatus has 2 source(s) with ok=false",
+    "anomaliesSummary.sourceStatus.overall=partial (expected ok)",
+    "anomaliesSummary.sourceStatus has 2 source(s) with ok=false",
+    "recommendations.sourceStatus.overall=partial (expected ok)",
+    "recommendations.sourceStatus has 7 source(s) with ok=false",
+    "recommendations.ruleEvaluation.skippedRuleDetails has 4 degraded item(s)"
+  ],
+  "groupedFailures": {
+    "upstream_unreachable": [
+      {
+        "endpoint": "/dashboard/overview",
+        "category": "upstream_unreachable",
+        "jsonPath": "/dashboard/overview.sourceStatus.sources[3]",
+        "key": "alarmDiagnosis",
+        "status": null,
+        "message": "key=alarmDiagnosis status=null"
+      },
+      {
+        "endpoint": "/dashboard/trends",
+        "category": "upstream_unreachable",
+        "jsonPath": "/dashboard/trends.sourceStatus.sources[3]",
+        "key": "trendQuality",
+        "status": null,
+        "message": "key=trendQuality status=null"
+      },
+      {
+        "endpoint": "/anomalies/summary",
+        "category": "upstream_unreachable",
+        "jsonPath": "/anomalies/summary.sourceStatus.sources[3]",
+        "key": "alarmDiagnosis",
+        "status": null,
+        "message": "key=alarmDiagnosis status=null"
+      },
+      {
+        "endpoint": "/recommendations",
+        "category": "upstream_unreachable",
+        "jsonPath": "/recommendations.sourceStatus.sources[2]",
+        "key": "anomalySummary",
+        "status": null,
+        "message": "key=anomalySummary status=null"
+      },
+      {
+        "endpoint": "/recommendations",
+        "category": "upstream_unreachable",
+        "jsonPath": "/recommendations.sourceStatus.sources[3]",
+        "key": "ruleMetrics",
+        "status": null,
+        "message": "key=ruleMetrics status=null"
+      },
+      {
+        "endpoint": "/recommendations",
+        "category": "upstream_unreachable",
+        "jsonPath": "/recommendations.sourceStatus.sources[4]",
+        "key": "metric.chilled_delta_t_c",
+        "status": null,
+        "message": "key=metric.chilled_delta_t_c status=null"
+      },
+      {
+        "endpoint": "/recommendations",
+        "category": "upstream_unreachable",
+        "jsonPath": "/recommendations.sourceStatus.sources[5]",
+        "key": "metric.cooling_delta_t_c",
+        "status": null,
+        "message": "key=metric.cooling_delta_t_c status=null"
+      },
+      {
+        "endpoint": "/recommendations",
+        "category": "upstream_unreachable",
+        "jsonPath": "/recommendations.sourceStatus.sources[6]",
+        "key": "metric.station_cop",
+        "status": null,
+        "message": "key=metric.station_cop status=null"
+      },
+      {
+        "endpoint": "/recommendations",
+        "category": "upstream_unreachable",
+        "jsonPath": "/recommendations.sourceStatus.sources[7]",
+        "key": "metric.station_total_power_kw",
+        "status": null,
+        "message": "key=metric.station_total_power_kw status=null"
+      },
+      {
+        "endpoint": "/recommendations",
+        "category": "upstream_unreachable",
+        "jsonPath": "/recommendations.ruleEvaluation.skippedRuleDetails[0].missingMetrics[0]",
+        "ruleId": "low-delta-t-chilled-loop",
+        "metric": "chilled_delta_t_c",
+        "message": "metric=chilled_delta_t_c category=upstream_unreachable"
+      },
+      {
+        "endpoint": "/recommendations",
+        "category": "upstream_unreachable",
+        "jsonPath": "/recommendations.ruleEvaluation.skippedRuleDetails[1].missingMetrics[0]",
+        "ruleId": "pump-frequency-too-high",
+        "metric": "chilled_delta_t_c",
+        "message": "metric=chilled_delta_t_c category=upstream_unreachable"
+      },
+      {
+        "endpoint": "/recommendations",
+        "category": "upstream_unreachable",
+        "jsonPath": "/recommendations.ruleEvaluation.skippedRuleDetails[2].missingMetrics[0]",
+        "ruleId": "cooling-side-low-efficiency",
+        "metric": "cooling_delta_t_c",
+        "message": "metric=cooling_delta_t_c category=upstream_unreachable"
+      },
+      {
+        "endpoint": "/recommendations",
+        "category": "upstream_unreachable",
+        "jsonPath": "/recommendations.ruleEvaluation.skippedRuleDetails[2].missingMetrics[1]",
+        "ruleId": "cooling-side-low-efficiency",
+        "metric": "station_cop",
+        "message": "metric=station_cop category=upstream_unreachable"
+      }
+    ],
+    "upstream_5xx": [
+      {
+        "endpoint": "/dashboard/overview",
+        "category": "upstream_5xx",
+        "jsonPath": "/dashboard/overview.sourceStatus.sources[2]",
+        "key": "alarms",
+        "status": 500,
+        "message": "key=alarms status=500"
+      },
+      {
+        "endpoint": "/dashboard/trends",
+        "category": "upstream_5xx",
+        "jsonPath": "/dashboard/trends.sourceStatus.sources[2]",
+        "key": "trendBaseline",
+        "status": 502,
+        "message": "key=trendBaseline status=502"
+      },
+      {
+        "endpoint": "/anomalies/summary",
+        "category": "upstream_5xx",
+        "jsonPath": "/anomalies/summary.sourceStatus.sources[2]",
+        "key": "alarmSeveritySplit",
+        "status": 500,
+        "message": "key=alarmSeveritySplit status=500"
+      },
+      {
+        "endpoint": "/recommendations",
+        "category": "upstream_5xx",
+        "jsonPath": "/recommendations.sourceStatus.sources[1]",
+        "key": "dashboardOverview",
+        "status": 502,
+        "message": "key=dashboardOverview status=502"
+      }
+    ],
+    "field_missing_or_invalid": [
+      {
+        "endpoint": "/recommendations",
+        "category": "field_missing_or_invalid",
+        "jsonPath": "/recommendations.ruleEvaluation.skippedRuleDetails[0].missingMetrics[1]",
+        "ruleId": "low-delta-t-chilled-loop",
+        "metric": "station_total_power_kw",
+        "message": "metric=station_total_power_kw category=field_missing_or_invalid"
+      }
+    ]
+  },
+  "groupedByEndpoint": {
+    "/dashboard/overview": {
+      "upstream_unreachable": [
+        {
+          "endpoint": "/dashboard/overview",
+          "category": "upstream_unreachable",
+          "jsonPath": "/dashboard/overview.sourceStatus.sources[3]",
+          "key": "alarmDiagnosis",
+          "status": null,
+          "message": "key=alarmDiagnosis status=null"
+        }
+      ],
+      "upstream_5xx": [
+        {
+          "endpoint": "/dashboard/overview",
+          "category": "upstream_5xx",
+          "jsonPath": "/dashboard/overview.sourceStatus.sources[2]",
+          "key": "alarms",
+          "status": 500,
+          "message": "key=alarms status=500"
+        }
+      ],
+      "field_missing_or_invalid": []
+    },
+    "/dashboard/trends": {
+      "upstream_unreachable": [
+        {
+          "endpoint": "/dashboard/trends",
+          "category": "upstream_unreachable",
+          "jsonPath": "/dashboard/trends.sourceStatus.sources[3]",
+          "key": "trendQuality",
+          "status": null,
+          "message": "key=trendQuality status=null"
+        }
+      ],
+      "upstream_5xx": [
+        {
+          "endpoint": "/dashboard/trends",
+          "category": "upstream_5xx",
+          "jsonPath": "/dashboard/trends.sourceStatus.sources[2]",
+          "key": "trendBaseline",
+          "status": 502,
+          "message": "key=trendBaseline status=502"
+        }
+      ],
+      "field_missing_or_invalid": []
+    },
+    "/anomalies/summary": {
+      "upstream_unreachable": [
+        {
+          "endpoint": "/anomalies/summary",
+          "category": "upstream_unreachable",
+          "jsonPath": "/anomalies/summary.sourceStatus.sources[3]",
+          "key": "alarmDiagnosis",
+          "status": null,
+          "message": "key=alarmDiagnosis status=null"
+        }
+      ],
+      "upstream_5xx": [
+        {
+          "endpoint": "/anomalies/summary",
+          "category": "upstream_5xx",
+          "jsonPath": "/anomalies/summary.sourceStatus.sources[2]",
+          "key": "alarmSeveritySplit",
+          "status": 500,
+          "message": "key=alarmSeveritySplit status=500"
+        }
+      ],
+      "field_missing_or_invalid": []
+    },
+    "/recommendations": {
+      "upstream_unreachable": [
+        {
+          "endpoint": "/recommendations",
+          "category": "upstream_unreachable",
+          "jsonPath": "/recommendations.sourceStatus.sources[2]",
+          "key": "anomalySummary",
+          "status": null,
+          "message": "key=anomalySummary status=null"
+        },
+        {
+          "endpoint": "/recommendations",
+          "category": "upstream_unreachable",
+          "jsonPath": "/recommendations.sourceStatus.sources[3]",
+          "key": "ruleMetrics",
+          "status": null,
+          "message": "key=ruleMetrics status=null"
+        },
+        {
+          "endpoint": "/recommendations",
+          "category": "upstream_unreachable",
+          "jsonPath": "/recommendations.sourceStatus.sources[4]",
+          "key": "metric.chilled_delta_t_c",
+          "status": null,
+          "message": "key=metric.chilled_delta_t_c status=null"
+        },
+        {
+          "endpoint": "/recommendations",
+          "category": "upstream_unreachable",
+          "jsonPath": "/recommendations.sourceStatus.sources[5]",
+          "key": "metric.cooling_delta_t_c",
+          "status": null,
+          "message": "key=metric.cooling_delta_t_c status=null"
+        },
+        {
+          "endpoint": "/recommendations",
+          "category": "upstream_unreachable",
+          "jsonPath": "/recommendations.sourceStatus.sources[6]",
+          "key": "metric.station_cop",
+          "status": null,
+          "message": "key=metric.station_cop status=null"
+        },
+        {
+          "endpoint": "/recommendations",
+          "category": "upstream_unreachable",
+          "jsonPath": "/recommendations.sourceStatus.sources[7]",
+          "key": "metric.station_total_power_kw",
+          "status": null,
+          "message": "key=metric.station_total_power_kw status=null"
+        },
+        {
+          "endpoint": "/recommendations",
+          "category": "upstream_unreachable",
+          "jsonPath": "/recommendations.ruleEvaluation.skippedRuleDetails[0].missingMetrics[0]",
+          "ruleId": "low-delta-t-chilled-loop",
+          "metric": "chilled_delta_t_c",
+          "message": "metric=chilled_delta_t_c category=upstream_unreachable"
+        },
+        {
+          "endpoint": "/recommendations",
+          "category": "upstream_unreachable",
+          "jsonPath": "/recommendations.ruleEvaluation.skippedRuleDetails[1].missingMetrics[0]",
+          "ruleId": "pump-frequency-too-high",
+          "metric": "chilled_delta_t_c",
+          "message": "metric=chilled_delta_t_c category=upstream_unreachable"
+        },
+        {
+          "endpoint": "/recommendations",
+          "category": "upstream_unreachable",
+          "jsonPath": "/recommendations.ruleEvaluation.skippedRuleDetails[2].missingMetrics[0]",
+          "ruleId": "cooling-side-low-efficiency",
+          "metric": "cooling_delta_t_c",
+          "message": "metric=cooling_delta_t_c category=upstream_unreachable"
+        },
+        {
+          "endpoint": "/recommendations",
+          "category": "upstream_unreachable",
+          "jsonPath": "/recommendations.ruleEvaluation.skippedRuleDetails[2].missingMetrics[1]",
+          "ruleId": "cooling-side-low-efficiency",
+          "metric": "station_cop",
+          "message": "metric=station_cop category=upstream_unreachable"
+        }
+      ],
+      "upstream_5xx": [
+        {
+          "endpoint": "/recommendations",
+          "category": "upstream_5xx",
+          "jsonPath": "/recommendations.sourceStatus.sources[1]",
+          "key": "dashboardOverview",
+          "status": 502,
+          "message": "key=dashboardOverview status=502"
+        }
+      ],
+      "field_missing_or_invalid": [
+        {
+          "endpoint": "/recommendations",
+          "category": "field_missing_or_invalid",
+          "jsonPath": "/recommendations.ruleEvaluation.skippedRuleDetails[0].missingMetrics[1]",
+          "ruleId": "low-delta-t-chilled-loop",
+          "metric": "station_total_power_kw",
+          "message": "metric=station_total_power_kw category=field_missing_or_invalid"
+        }
+      ]
+    }
+  },
+  "summary": {
+    "totalFailures": 18,
+    "byCategory": {
+      "upstream_unreachable": 13,
+      "upstream_5xx": 4,
+      "field_missing_or_invalid": 1
+    },
+    "byEndpoint": {
+      "/dashboard/overview": {
+        "total": 2,
+        "upstream_unreachable": 1,
+        "upstream_5xx": 1,
+        "field_missing_or_invalid": 0
+      },
+      "/dashboard/trends": {
+        "total": 2,
+        "upstream_unreachable": 1,
+        "upstream_5xx": 1,
+        "field_missing_or_invalid": 0
+      },
+      "/anomalies/summary": {
+        "total": 2,
+        "upstream_unreachable": 1,
+        "upstream_5xx": 1,
+        "field_missing_or_invalid": 0
+      },
+      "/recommendations": {
+        "total": 12,
+        "upstream_unreachable": 10,
+        "upstream_5xx": 1,
+        "field_missing_or_invalid": 1
+      }
+    }
+  },
+  "runtimeProbe": {
+    "enabled": true,
+    "available": true,
+    "probeBaseUrl": "http://127.0.0.1:8787",
+    "siteId": "126lnoffice",
+    "timeoutMs": 1500,
+    "runtimeReady": false,
+    "runtimeReadyLine": "runtime-ready=false",
+    "reasons": [
+      "dashboardTrends runtime probe failed: timeout >= 1500ms (http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/trends)",
+      "recommendations runtime probe failed: timeout >= 1500ms (http://127.0.0.1:8787/bff/v1/sites/126lnoffice/recommendations)",
+      "dashboardTrends.sourceStatus.overall=partial (expected ok)",
+      "dashboardTrends.sourceStatus has 1 source(s) with ok=false",
+      "recommendations.sourceStatus.overall=partial (expected ok)",
+      "recommendations.sourceStatus has 1 source(s) with ok=false",
+      "dashboardTrends.freshness.stale=undefined (expected false)",
+      "dashboardTrends.series has no numeric point value"
+    ],
+    "groupedFailures": {
+      "upstream_unreachable": [
+        {
+          "endpoint": "/dashboard/trends",
+          "category": "upstream_unreachable",
+          "jsonPath": "/dashboard/trends.sourceStatus.sources[0]",
+          "key": "runtimeProbe",
+          "status": null,
+          "message": "key=runtimeProbe status=null"
+        },
+        {
+          "endpoint": "/recommendations",
+          "category": "upstream_unreachable",
+          "jsonPath": "/recommendations.sourceStatus.sources[0]",
+          "key": "runtimeProbe",
+          "status": null,
+          "message": "key=runtimeProbe status=null"
+        }
+      ],
+      "upstream_5xx": [],
+      "field_missing_or_invalid": []
+    },
+    "groupedByEndpoint": {
+      "/dashboard/trends": {
+        "upstream_unreachable": [
+          {
+            "endpoint": "/dashboard/trends",
+            "category": "upstream_unreachable",
+            "jsonPath": "/dashboard/trends.sourceStatus.sources[0]",
+            "key": "runtimeProbe",
+            "status": null,
+            "message": "key=runtimeProbe status=null"
+          }
+        ],
+        "upstream_5xx": [],
+        "field_missing_or_invalid": []
+      },
+      "/recommendations": {
+        "upstream_unreachable": [
+          {
+            "endpoint": "/recommendations",
+            "category": "upstream_unreachable",
+            "jsonPath": "/recommendations.sourceStatus.sources[0]",
+            "key": "runtimeProbe",
+            "status": null,
+            "message": "key=runtimeProbe status=null"
+          }
+        ],
+        "upstream_5xx": [],
+        "field_missing_or_invalid": []
+      }
+    },
+    "summary": {
+      "totalFailures": 2,
+      "byCategory": {
+        "upstream_unreachable": 2,
+        "upstream_5xx": 0,
+        "field_missing_or_invalid": 0
+      },
+      "byEndpoint": {
+        "/dashboard/trends": {
+          "total": 1,
+          "upstream_unreachable": 1,
+          "upstream_5xx": 0,
+          "field_missing_or_invalid": 0
+        },
+        "/recommendations": {
+          "total": 1,
+          "upstream_unreachable": 1,
+          "upstream_5xx": 0,
+          "field_missing_or_invalid": 0
+        }
+      }
+    }
+  },
+  "baselineSample": "/Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/openapi/examples/real-link-ready-sample.json",
+  "baselineSampleReasons": [],
+  "nonBlockingProbes": {
+    "homeEnergyFallback": {
+      "applicable": false,
+      "ready": true,
+      "reasons": [
+        "energy source message missing fallback trigger \"homeEnergyEfficiency\""
+      ],
+      "triggerMessage": "OK"
+    }
+  }
+}

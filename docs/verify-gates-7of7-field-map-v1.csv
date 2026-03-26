@@ -1,0 +1,9 @@
+gate_id,gate_item,data_source_file_or_command,verify_command,release_impact,missing_default_behavior,affects_default_release,notes
+1,acceptance-report contract,file:docs/v19.2-acceptance-report.json,npm run check:acceptance-report,blocking,fail_closed_on_missing_or_invalid_json,yes,primary acceptance snapshot contract
+2,status-json contract,command:chiller_ctl.sh status-json (3 modes),npm run check:status-json,blocking,fail_closed_on_any_mode_failure,yes,multi-mode contract gate
+3,release-snapshot contract,file:docs/release-snapshot-latest.json,npm run check:release-snapshot with RELEASE_SNAPSHOT_PATH,blocking,auto_generate_once_then_fail_closed,yes,auto-generate via release_snapshot_cmd before check
+4,release-snapshot-index contract,file:docs/release-snapshot-index-latest.json,npm run check:release-snapshot-index with RELEASE_SNAPSHOT_INDEX_PATH,blocking,auto_generate_once_then_fail_closed,yes,auto-generate via release_snapshot_index_cmd before check
+5,release-snapshot-diff contract,file:docs/release-snapshot-diff-latest.json,npm run check:release-snapshot-diff with RELEASE_SNAPSHOT_DIFF_PATH,blocking,auto_generate_once_then_fail_closed,yes,auto-generate via release_snapshot_diff_cmd before check
+6,release-snapshot consistency,inputs:latest+index snapshots,release_snapshot_consistency_cmd --json,blocking,fail_closed_on_missing_or_mismatch,yes,consistency NO-GO blocks gate
+7,release-ready-brief contract,file:docs/release-ready-sync-latest.json,npm run check:release-ready-brief with RELEASE_READY_SYNC_PATH,blocking,auto_generate_once_then_fail_closed,yes,auto-generate via release_ready_sync_cmd --runtime-required=0
+7b,brief-check env fallback,env:RELEASE_READY_SYNC_PATH optional fallback,npm run check:release-ready-brief (standalone brief-check),blocking,if_env_missing_fallback_to_default_path_then_fail_closed_when_missing,yes,explicitly defined as fail-closed

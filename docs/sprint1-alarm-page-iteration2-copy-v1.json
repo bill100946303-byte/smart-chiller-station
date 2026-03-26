@@ -1,0 +1,353 @@
+{
+  "version": "1.0.0",
+  "copybookId": "sprint1-alarm-page-iteration2-copy-v1",
+  "scope": "Sprint1 alarm page iteration2 final-severity copy",
+  "demoRecommendation": {
+    "fitForDutyOpsDemo": true,
+    "reason": {
+      "zh": "最终展示词、状态话术和双区块说明已经统一，不再需要继续沿用旧的 high/medium/low 口径。",
+      "en": "Final display terms, state wording, and the dual-block explanation are now unified, so the old high/medium/low wording is no longer needed.",
+      "vi": "Tu hien thi cuoi cung, cach noi theo trang thai va giai thich hai khoi da duoc thong nhat, nen khong can tiep tuc dung cach noi cu high/medium/low nua."
+    }
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  },
+  "severityFinal": {
+    "finalEnum": [
+      "critical",
+      "major",
+      "minor",
+      "normal"
+    ],
+    "display": {
+      "critical": {
+        "zh": "紧急",
+        "en": "Critical",
+        "vi": "Khẩn cấp"
+      },
+      "major": {
+        "zh": "严重",
+        "en": "Major",
+        "vi": "Nghiêm trọng"
+      },
+      "minor": {
+        "zh": "一般",
+        "en": "Minor",
+        "vi": "Thông thường"
+      },
+      "normal": {
+        "zh": "正常",
+        "en": "Normal",
+        "vi": "Bình thường"
+      }
+    },
+    "summaryDisplay": {
+      "critical": {
+        "zh": "紧急告警",
+        "en": "Critical Alarms",
+        "vi": "Cảnh báo khẩn cấp"
+      },
+      "major": {
+        "zh": "严重告警",
+        "en": "Major Alarms",
+        "vi": "Cảnh báo nghiêm trọng"
+      },
+      "minor": {
+        "zh": "一般告警",
+        "en": "Minor Alarms",
+        "vi": "Cảnh báo thông thường"
+      },
+      "normal": {
+        "zh": "正常告警",
+        "en": "Normal Alarms",
+        "vi": "Cảnh báo bình thường"
+      }
+    }
+  },
+  "deprecatedSeverityTerms": {
+    "zh": [
+      "高等级",
+      "中等级",
+      "低等级",
+      "高",
+      "中",
+      "低"
+    ],
+    "en": [
+      "High Severity",
+      "Medium Severity",
+      "Low Severity",
+      "High",
+      "Medium",
+      "Low"
+    ],
+    "vi": [
+      "Mức cao",
+      "Mức trung bình",
+      "Mức thấp",
+      "Cao",
+      "Trung bình",
+      "Thấp"
+    ]
+  },
+  "coexistenceCopy": {
+    "main": {
+      "zh": "最近告警流看最新触发，真实列表看当前筛选结果。",
+      "en": "Use the recent stream for the latest triggers, and the real list for the current filtered result.",
+      "vi": "Dùng luồng cảnh báo gần nhất để xem kích hoạt mới nhất, và dùng danh sách thực để xem kết quả lọc hiện tại."
+    },
+    "sub": {
+      "zh": "两块同时出现时，先用最近告警流判断是否集中爆发，再用真实列表做筛选、翻页和逐条核对；不要把最近告警流当完整列表。",
+      "en": "When both blocks are shown, use the recent stream first to judge whether alarms are clustering, then use the real list for filtering, paging, and row-by-row verification. Do not treat the recent stream as the full list.",
+      "vi": "Khi cả hai khối cùng xuất hiện, trước tiên dùng luồng cảnh báo gần nhất để xem cảnh báo có đang tập trung bùng lên hay không, sau đó dùng danh sách thực để lọc, phân trang và đối soát từng dòng. Không được xem luồng gần nhất là danh sách đầy đủ."
+    }
+  },
+  "fieldScope": {
+    "allowedRoots": [
+      "items",
+      "filters",
+      "freshness",
+      "sourceStatus",
+      "counts"
+    ]
+  },
+  "priorityOrder": [
+    "list_stale",
+    "list_degraded",
+    "list_filtered_empty",
+    "list_empty",
+    "list_ready"
+  ],
+  "classes": [
+    {
+      "id": "list_ready",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "items.length > 0",
+          "filters.severity is null",
+          "filters.state is null"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "列表已就绪",
+          "sub": "按最终等级看"
+        },
+        "en": {
+          "main": "List Ready",
+          "sub": "Use final severity"
+        },
+        "vi": {
+          "main": "Danh sach da san sang",
+          "sub": "Dung muc do cuoi cung"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "告警页：LIST_READY",
+          "sub": "当前列表已接入、链路正常且数据不陈旧，可直接按“紧急 / 严重 / 一般 / 正常”口径查看告警分布与最近事件。"
+        },
+        "en": {
+          "main": "Alarm Page: LIST_READY",
+          "sub": "The list is connected, the source chain is healthy, and the data is not stale, so alarms can be reviewed directly with the Critical / Major / Minor / Normal severity model."
+        },
+        "vi": {
+          "main": "Trang bao dong: LIST_READY",
+          "sub": "Danh sach da duoc ket noi, chuoi nguon binh thuong va du lieu khong cu, nen co the xem bao dong truc tiep theo muc Khẩn cấp / Nghiêm trọng / Thông thường / Bình thường."
+        }
+      },
+      "firstAction": {
+        "zh": "先看紧急与严重告警是否集中在同一来源，再决定是否转趋势页验证。",
+        "en": "Check whether Critical and Major alarms are clustering on the same source first, then decide whether to move to the trend page for validation.",
+        "vi": "Trước tiên xem cảnh báo Khẩn cấp và Nghiêm trọng có đang tập trung vào cùng một nguồn hay không, sau đó mới quyết định có chuyển sang trang xu hướng để xác minh hay không."
+      }
+    },
+    {
+      "id": "list_stale",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == true"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "列表已陈旧",
+          "sub": "先刷新再讲"
+        },
+        "en": {
+          "main": "List Is Stale",
+          "sub": "Refresh before briefing"
+        },
+        "vi": {
+          "main": "Danh sach da cu",
+          "sub": "Lam moi truoc khi thong bao"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "告警页：LIST_STALE",
+          "sub": "当前列表已接入，但时间戳显示数据陈旧。此时即使看到紧急或严重告警，也应先按历史参考解读，不要直接作为实时判断。"
+        },
+        "en": {
+          "main": "Alarm Page: LIST_STALE",
+          "sub": "The list is connected, but the timestamp shows stale data. Even if Critical or Major alarms are shown, they should be treated as historical reference first rather than real-time judgment."
+        },
+        "vi": {
+          "main": "Trang bao dong: LIST_STALE",
+          "sub": "Danh sach da duoc ket noi, nhung moc thoi gian cho thay du lieu da cu. Ngay cả khi nhìn thấy cảnh báo Khẩn cấp hoặc Nghiêm trọng, vẫn phải xem đó là tham chiếu lịch sử trước, không được dùng trực tiếp cho phán đoán thời gian thực."
+        }
+      },
+      "firstAction": {
+        "zh": "先刷新列表或重跑运行态检查，确认 freshness 恢复后再向值班/运营说明当前风险等级。",
+        "en": "Refresh the list or rerun runtime checks first, then explain the current severity only after freshness recovers.",
+        "vi": "Lam moi danh sach hoac chay lai kiem tra runtime truoc, sau do chi giai thich muc do hien tai khi freshness da hoi phuc."
+      }
+    },
+    {
+      "id": "list_degraded",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall != 'ok' OR sourceStatus.overall is missing"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "列表已降级",
+          "sub": "先看来源状态"
+        },
+        "en": {
+          "main": "List Degraded",
+          "sub": "Check source health"
+        },
+        "vi": {
+          "main": "Danh sach da giam cap",
+          "sub": "Kiem tra tinh trang nguon"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "告警页：LIST_DEGRADED",
+          "sub": "当前列表链路处于 partial 或 failed。此时紧急 / 严重 / 一般 / 正常分布可能不完整，可用于初筛，不可作为完整依据。"
+        },
+        "en": {
+          "main": "Alarm Page: LIST_DEGRADED",
+          "sub": "The list pipeline is partial or failed. The Critical / Major / Minor / Normal distribution may be incomplete, so use it for triage but not as a complete basis."
+        },
+        "vi": {
+          "main": "Trang bao dong: LIST_DEGRADED",
+          "sub": "Chuoi danh sach hien dang partial hoac failed. Phan bo Khẩn cấp / Nghiêm trọng / Thông thường / Bình thường co the chua day du, vi vay chi nen dung de sang loc ban dau, khong nen xem la can cu day du."
+        }
+      },
+      "firstAction": {
+        "zh": "先确认 sourceStatus 是 partial 还是 failed，再决定先补链路还是先人工核对关键告警。",
+        "en": "Confirm whether sourceStatus is partial or failed first, then decide whether to repair the pipeline or manually verify key alarms.",
+        "vi": "Xac nhan truoc sourceStatus la partial hay failed, sau do moi quyet dinh sua chuoi nguon hay doi soat thu cong cac bao dong chinh."
+      }
+    },
+    {
+      "id": "list_empty",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "items.length == 0",
+          "counts.filteredTotal == 0",
+          "filters.severity is null",
+          "filters.state is null"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "当前无告警",
+          "sub": "不是永久无风险"
+        },
+        "en": {
+          "main": "No Alarm Now",
+          "sub": "Not risk-free forever"
+        },
+        "vi": {
+          "main": "Hien khong co bao dong",
+          "sub": "Khong phai an toan mai mai"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "告警页：LIST_EMPTY",
+          "sub": "当前未见可展示的活动告警，这表示全量列表为空，不等于站点绝对无风险，也不表示“正常告警”正在主导。"
+        },
+        "en": {
+          "main": "Alarm Page: LIST_EMPTY",
+          "sub": "No active alarm row is currently visible. It means the full list is empty now, not that the site is absolutely risk-free, and not that Normal alarms are dominating."
+        },
+        "vi": {
+          "main": "Trang bao dong: LIST_EMPTY",
+          "sub": "Hien chua thay dong bao dong hoat dong nao. Dieu nay co nghia la danh sach day du hien dang trong, khong co nghia la tram hoan toan khong co rui ro, va cung khong co nghia la canh bao Bình thường dang chiem uu the."
+        }
+      },
+      "firstAction": {
+        "zh": "先确认没有筛选条件残留，再去趋势页看关键指标是否稳定。",
+        "en": "Confirm that no filters are still applied first, then check key metric stability on the trend page.",
+        "vi": "Xac nhan truoc rang khong con bo loc nao dang duoc ap dung, sau do sang trang xu huong de xem cac chi so chinh co on dinh hay khong."
+      }
+    },
+    {
+      "id": "list_filtered_empty",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "items.length == 0",
+          "counts.filteredTotal == 0",
+          "filters.severity is not null OR filters.state is not null"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "筛选后为空",
+          "sub": "先看筛选条件"
+        },
+        "en": {
+          "main": "Filtered Empty",
+          "sub": "Check filters first"
+        },
+        "vi": {
+          "main": "Loc xong khong co du lieu",
+          "sub": "Kiem tra bo loc truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "告警页：LIST_FILTERED_EMPTY",
+          "sub": "当前结果为空，是因为筛选条件下没有命中记录；这不等于全站无告警，只表示当前视图下没有命中“紧急 / 严重 / 一般 / 正常”对应结果。"
+        },
+        "en": {
+          "main": "Alarm Page: LIST_FILTERED_EMPTY",
+          "sub": "The result is empty because no row matches the current filters. It does not mean the whole site has no alarms; it only means the current view has no matched Critical / Major / Minor / Normal result."
+        },
+        "vi": {
+          "main": "Trang bao dong: LIST_FILTERED_EMPTY",
+          "sub": "Ket qua dang trong vi khong co dong nao khop voi bo loc hien tai. Dieu nay khong co nghia la toan tram khong co bao dong; no chi co nghia la o goc nhin hien tai khong co ket qua Khẩn cấp / Nghiêm trọng / Thông thường / Bình thường nao khop."
+        }
+      },
+      "firstAction": {
+        "zh": "先口头确认当前 severity/state 筛选条件，再决定保留筛选还是回到全量列表。",
+        "en": "Confirm the current severity/state filters first, then decide whether to keep the filter or return to the full list.",
+        "vi": "Truoc tien xac nhan bang loi noi dieu kien loc severity/state hien tai, sau do moi quyet dinh giu nguyen bo loc hay quay lai danh sach day du."
+      }
+    }
+  ],
+  "fallback": {
+    "whenNoClassMatched": "list_degraded"
+  }
+}

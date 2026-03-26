@@ -1,0 +1,17 @@
+layer,file_path,check_item,current_shape,target_shape,status,residual_high_medium_low,blocking,note
+baseline,/Users/billchow/Documents/智慧冷冻站/docs/sprint1-anomalies-severity-final-v1.md:19,canonical_baseline,critical|major|minor|normal,critical|major|minor|normal,aligned,no,no,规范已拍板为四档统一枚举
+bff,/Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/src/adapters/legacyAlarmAdapter.js:13,alarm_row_normalization,high|medium|low,critical|major|minor|normal,open,yes,yes,adapter仍将旧源归一到旧三档
+bff,/Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/src/adapters/legacyAlarmAdapter.js:76,alarm_summary_counts,high|medium|low,critical|major|minor|normal,open,yes,yes,summary计数仍按旧三档切分
+bff,/Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/src/services/anomalyService.js:15,anomaly_summary_contract,high|medium|low|normal,critical|major|minor|normal,open,yes,yes,对外summary DTO键名仍输出high|medium|low
+bff,/Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/src/services/dashboardService.js:23,dashboard_alarm_summary_contract,high|medium|low,critical|major|minor|normal,open,yes,yes,overview仍透出旧三档
+frontend_dto,/Users/billchow/Documents/智慧冷冻站/apps/chiller-shell-v1/src/services/bffClient.ts:49,dashboard_overview_alarmSummary,high|medium|low,critical|major|minor|normal,open,yes,yes,首页DTO仍绑定旧三档
+frontend_dto,/Users/billchow/Documents/智慧冷冻站/apps/chiller-shell-v1/src/services/bffClient.ts:92,anomaly_summary_dto,high|medium|low,critical|major|minor|normal,open,yes,yes,summary与recent feed DTO仍是旧枚举
+frontend_dto,/Users/billchow/Documents/智慧冷冻站/apps/chiller-shell-v1/src/services/bffClient.ts:114,anomaly_list_item_dto,high|medium|low,critical|major|minor|normal,open,yes,yes,list DTO仍是旧枚举
+frontend_display,/Users/billchow/Documents/智慧冷冻站/apps/chiller-shell-v1/src/pages/AlarmPage.tsx:63,alarm_page_summary_cards,counts.high|medium|low,counts.critical|major|minor|normal,open,yes,yes,顶部摘要卡仍按旧三档取值
+frontend_display,/Users/billchow/Documents/智慧冷冻站/apps/chiller-shell-v1/src/pages/AlarmPage.tsx:92,alarm_page_severity_rendering,high|medium|low,critical|major|minor|normal,open,yes,yes,tag文本与筛选仍按旧三档运行
+frontend_display,/Users/billchow/Documents/智慧冷冻站/apps/chiller-shell-v1/src/components/dashboard/RealtimeStatusGrid.tsx:18,realtime_status_alarm_note,high|medium|low,critical|major|minor|normal,open,yes,yes,首页实时状态说明仍按高中低拼文案
+frontend_copy,/Users/billchow/Documents/智慧冷冻站/apps/chiller-shell-v1/src/i18n/zhCN.ts:147,realtime_status_copy,高等级|中等级|低等级,紧急|严重|一般|正常,open,yes,yes,三语实时状态copy仍是旧风险文案
+frontend_copy,/Users/billchow/Documents/智慧冷冻站/apps/chiller-shell-v1/src/i18n/zhCN.ts:226,alarm_severity_labels,high|medium|low,critical|major|minor|normal,open,yes,yes,告警severity标签字典仍是旧三档
+doc_example,/Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/openapi/examples/anomalies-summary.json:8,anomalies_summary_example,high|medium|low,critical|major|minor|normal,open,yes,no,示例仍会误导前后端继续沿用旧枚举
+doc,/Users/billchow/Documents/智慧冷冻站/docs/sprint1-anomalies-list-regression-v1.md:1,regression_doc_example,none,critical|major|minor|normal,aligned,no,no,回归文档当前未残留旧枚举样例
+doc,/Users/billchow/Documents/智慧冷冻站/docs/sprint1-anomalies-severity-final-v1.md:26,intentional_legacy_reference,high|medium|low,critical|major|minor|normal,excluded,no,no,这里是在说明旧口径问题本身不计入残留

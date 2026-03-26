@@ -1,0 +1,184 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-check-family-freshness-copy-v1",
+  "scope": "check-family freshness duty copy",
+  "fieldScope": {
+    "required": [
+      "generatedAt",
+      "ageMinutes",
+      "state",
+      "maxAgeMin"
+    ]
+  },
+  "priorityOrder": [
+    "stale",
+    "warn",
+    "fresh"
+  ],
+  "classes": [
+    {
+      "id": "fresh",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "stale",
+          "warn"
+        ],
+        "conditions": [
+          "state == 'fresh'",
+          "generatedAt exists and generatedAt != ''",
+          "ageMinutes >= 0",
+          "ageMinutes <= maxAgeMin * 0.5"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "时效新鲜",
+          "sub": "可继续值班",
+          "firstAction": "按节奏继续巡检"
+        },
+        "en": {
+          "main": "Fresh Data",
+          "sub": "Ops can continue",
+          "firstAction": "Continue routine checks"
+        },
+        "vi": {
+          "main": "Du lieu con moi",
+          "sub": "Co the tiep tuc truc",
+          "firstAction": "Tiep tuc kiem tra dinh ky"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Check-Family Freshness：FRESH",
+          "sub": "数据时间窗在健康范围内，当前可按标准流程继续执行。",
+          "firstAction": "保持既有巡检节奏，记录本次 generatedAt。"
+        },
+        "en": {
+          "main": "Check-Family Freshness: FRESH",
+          "sub": "Data is within healthy time window and can follow normal operations.",
+          "firstAction": "Keep normal patrol rhythm and log current generatedAt."
+        },
+        "vi": {
+          "main": "Check-Family Freshness: FRESH",
+          "sub": "Du lieu nam trong cua so thoi gian an toan, co the tiep tuc van hanh chuan.",
+          "firstAction": "Giu nhip kiem tra thong thuong va ghi lai generatedAt hien tai."
+        }
+      }
+    },
+    {
+      "id": "warn",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "stale"
+        ],
+        "conditions": [
+          "state == 'warn'",
+          "generatedAt exists and generatedAt != ''",
+          "ageMinutes > maxAgeMin * 0.5",
+          "ageMinutes <= maxAgeMin"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "时效预警",
+          "sub": "接近上限",
+          "firstAction": "先安排重跑窗口"
+        },
+        "en": {
+          "main": "Freshness Warn",
+          "sub": "Near max age",
+          "firstAction": "Schedule rerun window"
+        },
+        "vi": {
+          "main": "Canh bao do tuoi",
+          "sub": "Gan nguong toi da",
+          "firstAction": "Sap xep cua so chay lai"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Check-Family Freshness：WARN",
+          "sub": "数据接近时效上限，建议尽快刷新快照，避免进入 stale。",
+          "firstAction": "先安排最近窗口重跑 check-family，并复核 ageMinutes。"
+        },
+        "en": {
+          "main": "Check-Family Freshness: WARN",
+          "sub": "Data is approaching max age and should be refreshed soon to avoid stale.",
+          "firstAction": "Schedule the nearest check-family rerun and verify ageMinutes again."
+        },
+        "vi": {
+          "main": "Check-Family Freshness: WARN",
+          "sub": "Du lieu dang gan nguong toi da, can lam moi som de tranh stale.",
+          "firstAction": "Sap xep chay lai check-family som nhat va kiem tra lai ageMinutes."
+        }
+      }
+    },
+    {
+      "id": "stale",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "state == 'stale'",
+          "ageMinutes > maxAgeMin",
+          "generatedAt is missing or generatedAt == ''"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "时效陈旧",
+          "sub": "先刷新再判断",
+          "firstAction": "立即重跑check-family"
+        },
+        "en": {
+          "main": "Freshness Stale",
+          "sub": "Refresh before judging",
+          "firstAction": "Rerun check-family now"
+        },
+        "vi": {
+          "main": "Do tuoi da cu",
+          "sub": "Lam moi truoc khi danh gia",
+          "firstAction": "Chay lai check-family ngay"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Check-Family Freshness：STALE",
+          "sub": "当前快照已陈旧或时间戳异常，结论可信度下降。",
+          "firstAction": "先重跑 check-family 生成新快照，再继续发布相关判读。"
+        },
+        "en": {
+          "main": "Check-Family Freshness: STALE",
+          "sub": "Snapshot is stale or timestamp is abnormal, so confidence is reduced.",
+          "firstAction": "Rerun check-family first to generate a fresh snapshot before release interpretation."
+        },
+        "vi": {
+          "main": "Check-Family Freshness: STALE",
+          "sub": "Snapshot da cu hoac timestamp bat thuong, do tin cay giam.",
+          "firstAction": "Chay lai check-family truoc de tao snapshot moi, roi moi dien giai quyet dinh phat hanh."
+        }
+      }
+    }
+  ],
+  "staleClarification": {
+    "trigger": {
+      "mode": "any",
+      "conditions": [
+        "state == 'stale'",
+        "ageMinutes > maxAgeMin"
+      ]
+    },
+    "zh": "stale 表示数据时效过期，不等于系统故障；请先重跑 check-family 再判断系统状态。",
+    "en": "Stale means data freshness expired, not necessarily a system fault; rerun check-family before judging system health.",
+    "vi": "Stale co nghia la du lieu het do tuoi, khong dong nghia loi he thong; hay chay lai check-family truoc khi ket luan."
+  },
+  "fallback": {
+    "whenNoClassMatched": "warn"
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

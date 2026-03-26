@@ -1,0 +1,42 @@
+{
+  "name": "chiller-bff",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js",
+    "check:contract": "node scripts/check-contract.js",
+    "check:source-keys": "node scripts/check-source-key-consistency.js",
+    "check:acceptance-report": "node scripts/check-acceptance-report.js",
+    "check:status-json": "node scripts/check-status-json.js",
+    "check:release-snapshot": "node scripts/check-release-snapshot.js",
+    "check:release-snapshot-index": "node scripts/check-release-snapshot-index.js",
+    "check:release-snapshot-diff": "node scripts/check-release-snapshot-diff.js",
+    "check:release-ready": "node scripts/check-release-ready.js",
+    "check:release-ready-consistency": "node scripts/check-release-ready-consistency.js",
+    "check:release-ready-latest-check": "node scripts/check-release-ready-latest-check.js",
+    "check:release-command-center-latest-check": "node scripts/check-release-command-center-latest-check.js",
+    "check:release-command-center-sync": "node scripts/check-release-command-center-sync.js",
+    "check:check-family": "node scripts/check-check-family.js",
+    "check:check-family-brief": "node scripts/check-check-family-brief.js",
+    "check:check-family-consistency": "node scripts/check-check-family-consistency.js",
+    "check:check-family-freshness": "node scripts/check-check-family-freshness.js",
+    "sync:check-family": "node scripts/sync-check-family.js",
+    "sync:check-family-brief": "node scripts/sync-check-family-brief.js",
+    "sync:release-ready-latest-check": "node scripts/sync-release-ready-latest-check.js",
+    "sync:release-ready-consistency": "node scripts/sync-release-ready-consistency.js",
+    "sync:release-command-center": "node scripts/sync-release-command-center.js",
+    "sync:release-command-center-latest-check": "node scripts/sync-release-command-center-latest-check.js",
+    "sync:release-command-center-sync": "node scripts/sync-release-command-center-sync.js",
+    "check:release-ready-sync": "node scripts/check-release-ready-sync.js",
+    "check:release-ready-brief": "node scripts/check-release-ready-brief.js",
+    "check:verify-gates": "node scripts/check-verify-gates.js",
+    "check:release-command-center": "node scripts/check-release-command-center.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "js-yaml": "^4.1.1"
+  }
+}

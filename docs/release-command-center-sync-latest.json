@@ -1,0 +1,48 @@
+{
+  "version": "v1.0",
+  "generatedAt": "2026-03-12T21:41:43.000Z",
+  "source": "sync_chain",
+  "decision": "GO",
+  "summaryClass": "ready",
+  "exitCode": 0,
+  "reasons": [],
+  "advisories": [],
+  "firstAction": "可以从 release-command-center-latest-check 开始做值班判定。",
+  "steps": {
+    "releaseCommandCenterSync": {
+      "ok": true,
+      "exitCode": 0
+    },
+    "releaseCommandCenterCheck": {
+      "ok": true,
+      "exitCode": 0
+    },
+    "releaseCommandCenterLatestCheckSync": {
+      "ok": true,
+      "exitCode": 0
+    },
+    "releaseCommandCenterLatestCheck": {
+      "ok": true,
+      "exitCode": 0
+    }
+  },
+  "releaseCommandCenter": {
+    "decision": "GO",
+    "summaryClass": "ready",
+    "exitCode": 0,
+    "generatedAt": "2026-03-12T21:41:42.493Z",
+    "reasons": [],
+    "advisories": []
+  },
+  "releaseCommandCenterLatestCheck": {
+    "decision": "GO",
+    "summaryClass": "ready",
+    "exitCode": 0,
+    "generatedAt": "2026-03-12T21:41:42.831Z",
+    "consistencyOk": true
+  },
+  "artifacts": {
+    "releaseCommandCenterPath": "/Users/billchow/Documents/智慧冷冻站/docs/release-command-center-latest.json",
+    "releaseCommandCenterLatestCheckPath": "/Users/billchow/Documents/智慧冷冻站/docs/release-command-center-latest-check.json"
+  }
+}

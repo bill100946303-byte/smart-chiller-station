@@ -1,0 +1,10 @@
+semantic_key,release_ready_path,latest_check_path,family_consistency_path,release_impact,missing_default_behavior,fail_open_or_closed,group,mapping_note
+decision,$.decision,$.decision,"$.overall <-> $.overall (semantic analog)",blocking,missing_treated_as_failed_decision_or_validation_error,fail-closed,minimal_common,family-consistency uses PASS|FAIL as decision analog
+exitCode,$.exitCode,$.exitCode,N/A,blocking,missing_treated_as_exitCode_1_or_validation_error,fail-closed,minimal_common,no standalone exitCode field in family-consistency
+reasons,$.reasons[],$.reasons[],"$.topFailedChecks[*] (semantic analog)",blocking,missing_treated_as_blocking_reason_unavailable,fail-closed,minimal_common,family-consistency exposes failed script list as primary failure reason analog
+source,N/A,"check_context.loaded.source / $.source semantic",$.source,blocking,missing_source_treated_as_not_traceable,fail-closed,minimal_common,release-ready semantics doc does not explicitly expose source
+consistencyOk,$.consistencyOk,$.consistencyOk,"N/A (chain_result_itself_is_consistency_gate)",blocking,missing_treated_as_false_or_not_ready,fail-closed,minimal_common,family-consistency uses whole gate result instead of standalone consistencyOk field
+generatedAt,"N/A (not explicit in release-ready-field-semantics-v1)",$.generatedAt,"$.generatedAt <-> $.sourceGeneratedAt",warning,missing_treated_as_unknown_freshness_or_unknown_timestamp,fail-open,minimal_common,used for freshness explanation not default release flip
+diffClass,$.diffClass,$.diffClass,N/A,warning,default_to_error,fail-open,extended_shared,trend/change classification
+decisionChanged,$.decisionChanged,$.decisionChanged,N/A,warning,default_to_null,fail-open,extended_shared,change description field
+verifyGatesOk,$.verifyGatesOk,$.verifyGatesOk,N/A,blocking,missing_treated_as_false_or_not_passed,fail-closed,extended_shared,pre-release verification gate status

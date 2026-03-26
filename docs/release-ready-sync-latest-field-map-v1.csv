@@ -1,0 +1,16 @@
+row_type,sync_latest_field,source_field_path,release_impact,missing_default_behavior,affects_default_release,notes
+map,decision,$.decision,blocking,default_to_NO_GO,yes,top-level release decision in sync-latest snapshot
+map,exitCode,$.exitCode,blocking,default_to_1,yes,hard gate for default release
+map,inputs.strictFreshness,$.inputs.strictFreshness,info,default_to_false,no,input flag captured when sync snapshot generated
+map,inputs.runtimeRequired,$.inputs.runtimeRequired,info,default_to_false,no,input flag captured when sync snapshot generated
+map,inputs.recompute,$.inputs.recompute,info,default_to_false,no,true means release-ready was recomputed
+map,steps.releaseReady.ok,$.steps.releaseReady.ok,blocking,default_to_false,yes,release-ready step pass flag
+map,steps.releaseReady.exitCode,$.steps.releaseReady.exitCode,blocking,default_to_1,yes,release-ready step rc
+map,steps.releaseReady.mode,$.steps.releaseReady.mode,info,default_to_unknown,no,read_latest or recompute
+map,steps.releaseReadyCheck.ok,$.steps.releaseReadyCheck.ok,blocking,default_to_false,yes,release-ready-check step pass flag
+map,steps.releaseReadyCheck.exitCode,$.steps.releaseReadyCheck.exitCode,blocking,default_to_1,yes,release-ready-check step rc
+map,steps.releaseReadyLatest.ok,$.steps.releaseReadyLatest.ok,blocking,default_to_false,yes,release-ready-latest read step pass flag
+map,steps.releaseReadyLatest.exitCode,$.steps.releaseReadyLatest.exitCode,blocking,default_to_1,yes,release-ready-latest read step rc
+map,releaseReady,$.releaseReady,advisory,default_to_null,no,embedded release-ready snapshot object
+map,releaseReadyLatest,$.releaseReadyLatest,advisory,default_to_null,no,embedded latest release-ready snapshot object
+rule,default_gate_boundary,$.exitCode,N/A,if_missing_then_treat_as_1,yes,default release gate should follow exitCode fail-closed

@@ -1,0 +1,62 @@
+{
+  "site": {
+    "siteId": "126lnoffice",
+    "siteName": "126lnoffice"
+  },
+  "generatedAt": "2026-03-14T08:00:00.000Z",
+  "detail": {
+    "deviceId": "15",
+    "deviceCode": "ZHYS",
+    "deviceName": "中会议室",
+    "deviceTypeCode": "",
+    "deviceTypeName": "风机盘管",
+    "floorName": "10楼",
+    "buildingName": "6期1栋",
+    "usageType": "风机盘管",
+    "iconPath": "/imgs/126lnoffice/Device/7ff68ac3eb2346a29162853f018e7a2c.png",
+    "isVirtual": false,
+    "runStatusText": "已停止",
+    "alarmStatusText": "报警中",
+    "latestUpdateAt": "2025-08-19T17:11:20.000Z",
+    "treeNodeType": "device",
+    "treeChildCount": 15,
+    "pointCount": 15
+  },
+  "freshness": {
+    "latestTimestamp": "2026-03-14T08:00:00.000Z",
+    "stale": false,
+    "ageHours": 0
+  },
+  "sourceStatus": {
+    "overall": "ok",
+    "sources": [
+      {
+        "key": "deviceDetailCatalog",
+        "endpoint": "/zsqy/drinfo/126lnoffice/findObject?pageCurrent=1&pageSize=200",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "rows": 59,
+        "error": null
+      },
+      {
+        "key": "deviceDetailTree",
+        "endpoint": "/api/device/126lnoffice/data/tree?build=1&floor=1&mock=false",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "rows": 30,
+        "error": null
+      },
+      {
+        "key": "deviceDetailRuntime",
+        "endpoint": "/zsqy/reg/126lnoffice/findObject?pageCurrent=1&pageSize=200&drId=15",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "rows": 14,
+        "error": null
+      }
+    ]
+  }
+}

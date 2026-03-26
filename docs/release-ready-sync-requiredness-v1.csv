@@ -1,0 +1,19 @@
+field_path,requiredness,source_step,owner,missing_default_behavior,release_impact,affects_default_release,notes
+$.version,required,sync_aggregate,shell,fail_closed_if_missing,info,no,top-level schema version
+$.generatedAt,required,sync_aggregate,shell,fail_closed_if_missing,info,no,ISO timestamp
+$.decision,required,release-ready,shell,default_to_NO_GO,advisory,no,decision reflects release-ready step only
+$.exitCode,required,release-ready|check|latest,shell,default_to_1,blocking,yes,final sync gate result
+$.inputs,required,sync_input,shell,fail_closed_if_missing,info,no,input container
+$.inputs.strictFreshness,required,sync_input,shell,default_to_false,info,no,from --strict-freshness
+$.inputs.runtimeRequired,required,sync_input,shell,default_to_false,info,no,from --runtime-required
+$.inputs.recompute,optional,sync_input,shell,default_to_false,info,no,runtime enhancement field
+$.steps,required,sync_aggregate,shell,default_all_steps_failed,blocking,yes,step container
+$.steps.releaseReady.ok,required,release-ready,shell,default_to_false,blocking,yes,release-ready step status
+$.steps.releaseReady.exitCode,required,release-ready,shell,default_to_1,blocking,yes,release-ready rc
+$.steps.releaseReady.mode,optional,release-ready,shell,default_to_read_latest,info,no,read_latest or recompute
+$.steps.releaseReadyCheck.ok,required,release-ready-check,bff,default_to_false,blocking,yes,contract check step status
+$.steps.releaseReadyCheck.exitCode,required,release-ready-check,bff,default_to_1,blocking,yes,contract check rc
+$.steps.releaseReadyLatest.ok,required,release-ready-latest,shell,default_to_false,blocking,yes,latest readback status
+$.steps.releaseReadyLatest.exitCode,required,release-ready-latest,shell,default_to_1,blocking,yes,latest readback rc
+$.releaseReady,nullable,release-ready,shell,default_to_null,advisory,no,passthrough object from release-ready
+$.releaseReadyLatest,nullable,release-ready-latest,shell,default_to_null,advisory,no,passthrough object from release-ready-latest

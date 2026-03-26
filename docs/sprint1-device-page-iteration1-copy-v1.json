@@ -1,0 +1,370 @@
+{
+  "version": "1.0.0",
+  "packId": "sprint1-device-page-iteration1-copy-v1",
+  "scope": "Sprint1 device page iteration1 copy pack",
+  "demoRecommendation": {
+    "fitForDutyOpsDemo": false,
+    "reason": {
+      "zh": "独立设备页和真实列表区还未落地，当前只能演示摘要与骨架，不能作为完整设备页给值班/运营演示。",
+      "en": "The standalone device page and live list region are not landed yet, so only summary and skeleton can be shown now and the page is not ready as a full duty/ops demo.",
+      "vi": "Trang thiết bị độc lập và vùng danh sách thực vẫn chưa được hoàn thiện, nên hiện chỉ có thể demo phần tóm tắt và khung, chưa phù hợp làm trang thiết bị hoàn chỉnh cho ca trực/vận hành."
+    }
+  },
+  "boundary": {
+    "includeDeviceDetail": false,
+    "includeControlOpsCopy": false,
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  },
+  "pageMapping": {
+    "targetRoute": "/devices",
+    "currentCarrierRoute": "/system-overview",
+    "notes": {
+      "zh": "当前 devices 独立路由未落地，系统总览页临时承载设备骨架区。",
+      "en": "The standalone devices route is not landed yet, and system-overview is temporarily carrying the device skeleton region.",
+      "vi": "Route devices độc lập vẫn chưa hoàn thiện, và system-overview hiện đang tạm thời gánh phần khung thiết bị."
+    }
+  },
+  "fieldScope": {
+    "allowedRoots": [
+      "deviceSummary",
+      "groups",
+      "items",
+      "freshness",
+      "sourceStatus"
+    ]
+  },
+  "header": {
+    "title": {
+      "zh": "设备总览",
+      "en": "Device Overview",
+      "vi": "Tong quan thiet bi"
+    },
+    "subtitle": {
+      "zh": "先看设备规模与骨架，再看真实列表是否齐，再决定后续巡检路径。",
+      "en": "Check device scale and skeleton first, then confirm whether the live list is complete before choosing the next inspection path.",
+      "vi": "Xem quy mo thiet bi va khung truoc, sau do xac nhan danh sach thuc da day du hay chua roi moi chon huong kiem tra tiep theo."
+    }
+  },
+  "sections": {
+    "topSummary": {
+      "title": {
+        "zh": "设备摘要",
+        "en": "Device Summary",
+        "vi": "Tom tat thiet bi"
+      },
+      "subtitle": {
+        "zh": "用于快速判断设备总量、新鲜度与来源状态。",
+        "en": "Used to quickly judge total device scale, freshness, and source state.",
+        "vi": "Dung de danh gia nhanh quy mo thiet bi, do moi du lieu va trang thai nguon."
+      }
+    },
+    "topology": {
+      "title": {
+        "zh": "设备骨架",
+        "en": "Device Skeleton",
+        "vi": "Khung thiet bi"
+      },
+      "subtitle": {
+        "zh": "先承接主机、泵、塔主链路和基础分组，不在 iteration1 承接设备控制。",
+        "en": "Iteration1 carries the main chiller-pump-tower chain and basic grouping only, not device control.",
+        "vi": "Iteration1 chi nhan chuoi chinh may lam lanh-bom-thap va nhom co ban, chua nhan phan dieu khien thiet bi."
+      }
+    },
+    "realList": {
+      "title": {
+        "zh": "设备列表",
+        "en": "Device List",
+        "vi": "Danh sach thiet bi"
+      },
+      "subtitle": {
+        "zh": "用于逐项查看当前设备入口；首版只要求可浏览，不承接详情和控制动作。",
+        "en": "Used to browse live device entries one by one. The first version only needs browsing, not detail or control actions.",
+        "vi": "Dung de duyet tung muc thiet bi thuc. Ban dau chi can xem duoc danh sach, chua nhan chi tiet hay thao tac dieu khien."
+      }
+    }
+  },
+  "dutyIntro": {
+    "pageIntro": {
+      "zh": "设备总览页先回答三件事：设备规模是否正常、主链路骨架是否齐、真实设备列表能不能直接作为巡检入口。",
+      "en": "The device overview page answers three things first: whether device scale looks normal, whether the main skeleton is complete, and whether the live device list is ready to serve as the inspection entry.",
+      "vi": "Trang tong quan thiet bi truoc tien tra loi ba viec: quy mo thiet bi co binh thuong khong, khung chuoi chinh co day du khong, va danh sach thiet bi thuc da san sang lam diem vao kiem tra hay chua."
+    },
+    "dutySequence": {
+      "zh": "先看 freshness 和 sourceStatus，再看设备摘要和骨架，最后确认真实列表是否齐。",
+      "en": "Check freshness and sourceStatus first, then read the summary and skeleton, and finally confirm whether the live list is complete.",
+      "vi": "Xem freshness va sourceStatus truoc, sau do doc phan tom tat va khung, cuoi cung xac nhan danh sach thiet bi thuc da day du hay chua."
+    }
+  },
+  "priorityOrder": [
+    "stale",
+    "degraded",
+    "partial",
+    "empty",
+    "normal"
+  ],
+  "classes": [
+    {
+      "id": "normal",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "deviceSummary.totalDevices > 0",
+          "groups.length > 0",
+          "items.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "设备页已就绪",
+          "sub": "可直接巡检"
+        },
+        "en": {
+          "main": "Device Page Ready",
+          "sub": "Ready for inspection"
+        },
+        "vi": {
+          "main": "Trang thiet bi san sang",
+          "sub": "Co the kiem tra truc tiep"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "设备总览：NORMAL",
+          "sub": "顶部摘要、骨架分组和真实列表都已可用，当前页面可直接作为值班巡检入口。"
+        },
+        "en": {
+          "main": "Device Overview: NORMAL",
+          "sub": "Top summary, skeleton grouping, and the live list are all available, so the page is ready to serve as the duty inspection entry."
+        },
+        "vi": {
+          "main": "Tong quan thiet bi: NORMAL",
+          "sub": "Phan tom tat, khung nhom va danh sach thuc deu da kha dung, vi vay trang nay co the duoc dung truc tiep lam diem vao kiem tra ca truc."
+        }
+      },
+      "firstAction": {
+        "zh": "先看总设备数和骨架分组是否匹配，再沿真实列表逐项进入巡检。",
+        "en": "Check whether total device count matches the skeleton grouping first, then inspect device entries one by one through the live list.",
+        "vi": "Truoc tien kiem tra tong so thiet bi co khop voi khung nhom hay khong, sau do di vao kiem tra tung muc qua danh sach thuc."
+      }
+    },
+    {
+      "id": "partial",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "deviceSummary.totalDevices > 0",
+          "groups.length > 0 OR items.length > 0",
+          "sourceStatus.overall == 'partial' OR (sourceStatus.overall == 'ok' AND (groups.length == 0 OR items.length == 0))"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "设备页部分可用",
+          "sub": "骨架已到位"
+        },
+        "en": {
+          "main": "Device Page Partial",
+          "sub": "Skeleton is present"
+        },
+        "vi": {
+          "main": "Trang thiet bi dung duoc mot phan",
+          "sub": "Khung da co"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "设备总览：PARTIAL",
+          "sub": "当前设备摘要或骨架已可用，但真实列表尚未补齐，页面可用于入口判断，不适合作为完整设备页对外演示。"
+        },
+        "en": {
+          "main": "Device Overview: PARTIAL",
+          "sub": "The device summary or skeleton is already usable, but the live list is still incomplete. The page can be used for entry-level judgment, not as a full device page demo."
+        },
+        "vi": {
+          "main": "Tong quan thiet bi: PARTIAL",
+          "sub": "Phan tom tat hoac khung thiet bi da dung duoc, nhung danh sach thuc van chua day du. Trang nay co the dung de dinh huong ban dau, nhung chua phu hop lam trang thiet bi hoan chinh de demo."
+        }
+      },
+      "firstAction": {
+        "zh": "先确认当前缺的是骨架还是列表，再决定继续看骨架还是回退到旧系统核对设备清单。",
+        "en": "Confirm first whether the missing part is the skeleton or the list, then decide whether to keep using the skeleton or fall back to the legacy system for device inventory checking.",
+        "vi": "Truoc tien xac nhan phan dang thieu la khung hay danh sach, sau do moi quyet dinh tiep tuc dung khung hay quay lai he cu de doi soat danh muc thiet bi."
+      }
+    },
+    {
+      "id": "degraded",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'failed' OR sourceStatus.overall is missing"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "设备链路降级",
+          "sub": "先查来源"
+        },
+        "en": {
+          "main": "Device Chain Degraded",
+          "sub": "Check sources first"
+        },
+        "vi": {
+          "main": "Chuoi thiet bi suy giam",
+          "sub": "Kiem tra nguon truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "设备总览：DEGRADED",
+          "sub": "当前设备来源链路失败或缺失，摘要、骨架和列表都可能不完整，只能作为故障排查入口。"
+        },
+        "en": {
+          "main": "Device Overview: DEGRADED",
+          "sub": "The device source chain is failed or missing, so summary, skeleton, and list may all be incomplete and should be treated only as troubleshooting entry points."
+        },
+        "vi": {
+          "main": "Tong quan thiet bi: DEGRADED",
+          "sub": "Chuoi nguon thiet bi dang loi hoac thieu, vi vay phan tom tat, khung va danh sach deu co the khong day du va chi nen duoc dung nhu diem vao xu ly su co."
+        }
+      },
+      "firstAction": {
+        "zh": "先恢复 sourceStatus，再判断是补设备摘要、骨架还是列表。",
+        "en": "Recover sourceStatus first, then decide whether the missing piece is the summary, the skeleton, or the list.",
+        "vi": "Khoi phuc sourceStatus truoc, sau do moi quyet dinh can bu phan tom tat, khung hay danh sach."
+      }
+    },
+    {
+      "id": "stale",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == true"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "设备页已陈旧",
+          "sub": "先刷新数据"
+        },
+        "en": {
+          "main": "Device Page Stale",
+          "sub": "Refresh data first"
+        },
+        "vi": {
+          "main": "Trang thiet bi da cu",
+          "sub": "Lam moi du lieu truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "设备总览：STALE",
+          "sub": "当前设备页时间戳已陈旧，摘要、骨架和列表更适合作为历史参考，不应直接用于判断现场刚刚发生的变化。"
+        },
+        "en": {
+          "main": "Device Overview: STALE",
+          "sub": "The device page timestamp is stale, so summary, skeleton, and list are better treated as historical reference and should not be used alone to judge very recent site changes."
+        },
+        "vi": {
+          "main": "Tong quan thiet bi: STALE",
+          "sub": "Dau thoi gian cua trang thiet bi da cu, vi vay phan tom tat, khung va danh sach nen duoc xem nhu tham chieu lich su, khong nen dung rieng de danh gia thay doi vua xay ra tai hien truong."
+        }
+      },
+      "firstAction": {
+        "zh": "先刷新设备页并确认 freshness 恢复，再继续看设备规模和列表。",
+        "en": "Refresh the device page first and confirm freshness has recovered, then continue with device scale and list review.",
+        "vi": "Lam moi trang thiet bi truoc va xac nhan freshness da hoi phuc, sau do moi tiep tuc xem quy mo thiet bi va danh sach."
+      }
+    },
+    {
+      "id": "empty",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "deviceSummary.totalDevices == 0",
+          "groups.length == 0",
+          "items.length == 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "暂无设备数据",
+          "sub": "先核对映射"
+        },
+        "en": {
+          "main": "No Device Data",
+          "sub": "Verify mapping first"
+        },
+        "vi": {
+          "main": "Chua co du lieu thiet bi",
+          "sub": "Kiem tra mapping truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "设备总览：EMPTY",
+          "sub": "当前来源正常但未返回设备摘要、骨架或真实列表，更像设备映射尚未形成，不等于站点没有设备。"
+        },
+        "en": {
+          "main": "Device Overview: EMPTY",
+          "sub": "Sources are healthy, but device summary, skeleton, and live list are all empty. This usually means the device mapping is not ready yet, not that the site has no equipment."
+        },
+        "vi": {
+          "main": "Tong quan thiet bi: EMPTY",
+          "sub": "Nguon hien binh thuong nhung phan tom tat, khung va danh sach thuc deu dang trong. Dieu nay thuong co nghia la mapping thiet bi chua san sang, khong phai tram khong co thiet bi."
+        }
+      },
+      "firstAction": {
+        "zh": "先核对设备汇总、拓扑映射和列表源是否都已产出，再决定是否回退旧系统。",
+        "en": "Verify first whether device summary, topology mapping, and list source are all produced, then decide whether to fall back to the legacy system.",
+        "vi": "Truoc tien kiem tra xem phan tong hop thiet bi, mapping topology va nguon danh sach da duoc tao ra day du hay chua, sau do moi quyet dinh co quay lai he cu hay khong."
+      }
+    }
+  ],
+  "currentLocalEvidence": {
+    "targetRouteResult": {
+      "requestedPath": "/devices",
+      "actualPath": "/login"
+    },
+    "overviewSample": {
+      "deviceSummary": {
+        "totalDevices": 59,
+        "chillerCount": 3,
+        "chilledPumpCount": 3,
+        "coolingPumpCount": 3,
+        "coolingTowerCount": 4
+      },
+      "freshness": {
+        "stale": false
+      },
+      "sourceStatus": {
+        "overall": "ok"
+      }
+    },
+    "topologySample": {
+      "groupsLength": 59,
+      "nodesLength": 5,
+      "sourceStatus": {
+        "overall": "ok"
+      }
+    },
+    "itemsStatus": {
+      "implemented": false,
+      "note": {
+        "zh": "当前独立设备页真实列表区未落地。",
+        "en": "The live list region for the standalone device page is not landed yet.",
+        "vi": "Vung danh sach thuc cho trang thiet bi doc lap hien van chua duoc hoan thien."
+      }
+    }
+  },
+  "fallback": {
+    "whenNoClassMatched": "partial"
+  }
+}

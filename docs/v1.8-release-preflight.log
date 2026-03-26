@@ -1,0 +1,178 @@
+$ /usr/bin/env bash -lc AUTO_BOOT=1 READINESS_CHECK=0 SITE_ID=126lnoffice BFF_BASE_URL=http://127.0.0.1:8787 FRONTEND_BASE_URL=http://127.0.0.1:3001 FRONTEND_PORT=3001 /Users/billchow/Documents/智慧冷冻站/scripts/check_stack.sh
+=== Chiller Stack Check ===
+siteId=126lnoffice
+legacy=http://127.0.0.1:8098
+bff=http://127.0.0.1:8787
+frontend=http://127.0.0.1:3001
+frontendExpectServer=vite
+autoBoot=1
+
+[OK] auto-boot enabled, starting local stack first
+[WARN] auto-boot frontend endpoint not detected, recent auto-boot hints:
+[OK] legacy health: reachable HTTP 404 (http://127.0.0.1:8098/healthz)
+[OK] bff health: HTTP 200 (http://127.0.0.1:8787/healthz)
+[OK] frontend entry: HTTP 200 (http://127.0.0.1:3001/)
+[WARN] frontend server header missing (http://127.0.0.1:3001/)
+
+[OK] bff contract check passed
+[OK] bff probe executed
+[INFO] sourceStatus overall => overview:ok trends:partial anomalies:ok recommendations:ok
+[INFO] recommendation cards => 0
+[WARN] badge state skipped: READINESS_CHECK=0
+
+=== Summary: FAIL=0, WARN=3 ===
+$ /usr/bin/env bash -lc cd /Users/billchow/Documents/智慧冷冻站/apps/chiller-bff && npm run check:contract
+
+> chiller-bff@0.1.0 check:contract
+> node scripts/check-contract.js
+
+Station-COP-missing baseline probe (non-blocking): READY
+Station-COP-missing baseline sample: /Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/openapi/examples/recommendations-station-cop-missing.json
+Station-COP-missing current recommendations probe (non-blocking): N/A
+- station_cop trigger not present (need metric.station_cop.ok=false and category=field_missing_or_invalid)
+RunParams-500 fallback baseline probe (non-blocking): READY
+RunParams-500 fallback baseline sample: /Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/openapi/examples/dashboard-trends-runparams-500-fallback-ok.json
+RunParams-500 fallback current trends probe (non-blocking): N/A
+- runParams status>=500 not present
+HomeEnergy fallback probe (non-blocking): N/A
+- trigger message: OK
+- energy source message missing fallback trigger "homeEnergyEfficiency"
+Real-link-ready probe (non-blocking): NOT_READY
+example-ready=false
+runtime-ready=false
+Real-link-ready runtime probe (non-blocking): NOT_READY
+- dashboardTrends.sourceStatus.overall=partial (expected ok)
+- dashboardTrends.sourceStatus has 1 source(s) with ok=false
+Real-link-ready failure groups (by category):
+- group=upstream_unreachable count=0
+- group=upstream_5xx count=1
+  - /dashboard/trends.sourceStatus.sources[1]: key=runParams status=500
+- group=field_missing_or_invalid count=0
+Real-link-ready failure groups (by endpoint/category):
+- endpoint=/dashboard/trends
+  - group=upstream_unreachable count=0
+  - group=upstream_5xx count=1
+    - /dashboard/trends.sourceStatus.sources[1]: key=runParams status=500
+  - group=field_missing_or_invalid count=0
+- dashboardOverview.sourceStatus.overall=partial (expected ok)
+- dashboardOverview.sourceStatus has 2 source(s) with ok=false
+- dashboardTrends.sourceStatus.overall=partial (expected ok)
+- dashboardTrends.sourceStatus has 2 source(s) with ok=false
+- anomaliesSummary.sourceStatus.overall=partial (expected ok)
+- anomaliesSummary.sourceStatus has 2 source(s) with ok=false
+- recommendations.sourceStatus.overall=partial (expected ok)
+- recommendations.sourceStatus has 7 source(s) with ok=false
+- recommendations.ruleEvaluation.skippedRuleDetails has 4 degraded item(s)
+Real-link-ready failure groups (by category):
+- group=upstream_unreachable count=13
+  - /dashboard/overview.sourceStatus.sources[3]: key=alarmDiagnosis status=null
+  - /dashboard/trends.sourceStatus.sources[3]: key=trendQuality status=null
+  - /anomalies/summary.sourceStatus.sources[3]: key=alarmDiagnosis status=null
+  - /recommendations.sourceStatus.sources[2]: key=anomalySummary status=null
+  - /recommendations.sourceStatus.sources[3]: key=ruleMetrics status=null
+  - /recommendations.sourceStatus.sources[4]: key=metric.chilled_delta_t_c status=null
+  - /recommendations.sourceStatus.sources[5]: key=metric.cooling_delta_t_c status=null
+  - /recommendations.sourceStatus.sources[6]: key=metric.station_cop status=null
+  - /recommendations.sourceStatus.sources[7]: key=metric.station_total_power_kw status=null
+  - /recommendations.ruleEvaluation.skippedRuleDetails[0].missingMetrics[0]: metric=chilled_delta_t_c category=upstream_unreachable
+  - /recommendations.ruleEvaluation.skippedRuleDetails[1].missingMetrics[0]: metric=chilled_delta_t_c category=upstream_unreachable
+  - /recommendations.ruleEvaluation.skippedRuleDetails[2].missingMetrics[0]: metric=cooling_delta_t_c category=upstream_unreachable
+  - /recommendations.ruleEvaluation.skippedRuleDetails[2].missingMetrics[1]: metric=station_cop category=upstream_unreachable
+- group=upstream_5xx count=4
+  - /dashboard/overview.sourceStatus.sources[2]: key=alarms status=500
+  - /dashboard/trends.sourceStatus.sources[2]: key=trendBaseline status=502
+  - /anomalies/summary.sourceStatus.sources[2]: key=alarmSeveritySplit status=500
+  - /recommendations.sourceStatus.sources[1]: key=dashboardOverview status=502
+- group=field_missing_or_invalid count=1
+  - /recommendations.ruleEvaluation.skippedRuleDetails[0].missingMetrics[1]: metric=station_total_power_kw category=field_missing_or_invalid
+Real-link-ready failure groups (by endpoint/category):
+- endpoint=/anomalies/summary
+  - group=upstream_unreachable count=1
+    - /anomalies/summary.sourceStatus.sources[3]: key=alarmDiagnosis status=null
+  - group=upstream_5xx count=1
+    - /anomalies/summary.sourceStatus.sources[2]: key=alarmSeveritySplit status=500
+  - group=field_missing_or_invalid count=0
+- endpoint=/dashboard/overview
+  - group=upstream_unreachable count=1
+    - /dashboard/overview.sourceStatus.sources[3]: key=alarmDiagnosis status=null
+  - group=upstream_5xx count=1
+    - /dashboard/overview.sourceStatus.sources[2]: key=alarms status=500
+  - group=field_missing_or_invalid count=0
+- endpoint=/dashboard/trends
+  - group=upstream_unreachable count=1
+    - /dashboard/trends.sourceStatus.sources[3]: key=trendQuality status=null
+  - group=upstream_5xx count=1
+    - /dashboard/trends.sourceStatus.sources[2]: key=trendBaseline status=502
+  - group=field_missing_or_invalid count=0
+- endpoint=/recommendations
+  - group=upstream_unreachable count=10
+    - /recommendations.sourceStatus.sources[2]: key=anomalySummary status=null
+    - /recommendations.sourceStatus.sources[3]: key=ruleMetrics status=null
+    - /recommendations.sourceStatus.sources[4]: key=metric.chilled_delta_t_c status=null
+    - /recommendations.sourceStatus.sources[5]: key=metric.cooling_delta_t_c status=null
+    - /recommendations.sourceStatus.sources[6]: key=metric.station_cop status=null
+    - /recommendations.sourceStatus.sources[7]: key=metric.station_total_power_kw status=null
+    - /recommendations.ruleEvaluation.skippedRuleDetails[0].missingMetrics[0]: metric=chilled_delta_t_c category=upstream_unreachable
+    - /recommendations.ruleEvaluation.skippedRuleDetails[1].missingMetrics[0]: metric=chilled_delta_t_c category=upstream_unreachable
+    - /recommendations.ruleEvaluation.skippedRuleDetails[2].missingMetrics[0]: metric=cooling_delta_t_c category=upstream_unreachable
+    - /recommendations.ruleEvaluation.skippedRuleDetails[2].missingMetrics[1]: metric=station_cop category=upstream_unreachable
+  - group=upstream_5xx count=1
+    - /recommendations.sourceStatus.sources[1]: key=dashboardOverview status=502
+  - group=field_missing_or_invalid count=1
+    - /recommendations.ruleEvaluation.skippedRuleDetails[0].missingMetrics[1]: metric=station_total_power_kw category=field_missing_or_invalid
+Real-link-ready baseline sample: /Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/openapi/examples/real-link-ready-sample.json
+Real-link-ready probe report: /Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/openapi/examples/real-link-ready-probe-report.json
+Contract validation passed for 5 examples using bff-v1.yaml
+I18N safety notices (1):
+- I18N_ASSERTION: Primary rendering must use key/ok/status/category; message/error are diagnostic details only.
+Source key scan report:
+- uniqueKeys=19
+- alarmDiagnosis: count=2, sample=/bff/v1/sites/{siteId}/dashboard/overview.sourceStatus.sources[3].key
+- alarms: count=1, sample=/bff/v1/sites/{siteId}/dashboard/overview.sourceStatus.sources[2].key
+- alarmSeveritySplit: count=1, sample=/bff/v1/sites/{siteId}/anomalies/summary.sourceStatus.sources[2].key
+- anomalySummary: count=1, sample=/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[2].key
+- dashboardOverview: count=1, sample=/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[1].key
+- devices: count=1, sample=/bff/v1/sites/{siteId}/dashboard/overview.sourceStatus.sources[1].key
+- energy: count=1, sample=/bff/v1/sites/{siteId}/dashboard/overview.sourceStatus.sources[0].key
+- energyCurve: count=1, sample=/bff/v1/sites/{siteId}/dashboard/trends.sourceStatus.sources[0].key
+- latestAlarmLog: count=1, sample=/bff/v1/sites/{siteId}/anomalies/summary.sourceStatus.sources[1].key
+- metric.chilled_delta_t_c: count=1, sample=/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[4].key
+- metric.cooling_delta_t_c: count=1, sample=/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[5].key
+- metric.station_cop: count=1, sample=/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[6].key
+- metric.station_total_power_kw: count=1, sample=/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[7].key
+- ruleMetrics: count=1, sample=/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[3].key
+- rules: count=1, sample=/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[0].key
+- runParams: count=1, sample=/bff/v1/sites/{siteId}/dashboard/trends.sourceStatus.sources[1].key
+- subsystemSummary: count=1, sample=/bff/v1/sites/{siteId}/anomalies/summary.sourceStatus.sources[0].key
+- trendBaseline: count=1, sample=/bff/v1/sites/{siteId}/dashboard/trends.sourceStatus.sources[2].key
+- trendQuality: count=1, sample=/bff/v1/sites/{siteId}/dashboard/trends.sourceStatus.sources[3].key
+Source key drift warnings: none
+Source key scan JSON written: /Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/openapi/examples/source-key-scan-report.json
+$ /usr/bin/env bash -lc cd /Users/billchow/Documents/智慧冷冻站/apps/chiller-bff && npm run check:status-json
+
+> chiller-bff@0.1.0 check:status-json
+> node scripts/check-status-json.js
+
+Status-json contract validation passed for 3 modes
+$ /usr/bin/env bash -lc cd /Users/billchow/Documents/智慧冷冻站/apps/chiller-shell-v1 && npm run build
+
+> chiller-shell-v1@0.1.0 build
+> tsc -b && vite build
+
+vite v7.3.1 building client environment for production...
+transforming...
+✓ 1702 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.40 kB │ gzip:  0.28 kB
+dist/assets/index-3Psxls4d.css   16.85 kB │ gzip:  4.35 kB
+dist/assets/index-CJppG0g-.js   289.96 kB │ gzip: 92.57 kB
+✓ built in 911ms
+$ /usr/bin/env bash -lc /Users/billchow/Documents/智慧冷冻站/scripts/chiller_ctl.sh release-gate-latest
+releaseGateLatestJson=/Users/billchow/Documents/智慧冷冻站/docs/release-gate-latest.json
+releaseGateLatestMd=/Users/billchow/Documents/智慧冷冻站/docs/release-gate-latest.md
+-rw-r--r--@ 1 billchow  staff  2774 Mar 12 17:45 /Users/billchow/Documents/智慧冷冻站/docs/ui-badge-state-v1.8.json
+-rw-------@ 1 billchow  staff  2774 Mar 12 17:45 /Users/billchow/Documents/智慧冷冻站/apps/chiller-shell-v1/public/ui-badge-state-v1.8.json
+-rw-r--r--@ 1 billchow  staff  2427 Mar 12 13:05 /Users/billchow/Documents/智慧冷冻站/docs/v1.8-signoff-decision.md
+-rw-r--r--@ 1 billchow  staff  3990 Mar 12 12:04 /Users/billchow/Documents/智慧冷冻站/docs/ui-consistency-review-v1.8.md
+-rw-r--r--@ 1 billchow  staff  3626 Mar 12 12:06 /Users/billchow/Documents/智慧冷冻站/docs/readiness-baseline-freeze-v1.8.md

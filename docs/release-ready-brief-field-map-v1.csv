@@ -1,0 +1,7 @@
+brief_field,source_field_path,release_impact,missing_default_behavior,affects_default_release,notes
+decision,$.decision,blocking,default_to_NO_GO,yes,primary release gate
+exitCode,$.exitCode,blocking,default_to_1,yes,primary release gate
+reasons,$.releaseReadyLatest.reasons,blocking_explain,default_to_empty_array,conditional,explain blocking causes when decision is NO-GO
+advisories,$.releaseReadyLatest.advisories,advisory,default_to_empty_array,no,non-blocking hints
+generatedAt,$.releaseReadyLatest.generatedAt (brief alias latestGeneratedAt),info,default_to_unknown,no,timestamp for latest ready snapshot
+source,constant:/Users/billchow/Documents/智慧冷冻站/docs/release-ready-sync-latest.json,info,default_to_unknown_source,no,read-only source marker for operators

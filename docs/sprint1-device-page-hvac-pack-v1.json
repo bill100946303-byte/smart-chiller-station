@@ -1,0 +1,266 @@
+{
+  "version": "1.0.0",
+  "packId": "sprint1-device-page-hvac-pack-v1",
+  "scope": "Sprint1 device overview HVAC copy pack",
+  "pageIdentity": {
+    "businessPageName": {
+      "zh": "设备总览页",
+      "en": "Device Overview Page",
+      "vi": "Trang tổng quan thiết bị"
+    },
+    "routeKey": "system-overview",
+    "currentUiLabel": {
+      "zh": "系统总览",
+      "en": "System Overview",
+      "vi": "Tổng quan hệ thống"
+    }
+  },
+  "pageValue": {
+    "businessValue": "medium",
+    "operationsValue": "medium",
+    "userPerceptionValue": "high",
+    "reason": {
+      "zh": "设备总览更适合作为设备入口、拓扑入口和巡检入口，帮助值班判断下一步应转趋势页还是告警页。",
+      "en": "The device overview works best as the entry to equipment structure, topology, and inspection, helping duty decide whether to move next to the trend page or the alarm page.",
+      "vi": "Trang tổng quan thiết bị phù hợp nhất làm điểm vào cho cấu trúc thiết bị, topology và kiểm tra ca trực, giúp quyết định nên chuyển tiếp sang trang xu hướng hay trang cảnh báo."
+    }
+  },
+  "pageRecommendation": {
+    "fitAsSprint1ThirdPage": true,
+    "reason": {
+      "zh": "趋势页和告警页先承接判断链，设备总览页作为第三页更适合补齐设备入口和系统完整感。",
+      "en": "The trend and alarm pages should land first for the judgment chain, while the device overview fits naturally as the third page to complete equipment entry and system completeness.",
+      "vi": "Trang xu hướng và cảnh báo nên đi trước để dựng chuỗi phán đoán, còn trang tổng quan thiết bị phù hợp làm trang thứ ba để hoàn thiện điểm vào thiết bị và cảm nhận về độ đầy đủ của hệ thống."
+    }
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  },
+  "fieldScope": {
+    "allowedRoots": [
+      "deviceSummary",
+      "groups",
+      "nodes",
+      "freshness",
+      "sourceStatus"
+    ],
+    "normalizationHint": {
+      "zh": "若实际 payload 使用 topology.groups / topology.nodes，请先展开为 groups / nodes 后再命中文案。",
+      "en": "If the runtime payload uses topology.groups / topology.nodes, unwrap them into groups / nodes before evaluating copy.",
+      "vi": "Neu payload runtime dung topology.groups / topology.nodes, hay bung no thanh groups / nodes truoc khi danh gia copy."
+    }
+  },
+  "header": {
+    "title": {
+      "zh": "设备总览",
+      "en": "Device Overview",
+      "vi": "Tong quan thiet bi"
+    },
+    "subtitle": {
+      "zh": "先看设备规模与拓扑骨架，再判断当前设备链路是否完整、降级或陈旧。",
+      "en": "Check device scale and topology skeleton first, then judge whether the device chain is complete, degraded, or stale.",
+      "vi": "Xem quy mo thiet bi va khung topology truoc, sau do danh gia chuoi thiet bi hien tai la day du, suy giam hay da cu."
+    }
+  },
+  "dutyIntro": {
+    "pageIntro": {
+      "zh": "设备总览页先回答设备骨架在不在、分组齐不齐、当前值班下一步该转去趋势页还是告警页。",
+      "en": "The device overview page answers whether the equipment skeleton is present, whether the groups are complete, and whether duty should jump next to the trend page or the alarm page.",
+      "vi": "Trang tong quan thiet bi tra loi viec khung thiet bi co hien dien hay khong, cac nhom co day du hay khong, va ca truc nen chuyen sang trang xu huong hay trang canh bao tiep theo."
+    },
+    "dutySequence": {
+      "zh": "先看 freshness 和 sourceStatus，再看 totalDevices 与拓扑骨架，最后决定是继续巡检还是转趋势/告警页。",
+      "en": "Check freshness and sourceStatus first, then read totalDevices and the topology skeleton, and finally decide whether to keep inspecting here or switch to the trend/alarm pages.",
+      "vi": "Xem freshness va sourceStatus truoc, sau do doc totalDevices va khung topology, cuoi cung quyet dinh tiep tuc kiem tra tai day hay chuyen sang trang xu huong/canh bao."
+    }
+  },
+  "priorityOrder": [
+    "stale",
+    "degraded",
+    "empty",
+    "normal"
+  ],
+  "classes": [
+    {
+      "id": "normal",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "deviceSummary.totalDevices > 0",
+          "groups.length > 0 OR nodes.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "设备骨架正常",
+          "sub": "可作为巡检入口"
+        },
+        "en": {
+          "main": "Device View Ready",
+          "sub": "Use as inspection entry"
+        },
+        "vi": {
+          "main": "Khung thiet bi on",
+          "sub": "Dung lam diem vao kiem tra"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "设备总览：NORMAL",
+          "sub": "当前设备总数与拓扑骨架可用，适合先做巡检定位，再决定是否进入趋势页或告警页做进一步判断。"
+        },
+        "en": {
+          "main": "Device Overview: NORMAL",
+          "sub": "The current device count and topology skeleton are usable, so this page works as the first inspection and routing entry before moving to the trend or alarm page."
+        },
+        "vi": {
+          "main": "Tong quan thiet bi: NORMAL",
+          "sub": "Tong so thiet bi va khung topology hien kha dung, phu hop de kiem tra va dinh vi ban dau truoc khi chuyen sang trang xu huong hoac canh bao."
+        }
+      },
+      "firstAction": {
+        "zh": "先看总设备数和拓扑分组是否完整，再决定要继续查设备状态还是转去趋势/告警页。",
+        "en": "Check total device count and topology grouping first, then decide whether to stay on device status or move to the trend/alarm pages.",
+        "vi": "Xem tong so thiet bi va nhom topology truoc, sau do quyet dinh tiep tuc o trang thiet bi hay chuyen sang trang xu huong/canh bao."
+      }
+    },
+    {
+      "id": "degraded",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall != 'ok' OR sourceStatus.overall is missing"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "设备链路降级",
+          "sub": "先看来源状态"
+        },
+        "en": {
+          "main": "Device Chain Degraded",
+          "sub": "Check source state first"
+        },
+        "vi": {
+          "main": "Chuoi thiet bi suy giam",
+          "sub": "Xem trang thai nguon truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "设备总览：DEGRADED",
+          "sub": "当前设备链路处于 partial 或 failed，设备数量、分组或节点只可作为入口参考，不适合据此断定设备全貌已完整。"
+        },
+        "en": {
+          "main": "Device Overview: DEGRADED",
+          "sub": "The device chain is partial or failed, so counts, groups, or nodes should be treated as entry-level hints rather than proof that the full equipment picture is complete."
+        },
+        "vi": {
+          "main": "Tong quan thiet bi: DEGRADED",
+          "sub": "Chuoi thiet bi dang o trang thai partial hoac failed, vi vay so luong, nhom hoac nut chi nen duoc xem la goi y dau vao, khong phai bang chung la buc tranh thiet bi da day du."
+        }
+      },
+      "firstAction": {
+        "zh": "先看 sourceStatus 是哪条设备来源降级，再决定是先补链路还是先继续做有限巡检。",
+        "en": "Check which device source is degraded in sourceStatus first, then decide whether to repair the chain or continue with limited inspection.",
+        "vi": "Xem trong sourceStatus nguon thiet bi nao dang suy giam truoc, sau do quyet dinh sua chuoi hay tiep tuc kiem tra trong pham vi han che."
+      }
+    },
+    {
+      "id": "stale",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == true"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "设备页已陈旧",
+          "sub": "先刷新再看"
+        },
+        "en": {
+          "main": "Device View Stale",
+          "sub": "Refresh before reading"
+        },
+        "vi": {
+          "main": "Trang thiet bi da cu",
+          "sub": "Lam moi truoc khi xem"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "设备总览：STALE",
+          "sub": "当前设备总览时间戳已陈旧，页面更适合作为历史快照参考，不应直接据此判断现场设备刚刚发生的变化。"
+        },
+        "en": {
+          "main": "Device Overview: STALE",
+          "sub": "The device overview timestamp is stale, so the page is better treated as a historical snapshot and should not be used alone to judge very recent field changes."
+        },
+        "vi": {
+          "main": "Tong quan thiet bi: STALE",
+          "sub": "Dau thoi gian cua trang tong quan thiet bi da cu, vi vay trang nay nen duoc xem nhu anh chup lich su va khong nen dung mot minh de danh gia thay doi rat gan tai hien truong."
+        }
+      },
+      "firstAction": {
+        "zh": "先刷新设备总览并确认 freshness 恢复，再判断当前拓扑和设备数量是否可信。",
+        "en": "Refresh the device overview first and confirm freshness has recovered, then judge whether the topology and device counts are trustworthy.",
+        "vi": "Lam moi trang tong quan thiet bi truoc va xac nhan freshness da hoi phuc, sau do moi danh gia topology va so luong thiet bi co dang tin hay khong."
+      }
+    },
+    {
+      "id": "empty",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "deviceSummary.totalDevices == 0",
+          "groups.length == 0 OR all(groups[].deviceCount == 0)",
+          "all(nodes[].count == 0 OR nodes[].count is null)"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "暂无设备骨架",
+          "sub": "先核对映射"
+        },
+        "en": {
+          "main": "No Device Skeleton",
+          "sub": "Verify mapping first"
+        },
+        "vi": {
+          "main": "Chua co khung thiet bi",
+          "sub": "Kiem tra mapping truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "设备总览：EMPTY",
+          "sub": "当前来源正常但未返回可展示的设备规模或拓扑骨架，更像设备映射尚未形成，不等于站点没有设备。"
+        },
+        "en": {
+          "main": "Device Overview: EMPTY",
+          "sub": "Sources are healthy, but there is still no displayable device scale or topology skeleton. This usually means the device mapping is not formed yet, not that the site has no equipment."
+        },
+        "vi": {
+          "main": "Tong quan thiet bi: EMPTY",
+          "sub": "Nguon hien binh thuong nhung van chua tra ve quy mo thiet bi hoac khung topology de hien thi. Dieu nay thuong co nghia la mapping thiet bi chua hinh thanh, khong phai tram khong co thiet bi."
+        }
+      },
+      "firstAction": {
+        "zh": "先核对设备汇总和拓扑映射是否已生成，再决定是否回退到旧系统设备树核对。",
+        "en": "Verify device summary and topology mapping first, then decide whether to fall back to the legacy device tree for checking.",
+        "vi": "Kiem tra truoc xem tong hop thiet bi va mapping topology da duoc tao hay chua, sau do moi quyet dinh co quay lai cay thiet bi cua he cu de doi soat hay khong."
+      }
+    }
+  ],
+  "fallback": {
+    "whenNoClassMatched": "degraded"
+  }
+}

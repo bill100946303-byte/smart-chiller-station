@@ -1,0 +1,365 @@
+{
+  "version": "1.0.0",
+  "packId": "sprint2-device-tree-detail-copy-v1",
+  "scope": "Sprint2 device tree and detail copy pack",
+  "pageRecommendation": {
+    "fitForDevelopment": true,
+    "reason": {
+      "zh": "一期设备页已稳定承接摘要、骨架和列表，且旧系统设备数据与设备树接口已确认可用，二期可以直接进入树导航与详情面板开发。",
+      "en": "The phase-one device page already carries summary, skeleton, and list stably, and the legacy device-data and device-tree endpoints are confirmed usable, so phase two can move directly into tree navigation and detail-panel development.",
+      "vi": "Trang thiết bị giai đoạn một đã ổn định với phần tóm tắt, khung và danh sách, đồng thời các endpoint dữ liệu thiết bị và cây thiết bị của hệ cũ đã được xác nhận dùng được, vì vậy giai đoạn hai có thể đi thẳng vào phát triển điều hướng cây và vùng chi tiết."
+    }
+  },
+  "boundary": {
+    "includeRemoteControl": false,
+    "includeBatchCommands": false,
+    "includeAssetEditing": false,
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  },
+  "fieldScope": {
+    "allowedRoots": [
+      "tree",
+      "detail",
+      "freshness",
+      "sourceStatus",
+      "status"
+    ],
+    "normalizationHint": {
+      "zh": "tree 对应未来 devices/tree，detail 对应未来 devices/{deviceId}，status 只承接页面选择与面板状态。",
+      "en": "tree maps to the future devices/tree payload, detail maps to devices/{deviceId}, and status only carries page-selection and panel-state helpers.",
+      "vi": "tree anh xa toi payload devices/tree trong tuong lai, detail anh xa toi devices/{deviceId}, con status chi dung de chua trang thai chon va trang thai panel cua trang."
+    }
+  },
+  "header": {
+    "title": {
+      "zh": "设备树与详情",
+      "en": "Device Tree & Detail",
+      "vi": "Cay thiet bi va chi tiet"
+    },
+    "subtitle": {
+      "zh": "先用树定位设备，再用详情确认状态、最近上报和当前巡检重点。",
+      "en": "Locate the device through the tree first, then use the detail panel to confirm state, latest report, and current inspection focus.",
+      "vi": "Dinh vi thiet bi bang cay truoc, sau do dung vung chi tiet de xac nhan trang thai, lan bao cao gan nhat va trong tam kiem tra hien tai."
+    }
+  },
+  "sections": {
+    "tree": {
+      "title": {
+        "zh": "设备树",
+        "en": "Device Tree",
+        "vi": "Cay thiet bi"
+      },
+      "subtitle": {
+        "zh": "树区负责快速定位楼层、系统桶和目标设备，不在二期承接批量管理。",
+        "en": "The tree helps quickly locate floor, system bucket, and target device, without taking on batch management in phase two.",
+        "vi": "Vung cay giup dinh vi nhanh tang, nhom he thong va thiet bi muc tieu, chua nhan phan quan ly hang loat trong giai doan hai."
+      }
+    },
+    "detail": {
+      "title": {
+        "zh": "设备详情",
+        "en": "Device Detail",
+        "vi": "Chi tiet thiet bi"
+      },
+      "subtitle": {
+        "zh": "详情区负责展示当前选中设备的状态、关键字段和最近上报，不直接承接控制操作。",
+        "en": "The detail panel shows the selected device state, key fields, and latest report, without directly taking on control actions.",
+        "vi": "Vung chi tiet dung de hien thi trang thai, cac truong chinh va lan bao cao gan nhat cua thiet bi dang chon, chua truc tiep nhan thao tac dieu khien."
+      }
+    }
+  },
+  "dutyIntro": {
+    "pageIntro": {
+      "zh": "设备页二期先回答三件事：树里能不能快速找到设备、详情是否足够支持判断、当前是字段未齐还是链路已降级。",
+      "en": "Phase two of the device page answers three things first: whether the tree can locate a device quickly, whether detail is strong enough to support judgment, and whether the current issue is missing detail fields or a degraded source chain.",
+      "vi": "Giai doan hai cua trang thiet bi truoc tien tra loi ba viec: cay co giup tim thiet bi nhanh hay khong, chi tiet co du de ho tro phan doan hay khong, va van de hien tai la thieu truong chi tiet hay chuoi nguon da suy giam."
+    },
+    "dutySequence": {
+      "zh": "先看 freshness 与 sourceStatus，再看树是否可定位，最后看详情是否足够支撑下一步动作。",
+      "en": "Check freshness and sourceStatus first, then confirm the tree can locate the device, and finally judge whether the detail panel is strong enough to support the next action.",
+      "vi": "Xem freshness va sourceStatus truoc, sau do xac nhan cay co the dinh vi thiet bi, cuoi cung danh gia vung chi tiet da du de ho tro buoc tiep theo hay chua."
+    }
+  },
+  "priorityOrder": [
+    "stale",
+    "degraded",
+    "detail_partial",
+    "tree_empty",
+    "detail_normal",
+    "tree_normal"
+  ],
+  "classes": [
+    {
+      "id": "tree_normal",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "tree.nodes.length > 0",
+          "status.treeSelection != 'missing'"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "设备树已就绪",
+          "sub": "可直接定位"
+        },
+        "en": {
+          "main": "Tree Ready",
+          "sub": "Ready to locate"
+        },
+        "vi": {
+          "main": "Cay thiet bi san sang",
+          "sub": "Co the dinh vi truc tiep"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "设备树：TREE_NORMAL",
+          "sub": "当前设备树可用于楼层、系统桶与目标设备定位，值班可先从树进入，再打开详情确认。"
+        },
+        "en": {
+          "main": "Device Tree: TREE_NORMAL",
+          "sub": "The current tree can be used to locate floor, system bucket, and target device, so duty can start from the tree and then open the detail panel for confirmation."
+        },
+        "vi": {
+          "main": "Cay thiet bi: TREE_NORMAL",
+          "sub": "Cay hien tai co the dung de dinh vi tang, nhom he thong va thiet bi muc tieu, vi vay ca truc co the bat dau tu cay roi mo vung chi tiet de xac nhan."
+        }
+      },
+      "firstAction": {
+        "zh": "先从树里选中目标设备，再进入详情确认状态和最近上报时间。",
+        "en": "Select the target device from the tree first, then open detail to confirm state and last report time.",
+        "vi": "Chon thiet bi muc tieu tu cay truoc, sau do mo vung chi tiet de xac nhan trang thai va thoi diem bao cao gan nhat."
+      }
+    },
+    {
+      "id": "tree_empty",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "tree.nodes.length == 0",
+          "status.treeSelection == 'missing' OR tree.selectedId is missing"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "设备树为空",
+          "sub": "先查树源"
+        },
+        "en": {
+          "main": "Tree Is Empty",
+          "sub": "Check tree source"
+        },
+        "vi": {
+          "main": "Cay thiet bi trong",
+          "sub": "Kiem tra nguon cay"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "设备树：TREE_EMPTY",
+          "sub": "当前来源正常，但树区没有返回可定位节点，更像树结构尚未生成，不等于站点没有设备。"
+        },
+        "en": {
+          "main": "Device Tree: TREE_EMPTY",
+          "sub": "Sources are healthy, but the tree returned no navigable nodes. This usually means the tree structure is not generated yet, not that the site has no equipment."
+        },
+        "vi": {
+          "main": "Cay thiet bi: TREE_EMPTY",
+          "sub": "Nguon hien binh thuong nhung cay khong tra ve nut dieu huong nao. Dieu nay thuong co nghia la cau truc cay chua duoc tao, khong phai tram khong co thiet bi."
+        }
+      },
+      "firstAction": {
+        "zh": "先核对 tree 是否已生成，再决定先回列表定位还是先补 tree 接口。",
+        "en": "Verify first whether tree data has been generated, then decide whether to fall back to the list for locating or fix the tree endpoint first.",
+        "vi": "Truoc tien kiem tra xem du lieu cay da duoc tao hay chua, sau do moi quyet dinh quay lai danh sach de dinh vi hay sua endpoint cay truoc."
+      }
+    },
+    {
+      "id": "detail_normal",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "status.treeSelection == 'selected'",
+          "detail.deviceId exists",
+          "detail.sections.length > 0 OR detail.metrics.length > 0",
+          "detail.status != 'unknown'"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "详情已就绪",
+          "sub": "可直接判断"
+        },
+        "en": {
+          "main": "Detail Ready",
+          "sub": "Ready to judge"
+        },
+        "vi": {
+          "main": "Chi tiet da san sang",
+          "sub": "Co the phan doan truc tiep"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "设备详情：DETAIL_NORMAL",
+          "sub": "当前选中设备的详情字段已足够支撑值班判断，可直接查看状态、关键指标与最近上报。"
+        },
+        "en": {
+          "main": "Device Detail: DETAIL_NORMAL",
+          "sub": "The selected device detail is strong enough to support duty judgment, so status, key metrics, and latest report can be reviewed directly."
+        },
+        "vi": {
+          "main": "Chi tiet thiet bi: DETAIL_NORMAL",
+          "sub": "Thong tin chi tiet cua thiet bi dang chon da du de ho tro phan doan ca truc, vi vay co the xem truc tiep trang thai, chi so chinh va lan bao cao gan nhat."
+        }
+      },
+      "firstAction": {
+        "zh": "先看设备状态和最近上报，再看关键指标是否支持当前巡检结论。",
+        "en": "Check device status and latest report first, then confirm whether the key metrics support the current inspection conclusion.",
+        "vi": "Xem trang thai thiet bi va lan bao cao gan nhat truoc, sau do xac nhan cac chi so chinh co ho tro ket luan kiem tra hien tai hay khong."
+      }
+    },
+    {
+      "id": "detail_partial",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "status.treeSelection == 'selected'",
+          "detail.deviceId exists",
+          "sourceStatus.overall == 'partial' OR detail.sections.length == 0 OR detail.metrics.length == 0 OR detail.status == 'unknown'"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "详情待补齐",
+          "sub": "先看缺口"
+        },
+        "en": {
+          "main": "Detail Partial",
+          "sub": "Check missing parts"
+        },
+        "vi": {
+          "main": "Chi tiet con thieu",
+          "sub": "Xem phan con thieu"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "设备详情：DETAIL_PARTIAL",
+          "sub": "当前选中设备已能打开详情，但状态或关键字段仍未补齐，更适合作为辅助参考，不宜直接下最终判断。"
+        },
+        "en": {
+          "main": "Device Detail: DETAIL_PARTIAL",
+          "sub": "The selected device detail can already open, but state or key fields are still incomplete. It should be treated as supporting reference rather than final evidence."
+        },
+        "vi": {
+          "main": "Chi tiet thiet bi: DETAIL_PARTIAL",
+          "sub": "Thong tin chi tiet cua thiet bi dang chon da mo duoc, nhung trang thai hoac cac truong chinh van chua day du. Nen xem day la tham chieu ho tro, khong phai bang chung cuoi cung."
+        }
+      },
+      "firstAction": {
+        "zh": "先确认缺的是状态、指标还是最近上报，再决定继续看详情还是先回来源状态排查。",
+        "en": "Confirm first whether the missing part is state, metrics, or latest report, then decide whether to stay in detail or go back to source-status troubleshooting.",
+        "vi": "Truoc tien xac nhan phan con thieu la trang thai, chi so hay lan bao cao gan nhat, sau do moi quyet dinh tiep tuc xem chi tiet hay quay lai kiem tra trang thai nguon."
+      }
+    },
+    {
+      "id": "degraded",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'failed' OR sourceStatus.overall is missing"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "树详情已降级",
+          "sub": "先查链路"
+        },
+        "en": {
+          "main": "Tree/Detail Degraded",
+          "sub": "Check pipeline first"
+        },
+        "vi": {
+          "main": "Cay/chi tiet suy giam",
+          "sub": "Kiem tra chuoi truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "设备树与详情：DEGRADED",
+          "sub": "当前树或详情来源链路失败，树导航与详情面板都可能不完整，只能作为排障入口，不宜直接演示为完整功能。"
+        },
+        "en": {
+          "main": "Device Tree & Detail: DEGRADED",
+          "sub": "The current tree or detail source chain has failed, so both the tree and the detail panel may be incomplete. Treat them as troubleshooting entry points, not as complete functionality."
+        },
+        "vi": {
+          "main": "Cay va chi tiet thiet bi: DEGRADED",
+          "sub": "Chuoi nguon cua cay hoac chi tiet hien dang loi, vi vay ca dieu huong cay va vung chi tiet deu co the khong day du. Hay xem chung nhu diem vao xu ly su co, khong phai chuc nang hoan chinh."
+        }
+      },
+      "firstAction": {
+        "zh": "先恢复 sourceStatus，再判断是树源失败、详情源失败，还是两者都需要补。",
+        "en": "Recover sourceStatus first, then decide whether the failed part is the tree source, the detail source, or both.",
+        "vi": "Khoi phuc sourceStatus truoc, sau do moi quyet dinh phan loi nam o nguon cay, nguon chi tiet hay ca hai."
+      }
+    },
+    {
+      "id": "stale",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == true"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "树详情已陈旧",
+          "sub": "先刷新再看"
+        },
+        "en": {
+          "main": "Tree/Detail Stale",
+          "sub": "Refresh before reading"
+        },
+        "vi": {
+          "main": "Cay/chi tiet da cu",
+          "sub": "Lam moi truoc khi xem"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "设备树与详情：STALE",
+          "sub": "当前树和详情基于陈旧数据，节点定位和状态判断更适合作为历史参考，不应直接用于现场刚刚发生的变化判断。"
+        },
+        "en": {
+          "main": "Device Tree & Detail: STALE",
+          "sub": "The current tree and detail are based on stale data, so node locating and state judgment are better treated as historical reference rather than evidence for very recent site changes."
+        },
+        "vi": {
+          "main": "Cay va chi tiet thiet bi: STALE",
+          "sub": "Cay va vung chi tiet hien dua tren du lieu da cu, vi vay viec dinh vi nut va phan doan trang thai nen duoc xem la tham chieu lich su, khong phai bang chung cho thay doi vua xay ra tai hien truong."
+        }
+      },
+      "firstAction": {
+        "zh": "先刷新树与详情数据，再确认 freshness 恢复后再进行设备定位和状态判断。",
+        "en": "Refresh tree and detail data first, then proceed with device locating and state judgment only after freshness recovers.",
+        "vi": "Lam moi du lieu cay va chi tiet truoc, sau do chi tiep tuc dinh vi thiet bi va danh gia trang thai khi freshness da hoi phuc."
+      }
+    }
+  ],
+  "fallback": {
+    "whenNoClassMatched": "detail_partial"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "version": "v1.1",
+  "generatedAt": "2026-03-12T21:41:42.133Z",
+  "source": "latest_file",
+  "decision": "GO",
+  "exitCode": 0,
+  "reasons": [],
+  "advisories": [],
+  "diffClass": "stable",
+  "decisionChanged": false,
+  "hasPrevious": true,
+  "verifyGatesOk": true,
+  "consistencyOk": true,
+  "upstreamGeneratedAt": "2026-03-12T21:40:47Z",
+  "upstreamPath": "/Users/billchow/Documents/智慧冷冻站/docs/release-ready-latest.json"
+}

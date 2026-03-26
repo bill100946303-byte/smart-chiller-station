@@ -1,0 +1,157 @@
+{
+  "version": "1.1.0",
+  "copybookId": "hvac-signoff-copybook-v1.1",
+  "basedOn": {
+    "signoffCopybook": "hvac-signoff-copybook-v1.0@missing-in-workspace",
+    "ruleCopybook": "hvac-rule-copybook-v1.3@1.3.0",
+    "decisionRef": "v1.8-signoff-decision@2026-03-12"
+  },
+  "statusOrder": [
+    "NOT_READY",
+    "READY_WITH_RISK",
+    "READY"
+  ],
+  "fieldScope": {
+    "required": [
+      "sourceStatus.overall",
+      "ruleEvaluation.rulesLoaded",
+      "ruleEvaluation.matchedRuleIds",
+      "ruleEvaluation.skippedRuleIds",
+      "ruleEvaluation.skippedRuleDetails[].missingMetrics[].metric",
+      "overview.freshness.stale",
+      "trends.freshness.stale",
+      "anomalies.freshness.stale"
+    ],
+    "optional": [
+      "evidence.ndFailedCount",
+      "cards[].ruleId",
+      "cards[].id"
+    ]
+  },
+  "derivedFlags": {
+    "freshnessStale": "any([overview.freshness.stale, trends.freshness.stale, anomalies.freshness.stale] == true)",
+    "staleRuleHit": "ruleEvaluation.matchedRuleIds includes 'stale-data-detection' OR cards[].ruleId == 'stale-data-detection' OR cards[].id == 'rec-data-stale-01'",
+    "copMissing": "exists(ruleEvaluation.skippedRuleDetails[].missingMetrics[].metric == 'station_cop')"
+  },
+  "statuses": {
+    "NOT_READY": {
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "sourceStatus.overall != 'ok'",
+          "ruleEvaluation.rulesLoaded != true",
+          "freshnessStale == true",
+          "staleRuleHit == true",
+          "evidence.ndFailedCount > 0 (if present)"
+        ]
+      },
+      "copy": {
+        "zh": {
+          "title": "未达非降级可运行",
+          "oneLiner": "当前仍有链路或数据质量阻塞，暂不满足签收条件。",
+          "nextAction": "先修复上游/缺失指标并连续复测两次（间隔>=5分钟）。"
+        },
+        "en": {
+          "title": "Not Ready for Non-Degraded Run",
+          "oneLiner": "Blocking issues still exist in source connectivity or data quality, so signoff is not allowed yet.",
+          "nextAction": "Fix upstream/missing metrics and pass two consecutive checks (>=5 min apart)."
+        },
+        "vi": {
+          "title": "Chua dat dieu kien van hanh phi suy giam",
+          "oneLiner": "Van con diem nghen ve ket noi nguon hoac chat luong du lieu, chua du dieu kien ky nhan.",
+          "nextAction": "Sua nguon/thieu chi so va dat 2 lan kiem tra lien tiep (cach nhau >=5 phut)."
+        }
+      }
+    },
+    "READY_WITH_RISK": {
+      "trigger": {
+        "mode": "all+any",
+        "all": [
+          "sourceStatus.overall == 'ok'",
+          "ruleEvaluation.rulesLoaded == true",
+          "freshnessStale == false"
+        ],
+        "any": [
+          "ruleEvaluation.skippedRuleIds.length > 0",
+          "copMissing == true",
+          "staleRuleHit == true"
+        ]
+      },
+      "copy": {
+        "zh": {
+          "title": "可运行（有风险提示）",
+          "oneLiner": "系统主链路可用，但仍有规则可评估性风险，建议按边界执行。",
+          "nextAction": "先消除 skipped/COP 缺失，再恢复高风险调参节奏。"
+        },
+        "en": {
+          "title": "Runnable with Risk Notice",
+          "oneLiner": "Core pipeline is available, but rule evaluability risks remain and require bounded operations.",
+          "nextAction": "Clear skipped/COP-missing conditions before resuming high-risk tuning pace."
+        },
+        "vi": {
+          "title": "Co the van hanh (con canh bao rui ro)",
+          "oneLiner": "Chuoi du lieu chinh da san sang, nhung van con rui ro ve kha nang danh gia rule.",
+          "nextAction": "Xu ly xong skipped/thieu COP truoc khi tro lai nhip dieu chinh rui ro cao."
+        }
+      }
+    },
+    "READY": {
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "sourceStatus.overall == 'ok'",
+          "ruleEvaluation.rulesLoaded == true",
+          "ruleEvaluation.skippedRuleIds.length == 0",
+          "freshnessStale == false",
+          "staleRuleHit == false",
+          "copMissing == false",
+          "evidence.ndFailedCount == 0 (if present)"
+        ]
+      },
+      "copy": {
+        "zh": {
+          "title": "系统已达非降级可运行",
+          "oneLiner": "当前签收门槛已通过，可按非降级态口径稳定运行。",
+          "nextAction": "冻结版本点并按常规巡检节奏持续监控。"
+        },
+        "en": {
+          "title": "System Reached Non-Degraded Runnable State",
+          "oneLiner": "Signoff gates are passed and the system can run under non-degraded criteria.",
+          "nextAction": "Freeze baseline and continue standard monitoring cadence."
+        },
+        "vi": {
+          "title": "He thong da dat trang thai van hanh phi suy giam",
+          "oneLiner": "Cac cong ky nhan da dat, he thong co the van hanh on dinh theo tieu chi phi suy giam.",
+          "nextAction": "Dong bang moc phien ban va duy tri giam sat theo lich thuong le."
+        }
+      }
+    }
+  },
+  "passBadgeText": {
+    "zh-CN": "非降级态：通过",
+    "en-US": "Non-Degraded: PASS",
+    "vi-VN": "Phi suy giam: Dat"
+  },
+  "compatibility": {
+    "stateNamesRetained": true,
+    "stateCountRetained": 3,
+    "nonBreakingChange": true
+  },
+  "diffFromV1_0": {
+    "added": [
+      "READY 状态补齐“系统已达非降级可运行”三语模板",
+      "三档状态统一 oneLiner + nextAction 字段",
+      "字段级触发条件明确化（ruleEvaluation/freshness/sourceStatus）",
+      "PASS 角标三语文本对齐"
+    ],
+    "unchanged": [
+      "状态档位仍为 NOT_READY / READY_WITH_RISK / READY",
+      "不涉及 ruleId、阈值、evaluator 逻辑"
+    ]
+  },
+  "rollback": {
+    "current": "hvac-signoff-copybook-v1.1@1.1.0",
+    "target": "hvac-signoff-copybook-v1.0@1.0.x",
+    "strategy": "前端切回 v1.0 文案文件；规则引擎判定不受影响。"
+  }
+}

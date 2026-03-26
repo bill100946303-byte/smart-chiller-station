@@ -1,0 +1,47 @@
+{
+  "version": "v1",
+  "purpose": "chiller-shell model intake",
+  "status": "chiller_pump_valve_cooling_tower_ready",
+  "items": [
+    {
+      "id": "chiller-main",
+      "category": "chiller",
+      "targetPath": "/models/chiller/chiller-main-v1.glb",
+      "displayName": "冷机主设备",
+      "sourceLabel": "CG模型网",
+      "sourceUrl": "https://www.cgmodel.com/model/889159.html",
+      "license": "企业授权/企业扩展授权",
+      "notes": "已完成 FBX 解包、GLB 转换与 Web 压缩，优先用于设备详情首屏和新 3D 预览"
+    },
+    {
+      "id": "cooling-tower",
+      "category": "cooling-tower",
+      "targetPath": "/models/cooling-tower/cooling-tower-v1.glb",
+      "displayName": "冷却塔",
+      "sourceLabel": "CG模型网",
+      "sourceUrl": "https://www.cgmodel.com/model/711762.html",
+      "license": "企业授权/企业扩展授权",
+      "notes": "已完成 FBX 解包、GLB 转换与 Web 压缩，优先用于设备详情首屏和场景页实验区"
+    },
+    {
+      "id": "pump-horizontal",
+      "category": "pump",
+      "targetPath": "/models/pump/pump-horizontal-v1.glb",
+      "displayName": "卧式端吸离心泵",
+      "sourceLabel": "CG模型网",
+      "sourceUrl": "https://www.cgmodel.com/model/904190.html",
+      "license": "企业授权/企业扩展授权",
+      "notes": "已完成 FBX 解包、GLB 转换与 Web 压缩，优先用于设备详情首屏和场景页实验区"
+    },
+    {
+      "id": "valve-check",
+      "category": "valve",
+      "targetPath": "/models/valve/valve-check-v1.glb",
+      "displayName": "工业阀门",
+      "sourceLabel": "CG模型网",
+      "sourceUrl": "https://www.cgmodel.com/model/668247.html",
+      "license": "企业授权/企业扩展授权",
+      "notes": "已完成 FBX 解包、GLB 转换与 Web 压缩，优先用于设备详情首屏和场景页管路节点补件"
+    }
+  ]
+}

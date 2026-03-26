@@ -1,0 +1,40 @@
+{
+  "site": {
+    "siteId": "126lnoffice",
+    "siteName": "126lnoffice"
+  },
+  "generatedAt": "2026-03-14T14:20:00.000Z",
+  "tree": null,
+  "filters": {
+    "build": 1,
+    "floor": 1
+  },
+  "freshness": {
+    "latestTimestamp": "2026-03-14T14:20:00.000Z",
+    "stale": false,
+    "ageHours": 0
+  },
+  "sourceStatus": {
+    "overall": "partial",
+    "sources": [
+      {
+        "key": "devicesTree",
+        "endpoint": "/api/device/126lnoffice/data/tree?build=1&floor=1&mock=false",
+        "ok": false,
+        "status": 502,
+        "message": null,
+        "error": "Legacy tree source unavailable",
+        "rows": null
+      },
+      {
+        "key": "devicesCatalog",
+        "endpoint": "/zsqy/drinfo/126lnoffice/findObject?pageCurrent=1&pageSize=200",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "error": null,
+        "rows": 59
+      }
+    ]
+  }
+}

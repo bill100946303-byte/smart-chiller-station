@@ -1,0 +1,548 @@
+{
+  "site": {
+    "siteId": "126lnoffice",
+    "siteName": "lnoffice"
+  },
+  "generatedAt": "2026-03-18T10:12:00.000Z",
+  "layoutMode": "auto",
+  "scope": "full",
+  "freshness": {
+    "latestTimestamp": "2026-03-18T10:10:00.000Z",
+    "stale": false,
+    "ageHours": 0.03
+  },
+  "sourceStatus": {
+    "overall": "ok",
+    "sources": [
+      {
+        "key": "devices",
+        "endpoint": "/zsqy/drinfo/126lnoffice/findObject?pageCurrent=1&pageSize=200",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "error": null,
+        "rows": 200
+      },
+      {
+        "key": "devicesList",
+        "endpoint": "/zsqy/drinfo/126lnoffice/findObject?pageCurrent=1&pageSize=200",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "error": null,
+        "rows": 200
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "device-chiller-1",
+      "nodeType": "device",
+      "label": "冷机 1",
+      "systemType": "chiller",
+      "role": "main",
+      "group": "chiller_cluster",
+      "deviceIdRef": "CH-01",
+      "deviceIds": ["CH-01"],
+      "modelCategory": "chiller",
+      "positionHint": { "row": 1, "column": 2, "lane": "supply", "x": 4, "y": 0, "z": 2, "anchor": "center" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": "2026-03-18T10:09:00.000Z"
+      }
+    },
+    {
+      "id": "device-chiller-2",
+      "nodeType": "device",
+      "label": "冷机 2",
+      "systemType": "chiller",
+      "role": "main",
+      "group": "chiller_cluster",
+      "deviceIdRef": "CH-02",
+      "deviceIds": ["CH-02"],
+      "modelCategory": "chiller",
+      "positionHint": { "row": 2, "column": 2, "lane": "supply", "x": 4, "y": 0, "z": 4, "anchor": "center" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": "2026-03-18T10:09:00.000Z"
+      }
+    },
+    {
+      "id": "device-chiller-3",
+      "nodeType": "device",
+      "label": "冷机 3",
+      "systemType": "chiller",
+      "role": "main",
+      "group": "chiller_cluster",
+      "deviceIdRef": "CH-03",
+      "deviceIds": ["CH-03"],
+      "modelCategory": "chiller",
+      "positionHint": { "row": 3, "column": 2, "lane": "supply", "x": 4, "y": 0, "z": 6, "anchor": "center" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": "2026-03-18T10:09:00.000Z"
+      }
+    },
+    {
+      "id": "chilled-valve-1",
+      "nodeType": "valve",
+      "label": "冷冻阀门 1",
+      "systemType": "chilledValve",
+      "role": "main",
+      "group": "chilled_loop",
+      "deviceIdRef": null,
+      "deviceIds": [],
+      "modelCategory": "valve",
+      "positionHint": { "row": 2, "column": 1, "lane": "supply", "x": 2, "y": 0, "z": 4, "anchor": "left" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": null
+      }
+    },
+    {
+      "id": "chilled-valve-2",
+      "nodeType": "valve",
+      "label": "冷冻阀门 2",
+      "systemType": "chilledValve",
+      "role": "main",
+      "group": "chilled_loop",
+      "deviceIdRef": null,
+      "deviceIds": [],
+      "modelCategory": "valve",
+      "positionHint": { "row": 3, "column": 1, "lane": "supply", "x": 2, "y": 0, "z": 6, "anchor": "left" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": null
+      }
+    },
+    {
+      "id": "chilled-valve-3",
+      "nodeType": "valve",
+      "label": "冷冻阀门 3",
+      "systemType": "chilledValve",
+      "role": "main",
+      "group": "chilled_loop",
+      "deviceIdRef": null,
+      "deviceIds": [],
+      "modelCategory": "valve",
+      "positionHint": { "row": 4, "column": 1, "lane": "supply", "x": 2, "y": 0, "z": 8, "anchor": "left" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": null
+      }
+    },
+    {
+      "id": "device-chilled-pump-1",
+      "nodeType": "device",
+      "label": "冷冻泵 1",
+      "systemType": "chilledPump",
+      "role": "main",
+      "group": "chilled_loop",
+      "deviceIdRef": "CHP-01",
+      "deviceIds": ["CHP-01"],
+      "modelCategory": "pump",
+      "positionHint": { "row": 3, "column": 1, "lane": "supply", "x": 2, "y": 0, "z": 6, "anchor": "center" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": "2026-03-18T10:08:00.000Z"
+      }
+    },
+    {
+      "id": "device-chilled-pump-2",
+      "nodeType": "device",
+      "label": "冷冻泵 2",
+      "systemType": "chilledPump",
+      "role": "main",
+      "group": "chilled_loop",
+      "deviceIdRef": "CHP-02",
+      "deviceIds": ["CHP-02"],
+      "modelCategory": "pump",
+      "positionHint": { "row": 4, "column": 1, "lane": "supply", "x": 2, "y": 0, "z": 8, "anchor": "center" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": "2026-03-18T10:08:00.000Z"
+      }
+    },
+    {
+      "id": "device-chilled-pump-3",
+      "nodeType": "device",
+      "label": "冷冻泵 3",
+      "systemType": "chilledPump",
+      "role": "main",
+      "group": "chilled_loop",
+      "deviceIdRef": "CHP-03",
+      "deviceIds": ["CHP-03"],
+      "modelCategory": "pump",
+      "positionHint": { "row": 5, "column": 1, "lane": "supply", "x": 2, "y": 0, "z": 10, "anchor": "center" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": "2026-03-18T10:08:00.000Z"
+      }
+    },
+    {
+      "id": "load-1",
+      "nodeType": "load",
+      "label": "建筑负荷",
+      "systemType": "load",
+      "role": "main",
+      "group": "load_zone",
+      "deviceIdRef": null,
+      "deviceIds": [],
+      "modelCategory": "load",
+      "positionHint": { "row": 5, "column": 2, "lane": "return", "x": 4, "y": 0, "z": 10, "anchor": "center" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": null
+      }
+    },
+    {
+      "id": "cooling-valve-1",
+      "nodeType": "valve",
+      "label": "冷却阀门 1",
+      "systemType": "coolingValve",
+      "role": "main",
+      "group": "cooling_loop",
+      "deviceIdRef": null,
+      "deviceIds": [],
+      "modelCategory": "valve",
+      "positionHint": { "row": 2, "column": 3, "lane": "return", "x": 6, "y": 0, "z": 4, "anchor": "right" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": null
+      }
+    },
+    {
+      "id": "cooling-valve-2",
+      "nodeType": "valve",
+      "label": "冷却阀门 2",
+      "systemType": "coolingValve",
+      "role": "main",
+      "group": "cooling_loop",
+      "deviceIdRef": null,
+      "deviceIds": [],
+      "modelCategory": "valve",
+      "positionHint": { "row": 3, "column": 3, "lane": "return", "x": 6, "y": 0, "z": 6, "anchor": "right" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": null
+      }
+    },
+    {
+      "id": "cooling-valve-3",
+      "nodeType": "valve",
+      "label": "冷却阀门 3",
+      "systemType": "coolingValve",
+      "role": "main",
+      "group": "cooling_loop",
+      "deviceIdRef": null,
+      "deviceIds": [],
+      "modelCategory": "valve",
+      "positionHint": { "row": 4, "column": 3, "lane": "return", "x": 6, "y": 0, "z": 8, "anchor": "right" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": null
+      }
+    },
+    {
+      "id": "device-cooling-pump-1",
+      "nodeType": "device",
+      "label": "冷却泵 1",
+      "systemType": "coolingPump",
+      "role": "main",
+      "group": "cooling_loop",
+      "deviceIdRef": "CWP-01",
+      "deviceIds": ["CWP-01"],
+      "modelCategory": "pump",
+      "positionHint": { "row": 3, "column": 3, "lane": "return", "x": 6, "y": 0, "z": 6, "anchor": "center" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": "2026-03-18T10:08:00.000Z"
+      }
+    },
+    {
+      "id": "device-cooling-pump-2",
+      "nodeType": "device",
+      "label": "冷却泵 2",
+      "systemType": "coolingPump",
+      "role": "main",
+      "group": "cooling_loop",
+      "deviceIdRef": "CWP-02",
+      "deviceIds": ["CWP-02"],
+      "modelCategory": "pump",
+      "positionHint": { "row": 4, "column": 3, "lane": "return", "x": 6, "y": 0, "z": 8, "anchor": "center" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": "2026-03-18T10:08:00.000Z"
+      }
+    },
+    {
+      "id": "device-cooling-pump-3",
+      "nodeType": "device",
+      "label": "冷却泵 3",
+      "systemType": "coolingPump",
+      "role": "main",
+      "group": "cooling_loop",
+      "deviceIdRef": "CWP-03",
+      "deviceIds": ["CWP-03"],
+      "modelCategory": "pump",
+      "positionHint": { "row": 5, "column": 3, "lane": "return", "x": 6, "y": 0, "z": 10, "anchor": "center" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": "2026-03-18T10:08:00.000Z"
+      }
+    },
+    {
+      "id": "device-cooling-tower-1",
+      "nodeType": "device",
+      "label": "冷却塔 1",
+      "systemType": "coolingTower",
+      "role": "main",
+      "group": "cooling_tower",
+      "deviceIdRef": "CT-01",
+      "deviceIds": ["CT-01"],
+      "modelCategory": "coolingTower",
+      "positionHint": { "row": 4, "column": 4, "lane": "return", "x": 8, "y": 0, "z": 8, "anchor": "center" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": "2026-03-18T10:07:00.000Z"
+      }
+    },
+    {
+      "id": "device-cooling-tower-2",
+      "nodeType": "device",
+      "label": "冷却塔 2",
+      "systemType": "coolingTower",
+      "role": "main",
+      "group": "cooling_tower",
+      "deviceIdRef": "CT-02",
+      "deviceIds": ["CT-02"],
+      "modelCategory": "coolingTower",
+      "positionHint": { "row": 5, "column": 4, "lane": "return", "x": 8, "y": 0, "z": 10, "anchor": "center" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": "2026-03-18T10:07:00.000Z"
+      }
+    },
+    {
+      "id": "device-cooling-tower-3",
+      "nodeType": "device",
+      "label": "冷却塔 3",
+      "systemType": "coolingTower",
+      "role": "main",
+      "group": "cooling_tower",
+      "deviceIdRef": "CT-03",
+      "deviceIds": ["CT-03"],
+      "modelCategory": "coolingTower",
+      "positionHint": { "row": 6, "column": 4, "lane": "return", "x": 8, "y": 0, "z": 12, "anchor": "center" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": "2026-03-18T10:07:00.000Z"
+      }
+    },
+    {
+      "id": "device-cooling-tower-4",
+      "nodeType": "device",
+      "label": "冷却塔 4",
+      "systemType": "coolingTower",
+      "role": "main",
+      "group": "cooling_tower",
+      "deviceIdRef": "CT-04",
+      "deviceIds": ["CT-04"],
+      "modelCategory": "coolingTower",
+      "positionHint": { "row": 7, "column": 4, "lane": "return", "x": 8, "y": 0, "z": 14, "anchor": "center" },
+      "rotationHint": { "yaw": 0, "pitch": 0, "roll": 0 },
+      "statusSummary": {
+        "runStatus": "unknown",
+        "alarmStatus": "unknown",
+        "degraded": false,
+        "latestUpdateAt": "2026-03-18T10:07:00.000Z"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-chiller-to-chilled-valve",
+      "from": "device-chiller-1",
+      "to": "chilled-valve-1",
+      "edgeType": "pipe",
+      "pipeClass": "chilled_supply",
+      "routeHint": {
+        "points": [
+          { "x": 4, "y": 0, "z": 2 },
+          { "x": 2, "y": 0, "z": 4 }
+        ]
+      }
+    },
+    {
+      "id": "edge-chilled-valve-to-chilled-pump",
+      "from": "chilled-valve-1",
+      "to": "device-chilled-pump-1",
+      "edgeType": "pipe",
+      "pipeClass": "chilled_supply",
+      "routeHint": {
+        "points": [
+          { "x": 2, "y": 0, "z": 4 },
+          { "x": 2, "y": 0, "z": 6 }
+        ]
+      }
+    },
+    {
+      "id": "edge-chilled-pump-to-load",
+      "from": "device-chilled-pump-1",
+      "to": "load-1",
+      "edgeType": "pipe",
+      "pipeClass": "chilled_return",
+      "routeHint": {
+        "points": [
+          { "x": 2, "y": 0, "z": 6 },
+          { "x": 4, "y": 0, "z": 10 }
+        ]
+      }
+    },
+    {
+      "id": "edge-load-to-chiller",
+      "from": "load-1",
+      "to": "device-chiller-1",
+      "edgeType": "pipe",
+      "pipeClass": "chilled_return",
+      "routeHint": {
+        "points": [
+          { "x": 4, "y": 0, "z": 10 },
+          { "x": 4, "y": 0, "z": 2 }
+        ]
+      }
+    },
+    {
+      "id": "edge-chiller-to-cooling-valve",
+      "from": "device-chiller-1",
+      "to": "cooling-valve-1",
+      "edgeType": "pipe",
+      "pipeClass": "cooling_return",
+      "routeHint": {
+        "points": [
+          { "x": 4, "y": 0, "z": 2 },
+          { "x": 6, "y": 0, "z": 4 }
+        ]
+      }
+    },
+    {
+      "id": "edge-cooling-valve-to-cooling-pump",
+      "from": "cooling-valve-1",
+      "to": "device-cooling-pump-1",
+      "edgeType": "pipe",
+      "pipeClass": "cooling_return",
+      "routeHint": {
+        "points": [
+          { "x": 6, "y": 0, "z": 4 },
+          { "x": 6, "y": 0, "z": 6 }
+        ]
+      }
+    },
+    {
+      "id": "edge-cooling-pump-to-cooling-tower",
+      "from": "device-cooling-pump-1",
+      "to": "device-cooling-tower-1",
+      "edgeType": "pipe",
+      "pipeClass": "cooling_supply",
+      "routeHint": {
+        "points": [
+          { "x": 6, "y": 0, "z": 6 },
+          { "x": 8, "y": 0, "z": 8 }
+        ]
+      }
+    },
+    {
+      "id": "edge-cooling-tower-to-chiller",
+      "from": "device-cooling-tower-1",
+      "to": "device-chiller-1",
+      "edgeType": "pipe",
+      "pipeClass": "cooling_supply",
+      "routeHint": {
+        "points": [
+          { "x": 8, "y": 0, "z": 8 },
+          { "x": 4, "y": 0, "z": 2 }
+        ]
+      }
+    }
+  ],
+  "groups": [
+    {
+      "id": "main_loop",
+      "label": "冷站主回路",
+      "groupType": "loop",
+      "nodeIds": [
+        "device-chiller-1",
+        "chilled-valve-1",
+        "device-chilled-pump-1",
+        "load-1",
+        "cooling-valve-1",
+        "device-cooling-pump-1",
+        "device-cooling-tower-1"
+      ]
+    }
+  ],
+  "stats": {
+    "totalNodes": 20,
+    "totalEdges": 8,
+    "deviceNodeCount": 13,
+    "virtualNodeCount": 7,
+    "degradedNodeCount": 0
+  }
+}

@@ -1,0 +1,201 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-release-command-center-sync-copy-v1",
+  "scope": "release-command-center-sync duty copy",
+  "fieldScope": {
+    "required": [
+      "decision",
+      "summaryClass",
+      "reasons[]",
+      "advisories[]",
+      "generatedAt"
+    ]
+  },
+  "priorityOrder": [
+    "blocked_after_sync",
+    "review_required_after_sync",
+    "ready_after_sync"
+  ],
+  "classes": [
+    {
+      "id": "ready_after_sync",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "blocked_after_sync",
+          "review_required_after_sync"
+        ],
+        "conditions": [
+          "decision == 'GO'",
+          "summaryClass == 'ready'",
+          "reasons.length == 0",
+          "advisories.length == 0",
+          "generatedAt exists and generatedAt != ''"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "同步后可放行",
+          "sub": "先同步后看结论"
+        },
+        "en": {
+          "main": "Ready After Sync",
+          "sub": "Sync first, then trust result"
+        },
+        "vi": {
+          "main": "San sang sau dong bo",
+          "sub": "Dong bo truoc roi xem ket luan"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Command Center Sync 状态：READY_AFTER_SYNC",
+          "sub": "同步完成后主结论为 ready，当前无阻断或提示项，可按标准节奏推进。"
+        },
+        "en": {
+          "main": "Command Center Sync Status: READY_AFTER_SYNC",
+          "sub": "After sync, the top-level conclusion is ready with no blockers or advisories, so standard flow can proceed."
+        },
+        "vi": {
+          "main": "Trang thai Command Center Sync: READY_AFTER_SYNC",
+          "sub": "Sau dong bo, ket luan tong la ready va khong co blocker hay advisory, co the tiep tuc theo quy trinh chuan."
+        }
+      },
+      "syncSubcopy": {
+        "zh": "同步层已完成本轮汇总，当前值班口径可先以同步结果为准。",
+        "en": "The sync layer has completed this round of aggregation, so duty judgment can start from the synced result.",
+        "vi": "Lop dong bo da hoan tat tong hop cho lan nay, vi vay co the bat dau phan doan truc tu ket qua dong bo."
+      },
+      "latestSubcopy": {
+        "zh": "latest 层无需额外纠偏，当前可直接沿结论进入动作执行。",
+        "en": "The latest layer does not need extra correction, so operators can move directly from conclusion to action.",
+        "vi": "Lop latest khong can hieu chinh them, nen co the chuyen truc tiep tu ket luan sang hanh dong."
+      },
+      "firstAction": {
+        "zh": "先确认 generatedAt 属于当前同步轮次，再执行正式放行并同步值班结论。",
+        "en": "Confirm generatedAt belongs to the current sync run first, then execute formal release and sync the duty conclusion.",
+        "vi": "Xac nhan generatedAt thuoc lan dong bo hien tai truoc, sau do phat hanh chinh thuc va dong bo ket luan truc."
+      }
+    },
+    {
+      "id": "blocked_after_sync",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "decision == 'NO-GO'",
+          "summaryClass == 'blocked'",
+          "reasons.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "同步后阻断",
+          "sub": "先停发再排障"
+        },
+        "en": {
+          "main": "Blocked After Sync",
+          "sub": "Hold release first"
+        },
+        "vi": {
+          "main": "Bi chan sau dong bo",
+          "sub": "Tam dung phat hanh truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Command Center Sync 状态：BLOCKED_AFTER_SYNC",
+          "sub": "同步完成后仍存在阻断结论或阻断原因，当前应停止直接发布。"
+        },
+        "en": {
+          "main": "Command Center Sync Status: BLOCKED_AFTER_SYNC",
+          "sub": "Even after sync, blocking conclusion or reasons remain, so direct release should stop now."
+        },
+        "vi": {
+          "main": "Trang thai Command Center Sync: BLOCKED_AFTER_SYNC",
+          "sub": "Ngay ca sau dong bo van con ket luan chan hoac ly do chan, nen phai dung phat hanh truc tiep luc nay."
+        }
+      },
+      "syncSubcopy": {
+        "zh": "同步并未消除阻断，说明问题已进入总汇总层，需按正式阻断处理。",
+        "en": "Sync did not clear the blocker, which means the issue has reached the aggregated layer and must be treated as a formal block.",
+        "vi": "Dong bo khong xoa duoc blocker, dieu nay cho thay van de da len den lop tong hop va phai duoc xu ly nhu mot chan chinh thuc."
+      },
+      "latestSubcopy": {
+        "zh": "latest 层仍提示不可放行，不要跳过总卡片直接按单点结果放行。",
+        "en": "The latest layer still says release is not allowed, so do not bypass the overview card based on a single point result.",
+        "vi": "Lop latest van cho thay khong duoc phat hanh, vi vay khong duoc bo qua the tong quan chi vi mot ket qua don le."
+      },
+      "firstAction": {
+        "zh": "先处理 reasons 首项，再重跑 release-command-center-sync 确认阻断是否解除。",
+        "en": "Resolve the first item in reasons, then rerun release-command-center-sync to confirm whether the block is cleared.",
+        "vi": "Xu ly muc dau trong reasons, sau do chay lai release-command-center-sync de xac nhan blocker da duoc go hay chua."
+      }
+    },
+    {
+      "id": "review_required_after_sync",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "blocked_after_sync"
+        ],
+        "conditions": [
+          "decision == 'GO'",
+          "summaryClass == 'review_required'",
+          "reasons.length == 0",
+          "advisories.length > 0 OR generatedAt is missing OR generatedAt == ''"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "同步后待复核",
+          "sub": "先同步再看提示"
+        },
+        "en": {
+          "main": "Review After Sync",
+          "sub": "Sync first, then review hints"
+        },
+        "vi": {
+          "main": "Can ra soat sau dong bo",
+          "sub": "Dong bo truoc roi xem canh bao"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Command Center Sync 状态：REVIEW_REQUIRED_AFTER_SYNC",
+          "sub": "同步完成后主结论虽为 GO，但仍有提示项或时间证据不足，需人工复核。"
+        },
+        "en": {
+          "main": "Command Center Sync Status: REVIEW_REQUIRED_AFTER_SYNC",
+          "sub": "After sync, the top-level conclusion is GO, but advisories remain or time evidence is insufficient, so manual review is needed."
+        },
+        "vi": {
+          "main": "Trang thai Command Center Sync: REVIEW_REQUIRED_AFTER_SYNC",
+          "sub": "Sau dong bo, ket luan tong la GO nhung van con advisory hoac bang chung thoi gian chua du, can ra soat thu cong."
+        }
+      },
+      "syncSubcopy": {
+        "zh": "同步链路已跑通，但当前更适合把它视为已汇总待复核，而不是直接放行。",
+        "en": "The sync chain has completed, but the safer interpretation is aggregated-for-review rather than directly releasable.",
+        "vi": "Chuoi dong bo da chay xong, nhung cach hieu an toan hon la da tong hop de ra soat, khong phai de phat hanh ngay."
+      },
+      "latestSubcopy": {
+        "zh": "latest 层提示仍需人工确认，不要把 GO 误读成可立即发布。",
+        "en": "The latest layer still requires human confirmation, so do not read GO as immediate release.",
+        "vi": "Lop latest van yeu cau xac nhan thu cong, vi vay khong duoc hieu GO la co the phat hanh ngay."
+      },
+      "firstAction": {
+        "zh": "先核对 advisories 与 generatedAt，再决定是否进入正式放行。",
+        "en": "Verify advisories and generatedAt first, then decide whether to enter formal release.",
+        "vi": "Kiem tra advisories va generatedAt truoc, sau do moi quyet dinh co vao buoc phat hanh chinh thuc hay khong."
+      }
+    }
+  ],
+  "fallback": {
+    "whenNoClassMatched": "review_required_after_sync"
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

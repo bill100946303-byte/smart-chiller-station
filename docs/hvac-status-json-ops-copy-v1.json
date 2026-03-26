@@ -1,0 +1,134 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-status-json-ops-copy-v1",
+  "scope": "status-json recommendedAction operations copy",
+  "fieldScope": {
+    "required": [
+      "source",
+      "summary.releaseDecision",
+      "summary.recommendedAction",
+      "summary.strictFreshnessPreview",
+      "canonical.overallPass"
+    ],
+    "optional": [
+      "releaseGateLive.reasons[]",
+      "releaseGateLatest.reasons[]"
+    ]
+  },
+  "recommendedActionTemplates": [
+    {
+      "id": "RUN_ACCEPT_FIRST",
+      "actionPattern": "run accept first:",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "source == 'missing'",
+          "summary.recommendedAction startsWith 'run accept first:'"
+        ]
+      },
+      "copy": {
+        "zh": {
+          "prompt": "缺少验收快照，先补基础结果。",
+          "firstStep": "先执行 scripts/chiller_ctl.sh accept 生成 canonical 报告。"
+        },
+        "en": {
+          "prompt": "Acceptance snapshot is missing; create baseline first.",
+          "firstStep": "Run scripts/chiller_ctl.sh accept to generate the canonical report."
+        },
+        "vi": {
+          "prompt": "Thieu snapshot nghiem thu; can tao baseline truoc.",
+          "firstStep": "Chay scripts/chiller_ctl.sh accept de tao bao cao canonical."
+        }
+      }
+    },
+    {
+      "id": "DO_NOT_RELEASE",
+      "actionPattern": "do not release; inspect reasons/advisories and rerun acceptance",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "source == 'canonical'",
+          "summary.releaseDecision == 'NO-GO'",
+          "summary.recommendedAction contains 'do not release;'"
+        ]
+      },
+      "copy": {
+        "zh": {
+          "prompt": "当前为 NO-GO，禁止放行。",
+          "firstStep": "先查看 reasons/advisories，完成修复后重跑 accept。"
+        },
+        "en": {
+          "prompt": "Current state is NO-GO; release is blocked.",
+          "firstStep": "Check reasons/advisories first, then rerun accept after fixes."
+        },
+        "vi": {
+          "prompt": "Trang thai hien tai la NO-GO; chan phat hanh.",
+          "firstStep": "Kiem tra reasons/advisories truoc, sua xong roi chay lai accept."
+        }
+      }
+    },
+    {
+      "id": "RELEASE_CANDIDATE_READY",
+      "actionPattern": "release candidate is ready under default policy",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "source == 'canonical'",
+          "summary.releaseDecision == 'GO'",
+          "canonical.overallPass == true",
+          "summary.recommendedAction contains 'release candidate is ready under default policy'"
+        ]
+      },
+      "copy": {
+        "zh": {
+          "prompt": "发布候选已就绪（默认门禁）。",
+          "firstStep": "先按发布窗口走确认流程，再执行正式放行。"
+        },
+        "en": {
+          "prompt": "Release candidate is ready under default policy.",
+          "firstStep": "Start release-window confirmation, then execute formal release."
+        },
+        "vi": {
+          "prompt": "Ban release candidate da san sang theo chinh sach mac dinh.",
+          "firstStep": "Bat dau xac nhan cua so phat hanh, sau do moi phat hanh chinh thuc."
+        }
+      }
+    }
+  ],
+  "strictFreshnessPreviewReminder": {
+    "id": "STRICT_FRESHNESS_PREVIEW_NOGO",
+    "trigger": {
+      "mode": "all+any",
+      "all": [
+        "summary.strictFreshnessPreview == true",
+        "summary.releaseDecision == 'NO-GO'"
+      ],
+      "any": [
+        "releaseGateLive.reasons[] contains 'freshness_not_fresh_strict'",
+        "releaseGateLatest.reasons[] contains 'freshness_not_fresh_strict'"
+      ]
+    },
+    "copy": {
+      "zh": {
+        "prompt": "严格时效预览触发 NO-GO：当前 freshness 非 fresh。",
+        "firstStep": "先更新数据快照并重跑 status-json --live --strict-freshness。"
+      },
+      "en": {
+        "prompt": "Strict freshness preview triggered NO-GO: freshness is not fresh.",
+        "firstStep": "Refresh data snapshot, then rerun status-json --live --strict-freshness."
+      },
+      "vi": {
+        "prompt": "Preview strict freshness da kich hoat NO-GO: freshness khong phai fresh.",
+        "firstStep": "Cap nhat snapshot du lieu, sau do chay lai status-json --live --strict-freshness."
+      }
+    }
+  },
+  "fallback": {
+    "whenNoTemplateMatched": "Use summary.recommendedAction as-is."
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

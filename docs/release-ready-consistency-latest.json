@@ -1,0 +1,48 @@
+{
+  "version": "v1.0",
+  "generatedAt": "2026-03-12T21:41:41.962Z",
+  "decision": "GO",
+  "exitCode": 0,
+  "reasons": [],
+  "advisories": [],
+  "steps": {
+    "releaseReadyLatestCheck": {
+      "ok": true,
+      "exitCode": 0
+    },
+    "checkFamilyConsistency": {
+      "ok": true,
+      "exitCode": 0
+    },
+    "checkFamilyOverall": {
+      "ok": true,
+      "exitCode": 0
+    }
+  },
+  "releaseReadyLatest": {
+    "decision": "GO",
+    "exitCode": 0,
+    "generatedAt": "2026-03-12T21:40:47Z",
+    "reasons": [],
+    "advisories": []
+  },
+  "checkFamilyLatest": {
+    "overall": "PASS",
+    "passedCount": 17,
+    "totalCount": 17,
+    "generatedAt": "2026-03-12T21:41:41.432Z"
+  },
+  "checkFamilyBriefLatest": {
+    "overall": "PASS",
+    "passedCount": 17,
+    "totalCount": 17,
+    "failedCount": 0,
+    "freshnessState": "fresh",
+    "generatedAt": "2026-03-12T21:41:40.895Z"
+  },
+  "artifacts": {
+    "releaseReadyLatestPath": "/Users/billchow/Documents/智慧冷冻站/docs/release-ready-latest.json",
+    "checkFamilyPath": "/Users/billchow/Documents/智慧冷冻站/docs/check-family-latest.json",
+    "checkFamilyBriefPath": "/Users/billchow/Documents/智慧冷冻站/docs/check-family-brief-latest.json"
+  }
+}

@@ -1,0 +1,289 @@
+{
+  "id": "4669928",
+  "name": "2",
+  "font_family": "al_element-icons",
+  "css_prefix_text": "al_icon",
+  "description": "ui",
+  "glyphs": [
+    {
+      "icon_id": "36077726",
+      "name": "提交，上传，提取",
+      "font_class": "a-tijiaoshangchuantiqu",
+      "unicode": "e675",
+      "unicode_decimal": 58997
+    },
+    {
+      "icon_id": "5288586",
+      "name": "返回",
+      "font_class": "fanhui2",
+      "unicode": "e66c",
+      "unicode_decimal": 58988
+    },
+    {
+      "icon_id": "23157984",
+      "name": "导出",
+      "font_class": "daochu",
+      "unicode": "e623",
+      "unicode_decimal": 58915
+    },
+    {
+      "icon_id": "26968301",
+      "name": "返回",
+      "font_class": "fanhui",
+      "unicode": "e629",
+      "unicode_decimal": 58921
+    },
+    {
+      "icon_id": "1793595",
+      "name": "菜单",
+      "font_class": "caidan",
+      "unicode": "e662",
+      "unicode_decimal": 58978
+    },
+    {
+      "icon_id": "2108248",
+      "name": "冷却塔",
+      "font_class": "lengqueta",
+      "unicode": "e6ae",
+      "unicode_decimal": 59054
+    },
+    {
+      "icon_id": "5258621",
+      "name": "冷冻泵",
+      "font_class": "lengdongbeng_huaban",
+      "unicode": "e61d",
+      "unicode_decimal": 58909
+    },
+    {
+      "icon_id": "5259313",
+      "name": "冷却泵",
+      "font_class": "lengquebeng_huaban",
+      "unicode": "e622",
+      "unicode_decimal": 58914
+    },
+    {
+      "icon_id": "7533277",
+      "name": "密码",
+      "font_class": "mima",
+      "unicode": "e601",
+      "unicode_decimal": 58881
+    },
+    {
+      "icon_id": "7534472",
+      "name": "弹框叉掉",
+      "font_class": "dankuangchadiao",
+      "unicode": "e604",
+      "unicode_decimal": 58884
+    },
+    {
+      "icon_id": "8177010",
+      "name": "电表信息",
+      "font_class": "dianbiaoxinxi",
+      "unicode": "e69f",
+      "unicode_decimal": 59039
+    },
+    {
+      "icon_id": "8325260",
+      "name": "蒸发器",
+      "font_class": "zhengfaqi",
+      "unicode": "e631",
+      "unicode_decimal": 58929
+    },
+    {
+      "icon_id": "8361853",
+      "name": "眼睛1",
+      "font_class": "yanjing",
+      "unicode": "e6cf",
+      "unicode_decimal": 59087
+    },
+    {
+      "icon_id": "9219800",
+      "name": "总能耗",
+      "font_class": "zongnenghao",
+      "unicode": "e6d6",
+      "unicode_decimal": 59094
+    },
+    {
+      "icon_id": "11233265",
+      "name": "报警信息",
+      "font_class": "baojingxinxi",
+      "unicode": "e65e",
+      "unicode_decimal": 58974
+    },
+    {
+      "icon_id": "11345586",
+      "name": "用户",
+      "font_class": "yonghu",
+      "unicode": "e6fb",
+      "unicode_decimal": 59131
+    },
+    {
+      "icon_id": "11428224",
+      "name": "压缩机组",
+      "font_class": "yasuojizu",
+      "unicode": "e660",
+      "unicode_decimal": 58976
+    },
+    {
+      "icon_id": "11978410",
+      "name": "日期",
+      "font_class": "riqi",
+      "unicode": "e62b",
+      "unicode_decimal": 58923
+    },
+    {
+      "icon_id": "11994851",
+      "name": "气象资料与气候监测指数",
+      "font_class": "qixiangziliaoyuqihoujiancezhishu",
+      "unicode": "e658",
+      "unicode_decimal": 58968
+    },
+    {
+      "icon_id": "13177594",
+      "name": "冷凝器-开启",
+      "font_class": "lengningqi-kaiqi",
+      "unicode": "e71d",
+      "unicode_decimal": 59165
+    },
+    {
+      "icon_id": "13220573",
+      "name": "能耗系数",
+      "font_class": "g-guangjiaoxiang",
+      "unicode": "e661",
+      "unicode_decimal": 58977
+    },
+    {
+      "icon_id": "15206270",
+      "name": "实时总功率",
+      "font_class": "shishizonggongshuai",
+      "unicode": "e60b",
+      "unicode_decimal": 58891
+    },
+    {
+      "icon_id": "16064008",
+      "name": "打开",
+      "font_class": "ic_right",
+      "unicode": "e619",
+      "unicode_decimal": 58905
+    },
+    {
+      "icon_id": "16244005",
+      "name": "实时能耗",
+      "font_class": "shishinenghao",
+      "unicode": "ebe5",
+      "unicode_decimal": 60389
+    },
+    {
+      "icon_id": "17605487",
+      "name": "查找",
+      "font_class": "chazhao",
+      "unicode": "e817",
+      "unicode_decimal": 59415
+    },
+    {
+      "icon_id": "19415731",
+      "name": "返回首页",
+      "font_class": "icon-svg-04",
+      "unicode": "e605",
+      "unicode_decimal": 58885
+    },
+    {
+      "icon_id": "23684375",
+      "name": "能耗系数",
+      "font_class": "fuzhupianchaguanli",
+      "unicode": "e750",
+      "unicode_decimal": 59216
+    },
+    {
+      "icon_id": "25015254",
+      "name": "眼睛1",
+      "font_class": "eye1",
+      "unicode": "e6a3",
+      "unicode_decimal": 59043
+    },
+    {
+      "icon_id": "26283778",
+      "name": "查询",
+      "font_class": "chaxun",
+      "unicode": "e606",
+      "unicode_decimal": 58886
+    },
+    {
+      "icon_id": "26358533",
+      "name": "类表未选中差掉",
+      "font_class": "leibiaoweixuanzhongchadiao",
+      "unicode": "e6ca",
+      "unicode_decimal": 59082
+    },
+    {
+      "icon_id": "26515821",
+      "name": "基本信息",
+      "font_class": "jibenxinxi",
+      "unicode": "e607",
+      "unicode_decimal": 58887
+    },
+    {
+      "icon_id": "28277148",
+      "name": "制冷机组",
+      "font_class": "zhilengjizu",
+      "unicode": "e690",
+      "unicode_decimal": 59024
+    },
+    {
+      "icon_id": "32286372",
+      "name": "变频器",
+      "font_class": "bianpinqi",
+      "unicode": "e61c",
+      "unicode_decimal": 58908
+    },
+    {
+      "icon_id": "37516341",
+      "name": "排行02-L",
+      "font_class": "paihang02-L",
+      "unicode": "e624",
+      "unicode_decimal": 58916
+    },
+    {
+      "icon_id": "39305396",
+      "name": "中英切换",
+      "font_class": "zhongyingqiehuan",
+      "unicode": "e62d",
+      "unicode_decimal": 58925
+    },
+    {
+      "icon_id": "41652259",
+      "name": "时间日历",
+      "font_class": "a-huaban1",
+      "unicode": "e608",
+      "unicode_decimal": 58888
+    },
+    {
+      "icon_id": "41653866",
+      "name": "账号",
+      "font_class": "zhanghao",
+      "unicode": "e609",
+      "unicode_decimal": 58889
+    },
+    {
+      "icon_id": "41655392",
+      "name": "隐藏数据",
+      "font_class": "yincangshuju",
+      "unicode": "e60a",
+      "unicode_decimal": 58890
+    },
+    {
+      "icon_id": "41655658",
+      "name": "视角居中",
+      "font_class": "shijiaojuzhong",
+      "unicode": "e60d",
+      "unicode_decimal": 58893
+    },
+    {
+      "icon_id": "453996",
+      "name": "冷却塔风机",
+      "font_class": "hdnjjrt",
+      "unicode": "e67b",
+      "unicode_decimal": 59003
+    }
+  ]
+}

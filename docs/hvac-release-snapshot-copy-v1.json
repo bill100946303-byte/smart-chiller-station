@@ -1,0 +1,232 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-release-snapshot-copy-v1",
+  "scope": "release snapshot decision/reasons/advisories operations copy",
+  "fieldScope": {
+    "required": [
+      "decision",
+      "reasons[]",
+      "advisories[]",
+      "exitCode"
+    ],
+    "optional": [
+      "canonicalExists",
+      "canonicalOverallPass",
+      "strictFreshness",
+      "freshness"
+    ]
+  },
+  "decisionCopy": [
+    {
+      "id": "GO",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "decision == 'GO'"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "可放行",
+          "sub": "门禁通过",
+          "firstAction": "按窗口发布"
+        },
+        "en": {
+          "main": "GO",
+          "sub": "Gate passed",
+          "firstAction": "Release in window"
+        },
+        "vi": {
+          "main": "GO",
+          "sub": "Cong da dat",
+          "firstAction": "Phat hanh theo cua so"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "放行结论：GO",
+          "sub": "当前快照门禁通过，可进入正式发布流程。",
+          "firstAction": "先执行发布窗口确认，再按标准步骤放行。"
+        },
+        "en": {
+          "main": "Release Decision: GO",
+          "sub": "Current snapshot passes the gates and can enter formal release flow.",
+          "firstAction": "Run release-window confirmation, then proceed with standard release steps."
+        },
+        "vi": {
+          "main": "Ket luan phat hanh: GO",
+          "sub": "Snapshot hien tai dat cong va co the vao quy trinh phat hanh chinh thuc.",
+          "firstAction": "Xac nhan cua so phat hanh truoc, sau do phat hanh theo quy trinh chuan."
+        }
+      }
+    },
+    {
+      "id": "NO_GO",
+      "decisionValue": "NO-GO",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "decision == 'NO-GO'"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "禁止放行",
+          "sub": "存在阻断项",
+          "firstAction": "先修复再复跑"
+        },
+        "en": {
+          "main": "NO-GO",
+          "sub": "Blocking reason",
+          "firstAction": "Fix then rerun"
+        },
+        "vi": {
+          "main": "NO-GO",
+          "sub": "Co ly do chan",
+          "firstAction": "Sua roi chay lai"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "放行结论：NO-GO",
+          "sub": "当前快照存在阻断原因，暂不允许对外发布。",
+          "firstAction": "先处理首个 reason，再重跑 gate 快照确认。"
+        },
+        "en": {
+          "main": "Release Decision: NO-GO",
+          "sub": "Current snapshot has blocking reasons and external release is not allowed.",
+          "firstAction": "Resolve the first reason, then rerun release-gate snapshot."
+        },
+        "vi": {
+          "main": "Ket luan phat hanh: NO-GO",
+          "sub": "Snapshot hien tai co ly do chan, khong duoc cong bo ra ngoai.",
+          "firstAction": "Xu ly reason dau tien, sau do chay lai snapshot release-gate."
+        }
+      }
+    },
+    {
+      "id": "UNKNOWN",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "decision is missing",
+          "decision not in ['GO','NO-GO']",
+          "exitCode is missing and decision cannot be determined"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "状态未知",
+          "sub": "快照不完整",
+          "firstAction": "先重采快照"
+        },
+        "en": {
+          "main": "Unknown",
+          "sub": "Snapshot incomplete",
+          "firstAction": "Refresh snapshot"
+        },
+        "vi": {
+          "main": "Khong ro trang thai",
+          "sub": "Snapshot chua day du",
+          "firstAction": "Lay lai snapshot"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "放行结论：UNKNOWN",
+          "sub": "当前快照字段不完整或决策值异常，不能用于放行判断。",
+          "firstAction": "先重跑 release-gate --json 或 release-gate-latest 生成有效快照。"
+        },
+        "en": {
+          "main": "Release Decision: UNKNOWN",
+          "sub": "Snapshot is incomplete or decision value is invalid, so it cannot be used for release judgment.",
+          "firstAction": "Rerun release-gate --json or release-gate-latest to generate a valid snapshot."
+        },
+        "vi": {
+          "main": "Ket luan phat hanh: UNKNOWN",
+          "sub": "Snapshot thieu truong hoac gia tri decision khong hop le, khong the dung de phan quyet phat hanh.",
+          "firstAction": "Chay lai release-gate --json hoac release-gate-latest de tao snapshot hop le."
+        }
+      }
+    }
+  ],
+  "reasonAdvisoryShortMap": [
+    {
+      "key": "contract_not_ok",
+      "type": "reason",
+      "trigger": "reasons[] contains 'contract_not_ok'",
+      "short": {
+        "zh": "合同门禁未过",
+        "en": "Contract gate failed",
+        "vi": "Cong hop dong chua dat"
+      }
+    },
+    {
+      "key": "canonical_missing",
+      "type": "reason",
+      "trigger": "reasons[] contains 'canonical_missing'",
+      "short": {
+        "zh": "缺少验收主报告",
+        "en": "Canonical report missing",
+        "vi": "Thieu bao cao canonical"
+      }
+    },
+    {
+      "key": "canonical_not_pass",
+      "type": "reason",
+      "trigger": "reasons[] contains 'canonical_not_pass'",
+      "short": {
+        "zh": "验收结果未通过",
+        "en": "Acceptance not passed",
+        "vi": "Nghiem thu chua dat"
+      }
+    },
+    {
+      "key": "freshness_not_fresh_strict",
+      "type": "reason",
+      "trigger": "reasons[] contains 'freshness_not_fresh_strict'",
+      "short": {
+        "zh": "严格时效未达 fresh",
+        "en": "Strict freshness not fresh",
+        "vi": "Strict freshness khong fresh"
+      }
+    },
+    {
+      "key": "freshness_warn",
+      "type": "advisory",
+      "trigger": "advisories[] contains 'freshness_warn'",
+      "short": {
+        "zh": "时效预警",
+        "en": "Freshness warning",
+        "vi": "Canh bao do tuoi"
+      }
+    },
+    {
+      "key": "runtime_unavailable_snapshot_present",
+      "type": "advisory",
+      "trigger": "advisories[] contains 'runtime_unavailable_snapshot_present'",
+      "short": {
+        "zh": "存在环境受限快照",
+        "en": "Runtime-limited snapshot present",
+        "vi": "Co snapshot moi truong han che"
+      }
+    }
+  ],
+  "mobileBudget": {
+    "zhMaxChars": 18,
+    "notes": "mobileShort fields should stay within 18 Chinese characters where applicable."
+  },
+  "fallback": {
+    "unknownDecision": "Use UNKNOWN copy.",
+    "unknownReasonOrAdvisoryKey": {
+      "zh": "存在未识别键，请主控复核",
+      "en": "Unrecognized key, ask control owner to review",
+      "vi": "Key chua nhan dien, vui long nho dieu phoi vien ra soat"
+    }
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

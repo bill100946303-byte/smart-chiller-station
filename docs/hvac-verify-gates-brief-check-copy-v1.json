@@ -1,0 +1,167 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-verify-gates-brief-check-copy-v1",
+  "scope": "verify-gates brief-check voice copy",
+  "fieldScope": {
+    "required": [
+      "briefCheck.ok",
+      "exitCode",
+      "reasons[]",
+      "advisories[]"
+    ]
+  },
+  "priorityOrder": [
+    "check_fail",
+    "check_unknown",
+    "check_pass"
+  ],
+  "classes": [
+    {
+      "id": "check_pass",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "briefCheck.ok == true",
+          "exitCode == 0",
+          "reasons.length == 0",
+          "advisories is array"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "Brief校验通过",
+          "sub": "结构可读",
+          "firstAction": "继续发布确认"
+        },
+        "en": {
+          "main": "Brief Check Pass",
+          "sub": "Structure is readable",
+          "firstAction": "Continue release confirmation"
+        },
+        "vi": {
+          "main": "Brief check dat",
+          "sub": "Cau truc doc duoc",
+          "firstAction": "Tiep tuc xac nhan phat hanh"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Brief-Check 状态：PASS",
+          "sub": "brief 结构校验已通过，当前可用于值班播报。",
+          "firstAction": "按值班流程继续执行 release-ready 播报。"
+        },
+        "en": {
+          "main": "Brief-Check Status: PASS",
+          "sub": "Brief structure validation passed and is ready for duty broadcast.",
+          "firstAction": "Continue release-ready broadcast in standard duty flow."
+        },
+        "vi": {
+          "main": "Trang thai Brief-Check: PASS",
+          "sub": "Da qua xac thuc cau truc brief, co the dung de phat thong tin truc.",
+          "firstAction": "Tiep tuc phat thong bao release-ready theo quy trinh truc chuan."
+        }
+      }
+    },
+    {
+      "id": "check_fail",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "briefCheck.ok == false",
+          "exitCode == 1",
+          "reasons.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "Brief校验失败",
+          "sub": "存在校验错误",
+          "firstAction": "先处理首个reason"
+        },
+        "en": {
+          "main": "Brief Check Fail",
+          "sub": "Validation errors found",
+          "firstAction": "Handle first reason"
+        },
+        "vi": {
+          "main": "Brief check that bai",
+          "sub": "Co loi xac thuc",
+          "firstAction": "Xu ly reason dau tien"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Brief-Check 状态：FAIL",
+          "sub": "brief 校验未通过，当前结果不应直接用于放行播报。",
+          "firstAction": "先按 reasons 首项修复后，再重跑 brief-check。"
+        },
+        "en": {
+          "main": "Brief-Check Status: FAIL",
+          "sub": "Brief validation failed, so current result must not be used for release broadcast.",
+          "firstAction": "Fix the first item in reasons, then rerun brief-check."
+        },
+        "vi": {
+          "main": "Trang thai Brief-Check: FAIL",
+          "sub": "Xac thuc brief that bai, khong duoc dung ket qua hien tai de phat thong bao phat hanh.",
+          "firstAction": "Sua muc dau trong reasons, sau do chay lai brief-check."
+        }
+      }
+    },
+    {
+      "id": "check_unknown",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "briefCheck.ok is missing or not boolean",
+          "exitCode is missing or exitCode not in [0,1]",
+          "reasons is missing or not array",
+          "advisories is missing or not array",
+          "briefCheck.ok == true && exitCode == 1",
+          "briefCheck.ok == false && exitCode == 0 && reasons.length == 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "Brief状态未知",
+          "sub": "字段冲突/缺失",
+          "firstAction": "先重跑brief-check"
+        },
+        "en": {
+          "main": "Brief Unknown",
+          "sub": "Field conflict/missing",
+          "firstAction": "Rerun brief-check"
+        },
+        "vi": {
+          "main": "Trang thai brief chua ro",
+          "sub": "Xung dot/thieu truong",
+          "firstAction": "Chay lai brief-check"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Brief-Check 状态：UNKNOWN",
+          "sub": "字段缺失、类型异常或状态冲突，当前结论不可用于值班播报。",
+          "firstAction": "先重跑 release-ready-brief-check 并复核输出字段。"
+        },
+        "en": {
+          "main": "Brief-Check Status: UNKNOWN",
+          "sub": "Missing/invalid fields or state conflict detected; current result is not usable for duty broadcast.",
+          "firstAction": "Rerun release-ready-brief-check and verify output fields."
+        },
+        "vi": {
+          "main": "Trang thai Brief-Check: UNKNOWN",
+          "sub": "Phat hien thieu/sai truong hoac xung dot trang thai; ket qua hien tai khong dung duoc cho thong bao truc.",
+          "firstAction": "Chay lai release-ready-brief-check va kiem tra lai cac truong dau ra."
+        }
+      }
+    }
+  ],
+  "fallback": {
+    "whenNoClassMatched": "check_unknown"
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "uniqueKeys": [
+    "alarmDiagnosis",
+    "alarms",
+    "alarmSeveritySplit",
+    "anomalySummary",
+    "dashboardOverview",
+    "devices",
+    "energy",
+    "energyCurve",
+    "latestAlarmLog",
+    "metric.chilled_delta_t_c",
+    "metric.cooling_delta_t_c",
+    "metric.station_cop",
+    "metric.station_total_power_kw",
+    "ruleMetrics",
+    "rules",
+    "runParams",
+    "subsystemSummary",
+    "trendBaseline",
+    "trendQuality"
+  ],
+  "newMetricKeys": [],
+  "unknownStaticKeys": [],
+  "examplePaths": {
+    "energy": [
+      "/bff/v1/sites/{siteId}/dashboard/overview.sourceStatus.sources[0].key"
+    ],
+    "devices": [
+      "/bff/v1/sites/{siteId}/dashboard/overview.sourceStatus.sources[1].key"
+    ],
+    "alarms": [
+      "/bff/v1/sites/{siteId}/dashboard/overview.sourceStatus.sources[2].key"
+    ],
+    "alarmDiagnosis": [
+      "/bff/v1/sites/{siteId}/dashboard/overview.sourceStatus.sources[3].key",
+      "/bff/v1/sites/{siteId}/anomalies/summary.sourceStatus.sources[3].key"
+    ],
+    "energyCurve": [
+      "/bff/v1/sites/{siteId}/dashboard/trends.sourceStatus.sources[0].key"
+    ],
+    "runParams": [
+      "/bff/v1/sites/{siteId}/dashboard/trends.sourceStatus.sources[1].key"
+    ],
+    "trendBaseline": [
+      "/bff/v1/sites/{siteId}/dashboard/trends.sourceStatus.sources[2].key"
+    ],
+    "trendQuality": [
+      "/bff/v1/sites/{siteId}/dashboard/trends.sourceStatus.sources[3].key"
+    ],
+    "subsystemSummary": [
+      "/bff/v1/sites/{siteId}/anomalies/summary.sourceStatus.sources[0].key"
+    ],
+    "latestAlarmLog": [
+      "/bff/v1/sites/{siteId}/anomalies/summary.sourceStatus.sources[1].key"
+    ],
+    "alarmSeveritySplit": [
+      "/bff/v1/sites/{siteId}/anomalies/summary.sourceStatus.sources[2].key"
+    ],
+    "rules": [
+      "/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[0].key"
+    ],
+    "dashboardOverview": [
+      "/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[1].key"
+    ],
+    "anomalySummary": [
+      "/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[2].key"
+    ],
+    "ruleMetrics": [
+      "/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[3].key"
+    ],
+    "metric.chilled_delta_t_c": [
+      "/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[4].key"
+    ],
+    "metric.cooling_delta_t_c": [
+      "/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[5].key"
+    ],
+    "metric.station_cop": [
+      "/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[6].key"
+    ],
+    "metric.station_total_power_kw": [
+      "/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[7].key"
+    ]
+  }
+}

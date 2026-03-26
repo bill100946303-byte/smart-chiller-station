@@ -1,0 +1,13 @@
+check_id,severity,status,dimension,metric,check_target,gap_description,owner,evidence,fix_priority
+NDC-001,blocking,fail,field_exists,station_total_power_kw,overview.energyCards.totalPowerKw numeric gate,"v1.1 缺少 station_total_power_kw 的 overview 数值可解析门禁，可能出现来源可达但值无效仍放行",bff,"v1.1 仅有 metric.station_total_power_kw sourceStatus 检查；无 overview.energyCards.totalPowerKw 检查",P0
+NDC-002,blocking,fail,field_exists,chilled_delta_t_c,overview.energyCards.chilledDeltaT numeric gate,"v1.1 缺少 chilled_delta_t_c 的 overview 数值可解析门禁，字段存在但值无效时无法拦截",bff,"v1.1 无 overview.energyCards.chilledDeltaT 检查",P0
+NDC-003,blocking,fail,field_exists,cooling_delta_t_c,overview.energyCards.coolingDeltaT numeric gate,"v1.1 缺少 cooling_delta_t_c 的 overview 数值可解析门禁，字段存在但值无效时无法拦截",bff,"v1.1 无 overview.energyCards.coolingDeltaT 检查",P0
+NDC-004,blocking,fail,field_exists,cooling_delta_t_c,trends.series[metric=coolingDeltaT] points/value gate,"四核心指标要求下，v1.1 仅校验 chilledDeltaT，未校验 coolingDeltaT 趋势序列存在与可解析",legacy,"v1.1 trends core set 为 totalPowerKw/currentCop/chilledDeltaT",P0
+NDC-005,warning,fail,unit_consistency,station_total_power_kw,unit gate for kW,"readiness 清单未定义 station_total_power_kw 单位一致性检查（kW）",bff,"field-display-dictionary-v1.json: station_total_power_kw.unitDisplay=kW",P1
+NDC-006,warning,fail,unit_consistency,chilled_delta_t_c,unit gate for ℃/degC,"readiness 清单未定义 chilled_delta_t_c 单位一致性检查（℃/degC）",bff,"field-display-dictionary-v1.json: chilled_delta_t_c.unitDisplay=℃/degC",P1
+NDC-007,warning,fail,unit_consistency,cooling_delta_t_c,unit gate for ℃/degC,"readiness 清单未定义 cooling_delta_t_c 单位一致性检查（℃/degC）",bff,"field-display-dictionary-v1.json: cooling_delta_t_c.unitDisplay=℃/degC",P1
+NDC-008,warning,fail,unit_consistency,station_cop,unit gate for dimensionless(-),"readiness 清单未定义 station_cop 单位一致性检查（无量纲 -）",bff,"field-display-dictionary-v1.json: station_cop.unitDisplay='-'",P1
+NDC-009,warning,fail,compare_constraint,station_total_power_kw,cross-site comparability guard,"v1.1 仅对 station_cop 定义 comparability_guard，缺少 station_total_power_kw 的跨站比较前置约束",shell,"metric-availability-field-mapping-v1.md 第5/6节覆盖四核心指标",P1
+NDC-010,warning,fail,compare_constraint,chilled_delta_t_c,cross-site comparability guard,"v1.1 缺少 chilled_delta_t_c 跨站点比较 guard（时间窗/采样/缺失策略/错误分类一致）",shell,"metric-availability-field-mapping-v1.md 四核心可比条件",P1
+NDC-011,warning,fail,compare_constraint,cooling_delta_t_c,cross-site comparability guard,"v1.1 缺少 cooling_delta_t_c 跨站点比较 guard（时间窗/采样/缺失策略/错误分类一致）",shell,"metric-availability-field-mapping-v1.md 四核心可比条件",P1
+NDC-012,warning,fail,i18n_completeness,core_4_metrics,readiness-level i18n gate,"field-display 已三语完整，但 readiness 清单未设置 core4 三语完整性门禁，存在展示层回归漏检风险",shell,"field-display-dictionary-v1.json 已有 displayName/unitDisplay/shortHint zh/en/vi",P1

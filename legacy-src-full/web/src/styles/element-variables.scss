@@ -1,0 +1,78 @@
+/**
+* I think element-ui's default theme color is too light for long-term use.
+* So I modified the default color and you can modify it to your liking.
+**/
+
+/* theme color */
+$--color-primary: #1890ff;
+$--color-success: #13ce66;
+$--color-warning: #FFBA00;
+$--color-danger: #ff4949;
+// $--color-info: #1E1E1E;
+
+$--button-font-weight: 400;
+
+// $--color-text-regular: #1f2d3d;
+
+$--border-color-light: #dfe4ed;
+$--border-color-lighter: #e6ebf5;
+
+$--table-border:1px solid#dfe6ec;
+
+/* icon font path, required */
+$--font-path: '~element-ui/lib/theme-chalk/fonts';
+
+@import "~element-ui/packages/theme-chalk/src/base";
+@import "~element-ui/packages/theme-chalk/src/loading";
+@import "~element-ui/packages/theme-chalk/src/message";
+@import "~element-ui/packages/theme-chalk/src/message-box";
+@import "~element-ui/packages/theme-chalk/src/notification";
+@import "~element-ui/packages/theme-chalk/src/alert";
+@import "~element-ui/packages/theme-chalk/src/badge";
+@import "~element-ui/packages/theme-chalk/src/button";
+@import "~element-ui/packages/theme-chalk/src/calendar";
+@import "~element-ui/packages/theme-chalk/src/card";
+@import "~element-ui/packages/theme-chalk/src/cascader";
+@import "~element-ui/packages/theme-chalk/src/checkbox";
+@import "~element-ui/packages/theme-chalk/src/checkbox-group";
+@import "~element-ui/packages/theme-chalk/src/col";
+@import "~element-ui/packages/theme-chalk/src/color-picker";
+@import "~element-ui/packages/theme-chalk/src/date-picker";
+@import "~element-ui/packages/theme-chalk/src/descriptions";
+@import "~element-ui/packages/theme-chalk/src/dialog";
+@import "~element-ui/packages/theme-chalk/src/drawer";
+@import "~element-ui/packages/theme-chalk/src/dropdown";
+@import "~element-ui/packages/theme-chalk/src/dropdown-menu";
+@import "~element-ui/packages/theme-chalk/src/dropdown-item";
+@import "~element-ui/packages/theme-chalk/src/empty";
+@import "~element-ui/packages/theme-chalk/src/form";
+@import "~element-ui/packages/theme-chalk/src/form-item";
+@import "~element-ui/packages/theme-chalk/src/image";
+@import "~element-ui/packages/theme-chalk/src/input";
+@import "~element-ui/packages/theme-chalk/src/menu";
+@import "~element-ui/packages/theme-chalk/src/menu-item";
+@import "~element-ui/packages/theme-chalk/src/submenu";
+@import "~element-ui/packages/theme-chalk/src/pagination";
+@import "~element-ui/packages/theme-chalk/src/popover";
+@import "~element-ui/packages/theme-chalk/src/progress";
+@import "~element-ui/packages/theme-chalk/src/radio";
+@import "~element-ui/packages/theme-chalk/src/radio-group";
+@import "~element-ui/packages/theme-chalk/src/radio-button";
+@import "~element-ui/packages/theme-chalk/src/row";
+@import "~element-ui/packages/theme-chalk/src/scrollbar";
+@import "~element-ui/packages/theme-chalk/src/select";
+@import "~element-ui/packages/theme-chalk/src/slider";
+@import "~element-ui/packages/theme-chalk/src/step";
+@import "~element-ui/packages/theme-chalk/src/steps";
+@import "~element-ui/packages/theme-chalk/src/switch";
+@import "~element-ui/packages/theme-chalk/src/table";
+@import "~element-ui/packages/theme-chalk/src/tabs";
+@import "~element-ui/packages/theme-chalk/src/tooltip";
+@import "~element-ui/packages/theme-chalk/src/tree";
+@import "~element-ui/packages/theme-chalk/src/upload";
+
+// the :export directive is the magic sauce for webpack
+// https://www.bluematador.com/blog/how-to-share-variables-between-js-and-sass
+:export {
+  theme: $--color-primary;
+}

@@ -1,0 +1,9 @@
+check_field,source_field_path,release_impact,missing_default_behavior,affects_default_release,check_coverage,evidence_path,notes
+decision,$.decision (fallback: release-snapshot-latest.decision),blocking,fail_closed_if_missing_or_invalid_enum,yes,enforced,apps/chiller-bff/scripts/check-release-ready.js#L91,validated enum GO|NO-GO
+exitCode,$.exitCode (fallback: release-snapshot-latest.exitCode),blocking,fail_closed_if_missing_or_not_0_or_1,yes,enforced,apps/chiller-bff/scripts/check-release-ready.js#L107,validated integer in [0|1]
+reasons,$.reasons[] (fallback: release-snapshot-latest.reasons[]),blocking,fail_closed_if_missing_or_not_array,yes,enforced,apps/chiller-bff/scripts/check-release-ready.js#L113,validated array of string
+advisories,$.advisories[] (fallback: release-snapshot-latest.advisories[]),advisory,fail_if_not_array,no,enforced,apps/chiller-bff/scripts/check-release-ready.js#L113,validated array of string
+diffClass,$.diffClass (fallback: release-snapshot-diff-latest.diffClass),advisory,fail_if_missing_or_invalid_enum,no,enforced,apps/chiller-bff/scripts/check-release-ready.js#L97,validated enum set
+verifyGatesOk,$.verifyGatesOk (fallback: null),blocking_semantic,currently_not_enforced_by_check,yes,not_enforced,apps/chiller-bff/scripts/check-release-ready.js#L78,present in payload semantics but not validated in current checker
+consistencyOk,$.consistencyOk (fallback: release-snapshot-consistency-latest.decision==GO or null),blocking_semantic,currently_not_enforced_by_check,yes,not_enforced,apps/chiller-bff/scripts/check-release-ready.js#L77,present in payload semantics but not validated in current checker
+rule,release-ready-latest-check_aliases_release-ready-check,N/A,N/A,no,N/A,scripts/chiller_ctl.sh#L1923-L1930,both dispatch release_ready_check_cmd

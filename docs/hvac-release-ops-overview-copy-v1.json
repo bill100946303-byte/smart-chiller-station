@@ -1,0 +1,212 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-release-ops-overview-copy-v1",
+  "scope": "release ops overview duty copy",
+  "fieldScope": {
+    "required": [
+      "decision",
+      "exitCode",
+      "reasons[]",
+      "source",
+      "consistencyOk",
+      "generatedAt"
+    ],
+    "sourceWhitelist": [
+      "live",
+      "latest_file",
+      "sync_latest",
+      "canonical",
+      "release_ready_latest"
+    ]
+  },
+  "priorityOrder": [
+    "blocked",
+    "review_required",
+    "ready"
+  ],
+  "classes": [
+    {
+      "id": "ready",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "blocked",
+          "review_required"
+        ],
+        "conditions": [
+          "decision == 'GO'",
+          "exitCode == 0",
+          "reasons.length == 0",
+          "consistencyOk == true",
+          "source in ['live','latest_file','sync_latest','canonical','release_ready_latest']",
+          "generatedAt exists and generatedAt != ''"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "放行总览就绪",
+          "sub": "主信号一致"
+        },
+        "en": {
+          "main": "Release Ops Ready",
+          "sub": "Core signals aligned"
+        },
+        "vi": {
+          "main": "Tong quan phat hanh san sang",
+          "sub": "Tin hieu chinh da dong nhat"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Release Ops 总卡片：READY",
+          "sub": "主决策为 GO，来源可信，一致性正常，当前可按标准流程推进发布。"
+        },
+        "en": {
+          "main": "Release Ops Overview: READY",
+          "sub": "Core decision is GO, source is trusted, and consistency is healthy, so release can proceed by standard flow."
+        },
+        "vi": {
+          "main": "Tong quan Release Ops: READY",
+          "sub": "Quyet dinh chinh la GO, nguon tin cay va tinh nhat quan binh thuong, co the tiep tuc theo quy trinh chuan."
+        }
+      },
+      "firstAction": {
+        "zh": "先确认发布窗口，再执行正式放行并同步值班结论。",
+        "en": "Confirm release window first, then execute formal release and sync the duty conclusion.",
+        "vi": "Xac nhan cua so phat hanh truoc, sau do phat hanh chinh thuc va dong bo ket luan truc."
+      },
+      "sourceSubcopy": {
+        "zh": "source 正常且 generatedAt 存在，来源链路可用于当前值班判断。",
+        "en": "Source is valid and generatedAt is present, so the source chain is usable for duty judgment.",
+        "vi": "Source hop le va generatedAt ton tai, nen co the dung chuoi nguon cho phan doan truc."
+      },
+      "consistencySubcopy": {
+        "zh": "consistencyOk=true，release-ready 与 consistency 口径未见冲突。",
+        "en": "consistencyOk=true, so release-ready and consistency signals are not conflicting.",
+        "vi": "consistencyOk=true, nen release-ready va tin hieu consistency khong xung dot."
+      }
+    },
+    {
+      "id": "blocked",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "decision == 'NO-GO'",
+          "exitCode == 1",
+          "reasons.length > 0",
+          "consistencyOk == false"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "放行总览阻断",
+          "sub": "禁止直接发布"
+        },
+        "en": {
+          "main": "Release Ops Blocked",
+          "sub": "Do not release now"
+        },
+        "vi": {
+          "main": "Tong quan phat hanh bi chan",
+          "sub": "Khong duoc phat hanh luc nay"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Release Ops 总卡片：BLOCKED",
+          "sub": "当前存在阻断信号，或一致性未通过，必须先停发再复核。"
+        },
+        "en": {
+          "main": "Release Ops Overview: BLOCKED",
+          "sub": "There is a blocking signal or failed consistency, so release must be held before review."
+        },
+        "vi": {
+          "main": "Tong quan Release Ops: BLOCKED",
+          "sub": "Dang co tin hieu chan hoac consistency that bai, can tam dung phat hanh truoc khi ra soat."
+        }
+      },
+      "firstAction": {
+        "zh": "先处理首个 reason 或一致性冲突，再重跑 latest-check 与 consistency 校验。",
+        "en": "Resolve the first reason or consistency conflict first, then rerun latest-check and consistency validation.",
+        "vi": "Xu ly reason dau tien hoac xung dot consistency truoc, sau do chay lai latest-check va kiem tra consistency."
+      },
+      "sourceSubcopy": {
+        "zh": "即使 source 正常，阻断信号仍优先；若 source 异常，待阻断项清零后再补复核。",
+        "en": "Even with a normal source, blockers still take priority; if source is abnormal, review it after blockers are cleared.",
+        "vi": "Ngay ca khi source binh thuong, blocker van uu tien; neu source bat thuong, hay ra soat sau khi da xu ly blocker."
+      },
+      "consistencySubcopy": {
+        "zh": "consistencyOk=false 时按高风险处理，禁止依据单一卡片直接对外放行。",
+        "en": "When consistencyOk=false, treat it as high risk and do not release based on a single card.",
+        "vi": "Khi consistencyOk=false, can xem la rui ro cao va khong duoc phat hanh chi dua tren mot the duy nhat."
+      }
+    },
+    {
+      "id": "review_required",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "blocked"
+        ],
+        "conditions": [
+          "decision == 'GO'",
+          "exitCode == 0",
+          "reasons.length == 0",
+          "consistencyOk == true",
+          "source missing OR source not_in ['live','latest_file','sync_latest','canonical','release_ready_latest'] OR generatedAt is missing OR generatedAt == ''"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "放行总览待复核",
+          "sub": "来源或时间待确认"
+        },
+        "en": {
+          "main": "Release Ops Review",
+          "sub": "Source or timestamp needs review"
+        },
+        "vi": {
+          "main": "Tong quan phat hanh can ra soat",
+          "sub": "Can xac nhan nguon hoac moc thoi gian"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Release Ops 总卡片：REVIEW_REQUIRED",
+          "sub": "主决策为 GO 且一致性正常，但来源字段或时间戳不足以支持直接发布，需人工复核。"
+        },
+        "en": {
+          "main": "Release Ops Overview: REVIEW_REQUIRED",
+          "sub": "Core decision is GO and consistency is fine, but source field or timestamp is not strong enough for direct release."
+        },
+        "vi": {
+          "main": "Tong quan Release Ops: REVIEW_REQUIRED",
+          "sub": "Quyet dinh chinh la GO va consistency binh thuong, nhung truong nguon hoac moc thoi gian chua du de phat hanh truc tiep."
+        }
+      },
+      "firstAction": {
+        "zh": "先核对 source 与 generatedAt，再决定是否进入正式放行。",
+        "en": "Verify source and generatedAt first, then decide whether to enter formal release.",
+        "vi": "Kiem tra source va generatedAt truoc, sau do moi quyet dinh co vao buoc phat hanh chinh thuc hay khong."
+      },
+      "sourceSubcopy": {
+        "zh": "source 异常或 generatedAt 缺失更像证据不足，不等于系统故障。",
+        "en": "Abnormal source or missing generatedAt usually means insufficient evidence, not necessarily a system fault.",
+        "vi": "Source bat thuong hoac thieu generatedAt thuong la do bang chung chua du, khong nhat thiet la loi he thong."
+      },
+      "consistencySubcopy": {
+        "zh": "consistencyOk=true 仅表示口径一致，不能替代 source/generatedAt 的复核。",
+        "en": "consistencyOk=true only means the signals agree; it does not replace source/generatedAt review.",
+        "vi": "consistencyOk=true chi co nghia la cac tin hieu dong nhat; no khong the thay the viec ra soat source/generatedAt."
+      }
+    }
+  ],
+  "fallback": {
+    "whenNoClassMatched": "review_required"
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

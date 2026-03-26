@@ -1,0 +1,34 @@
+@font-face {
+  font-family: 'UnidreamLED';
+  src: url('./UnidreamLED.ttf');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'DIN Condensed';
+  src: url('./DIN Condensed Bold.ttf');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Impact';
+  src: url('./Impact.ttf');
+  font-weight: normal;
+  font-style: normal;
+}
+
+
+@font-face {
+  font-family: 'Orbitron';
+  src: url('./Orbitron-Bold.ttf');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Agency FB';
+  src: url('./AgencyFB.ttf');
+  font-weight: normal;
+  font-style: normal;
+}

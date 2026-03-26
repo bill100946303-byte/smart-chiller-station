@@ -1,0 +1,113 @@
+{
+  "generatedAt": "2026-03-24T17:24:12.408Z",
+  "sourceReadinessReport": "/tmp/chiller_readiness_report.json",
+  "rule": "badge_result_must_come_from_backend_readiness_only",
+  "global": {
+    "pass": true,
+    "text": {
+      "zh-CN": "非降级态：通过",
+      "en-US": "Non-Degraded: PASS",
+      "vi-VN": "Phi suy giảm: Đạt"
+    }
+  },
+  "pages": {
+    "dashboard": {
+      "pass": true,
+      "text": {
+        "zh-CN": "非降级态：通过",
+        "en-US": "Non-Degraded: PASS",
+        "vi-VN": "Phi suy giảm: Đạt"
+      }
+    },
+    "systemOverview": {
+      "pass": true,
+      "text": {
+        "zh-CN": "非降级态：通过",
+        "en-US": "Non-Degraded: PASS",
+        "vi-VN": "Phi suy giảm: Đạt"
+      }
+    }
+  },
+  "evidence": {
+    "attribution": "none",
+    "ndFailedCount": 0,
+    "m123": {
+      "dashboard": {
+        "M1": {
+          "value": "0/4",
+          "threshold": "<=0/4",
+          "pass": true
+        },
+        "M2": {
+          "value": 0,
+          "threshold": "0",
+          "pass": true
+        },
+        "M3": {
+          "value": "3/3 (100.0%)",
+          "threshold": ">=80% and non_empty_series>=2",
+          "pass": true,
+          "detail": {
+            "nonEmptySeries": 3,
+            "metrics": [
+              {
+                "metric": "totalPowerKw",
+                "validPointCount": 2,
+                "pass": true
+              },
+              {
+                "metric": "currentCop",
+                "validPointCount": 144,
+                "pass": true
+              },
+              {
+                "metric": "chilledDeltaT",
+                "validPointCount": 144,
+                "pass": true
+              }
+            ]
+          }
+        },
+        "pass": true
+      },
+      "systemOverview": {
+        "M1": {
+          "value": "0/1",
+          "threshold": "<=0/1",
+          "pass": true
+        },
+        "M2": {
+          "value": 0,
+          "threshold": "0",
+          "pass": true
+        },
+        "M3": {
+          "value": "3/3 (100.0%)",
+          "threshold": ">=80% (chain proxy)",
+          "pass": true,
+          "detail": {
+            "nonEmptySeries": 3,
+            "metrics": [
+              {
+                "metric": "totalPowerKw",
+                "validPointCount": 2,
+                "pass": true
+              },
+              {
+                "metric": "currentCop",
+                "validPointCount": 144,
+                "pass": true
+              },
+              {
+                "metric": "chilledDeltaT",
+                "validPointCount": 144,
+                "pass": true
+              }
+            ]
+          }
+        },
+        "pass": true
+      }
+    }
+  }
+}

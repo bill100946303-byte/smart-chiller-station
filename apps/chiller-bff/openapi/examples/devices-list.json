@@ -1,0 +1,59 @@
+{
+  "site": {
+    "siteId": "126lnoffice",
+    "siteName": "126lnoffice"
+  },
+  "generatedAt": "2026-03-14T13:05:00.000Z",
+  "items": [
+    {
+      "deviceId": "19",
+      "deviceCode": "BGS01",
+      "deviceName": "办公室01",
+      "systemType": "other",
+      "floorName": "10楼",
+      "buildingName": "6期1栋",
+      "usageType": "风机盘管",
+      "iconPath": "/imgs/126lnoffice/Device/7ff68ac3eb2346a29162853f018e7a2c.png",
+      "status": "unknown",
+      "lastReportAt": null
+    },
+    {
+      "deviceId": "20",
+      "deviceCode": "BGS02",
+      "deviceName": "办公室02",
+      "systemType": "other",
+      "floorName": "10楼",
+      "buildingName": "6期1栋",
+      "usageType": "风机盘管",
+      "iconPath": "/imgs/126lnoffice/Device/7ff68ac3eb2346a29162853f018e7a2c.png",
+      "status": "unknown",
+      "lastReportAt": null
+    }
+  ],
+  "page": 1,
+  "pageSize": 12,
+  "total": 59,
+  "filters": {
+    "type": null,
+    "floor": null
+  },
+  "freshness": {
+    "latestTimestamp": "2026-03-14T13:05:00.000Z",
+    "stale": false,
+    "ageHours": 0
+  },
+  "sourceStatus": {
+    "overall": "ok",
+    "sources": [
+      {
+        "key": "devices",
+        "endpoint": "/zsqy/drinfo/126lnoffice/findObject?pageCurrent=1&pageSize=200",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "rows": 59,
+        "error": null
+      }
+    ]
+  }
+}

@@ -1,0 +1,1508 @@
+openapi: 3.0.3
+info:
+  title: Chiller BFF API
+  version: 1.0.1
+  description: |
+    Contract for Chiller 2.0 BFF aggregation APIs.
+    P0 routes are fully specified for FE/BE integration:
+    - dashboard/overview
+    - dashboard/trends
+    - anomalies/summary
+    - anomalies/list
+servers:
+  - url: http://127.0.0.1:8787
+tags:
+  - name: Health
+  - name: Dashboard
+  - name: Anomalies
+  - name: Devices
+  - name: System
+  - name: Recommendations
+paths:
+  /healthz:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: getHealthz
+      responses:
+        "200":
+          description: Service health
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthzResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /bff/v1/sites/{siteId}/dashboard/overview:
+    get:
+      tags: [Dashboard]
+      summary: Dashboard overview aggregate
+      operationId: getDashboardOverview
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+      responses:
+        "200":
+          description: Dashboard overview payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardOverviewResponse"
+              examples:
+                default:
+                  summary: P0 dashboard overview example
+                  externalValue: ./examples/dashboard-overview.json
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+  /bff/v1/sites/{siteId}/dashboard/trends:
+    get:
+      tags: [Dashboard]
+      summary: Dashboard trend series aggregate
+      operationId: getDashboardTrends
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/RangeQueryParam"
+      responses:
+        "200":
+          description: Dashboard trends payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardTrendsResponse"
+              examples:
+                default:
+                  summary: P0 dashboard trends example
+                  externalValue: ./examples/dashboard-trends.json
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+  /bff/v1/sites/{siteId}/anomalies/summary:
+    get:
+      tags: [Anomalies]
+      summary: Anomaly summary aggregate
+      operationId: getAnomaliesSummary
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+      responses:
+        "200":
+          description: Anomalies summary payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnomaliesSummaryResponse"
+              examples:
+                default:
+                  summary: P0 anomalies summary example
+                  externalValue: ./examples/anomalies-summary.json
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+  /bff/v1/sites/{siteId}/anomalies/list:
+    get:
+      tags: [Anomalies]
+      summary: Anomaly list aggregate
+      operationId: getAnomaliesList
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - name: page
+          in: query
+          required: false
+          description: 1-based page index.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          description: Number of rows per page.
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
+        - name: severity
+          in: query
+          required: false
+          description: Severity filter for the final alarm taxonomy.
+          schema:
+            type: string
+            enum: [critical, major, minor, normal]
+        - name: state
+          in: query
+          required: false
+          description: Optional legacy alarm state filter.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Anomalies list payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnomaliesListResponse"
+              examples:
+                default:
+                  summary: Sprint1 anomalies list example
+                  externalValue: ./examples/anomalies-list.json
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+  /bff/v1/sites/{siteId}/system/topology:
+    get:
+      tags: [System]
+      summary: Static system topology aggregate
+      operationId: getSystemTopology
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+      responses:
+        "200":
+          description: System topology payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemTopologyResponse"
+              examples:
+                default:
+                  summary: System topology example
+                  externalValue: ./examples/system-topology.json
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+  /bff/v1/sites/{siteId}/system/diagram:
+    get:
+      tags: [System]
+      summary: System diagram aggregate
+      operationId: getSystemDiagram
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/LayoutModeQueryParam"
+        - $ref: "#/components/parameters/ScopeQueryParam"
+      responses:
+        "200":
+          description: System diagram payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemDiagramResponse"
+              examples:
+                default:
+                  summary: System diagram example
+                  externalValue: ./examples/system-diagram.json
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+  /bff/v1/sites/{siteId}/devices/list:
+    get:
+      tags: [Devices]
+      summary: Device list aggregate
+      operationId: getDevicesList
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - name: page
+          in: query
+          required: false
+          description: 1-based page index.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          description: Number of rows per page.
+          schema:
+            type: integer
+            minimum: 1
+            default: 12
+        - name: type
+          in: query
+          required: false
+          description: Optional system type filter.
+          schema:
+            type: string
+            enum: [chiller, chilledPump, coolingPump, coolingTower, other]
+        - name: floor
+          in: query
+          required: false
+          description: Optional floor filter.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Device list payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevicesListResponse"
+              examples:
+                default:
+                  summary: Sprint1 devices list example
+                  externalValue: ./examples/devices-list.json
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+  /bff/v1/sites/{siteId}/devices/tree:
+    get:
+      tags: [Devices]
+      summary: Device tree aggregate
+      operationId: getDevicesTree
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - name: build
+          in: query
+          required: false
+          description: Legacy building selector for tree source.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: floor
+          in: query
+          required: false
+          description: Legacy floor selector for tree source.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+      responses:
+        "200":
+          description: Device tree payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevicesTreeResponse"
+              examples:
+                default:
+                  summary: Sprint2 devices tree example
+                  externalValue: ./examples/devices-tree.json
+                degraded:
+                  summary: Sprint2 devices tree degraded example
+                  externalValue: ./examples/devices-tree-degraded.json
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+  /bff/v1/sites/{siteId}/devices/{deviceId}:
+    get:
+      tags: [Devices]
+      summary: Device detail aggregate
+      operationId: getDeviceDetail
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - name: deviceId
+          in: path
+          required: true
+          description: Device identifier from devices/list or devices/tree.
+          schema:
+            type: string
+            minLength: 1
+        - name: build
+          in: query
+          required: false
+          description: Legacy building selector for detail tree source.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: floor
+          in: query
+          required: false
+          description: Legacy floor selector for detail tree source.
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+      responses:
+        "200":
+          description: Device detail payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceDetailResponse"
+              examples:
+                default:
+                  summary: Sprint2 device detail example
+                  externalValue: ./examples/device-detail.json
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+  /bff/v1/sites/{siteId}/recommendations:
+    get:
+      tags: [Recommendations]
+      summary: Recommendation cards aggregate
+      operationId: getRecommendations
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+      responses:
+        "200":
+          description: Recommendations payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecommendationsResponse"
+              examples:
+                default:
+                  summary: Recommendations example
+                  externalValue: ./examples/recommendations.json
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+components:
+  parameters:
+    SiteIdPathParam:
+      name: siteId
+      in: path
+      required: true
+      description: Site identifier, same as legacy dbName, e.g. 126lnoffice.
+      schema:
+        type: string
+        minLength: 1
+    RangeQueryParam:
+      name: range
+      in: query
+      required: false
+      description: Time range key for trends.
+      schema:
+        type: string
+        enum: [24h, 7d, 30d]
+        default: 24h
+    LayoutModeQueryParam:
+      name: layoutMode
+      in: query
+      required: false
+      description: Layout mode for system diagram rendering.
+      schema:
+        type: string
+        enum: [auto, fixed]
+        default: auto
+    ScopeQueryParam:
+      name: scope
+      in: query
+      required: false
+      description: Diagram scope level.
+      schema:
+        type: string
+        enum: [main_loop, full]
+        default: full
+
+  responses:
+    BadRequestError:
+      description: Invalid request parameter or malformed query.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            code: BAD_REQUEST
+            error: "Invalid range value: 90d"
+            requestId: "req-20260311-0001"
+            details:
+              field: range
+    NotFoundError:
+      description: Site not found.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            code: NOT_FOUND
+            error: "Site not found: missing-site"
+            requestId: "req-20260311-0002"
+    UpstreamError:
+      description: Upstream legacy endpoint failure.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            code: UPSTREAM_ERROR
+            error: "Legacy request failed"
+            requestId: "req-20260311-0003"
+            sourceStatus:
+              overall: failed
+              sources:
+                - key: energy
+                  endpoint: "/zsqy/homepage/126lnoffice/getEnergyStatisticsCurve"
+                  ok: false
+                  status: 500
+                  message: null
+                  error: "Legacy request failed: 500"
+                  rows: null
+    InternalError:
+      description: BFF internal unhandled error.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            code: INTERNAL_ERROR
+            error: "Unhandled error"
+            requestId: "req-20260311-0004"
+
+  schemas:
+    HealthzResponse:
+      type: object
+      required: [ok, service, port, legacyBaseUrl]
+      properties:
+        ok:
+          type: boolean
+        service:
+          type: string
+        port:
+          type: integer
+        legacyBaseUrl:
+          type: string
+
+    SiteRef:
+      type: object
+      required: [siteId, siteName]
+      properties:
+        siteId:
+          type: string
+        siteName:
+          type: string
+
+    Freshness:
+      type: object
+      description: Unified freshness metadata for all aggregation payloads.
+      required: [latestTimestamp, stale, ageHours]
+      properties:
+        latestTimestamp:
+          type: string
+          format: date-time
+          nullable: true
+        stale:
+          type: boolean
+        ageHours:
+          type: number
+          format: double
+          nullable: true
+
+    SourceEndpointStatus:
+      type: object
+      required: [key, endpoint, ok, status, message, error, rows]
+      properties:
+        key:
+          type: string
+          description: Stable source key used by the BFF contract. Frontend should map localized text by key first (not by message). For metric-level recommendation sources, key must be metric.<snake_case> (for example metric.station_total_power_kw). For non-metric sources, use stable adapter keys such as energyCurve/latestAlarmLog/ruleMetrics. If client receives non-contract payload with missing key, fallback to endpoint only as a temporary UI label and report contract drift.
+          pattern: "^(metric\\.[a-z0-9_]+|[A-Za-z][A-Za-z0-9._-]*)$"
+          example: metric.station_total_power_kw
+        endpoint:
+          type: string
+        ok:
+          type: boolean
+        status:
+          type: integer
+          nullable: true
+          description: Upstream HTTP status when available. Use null when upstream is unreachable or no HTTP status is available (for example timeout/network/parser failure). When value is >=500, treat as upstream service failure.
+        message:
+          type: string
+          nullable: true
+          description: Optional non-localized adapter detail. Frontend should treat this as secondary detail and avoid direct rendering as the primary localized text.
+        error:
+          type: string
+          nullable: true
+        rows:
+          type: integer
+          nullable: true
+
+    SourceStatus:
+      type: object
+      description: Unified source status for all aggregation payloads.
+      required: [overall, sources]
+      properties:
+        overall:
+          type: string
+          enum: [ok, partial, failed]
+        sources:
+          type: array
+          minItems: 0
+          description: Per-source status list. Empty array means no upstream source participated for this payload.
+          items:
+            $ref: "#/components/schemas/SourceEndpointStatus"
+
+    ErrorResponse:
+      type: object
+      required: [ok, code, error]
+      properties:
+        ok:
+          type: boolean
+          enum: [false]
+        code:
+          type: string
+          enum: [BAD_REQUEST, NOT_FOUND, UPSTREAM_ERROR, INTERNAL_ERROR]
+        error:
+          type: string
+        requestId:
+          type: string
+          nullable: true
+        details:
+          type: object
+          nullable: true
+          additionalProperties: true
+        freshness:
+          allOf:
+            - $ref: "#/components/schemas/Freshness"
+          nullable: true
+        sourceStatus:
+          allOf:
+            - $ref: "#/components/schemas/SourceStatus"
+          nullable: true
+
+    OverviewEnergyCards:
+      type: object
+      required:
+        - currentCop
+        - totalPowerKw
+        - currentLoadRate
+        - totalElectricityKwh
+        - savingPotentialPct
+        - activeAnomalyCount
+        - chilledDeltaT
+        - coolingDeltaT
+      properties:
+        currentCop:
+          type: number
+          format: double
+          nullable: true
+        totalPowerKw:
+          type: number
+          format: double
+          nullable: true
+        currentLoadRate:
+          type: number
+          format: double
+          nullable: true
+        totalElectricityKwh:
+          type: number
+          format: double
+          nullable: true
+        savingPotentialPct:
+          type: number
+          format: double
+          nullable: true
+        activeAnomalyCount:
+          type: integer
+          nullable: true
+        chilledDeltaT:
+          type: number
+          format: double
+          nullable: true
+        coolingDeltaT:
+          type: number
+          format: double
+          nullable: true
+
+    DeviceSummary:
+      type: object
+      required:
+        - totalDevices
+        - chillerCount
+        - chilledPumpCount
+        - coolingPumpCount
+        - coolingTowerCount
+      properties:
+        totalDevices:
+          type: integer
+        chillerCount:
+          type: integer
+        chilledPumpCount:
+          type: integer
+        coolingPumpCount:
+          type: integer
+        coolingTowerCount:
+          type: integer
+
+    AlarmCounts:
+      type: object
+      required: [total, high, medium, low]
+      properties:
+        total:
+          type: integer
+        high:
+          type: integer
+        medium:
+          type: integer
+        low:
+          type: integer
+
+    AnomalyCounts:
+      type: object
+      required: [total, critical, major, minor, normal]
+      properties:
+        total:
+          type: integer
+        critical:
+          type: integer
+        major:
+          type: integer
+        minor:
+          type: integer
+        normal:
+          type: integer
+
+    DashboardOverviewResponse:
+      type: object
+      required: [site, generatedAt, energyCards, deviceSummary, alarmSummary, freshness, sourceStatus]
+      properties:
+        site:
+          $ref: "#/components/schemas/SiteRef"
+        generatedAt:
+          type: string
+          format: date-time
+        energyCards:
+          $ref: "#/components/schemas/OverviewEnergyCards"
+        deviceSummary:
+          allOf:
+            - $ref: "#/components/schemas/DeviceSummary"
+          nullable: true
+        alarmSummary:
+          $ref: "#/components/schemas/AlarmCounts"
+        freshness:
+          $ref: "#/components/schemas/Freshness"
+        sourceStatus:
+          $ref: "#/components/schemas/SourceStatus"
+
+    TrendPoint:
+      type: object
+      required: [t, v]
+      properties:
+        t:
+          type: string
+          format: date-time
+        v:
+          type: number
+          format: double
+          nullable: true
+
+    TrendSeries:
+      type: object
+      required: [metric, label, points]
+      properties:
+        metric:
+          type: string
+        label:
+          type: string
+        points:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrendPoint"
+
+    TrendStats:
+      type: object
+      required: [metric, latest, min, max]
+      properties:
+        metric:
+          type: string
+        latest:
+          type: number
+          format: double
+          nullable: true
+        min:
+          type: number
+          format: double
+          nullable: true
+        max:
+          type: number
+          format: double
+          nullable: true
+
+    DashboardTrendsResponse:
+      type: object
+      required: [site, generatedAt, range, series, stats, freshness, sourceStatus]
+      properties:
+        site:
+          $ref: "#/components/schemas/SiteRef"
+        generatedAt:
+          type: string
+          format: date-time
+        range:
+          type: string
+          enum: [24h, 7d, 30d]
+        series:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrendSeries"
+        stats:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrendStats"
+        freshness:
+          $ref: "#/components/schemas/Freshness"
+        sourceStatus:
+          $ref: "#/components/schemas/SourceStatus"
+
+    AnomalyEvent:
+      type: object
+      required: [id, title, severity, occurredAt, source]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        severity:
+          type: string
+          enum: [critical, major, minor, normal]
+        state:
+          type: string
+          nullable: true
+        occurredAt:
+          type: string
+          format: date-time
+          nullable: true
+        source:
+          type: string
+        regId:
+          type: string
+          nullable: true
+        value:
+          type: string
+          nullable: true
+
+    DiagnosisFlags:
+      type: object
+      required: [staleAlarmFeed, missingHighSeverity]
+      properties:
+        staleAlarmFeed:
+          type: boolean
+        missingHighSeverity:
+          type: boolean
+
+    AnomaliesSummaryResponse:
+      type: object
+      required: [site, generatedAt, counts, latestEvents, diagnosisFlags, freshness, sourceStatus]
+      properties:
+        site:
+          $ref: "#/components/schemas/SiteRef"
+        generatedAt:
+          type: string
+          format: date-time
+        counts:
+          $ref: "#/components/schemas/AnomalyCounts"
+        latestEvents:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnomalyEvent"
+        diagnosisFlags:
+          $ref: "#/components/schemas/DiagnosisFlags"
+        freshness:
+          $ref: "#/components/schemas/Freshness"
+        sourceStatus:
+          $ref: "#/components/schemas/SourceStatus"
+
+    AnomaliesListResponse:
+      type: object
+      required: [site, generatedAt, items, page, pageSize, total, filters, freshness, sourceStatus]
+      properties:
+        site:
+          $ref: "#/components/schemas/SiteRef"
+        generatedAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnomalyEvent"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+        filters:
+          type: object
+          required: [severity, state]
+          properties:
+            severity:
+              type: string
+              enum: [critical, major, minor, normal]
+              nullable: true
+            state:
+              type: string
+              nullable: true
+        freshness:
+          $ref: "#/components/schemas/Freshness"
+        sourceStatus:
+          $ref: "#/components/schemas/SourceStatus"
+
+    RecommendationCard:
+      type: object
+      required:
+        - id
+        - title
+        - priority
+        - category
+        - reason
+        - evidence
+        - actions
+        - relatedDevices
+        - severity
+        - risk
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        priority:
+          type: string
+          enum: [high, medium, low]
+        category:
+          type: string
+        reason:
+          type: string
+        evidence:
+          type: array
+          items:
+            type: string
+        actions:
+          type: array
+          items:
+            type: string
+        relatedDevices:
+          type: array
+          items:
+            type: string
+        severity:
+          type: string
+          enum: [critical, major, minor]
+        risk:
+          type: string
+          enum: [high, medium, low]
+        ruleId:
+          type: string
+          nullable: true
+
+    RecommendationSummary:
+      type: object
+      required: [total, highRisk, criticalSeverity]
+      properties:
+        total:
+          type: integer
+        highRisk:
+          type: integer
+        criticalSeverity:
+          type: integer
+
+    RuleEvaluation:
+      type: object
+      required:
+        - rulesLoaded
+        - error
+        - ruleSetId
+        - version
+        - totalEnabledRules
+        - matchedRuleIds
+        - skippedRuleIds
+        - skippedRuleDetails
+        - missingMetricPolicy
+      properties:
+        rulesLoaded:
+          type: boolean
+        error:
+          type: string
+          nullable: true
+        ruleSetId:
+          type: string
+          nullable: true
+        version:
+          type: string
+          nullable: true
+        totalEnabledRules:
+          type: integer
+        matchedRuleIds:
+          type: array
+          items:
+            type: string
+        skippedRuleIds:
+          type: array
+          items:
+            type: string
+        skippedRuleDetails:
+          type: array
+          items:
+            $ref: "#/components/schemas/SkippedRuleDetail"
+        missingMetricPolicy:
+          type: string
+          nullable: true
+
+    SkippedRuleMissingMetric:
+      type: object
+      required: [metric, category]
+      properties:
+        metric:
+          type: string
+        category:
+          type: string
+          description: Stable missing-metric category for frontend localization mapping.
+          enum: [upstream_unreachable, field_missing_or_invalid, unknown]
+        message:
+          type: string
+          nullable: true
+          description: Optional raw detail string. Frontend should render localized copy by category and use message only as extra diagnostic detail.
+
+    SkippedRuleDetail:
+      type: object
+      required: [ruleId, reason, missingMetrics]
+      properties:
+        ruleId:
+          type: string
+        reason:
+          type: string
+        missingMetrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/SkippedRuleMissingMetric"
+
+    RecommendationsResponse:
+      type: object
+      required: [site, generatedAt, summary, cards, ruleEvaluation, sourceStatus]
+      properties:
+        site:
+          $ref: "#/components/schemas/SiteRef"
+        generatedAt:
+          type: string
+          format: date-time
+        summary:
+          $ref: "#/components/schemas/RecommendationSummary"
+        cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecommendationCard"
+        ruleEvaluation:
+          $ref: "#/components/schemas/RuleEvaluation"
+        sourceStatus:
+          $ref: "#/components/schemas/SourceStatus"
+
+    TopologyGroup:
+      type: object
+      required: [id, name, type, floor]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        floor:
+          type: string
+
+    TopologyNode:
+      type: object
+      required: [id, label, count, downstream]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        count:
+          type: integer
+          nullable: true
+        downstream:
+          type: string
+          nullable: true
+
+    SystemTopologyResponse:
+      type: object
+      required: [site, generatedAt, summary, groups, nodes, sourceStatus]
+      properties:
+        site:
+          $ref: "#/components/schemas/SiteRef"
+        generatedAt:
+          type: string
+          format: date-time
+        summary:
+          $ref: "#/components/schemas/DeviceSummary"
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopologyGroup"
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/TopologyNode"
+        sourceStatus:
+          $ref: "#/components/schemas/SourceStatus"
+
+    DiagramPositionHint:
+      type: object
+      required: [row, column, lane, x, y, z, anchor]
+      properties:
+        row:
+          type: integer
+        column:
+          type: integer
+        lane:
+          type: string
+        x:
+          type: number
+          format: double
+        y:
+          type: number
+          format: double
+        z:
+          type: number
+          format: double
+        anchor:
+          type: string
+          enum: [left, center, right, top, bottom]
+
+    DiagramRotationHint:
+      type: object
+      required: [yaw, pitch, roll]
+      properties:
+        yaw:
+          type: number
+          format: double
+        pitch:
+          type: number
+          format: double
+        roll:
+          type: number
+          format: double
+
+    DiagramStatusSummary:
+      type: object
+      required: [runStatus, alarmStatus, degraded, latestUpdateAt]
+      properties:
+        runStatus:
+          type: string
+          enum: [run, stop, unknown]
+        alarmStatus:
+          type: string
+          enum: [normal, alarm, unknown]
+        degraded:
+          type: boolean
+        latestUpdateAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    DiagramRoutePoint:
+      type: object
+      required: [x, y, z]
+      properties:
+        x:
+          type: number
+          format: double
+        y:
+          type: number
+          format: double
+        z:
+          type: number
+          format: double
+
+    DiagramRouteHint:
+      type: object
+      required: [points]
+      properties:
+        points:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/DiagramRoutePoint"
+
+    SystemDiagramNode:
+      type: object
+      required:
+        [
+          id,
+          nodeType,
+          label,
+          systemType,
+          role,
+          group,
+          deviceIdRef,
+          deviceIds,
+          modelCategory,
+          positionHint,
+          rotationHint,
+          statusSummary
+        ]
+      properties:
+        id:
+          type: string
+        nodeType:
+          type: string
+          enum: [device, valve, header, load, sensor, virtual]
+        label:
+          type: string
+        systemType:
+          type: string
+          enum: [chiller, chilledPump, coolingPump, coolingTower, chilledValve, coolingValve, load, other]
+        role:
+          type: string
+          enum: [main, branch, return, bypass, header]
+        group:
+          type: string
+        deviceIdRef:
+          type: string
+          nullable: true
+        deviceIds:
+          type: array
+          items:
+            type: string
+        modelCategory:
+          type: string
+          enum: [chiller, pump, valve, coolingTower, load, other]
+        positionHint:
+          $ref: "#/components/schemas/DiagramPositionHint"
+        rotationHint:
+          $ref: "#/components/schemas/DiagramRotationHint"
+        statusSummary:
+          $ref: "#/components/schemas/DiagramStatusSummary"
+
+    SystemDiagramEdge:
+      type: object
+      required: [id, from, to, edgeType, pipeClass, routeHint]
+      properties:
+        id:
+          type: string
+        from:
+          type: string
+        to:
+          type: string
+        edgeType:
+          type: string
+          enum: [pipe, control, logical]
+        pipeClass:
+          type: string
+          enum: [chilled_supply, chilled_return, cooling_supply, cooling_return, bypass]
+        routeHint:
+          $ref: "#/components/schemas/DiagramRouteHint"
+
+    SystemDiagramGroup:
+      type: object
+      required: [id, label, groupType, nodeIds]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        groupType:
+          type: string
+          enum: [loop, cluster, zone]
+        nodeIds:
+          type: array
+          items:
+            type: string
+
+    SystemDiagramStats:
+      type: object
+      required: [totalNodes, totalEdges, deviceNodeCount, virtualNodeCount, degradedNodeCount]
+      properties:
+        totalNodes:
+          type: integer
+        totalEdges:
+          type: integer
+        deviceNodeCount:
+          type: integer
+        virtualNodeCount:
+          type: integer
+        degradedNodeCount:
+          type: integer
+
+    SystemDiagramResponse:
+      type: object
+      required:
+        [site, generatedAt, layoutMode, scope, freshness, sourceStatus, nodes, edges, groups, stats]
+      properties:
+        site:
+          $ref: "#/components/schemas/SiteRef"
+        generatedAt:
+          type: string
+          format: date-time
+        layoutMode:
+          type: string
+          enum: [auto, fixed]
+        scope:
+          type: string
+          enum: [main_loop, full]
+        freshness:
+          $ref: "#/components/schemas/Freshness"
+        sourceStatus:
+          $ref: "#/components/schemas/SourceStatus"
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/SystemDiagramNode"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/SystemDiagramEdge"
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/SystemDiagramGroup"
+        stats:
+          $ref: "#/components/schemas/SystemDiagramStats"
+
+    DeviceListItem:
+      type: object
+      required:
+        [deviceId, deviceCode, deviceName, systemType, floorName, buildingName, usageType, iconPath, status, lastReportAt]
+      properties:
+        deviceId:
+          type: string
+        deviceCode:
+          type: string
+        deviceName:
+          type: string
+        systemType:
+          type: string
+          enum: [chiller, chilledPump, coolingPump, coolingTower, other]
+        floorName:
+          type: string
+        buildingName:
+          type: string
+        usageType:
+          type: string
+        iconPath:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [online, offline, unknown]
+        lastReportAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    DevicesListResponse:
+      type: object
+      required: [site, generatedAt, items, page, pageSize, total, filters, freshness, sourceStatus]
+      properties:
+        site:
+          $ref: "#/components/schemas/SiteRef"
+        generatedAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeviceListItem"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+        filters:
+          type: object
+          required: [type, floor]
+          properties:
+            type:
+              type: string
+              enum: [chiller, chilledPump, coolingPump, coolingTower, other]
+              nullable: true
+            floor:
+              type: string
+              nullable: true
+        freshness:
+          $ref: "#/components/schemas/Freshness"
+        sourceStatus:
+          $ref: "#/components/schemas/SourceStatus"
+
+    DeviceTreeNode:
+      type: object
+      required:
+        [id, label, nodeType, parentId, deviceIdRef, deviceCode, deviceName, systemType, floorName, buildingName, status, lastReportAt, childCount, children]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        nodeType:
+          type: string
+          enum: [root, group, device, point]
+        parentId:
+          type: string
+          nullable: true
+        deviceIdRef:
+          type: string
+          nullable: true
+        deviceCode:
+          type: string
+          nullable: true
+        deviceName:
+          type: string
+          nullable: true
+        systemType:
+          type: string
+          enum: [chiller, chilledPump, coolingPump, coolingTower, other]
+          nullable: true
+        floorName:
+          type: string
+          nullable: true
+        buildingName:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [online, offline, unknown]
+        lastReportAt:
+          type: string
+          format: date-time
+          nullable: true
+        childCount:
+          type: integer
+        children:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeviceTreeNode"
+
+    DevicesTreeResponse:
+      type: object
+      required: [site, generatedAt, tree, filters, freshness, sourceStatus]
+      properties:
+        site:
+          $ref: "#/components/schemas/SiteRef"
+        generatedAt:
+          type: string
+          format: date-time
+        tree:
+          $ref: "#/components/schemas/DeviceTreeNode"
+          nullable: true
+        filters:
+          type: object
+          required: [build, floor]
+          properties:
+            build:
+              type: integer
+            floor:
+              type: integer
+        freshness:
+          $ref: "#/components/schemas/Freshness"
+        sourceStatus:
+          $ref: "#/components/schemas/SourceStatus"
+
+    DeviceDetail:
+      type: object
+      required:
+        [deviceId, deviceCode, deviceName, deviceTypeCode, deviceTypeName, floorName, buildingName, usageType, iconPath, isVirtual, runStatusText, alarmStatusText, latestUpdateAt, treeNodeType, treeChildCount, pointCount]
+      properties:
+        deviceId:
+          type: string
+        deviceCode:
+          type: string
+        deviceName:
+          type: string
+        deviceTypeCode:
+          type: string
+          nullable: true
+        deviceTypeName:
+          type: string
+          nullable: true
+        floorName:
+          type: string
+        buildingName:
+          type: string
+        usageType:
+          type: string
+        iconPath:
+          type: string
+          nullable: true
+        isVirtual:
+          type: boolean
+          nullable: true
+        runStatusText:
+          type: string
+          nullable: true
+        alarmStatusText:
+          type: string
+          nullable: true
+        latestUpdateAt:
+          type: string
+          format: date-time
+          nullable: true
+        treeNodeType:
+          type: string
+          enum: [root, group, device, point]
+          nullable: true
+        treeChildCount:
+          type: integer
+          nullable: true
+        pointCount:
+          type: integer
+          nullable: true
+
+    DeviceDetailResponse:
+      type: object
+      required: [site, generatedAt, detail, freshness, sourceStatus]
+      properties:
+        site:
+          $ref: "#/components/schemas/SiteRef"
+        generatedAt:
+          type: string
+          format: date-time
+        detail:
+          allOf:
+            - $ref: "#/components/schemas/DeviceDetail"
+          nullable: true
+        freshness:
+          $ref: "#/components/schemas/Freshness"
+        sourceStatus:
+          $ref: "#/components/schemas/SourceStatus"

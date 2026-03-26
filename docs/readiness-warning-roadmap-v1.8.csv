@@ -1,0 +1,9 @@
+warning_id,source_check_id,metric,dimension,current_status,tier,owner,scope,objective,acceptance
+W-001,NDC-009,station_total_power_kw,compare_constraint,warning-open,P1,shell,cross-site compare,"为 station_total_power_kw 增加 comparability guard（时间窗/采样频率/缺失策略/错误分类一致）","存在 compareMode=crossSite 且条件不满足时，阻断横向结论并输出标准提示文案"
+W-002,NDC-010,chilled_delta_t_c,compare_constraint,warning-open,P1,shell,cross-site compare,"为 chilled_delta_t_c 增加 comparability guard","compareMode=crossSite 时必须通过 guard；未通过仅显示'不可直接比较'"
+W-003,NDC-011,cooling_delta_t_c,compare_constraint,warning-open,P1,shell,cross-site compare,"为 cooling_delta_t_c 增加 comparability guard","compareMode=crossSite 时 guard 生效；不可比样本不进入排名/结论"
+W-004,NDC-005,station_total_power_kw,unit_consistency,warning-open,P2,bff,readiness gate,"将 station_total_power_kw 单位一致性（kW）纳入 readiness 门禁","readiness 检查包含 unit gate，单位不一致触发 warning 并可追踪"
+W-005,NDC-006,chilled_delta_t_c,unit_consistency,warning-open,P2,bff,readiness gate,"将 chilled_delta_t_c 单位一致性（℃/degC）纳入 readiness 门禁","unit gate 校验通过；异常时输出 owner=bff 的 fail/warn 记录"
+W-006,NDC-007,cooling_delta_t_c,unit_consistency,warning-open,P2,bff,readiness gate,"将 cooling_delta_t_c 单位一致性（℃/degC）纳入 readiness 门禁","unit gate 校验通过；异常时可定位到具体字段"
+W-007,NDC-008,station_cop,unit_consistency,warning-open,P2,bff,readiness gate,"将 station_cop 单位一致性（无量纲 -）纳入 readiness 门禁","station_cop unit gate 通过；禁止展示非'-'单位"
+W-008,NDC-012,core_4_metrics,i18n_completeness,warning-open,P2,shell,ui regression gate,"为 core4 增加 readiness 层三语完整性回归钩子","displayName/unitDisplay/shortHint zh/en/vi 缺任一项即触发 warning"

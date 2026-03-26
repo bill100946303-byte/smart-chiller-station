@@ -1,0 +1,172 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-release-ready-latest-check-copy-v1",
+  "scope": "release-ready-latest-check voice copy",
+  "fieldScope": {
+    "required": [
+      "decision",
+      "exitCode",
+      "reasons[]",
+      "advisories[]"
+    ]
+  },
+  "priorityOrder": [
+    "check_blocked",
+    "check_review_required",
+    "check_ready"
+  ],
+  "classes": [
+    {
+      "id": "check_ready",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "check_blocked",
+          "check_review_required"
+        ],
+        "conditions": [
+          "decision == 'GO'",
+          "exitCode == 0",
+          "reasons.length == 0",
+          "advisories.length == 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "最新检查就绪",
+          "sub": "可直接放行",
+          "firstAction": "按窗口执行发布"
+        },
+        "en": {
+          "main": "Latest Check Ready",
+          "sub": "Ready to release",
+          "firstAction": "Release in window"
+        },
+        "vi": {
+          "main": "Kiem tra moi da san sang",
+          "sub": "Co the phat hanh",
+          "firstAction": "Phat hanh theo cua so"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Latest-Check 状态：CHECK_READY",
+          "sub": "主结论为 GO，且无 reasons/advisories，当前可按标准流程放行。",
+          "firstAction": "先确认发布窗口，再执行正式放行。"
+        },
+        "en": {
+          "main": "Latest-Check Status: CHECK_READY",
+          "sub": "Decision is GO with no reasons/advisories, ready for standard release flow.",
+          "firstAction": "Confirm release window first, then execute formal release."
+        },
+        "vi": {
+          "main": "Trang thai Latest-Check: CHECK_READY",
+          "sub": "Decision la GO va khong co reasons/advisories, san sang cho quy trinh phat hanh chuan.",
+          "firstAction": "Xac nhan cua so phat hanh truoc, sau do phat hanh chinh thuc."
+        }
+      }
+    },
+    {
+      "id": "check_blocked",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "decision == 'NO-GO'",
+          "exitCode == 1",
+          "reasons.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "最新检查受阻",
+          "sub": "存在阻断项",
+          "firstAction": "先处理首个reason"
+        },
+        "en": {
+          "main": "Latest Check Blocked",
+          "sub": "Blocking reasons detected",
+          "firstAction": "Handle first reason"
+        },
+        "vi": {
+          "main": "Kiem tra moi bi chan",
+          "sub": "Phat hien ly do chan",
+          "firstAction": "Xu ly reason dau tien"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Latest-Check 状态：CHECK_BLOCKED",
+          "sub": "当前检查存在阻断信号，暂不允许放行。",
+          "firstAction": "先修复 reasons 首项，再重跑 latest-check。"
+        },
+        "en": {
+          "main": "Latest-Check Status: CHECK_BLOCKED",
+          "sub": "Current check has blocking signals, so release is blocked now.",
+          "firstAction": "Fix the first item in reasons, then rerun latest-check."
+        },
+        "vi": {
+          "main": "Trang thai Latest-Check: CHECK_BLOCKED",
+          "sub": "Kiem tra hien tai co tin hieu chan, tam thoi khong duoc phat hanh.",
+          "firstAction": "Sua muc dau trong reasons, sau do chay lai latest-check."
+        }
+      }
+    },
+    {
+      "id": "check_review_required",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "check_blocked"
+        ],
+        "conditions": [
+          "decision == 'GO'",
+          "exitCode == 0",
+          "reasons.length == 0",
+          "advisories.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "最新检查待复核",
+          "sub": "存在提示项",
+          "firstAction": "先看advisories"
+        },
+        "en": {
+          "main": "Latest Check Review",
+          "sub": "Advisories present",
+          "firstAction": "Review advisories first"
+        },
+        "vi": {
+          "main": "Kiem tra moi can ra soat",
+          "sub": "Co advisories",
+          "firstAction": "Xem advisories truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Latest-Check 状态：CHECK_REVIEW_REQUIRED",
+          "sub": "主结论虽为 GO，但存在 advisories，需人工复核后再放行。",
+          "firstAction": "先确认 advisories 影响范围，再进入发布确认。"
+        },
+        "en": {
+          "main": "Latest-Check Status: CHECK_REVIEW_REQUIRED",
+          "sub": "Decision is GO but advisories remain, so manual review is required before release.",
+          "firstAction": "Confirm advisory impact first, then proceed to release confirmation."
+        },
+        "vi": {
+          "main": "Trang thai Latest-Check: CHECK_REVIEW_REQUIRED",
+          "sub": "Decision la GO nhung van co advisories, can ra soat thu cong truoc khi phat hanh.",
+          "firstAction": "Xac nhan anh huong cua advisories truoc, roi moi vao buoc xac nhan phat hanh."
+        }
+      }
+    }
+  ],
+  "fallback": {
+    "whenNoClassMatched": "check_review_required"
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

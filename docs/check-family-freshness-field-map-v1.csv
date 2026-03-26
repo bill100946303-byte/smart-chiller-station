@@ -1,0 +1,7 @@
+freshness_field,source_field_path_or_logic,release_impact,requiredness,missing_default_behavior,fail_open_or_closed,affects_default_release,notes
+generatedAt,$.generatedAt,advisory,required,if_missing_or_unparseable_then_state_unknown_and_ageMinutes_null,fail-open_default_strict_can_be_fail-closed,no,raw snapshot timestamp in check-family-latest
+ageMinutes,derived_from_now_utc_minus_$.generatedAt_in_minutes,advisory,required,if_cannot_compute_then_null_and_state_unknown,fail-open,no,derived freshness age
+state,derived_from_ageMinutes_and_thresholds_fresh_lt30_warn_30_to_59_stale_ge60_unknown,advisory_default_blocking_strict,required,default_to_unknown_when_missing,fail-open_default_strict_fail-closed,no_default,strict mode may upgrade to blocking when state!=fresh
+maxAgeMin,constant_60_from_freshness_policy,info,required,default_to_60,fail-open,no,upper bound threshold for stale
+rule,freshness_threshold_source,acceptance-snapshot-freshness-policy-v1.md,NA,NA,NA,no,warn=30 stale=60 baseline
+summary,counts,blocking=0|warning=3,NA,NA,NA,no,counted under default release policy

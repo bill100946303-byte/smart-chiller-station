@@ -1,0 +1,13 @@
+section,field_key,source_candidate,current_status,blocking,fallback_strategy,display_name
+item,id,"主候选: legacy /zsqy/drinfo/{siteId}/findObject -> records[].drid; 弱代理: /bff/v1/sites/{siteId}/system/topology -> groups[].id",partial,yes,"禁止前端使用数组下标代替; 需 BFF 直出稳定主键",设备ID
+item,deviceCode,"主候选: legacy drinfo.drcode",partial,no,"BFF 应一次性输出; UI 首版可先不展示, 缺失时显示 --",设备编码
+item,deviceName,"主候选: legacy drinfo.drname; 弱代理: topology.groups[].name",partial,yes,"不得用 deviceCode 反推名称; 需 BFF 直出",设备名称
+item,systemType,"主候选: BFF 基于 drinfo.drTypeCode/drtypename/typeYT 归一化; 弱代理: topology.groups[].type",partial,yes,"需 BFF 统一枚举; 禁止前端按中文名或编码自行分类",系统类型
+item,onlineStatus,"候选: reg + qstag + subinfo(run/online相关点位); 当前无现成 BFF 输出",missing,no,"首版先不渲染在线状态 pill; 显示 --",在线状态
+item,alarmStatus,"候选: reg(reg_DrShowType in 2/3 or Isalarm=1) + qstag + subinfo; 当前无现成 BFF 输出",missing,no,"首版先不渲染报警状态 pill; 显示 --",报警状态
+item,floor,"主候选: legacy drinfo.floorName; 弱代理: topology.groups[].floor",partial,yes,"缺失时显示 unknown/--; 但字段仍需进入合同",所在楼层
+item,isVirtual,"主候选: legacy drinfo.typeYT(1实体/2虚拟)",partial,no,"首版可先隐藏虚拟标签; 禁止按名称猜测虚拟设备",是否虚拟设备
+page_status,freshness.latestTimestamp,"/bff/v1/sites/{siteId}/dashboard/overview -> freshness.latestTimestamp",ready,no,"页面级 freshness 主锚点直接复用 overview",页面数据时间
+page_status,freshness.stale,"/bff/v1/sites/{siteId}/dashboard/overview -> freshness.stale",ready,no,"true 时展示数据陈旧提示",页面陈旧标记
+page_status,sourceStatus.overall,"优先 /bff/v1/sites/{siteId}/system/topology -> sourceStatus.overall; 可与 overview.sourceStatus.overall 交叉校验",ready,no,"首版 banner 只显示 overall",页面源状态
+page_status,sourceStatus.sources.devices,"/bff/v1/sites/{siteId}/system/topology -> sourceStatus.sources[key=devices]; fallback overview.sourceStatus.sources[key=devices]",ready,no,"展开态再显示明细; 折叠态可先不展示",设备源明细

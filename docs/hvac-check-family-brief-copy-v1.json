@@ -1,0 +1,180 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-check-family-brief-copy-v1",
+  "scope": "check-family-brief duty copy",
+  "fieldScope": {
+    "required": [
+      "overall",
+      "failedCount",
+      "freshness.state",
+      "topFailedChecks[]"
+    ]
+  },
+  "priorityOrder": [
+    "blocked",
+    "review_required",
+    "ready"
+  ],
+  "classes": [
+    {
+      "id": "ready",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "blocked",
+          "review_required"
+        ],
+        "conditions": [
+          "overall == 'PASS'",
+          "failedCount == 0",
+          "freshness.state == 'fresh'",
+          "topFailedChecks.length == 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "简报可放行",
+          "sub": "检查与时效正常",
+          "firstAction": "按窗口执行发布"
+        },
+        "en": {
+          "main": "Brief Ready",
+          "sub": "Checks and freshness normal",
+          "firstAction": "Release in window"
+        },
+        "vi": {
+          "main": "Brief san sang",
+          "sub": "Kiem tra va do tuoi binh thuong",
+          "firstAction": "Phat hanh theo cua so"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Check-Family-Brief 状态：READY",
+          "sub": "总体通过且无失败项，freshness 为 fresh，可按标准流程推进。",
+          "firstAction": "先确认发布窗口，再执行放行。"
+        },
+        "en": {
+          "main": "Check-Family-Brief Status: READY",
+          "sub": "Overall passed with zero failures and freshness is fresh, ready for standard flow.",
+          "firstAction": "Confirm release window first, then execute release."
+        },
+        "vi": {
+          "main": "Trang thai Check-Family-Brief: READY",
+          "sub": "Tong the dat, khong co muc loi va freshness la fresh, co the theo quy trinh chuan.",
+          "firstAction": "Xac nhan cua so phat hanh truoc, sau do phat hanh."
+        }
+      }
+    },
+    {
+      "id": "blocked",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "overall == 'FAIL'",
+          "failedCount > 0",
+          "freshness.state != 'stale'",
+          "topFailedChecks.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "简报阻断",
+          "sub": "存在失败检查",
+          "firstAction": "先修首个失败项"
+        },
+        "en": {
+          "main": "Brief Blocked",
+          "sub": "Failed checks present",
+          "firstAction": "Fix first failed check"
+        },
+        "vi": {
+          "main": "Brief bi chan",
+          "sub": "Co muc kiem tra that bai",
+          "firstAction": "Sua muc loi dau tien"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Check-Family-Brief 状态：BLOCKED",
+          "sub": "当前存在明确失败项，发布应保持阻断。",
+          "firstAction": "优先处理 topFailedChecks 首项，修复后重跑 check-family。"
+        },
+        "en": {
+          "main": "Check-Family-Brief Status: BLOCKED",
+          "sub": "There are explicit failed checks, so release must remain blocked.",
+          "firstAction": "Fix the first item in topFailedChecks, then rerun check-family."
+        },
+        "vi": {
+          "main": "Trang thai Check-Family-Brief: BLOCKED",
+          "sub": "Dang co muc that bai ro rang, can tiep tuc chan phat hanh.",
+          "firstAction": "Xu ly muc dau trong topFailedChecks, sau do chay lai check-family."
+        }
+      }
+    },
+    {
+      "id": "review_required",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "freshness.state == 'stale'",
+          "overall == 'PASS' && failedCount == 0 && freshness.state == 'warn'",
+          "overall == 'FAIL' && failedCount > 0 && topFailedChecks.length == 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "简报待复核",
+          "sub": "时效或摘要需确认",
+          "firstAction": "先重跑check-family"
+        },
+        "en": {
+          "main": "Brief Review",
+          "sub": "Freshness or summary needs review",
+          "firstAction": "Rerun check-family first"
+        },
+        "vi": {
+          "main": "Brief can ra soat",
+          "sub": "Can xac nhan do tuoi hoac tom tat",
+          "firstAction": "Chay lai check-family truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Check-Family-Brief 状态：REVIEW_REQUIRED",
+          "sub": "当前结果需复核后再判定发布，尤其 stale 场景不应直接放行或拦截。",
+          "firstAction": "先重跑 check-family，刷新后再依据最新结果决定是否发布。"
+        },
+        "en": {
+          "main": "Check-Family-Brief Status: REVIEW_REQUIRED",
+          "sub": "Current result needs manual review before release decision, especially in stale scenarios.",
+          "firstAction": "Rerun check-family first, then decide release using refreshed output."
+        },
+        "vi": {
+          "main": "Trang thai Check-Family-Brief: REVIEW_REQUIRED",
+          "sub": "Can ra soat thu cong truoc khi quyet dinh phat hanh, dac biet voi truong hop stale.",
+          "firstAction": "Chay lai check-family truoc, sau do moi quyet dinh phat hanh theo ket qua moi."
+        }
+      }
+    }
+  ],
+  "staleFirstReminder": {
+    "trigger": {
+      "mode": "all",
+      "conditions": [
+        "freshness.state == 'stale'"
+      ]
+    },
+    "zh": "freshness=stale 表示结果时效不足，不等于系统故障；先重跑 check-family，再决定是否发布。",
+    "en": "freshness=stale means stale evidence, not necessarily a system fault; rerun check-family first, then decide release.",
+    "vi": "freshness=stale co nghia la bang chung da cu, khong dong nghia loi he thong; hay chay lai check-family truoc, roi moi quyet dinh phat hanh."
+  },
+  "fallback": {
+    "whenNoClassMatched": "review_required"
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

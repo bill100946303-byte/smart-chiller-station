@@ -1,0 +1,965 @@
+{
+  "payloadVersion": "1.0.0",
+  "payloadId": "hvac-rule-ui-payload-v1",
+  "basedOn": {
+    "rules": "hvac-rules-v1.yaml@1.0.1",
+    "copybook": "hvac-rule-copybook-v1.2.json@1.2.0",
+    "i18n": "hvac-rule-copybook-v1.2-i18n.json@1.2.0-i18n-min"
+  },
+  "contractBoundary": {
+    "ruleLogicChanged": false,
+    "thresholdChanged": false,
+    "evaluatorChanged": false,
+    "ruleIdChanged": false
+  },
+  "locales": [
+    "zh",
+    "en",
+    "vi"
+  ],
+  "rules": [
+    {
+      "ruleId": "low-delta-t-chilled-loop",
+      "display": {
+        "zh": {
+          "title": "冷冻侧低温差",
+          "reason": "在有一定负荷时，冷冻水温差持续偏低，通常表示换热利用不足或旁通偏大。",
+          "action": "先查末端阀门与旁通，再校核供水温度设定。"
+        },
+        "en": {
+          "title": "Improve chilled-water delta-T",
+          "reason": "Chilled-water delta-T remains below healthy range under non-trivial load.",
+          "action": "Check valve opening and balancing in secondary loop."
+        },
+        "vi": {
+          "title": "Chenh nhiet nuoc lanh thap",
+          "reason": "Khi tai van dang ke, chenh nhiet nuoc lanh duy tri thap, cho thay trao doi nhiet chua toi uu hoac bypass lon.",
+          "action": "Uu tien kiem tra van cuoi tuyen va bypass, sau do hieu chinh nhiet do nuoc cap lanh."
+        }
+      },
+      "displayShort": {
+        "zh": {
+          "title": "冷冻低温差",
+          "reason": "温差低且负荷不低",
+          "action": "查旁通并微调供水"
+        },
+        "en": {
+          "title": "Low Delta-T",
+          "reason": "Low delta-T under load",
+          "action": "Check bypass, tune CHWS setpoint"
+        },
+        "vi": {
+          "title": "Delta-T thấp",
+          "reason": "Delta-T thấp khi tải vẫn cao",
+          "action": "Kiểm tra bypass, chỉnh nước cấp"
+        }
+      },
+      "severityMapping": {
+        "value": "major",
+        "label": {
+          "zh": "重要",
+          "en": "Major",
+          "vi": "Quan trong"
+        }
+      },
+      "riskMapping": {
+        "value": "medium",
+        "label": {
+          "zh": "中风险",
+          "en": "Medium risk",
+          "vi": "Rui ro trung binh"
+        }
+      },
+      "skippedTemplates": {
+        "upstream_unreachable": {
+          "display": {
+            "zh": {
+              "title": "上游不可达",
+              "reason": "上游服务不可达，规则已跳过。请按“服务 -> 网络 -> 端口”顺序排障后重试。",
+              "action": "排障顺序：服务：确认BFF/legacy进程与健康检查。 -> 网络：确认目标主机可达与路由策略。 -> 端口：确认8787/8098监听和接口连通。"
+            },
+            "en": {
+              "title": "Upstream unreachable",
+              "reason": "Upstream service is unreachable and rule evaluation is skipped in this window.",
+              "action": "Troubleshoot in order: service health -> network reachability -> port/listener."
+            },
+            "vi": {
+              "title": "Nguon du lieu khong truy cap duoc",
+              "reason": "Dich vu nguon khong truy cap duoc nen rule bi bo qua trong cua so hien tai.",
+              "action": "Xu ly theo thu tu: dich vu -> ket noi mang -> cong/listener."
+            }
+          },
+          "displayShort": {
+            "zh": {
+              "title": "上游不可达",
+              "reason": "未取到上游数据，规则已跳过",
+              "action": "按服务→网络→端口顺序排障"
+            },
+            "en": {
+              "title": "Upstream Down",
+              "reason": "No upstream data; rule skipped",
+              "action": "Check service -> network -> port"
+            },
+            "vi": {
+              "title": "Nguon khong toi",
+              "reason": "Khong co du lieu nguon; da bo qua",
+              "action": "Kiem tra dich vu -> mang -> cong"
+            }
+          }
+        },
+        "field_missing_or_invalid": {
+          "display": {
+            "zh": {
+              "title": "字段异常",
+              "reason": "关键字段缺失或无效，规则已跳过。请按“映射 -> 单位 -> 采样”顺序排查。",
+              "action": "排障顺序：字段映射：确认规则字段与聚合字段一一对应。 -> 单位口径：确认kW/kWh/°C等单位无混用。 -> 采样有效性：确认采样周期、空值比例与时间戳连续性。"
+            },
+            "en": {
+              "title": "Missing or invalid fields",
+              "reason": "Required fields are missing or invalid, so the rule cannot be evaluated reliably.",
+              "action": "Check in order: field mapping -> unit consistency -> sampling continuity."
+            },
+            "vi": {
+              "title": "Thieu hoac sai truong du lieu",
+              "reason": "Truong bat buoc bi thieu hoac khong hop le, nen rule khong the danh gia tin cay.",
+              "action": "Kiem tra theo thu tu: mapping truong -> thong nhat don vi -> lien tuc lay mau."
+            }
+          },
+          "displayShort": {
+            "zh": {
+              "title": "字段异常",
+              "reason": "关键字段缺失或值无效，已跳过",
+              "action": "先查映射，再核单位与采样"
+            },
+            "en": {
+              "title": "Field Invalid",
+              "reason": "Required fields missing/invalid; skipped",
+              "action": "Check mapping, units, then sampling"
+            },
+            "vi": {
+              "title": "Loi truong du lieu",
+              "reason": "Thieu/sai truong bat buoc; da bo qua",
+              "action": "Kiem tra map truong, don vi roi lay mau"
+            }
+          }
+        },
+        "unknown": {
+          "display": {
+            "zh": {
+              "title": "状态未识别",
+              "reason": "未识别的跳过类型，系统已降级。请先核对版本与词典收录。",
+              "action": "排障顺序：版本：确认规则版本与前端词典版本一致。 -> 词典：确认ruleId或skippedCategory已被收录。 -> 合同：确认recommendations合同字段未被破坏。"
+            },
+            "en": {
+              "title": "Unknown skip status",
+              "reason": "Skip status is not recognized by current dictionary and is rendered in degraded mode.",
+              "action": "Check in order: version alignment -> dictionary coverage -> contract fields."
+            },
+            "vi": {
+              "title": "Trang thai bo qua chua xac dinh",
+              "reason": "Trang thai bo qua chua duoc tu dien hien tai nhan dien nen hien thi ha cap.",
+              "action": "Kiem tra theo thu tu: dong bo phien ban -> pham vi tu dien -> truong hop dong."
+            }
+          },
+          "displayShort": {
+            "zh": {
+              "title": "状态未识别",
+              "reason": "未匹配词典模板，已降级展示",
+              "action": "按版本→词典→合同顺序核查"
+            },
+            "en": {
+              "title": "Unknown Status",
+              "reason": "No template matched; downgraded view",
+              "action": "Check version -> dictionary -> contract"
+            },
+            "vi": {
+              "title": "Trang thai la",
+              "reason": "Khong khop mau tu dien; da ha cap hien thi",
+              "action": "Kiem tra phien ban -> tu dien -> hop dong"
+            }
+          }
+        }
+      }
+    },
+    {
+      "ruleId": "pump-frequency-too-high",
+      "display": {
+        "zh": {
+          "title": "冷冻泵高频低效",
+          "reason": "泵频长期偏高但温差提升有限，输配能耗可能偏高。",
+          "action": "下调泵频并观察压差/舒适度，复核压差传感器。"
+        },
+        "en": {
+          "title": "Reduce excessive chilled-pump frequency",
+          "reason": "Pump speed is high while heat transfer gain is weak, indicating avoidable transport energy.",
+          "action": "Apply delta-T guided pump VFD reset."
+        },
+        "vi": {
+          "title": "Bom nuoc lanh tan so cao, hieu qua thap",
+          "reason": "Tan so bom duy tri cao nhung cai thien chenh nhiet han che, co dau hieu tieu hao van chuyen khong can thiet.",
+          "action": "Giam tan so bom theo tung buoc nho va theo doi chenh ap/do thoai mai, dong thoi kiem tra cam bien chenh ap."
+        }
+      },
+      "displayShort": {
+        "zh": {
+          "title": "泵频高低效",
+          "reason": "泵频高但换热提升小",
+          "action": "每次降2Hz并看压差"
+        },
+        "en": {
+          "title": "Pump Hz High",
+          "reason": "High Hz, limited heat-transfer gain",
+          "action": "Reduce by 2Hz, watch dP"
+        },
+        "vi": {
+          "title": "Tần số bơm cao",
+          "reason": "Hz cao nhưng trao đổi nhiệt tăng ít",
+          "action": "Giảm 2Hz mỗi bước, theo dõi dP"
+        }
+      },
+      "severityMapping": {
+        "value": "major",
+        "label": {
+          "zh": "重要",
+          "en": "Major",
+          "vi": "Quan trong"
+        }
+      },
+      "riskMapping": {
+        "value": "medium",
+        "label": {
+          "zh": "中风险",
+          "en": "Medium risk",
+          "vi": "Rui ro trung binh"
+        }
+      },
+      "skippedTemplates": {
+        "upstream_unreachable": {
+          "display": {
+            "zh": {
+              "title": "上游不可达",
+              "reason": "上游服务不可达，规则已跳过。请按“服务 -> 网络 -> 端口”顺序排障后重试。",
+              "action": "排障顺序：服务：确认BFF/legacy进程与健康检查。 -> 网络：确认目标主机可达与路由策略。 -> 端口：确认8787/8098监听和接口连通。"
+            },
+            "en": {
+              "title": "Upstream unreachable",
+              "reason": "Upstream service is unreachable and rule evaluation is skipped in this window.",
+              "action": "Troubleshoot in order: service health -> network reachability -> port/listener."
+            },
+            "vi": {
+              "title": "Nguon du lieu khong truy cap duoc",
+              "reason": "Dich vu nguon khong truy cap duoc nen rule bi bo qua trong cua so hien tai.",
+              "action": "Xu ly theo thu tu: dich vu -> ket noi mang -> cong/listener."
+            }
+          },
+          "displayShort": {
+            "zh": {
+              "title": "上游不可达",
+              "reason": "未取到上游数据，规则已跳过",
+              "action": "按服务→网络→端口顺序排障"
+            },
+            "en": {
+              "title": "Upstream Down",
+              "reason": "No upstream data; rule skipped",
+              "action": "Check service -> network -> port"
+            },
+            "vi": {
+              "title": "Nguon khong toi",
+              "reason": "Khong co du lieu nguon; da bo qua",
+              "action": "Kiem tra dich vu -> mang -> cong"
+            }
+          }
+        },
+        "field_missing_or_invalid": {
+          "display": {
+            "zh": {
+              "title": "字段异常",
+              "reason": "关键字段缺失或无效，规则已跳过。请按“映射 -> 单位 -> 采样”顺序排查。",
+              "action": "排障顺序：字段映射：确认规则字段与聚合字段一一对应。 -> 单位口径：确认kW/kWh/°C等单位无混用。 -> 采样有效性：确认采样周期、空值比例与时间戳连续性。"
+            },
+            "en": {
+              "title": "Missing or invalid fields",
+              "reason": "Required fields are missing or invalid, so the rule cannot be evaluated reliably.",
+              "action": "Check in order: field mapping -> unit consistency -> sampling continuity."
+            },
+            "vi": {
+              "title": "Thieu hoac sai truong du lieu",
+              "reason": "Truong bat buoc bi thieu hoac khong hop le, nen rule khong the danh gia tin cay.",
+              "action": "Kiem tra theo thu tu: mapping truong -> thong nhat don vi -> lien tuc lay mau."
+            }
+          },
+          "displayShort": {
+            "zh": {
+              "title": "字段异常",
+              "reason": "关键字段缺失或值无效，已跳过",
+              "action": "先查映射，再核单位与采样"
+            },
+            "en": {
+              "title": "Field Invalid",
+              "reason": "Required fields missing/invalid; skipped",
+              "action": "Check mapping, units, then sampling"
+            },
+            "vi": {
+              "title": "Loi truong du lieu",
+              "reason": "Thieu/sai truong bat buoc; da bo qua",
+              "action": "Kiem tra map truong, don vi roi lay mau"
+            }
+          }
+        },
+        "unknown": {
+          "display": {
+            "zh": {
+              "title": "状态未识别",
+              "reason": "未识别的跳过类型，系统已降级。请先核对版本与词典收录。",
+              "action": "排障顺序：版本：确认规则版本与前端词典版本一致。 -> 词典：确认ruleId或skippedCategory已被收录。 -> 合同：确认recommendations合同字段未被破坏。"
+            },
+            "en": {
+              "title": "Unknown skip status",
+              "reason": "Skip status is not recognized by current dictionary and is rendered in degraded mode.",
+              "action": "Check in order: version alignment -> dictionary coverage -> contract fields."
+            },
+            "vi": {
+              "title": "Trang thai bo qua chua xac dinh",
+              "reason": "Trang thai bo qua chua duoc tu dien hien tai nhan dien nen hien thi ha cap.",
+              "action": "Kiem tra theo thu tu: dong bo phien ban -> pham vi tu dien -> truong hop dong."
+            }
+          },
+          "displayShort": {
+            "zh": {
+              "title": "状态未识别",
+              "reason": "未匹配词典模板，已降级展示",
+              "action": "按版本→词典→合同顺序核查"
+            },
+            "en": {
+              "title": "Unknown Status",
+              "reason": "No template matched; downgraded view",
+              "action": "Check version -> dictionary -> contract"
+            },
+            "vi": {
+              "title": "Trang thai la",
+              "reason": "Khong khop mau tu dien; da ha cap hien thi",
+              "action": "Kiem tra phien ban -> tu dien -> hop dong"
+            }
+          }
+        }
+      }
+    },
+    {
+      "ruleId": "cooling-side-low-efficiency",
+      "display": {
+        "zh": {
+          "title": "冷却侧效率偏低",
+          "reason": "冷却侧功率投入较高但散热效果偏弱，系统COP被拖低。",
+          "action": "优化塔风机分级与冷却水设定，检查冷凝器污垢。"
+        },
+        "en": {
+          "title": "Improve cooling-side heat rejection efficiency",
+          "reason": "Cooling side consumes meaningful power but rejects heat inefficiently, dragging overall COP.",
+          "action": "Tune tower fan staging and condenser-water setpoint reset."
+        },
+        "vi": {
+          "title": "Hieu suat phia giai nhiet thap",
+          "reason": "Phia giai nhiet tieu thu cong suat dang ke nhung kha nang thai nhiet yeu, keo giam COP toan tram.",
+          "action": "Toi uu cap quat thap va diem dat nuoc giai nhiet, kiem tra cau can binh ngung."
+        }
+      },
+      "displayShort": {
+        "zh": {
+          "title": "冷却侧低效",
+          "reason": "散热弱且COP偏低",
+          "action": "调塔风机并查冷凝器"
+        },
+        "en": {
+          "title": "Cooling Side Low Eff.",
+          "reason": "Weak heat rejection, low COP",
+          "action": "Tune tower fans, inspect condenser"
+        },
+        "vi": {
+          "title": "Giải nhiệt kém",
+          "reason": "Thải nhiệt yếu, COP thấp",
+          "action": "Chỉnh quạt tháp, kiểm tra bình ngưng"
+        }
+      },
+      "severityMapping": {
+        "value": "major",
+        "label": {
+          "zh": "重要",
+          "en": "Major",
+          "vi": "Quan trong"
+        }
+      },
+      "riskMapping": {
+        "value": "medium",
+        "label": {
+          "zh": "中风险",
+          "en": "Medium risk",
+          "vi": "Rui ro trung binh"
+        }
+      },
+      "skippedTemplates": {
+        "upstream_unreachable": {
+          "display": {
+            "zh": {
+              "title": "上游不可达",
+              "reason": "上游服务不可达，规则已跳过。请按“服务 -> 网络 -> 端口”顺序排障后重试。",
+              "action": "排障顺序：服务：确认BFF/legacy进程与健康检查。 -> 网络：确认目标主机可达与路由策略。 -> 端口：确认8787/8098监听和接口连通。"
+            },
+            "en": {
+              "title": "Upstream unreachable",
+              "reason": "Upstream service is unreachable and rule evaluation is skipped in this window.",
+              "action": "Troubleshoot in order: service health -> network reachability -> port/listener."
+            },
+            "vi": {
+              "title": "Nguon du lieu khong truy cap duoc",
+              "reason": "Dich vu nguon khong truy cap duoc nen rule bi bo qua trong cua so hien tai.",
+              "action": "Xu ly theo thu tu: dich vu -> ket noi mang -> cong/listener."
+            }
+          },
+          "displayShort": {
+            "zh": {
+              "title": "上游不可达",
+              "reason": "未取到上游数据，规则已跳过",
+              "action": "按服务→网络→端口顺序排障"
+            },
+            "en": {
+              "title": "Upstream Down",
+              "reason": "No upstream data; rule skipped",
+              "action": "Check service -> network -> port"
+            },
+            "vi": {
+              "title": "Nguon khong toi",
+              "reason": "Khong co du lieu nguon; da bo qua",
+              "action": "Kiem tra dich vu -> mang -> cong"
+            }
+          }
+        },
+        "field_missing_or_invalid": {
+          "display": {
+            "zh": {
+              "title": "字段异常",
+              "reason": "关键字段缺失或无效，规则已跳过。请按“映射 -> 单位 -> 采样”顺序排查。",
+              "action": "排障顺序：字段映射：确认规则字段与聚合字段一一对应。 -> 单位口径：确认kW/kWh/°C等单位无混用。 -> 采样有效性：确认采样周期、空值比例与时间戳连续性。"
+            },
+            "en": {
+              "title": "Missing or invalid fields",
+              "reason": "Required fields are missing or invalid, so the rule cannot be evaluated reliably.",
+              "action": "Check in order: field mapping -> unit consistency -> sampling continuity."
+            },
+            "vi": {
+              "title": "Thieu hoac sai truong du lieu",
+              "reason": "Truong bat buoc bi thieu hoac khong hop le, nen rule khong the danh gia tin cay.",
+              "action": "Kiem tra theo thu tu: mapping truong -> thong nhat don vi -> lien tuc lay mau."
+            }
+          },
+          "displayShort": {
+            "zh": {
+              "title": "字段异常",
+              "reason": "关键字段缺失或值无效，已跳过",
+              "action": "先查映射，再核单位与采样"
+            },
+            "en": {
+              "title": "Field Invalid",
+              "reason": "Required fields missing/invalid; skipped",
+              "action": "Check mapping, units, then sampling"
+            },
+            "vi": {
+              "title": "Loi truong du lieu",
+              "reason": "Thieu/sai truong bat buoc; da bo qua",
+              "action": "Kiem tra map truong, don vi roi lay mau"
+            }
+          }
+        },
+        "unknown": {
+          "display": {
+            "zh": {
+              "title": "状态未识别",
+              "reason": "未识别的跳过类型，系统已降级。请先核对版本与词典收录。",
+              "action": "排障顺序：版本：确认规则版本与前端词典版本一致。 -> 词典：确认ruleId或skippedCategory已被收录。 -> 合同：确认recommendations合同字段未被破坏。"
+            },
+            "en": {
+              "title": "Unknown skip status",
+              "reason": "Skip status is not recognized by current dictionary and is rendered in degraded mode.",
+              "action": "Check in order: version alignment -> dictionary coverage -> contract fields."
+            },
+            "vi": {
+              "title": "Trang thai bo qua chua xac dinh",
+              "reason": "Trang thai bo qua chua duoc tu dien hien tai nhan dien nen hien thi ha cap.",
+              "action": "Kiem tra theo thu tu: dong bo phien ban -> pham vi tu dien -> truong hop dong."
+            }
+          },
+          "displayShort": {
+            "zh": {
+              "title": "状态未识别",
+              "reason": "未匹配词典模板，已降级展示",
+              "action": "按版本→词典→合同顺序核查"
+            },
+            "en": {
+              "title": "Unknown Status",
+              "reason": "No template matched; downgraded view",
+              "action": "Check version -> dictionary -> contract"
+            },
+            "vi": {
+              "title": "Trang thai la",
+              "reason": "Khong khop mau tu dien; da ha cap hien thi",
+              "action": "Kiem tra phien ban -> tu dien -> hop dong"
+            }
+          }
+        }
+      }
+    },
+    {
+      "ruleId": "frequent-start-stop",
+      "display": {
+        "zh": {
+          "title": "设备频繁启停",
+          "reason": "主机或水泵短时反复启停，存在控制震荡和设备损耗风险。",
+          "action": "启用最小启停锁定时间，放宽控制死区。"
+        },
+        "en": {
+          "title": "Stop short-cycling of chillers/pumps",
+          "reason": "Frequent start-stop indicates unstable sequence control and increases wear/energy loss.",
+          "action": "Apply minimum on/off lockout timers."
+        },
+        "vi": {
+          "title": "Thiet bi dong cat thuong xuyen",
+          "reason": "May chinh hoac bom dong/cat lap lai trong thoi gian ngan, lam tang rui ro dao dong dieu khien va hao mon thiet bi.",
+          "action": "Bat khoa thoi gian chay/dung toi thieu va noi deadband de giam dao dong dieu khien."
+        }
+      },
+      "displayShort": {
+        "zh": {
+          "title": "频繁启停",
+          "reason": "短时启停次数过多",
+          "action": "启用最小启停锁定"
+        },
+        "en": {
+          "title": "Frequent Cycling",
+          "reason": "Too many starts/stops in short window",
+          "action": "Enable min on/off lockout"
+        },
+        "vi": {
+          "title": "Đóng cắt nhiều",
+          "reason": "Số lần start/stop quá dày",
+          "action": "Bật khóa thời gian chạy/dừng tối thiểu"
+        }
+      },
+      "severityMapping": {
+        "value": "critical",
+        "label": {
+          "zh": "紧急",
+          "en": "Critical",
+          "vi": "Khan cap"
+        }
+      },
+      "riskMapping": {
+        "value": "high",
+        "label": {
+          "zh": "高风险",
+          "en": "High risk",
+          "vi": "Rui ro cao"
+        }
+      },
+      "skippedTemplates": {
+        "upstream_unreachable": {
+          "display": {
+            "zh": {
+              "title": "上游不可达",
+              "reason": "上游服务不可达，规则已跳过。请按“服务 -> 网络 -> 端口”顺序排障后重试。",
+              "action": "排障顺序：服务：确认BFF/legacy进程与健康检查。 -> 网络：确认目标主机可达与路由策略。 -> 端口：确认8787/8098监听和接口连通。"
+            },
+            "en": {
+              "title": "Upstream unreachable",
+              "reason": "Upstream service is unreachable and rule evaluation is skipped in this window.",
+              "action": "Troubleshoot in order: service health -> network reachability -> port/listener."
+            },
+            "vi": {
+              "title": "Nguon du lieu khong truy cap duoc",
+              "reason": "Dich vu nguon khong truy cap duoc nen rule bi bo qua trong cua so hien tai.",
+              "action": "Xu ly theo thu tu: dich vu -> ket noi mang -> cong/listener."
+            }
+          },
+          "displayShort": {
+            "zh": {
+              "title": "上游不可达",
+              "reason": "未取到上游数据，规则已跳过",
+              "action": "按服务→网络→端口顺序排障"
+            },
+            "en": {
+              "title": "Upstream Down",
+              "reason": "No upstream data; rule skipped",
+              "action": "Check service -> network -> port"
+            },
+            "vi": {
+              "title": "Nguon khong toi",
+              "reason": "Khong co du lieu nguon; da bo qua",
+              "action": "Kiem tra dich vu -> mang -> cong"
+            }
+          }
+        },
+        "field_missing_or_invalid": {
+          "display": {
+            "zh": {
+              "title": "字段异常",
+              "reason": "关键字段缺失或无效，规则已跳过。请按“映射 -> 单位 -> 采样”顺序排查。",
+              "action": "排障顺序：字段映射：确认规则字段与聚合字段一一对应。 -> 单位口径：确认kW/kWh/°C等单位无混用。 -> 采样有效性：确认采样周期、空值比例与时间戳连续性。"
+            },
+            "en": {
+              "title": "Missing or invalid fields",
+              "reason": "Required fields are missing or invalid, so the rule cannot be evaluated reliably.",
+              "action": "Check in order: field mapping -> unit consistency -> sampling continuity."
+            },
+            "vi": {
+              "title": "Thieu hoac sai truong du lieu",
+              "reason": "Truong bat buoc bi thieu hoac khong hop le, nen rule khong the danh gia tin cay.",
+              "action": "Kiem tra theo thu tu: mapping truong -> thong nhat don vi -> lien tuc lay mau."
+            }
+          },
+          "displayShort": {
+            "zh": {
+              "title": "字段异常",
+              "reason": "关键字段缺失或值无效，已跳过",
+              "action": "先查映射，再核单位与采样"
+            },
+            "en": {
+              "title": "Field Invalid",
+              "reason": "Required fields missing/invalid; skipped",
+              "action": "Check mapping, units, then sampling"
+            },
+            "vi": {
+              "title": "Loi truong du lieu",
+              "reason": "Thieu/sai truong bat buoc; da bo qua",
+              "action": "Kiem tra map truong, don vi roi lay mau"
+            }
+          }
+        },
+        "unknown": {
+          "display": {
+            "zh": {
+              "title": "状态未识别",
+              "reason": "未识别的跳过类型，系统已降级。请先核对版本与词典收录。",
+              "action": "排障顺序：版本：确认规则版本与前端词典版本一致。 -> 词典：确认ruleId或skippedCategory已被收录。 -> 合同：确认recommendations合同字段未被破坏。"
+            },
+            "en": {
+              "title": "Unknown skip status",
+              "reason": "Skip status is not recognized by current dictionary and is rendered in degraded mode.",
+              "action": "Check in order: version alignment -> dictionary coverage -> contract fields."
+            },
+            "vi": {
+              "title": "Trang thai bo qua chua xac dinh",
+              "reason": "Trang thai bo qua chua duoc tu dien hien tai nhan dien nen hien thi ha cap.",
+              "action": "Kiem tra theo thu tu: dong bo phien ban -> pham vi tu dien -> truong hop dong."
+            }
+          },
+          "displayShort": {
+            "zh": {
+              "title": "状态未识别",
+              "reason": "未匹配词典模板，已降级展示",
+              "action": "按版本→词典→合同顺序核查"
+            },
+            "en": {
+              "title": "Unknown Status",
+              "reason": "No template matched; downgraded view",
+              "action": "Check version -> dictionary -> contract"
+            },
+            "vi": {
+              "title": "Trang thai la",
+              "reason": "Khong khop mau tu dien; da ha cap hien thi",
+              "action": "Kiem tra phien ban -> tu dien -> hop dong"
+            }
+          }
+        }
+      }
+    },
+    {
+      "ruleId": "stale-data-detection",
+      "display": {
+        "zh": {
+          "title": "数据新鲜度不足",
+          "reason": "关键输入数据滞后或缺失，建议可信度下降。",
+          "action": "优先恢复数据链路，再执行节能优化动作。"
+        },
+        "en": {
+          "title": "Data is stale, verify ingestion and adapters",
+          "reason": "Key input data is stale or missing; optimization recommendations may be unreliable.",
+          "action": "Surface stale status in UI and pause aggressive optimization advice."
+        },
+        "vi": {
+          "title": "Do moi du lieu suy giam",
+          "reason": "Du lieu dau vao quan trong bi tre hoac thieu, lam giam do tin cay cua khuyen nghi toi uu.",
+          "action": "Khoi phuc chuoi thu thap du lieu truoc, roi moi thuc hien dieu chinh tiet kiem nang luong."
+        }
+      },
+      "displayShort": {
+        "zh": {
+          "title": "数据不新鲜",
+          "reason": "关键数据滞后或缺失",
+          "action": "先恢复链路再调参"
+        },
+        "en": {
+          "title": "Stale Data",
+          "reason": "Key data delayed or missing",
+          "action": "Restore data link before tuning"
+        },
+        "vi": {
+          "title": "Dữ liệu cũ",
+          "reason": "Thiếu hoặc trễ dữ liệu quan trọng",
+          "action": "Khôi phục đường dữ liệu trước khi chỉnh"
+        }
+      },
+      "severityMapping": {
+        "value": "major",
+        "label": {
+          "zh": "重要",
+          "en": "Major",
+          "vi": "Quan trong"
+        }
+      },
+      "riskMapping": {
+        "value": "high",
+        "label": {
+          "zh": "高风险",
+          "en": "High risk",
+          "vi": "Rui ro cao"
+        }
+      },
+      "skippedTemplates": {
+        "upstream_unreachable": {
+          "display": {
+            "zh": {
+              "title": "上游不可达",
+              "reason": "上游服务不可达，规则已跳过。请按“服务 -> 网络 -> 端口”顺序排障后重试。",
+              "action": "排障顺序：服务：确认BFF/legacy进程与健康检查。 -> 网络：确认目标主机可达与路由策略。 -> 端口：确认8787/8098监听和接口连通。"
+            },
+            "en": {
+              "title": "Upstream unreachable",
+              "reason": "Upstream service is unreachable and rule evaluation is skipped in this window.",
+              "action": "Troubleshoot in order: service health -> network reachability -> port/listener."
+            },
+            "vi": {
+              "title": "Nguon du lieu khong truy cap duoc",
+              "reason": "Dich vu nguon khong truy cap duoc nen rule bi bo qua trong cua so hien tai.",
+              "action": "Xu ly theo thu tu: dich vu -> ket noi mang -> cong/listener."
+            }
+          },
+          "displayShort": {
+            "zh": {
+              "title": "上游不可达",
+              "reason": "未取到上游数据，规则已跳过",
+              "action": "按服务→网络→端口顺序排障"
+            },
+            "en": {
+              "title": "Upstream Down",
+              "reason": "No upstream data; rule skipped",
+              "action": "Check service -> network -> port"
+            },
+            "vi": {
+              "title": "Nguon khong toi",
+              "reason": "Khong co du lieu nguon; da bo qua",
+              "action": "Kiem tra dich vu -> mang -> cong"
+            }
+          }
+        },
+        "field_missing_or_invalid": {
+          "display": {
+            "zh": {
+              "title": "字段异常",
+              "reason": "关键字段缺失或无效，规则已跳过。请按“映射 -> 单位 -> 采样”顺序排查。",
+              "action": "排障顺序：字段映射：确认规则字段与聚合字段一一对应。 -> 单位口径：确认kW/kWh/°C等单位无混用。 -> 采样有效性：确认采样周期、空值比例与时间戳连续性。"
+            },
+            "en": {
+              "title": "Missing or invalid fields",
+              "reason": "Required fields are missing or invalid, so the rule cannot be evaluated reliably.",
+              "action": "Check in order: field mapping -> unit consistency -> sampling continuity."
+            },
+            "vi": {
+              "title": "Thieu hoac sai truong du lieu",
+              "reason": "Truong bat buoc bi thieu hoac khong hop le, nen rule khong the danh gia tin cay.",
+              "action": "Kiem tra theo thu tu: mapping truong -> thong nhat don vi -> lien tuc lay mau."
+            }
+          },
+          "displayShort": {
+            "zh": {
+              "title": "字段异常",
+              "reason": "关键字段缺失或值无效，已跳过",
+              "action": "先查映射，再核单位与采样"
+            },
+            "en": {
+              "title": "Field Invalid",
+              "reason": "Required fields missing/invalid; skipped",
+              "action": "Check mapping, units, then sampling"
+            },
+            "vi": {
+              "title": "Loi truong du lieu",
+              "reason": "Thieu/sai truong bat buoc; da bo qua",
+              "action": "Kiem tra map truong, don vi roi lay mau"
+            }
+          }
+        },
+        "unknown": {
+          "display": {
+            "zh": {
+              "title": "状态未识别",
+              "reason": "未识别的跳过类型，系统已降级。请先核对版本与词典收录。",
+              "action": "排障顺序：版本：确认规则版本与前端词典版本一致。 -> 词典：确认ruleId或skippedCategory已被收录。 -> 合同：确认recommendations合同字段未被破坏。"
+            },
+            "en": {
+              "title": "Unknown skip status",
+              "reason": "Skip status is not recognized by current dictionary and is rendered in degraded mode.",
+              "action": "Check in order: version alignment -> dictionary coverage -> contract fields."
+            },
+            "vi": {
+              "title": "Trang thai bo qua chua xac dinh",
+              "reason": "Trang thai bo qua chua duoc tu dien hien tai nhan dien nen hien thi ha cap.",
+              "action": "Kiem tra theo thu tu: dong bo phien ban -> pham vi tu dien -> truong hop dong."
+            }
+          },
+          "displayShort": {
+            "zh": {
+              "title": "状态未识别",
+              "reason": "未匹配词典模板，已降级展示",
+              "action": "按版本→词典→合同顺序核查"
+            },
+            "en": {
+              "title": "Unknown Status",
+              "reason": "No template matched; downgraded view",
+              "action": "Check version -> dictionary -> contract"
+            },
+            "vi": {
+              "title": "Trang thai la",
+              "reason": "Khong khop mau tu dien; da ha cap hien thi",
+              "action": "Kiem tra phien ban -> tu dien -> hop dong"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "lengthBudget": {
+    "desktop": {
+      "titleMaxChars": {
+        "zh": 16,
+        "en": 36,
+        "vi": 34
+      },
+      "reasonMaxChars": {
+        "zh": 48,
+        "en": 120,
+        "vi": 110
+      },
+      "actionMaxChars": {
+        "zh": 42,
+        "en": 110,
+        "vi": 100
+      }
+    },
+    "mobile": {
+      "titleMaxChars": {
+        "zh": 8,
+        "en": 18,
+        "vi": 16
+      },
+      "reasonMaxChars": {
+        "zh": 18,
+        "en": 40,
+        "vi": 36
+      },
+      "actionMaxChars": {
+        "zh": 18,
+        "en": 38,
+        "vi": 34
+      }
+    },
+    "overflowPolicy": {
+      "title": "ellipsis",
+      "reason": "single-line-ellipsis",
+      "action": "single-line-ellipsis",
+      "expandOnTap": true
+    }
+  },
+  "conflictLexicon": {
+    "policy": "Block dangerous imperative wording that can trigger unsafe operation without procedure approval.",
+    "blacklist": [
+      {
+        "locale": "zh",
+        "term": "立即停机",
+        "risk": "high",
+        "replacement": "先进入受控降载并按值班审批执行"
+      },
+      {
+        "locale": "zh",
+        "term": "马上断电",
+        "risk": "high",
+        "replacement": "先隔离风险回路并执行标准停机流程"
+      },
+      {
+        "locale": "zh",
+        "term": "强制全关阀",
+        "risk": "high",
+        "replacement": "按步进策略逐步关小阀位并观察反馈"
+      },
+      {
+        "locale": "zh",
+        "term": "立刻大幅调参",
+        "risk": "medium",
+        "replacement": "按小步长调参并保留观察窗口"
+      },
+      {
+        "locale": "en",
+        "term": "shut down immediately",
+        "risk": "high",
+        "replacement": "enter controlled derating and follow approved shutdown procedure"
+      },
+      {
+        "locale": "en",
+        "term": "cut power now",
+        "risk": "high",
+        "replacement": "isolate risk path first, then execute standard power-off procedure"
+      },
+      {
+        "locale": "en",
+        "term": "force close all valves",
+        "risk": "high",
+        "replacement": "close valves stepwise with feedback monitoring"
+      },
+      {
+        "locale": "en",
+        "term": "urgent drastic retune",
+        "risk": "medium",
+        "replacement": "retune in small steps with an observation window"
+      },
+      {
+        "locale": "vi",
+        "term": "dung may ngay",
+        "risk": "high",
+        "replacement": "giam tai co kiem soat va lam theo quy trinh da phe duyet"
+      },
+      {
+        "locale": "vi",
+        "term": "cat dien ngay",
+        "risk": "high",
+        "replacement": "co lap rui ro truoc roi thuc hien quy trinh ngat dien chuan"
+      },
+      {
+        "locale": "vi",
+        "term": "dong het van ngay",
+        "risk": "high",
+        "replacement": "dong van theo tung buoc va theo doi phan hoi"
+      },
+      {
+        "locale": "vi",
+        "term": "chinh manh ngay lap tuc",
+        "risk": "medium",
+        "replacement": "dieu chinh tung buoc nho va giu cua so quan sat"
+      }
+    ]
+  },
+  "renderHints": {
+    "defaultLocale": "zh",
+    "fallbackOrder": [
+      "activeLocale",
+      "zh"
+    ],
+    "useDisplayShortOnMobile": true,
+    "useDisplayOnDesktop": true
+  }
+}

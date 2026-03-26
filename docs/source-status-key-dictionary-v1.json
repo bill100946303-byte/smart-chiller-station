@@ -1,0 +1,152 @@
+{
+  "version": "1.0.0",
+  "description": "sourceStatus key 中文映射字典（前端消费版）",
+  "keyMap": {
+    "energy": {
+      "zhName": "能耗总览源",
+      "sourceEndpoint": "/zsqy/homepage/{siteId}/getEquipmentEnergyStatisticsCurve",
+      "semantics": "首页能耗卡片与核心实时量的上游来源。",
+      "failHint": "能耗总览源不可达，请检查站点能耗接口。"
+    },
+    "runParams": {
+      "zhName": "运行参数趋势源",
+      "sourceEndpoint": "/zsqy/homepage/{siteId}/getRunParamsCurve",
+      "semantics": "运行参数趋势（如温差等）的曲线来源。",
+      "failHint": "运行参数趋势源不可达，请检查参数曲线接口。"
+    },
+    "latestAlarmLog": {
+      "zhName": "最新告警日志源",
+      "sourceEndpoint": "/zsqy/qsAlarmlog/{siteId}/findNewAlarmLog",
+      "semantics": "最新告警事件列表及时间戳来源。",
+      "failHint": "最新告警日志不可达，请检查告警日志接口。"
+    },
+    "subsystemInfo": {
+      "zhName": "子系统概览源（兼容别名）",
+      "sourceEndpoint": "/{siteId}/getAllSubsystemInfo",
+      "semantics": "子系统在线/离线及告警汇总来源（兼容旧 key）。",
+      "failHint": "子系统概览不可达，请检查子系统汇总接口。",
+      "canonicalKey": "subsystemSummary"
+    },
+    "subsystemSummary": {
+      "zhName": "子系统概览源",
+      "sourceEndpoint": "/{siteId}/getAllSubsystemInfo",
+      "semantics": "子系统在线/离线及告警汇总来源（推荐标准 key）。",
+      "failHint": "子系统概览不可达，请检查子系统汇总接口。"
+    },
+    "ruleMetrics": {
+      "zhName": "规则指标聚合源",
+      "sourceEndpoint": "/zsqy/homepage/{siteId}/getEquipmentEnergyStatisticsCurve + getEnergyStatisticsCurve + getRunParamsCurve",
+      "semantics": "规则引擎前置聚合指标的组合来源。",
+      "failHint": "规则指标聚合源不可达，建议诊断可能降级。"
+    },
+    "metric.chilled_delta_t_c": {
+      "zhName": "规则指标：冷冻水温差",
+      "sourceEndpoint": "/zsqy/homepage/{siteId}/getEquipmentEnergyStatisticsCurve",
+      "semantics": "规则评估所需 chilled_delta_t_c 的可用性状态。",
+      "failHint": "冷冻水温差指标不可用，请检查温差点位或上游链路。"
+    },
+    "metric.cooling_delta_t_c": {
+      "zhName": "规则指标：冷却水温差",
+      "sourceEndpoint": "/zsqy/homepage/{siteId}/getEquipmentEnergyStatisticsCurve",
+      "semantics": "规则评估所需 cooling_delta_t_c 的可用性状态。",
+      "failHint": "冷却水温差指标不可用，请检查温差点位或上游链路。"
+    },
+    "metric.station_cop": {
+      "zhName": "规则指标：冷站COP",
+      "sourceEndpoint": "/zsqy/homepage/{siteId}/getEquipmentEnergyStatisticsCurve",
+      "semantics": "规则评估所需 station_cop 的可用性状态。",
+      "failHint": "冷站COP指标不可用，请检查COP字段或上游链路。"
+    },
+    "metric.station_total_power_kw": {
+      "zhName": "规则指标：冷站实时总功率",
+      "sourceEndpoint": "/zsqy/homepage/{siteId}/getEquipmentEnergyStatisticsCurve",
+      "semantics": "规则评估所需 station_total_power_kw 的可用性状态。",
+      "failHint": "冷站总功率指标不可用，请检查总功率字段或上游链路。"
+    },
+    "energyCurve": {
+      "zhName": "能耗趋势源",
+      "sourceEndpoint": "/zsqy/homepage/{siteId}/getEnergyStatisticsCurve",
+      "semantics": "功率等能耗趋势曲线来源。",
+      "failHint": "能耗趋势源不可达，请检查能耗曲线接口。"
+    },
+    "devices": {
+      "zhName": "设备清单源",
+      "sourceEndpoint": "/zsqy/drinfo/{siteId}/findObject",
+      "semantics": "设备数量、类型和拓扑节点的基础来源。",
+      "failHint": "设备清单源不可达，请检查设备台账接口。"
+    },
+    "alarms": {
+      "zhName": "告警摘要源",
+      "sourceEndpoint": "/zsqy/qsAlarmlog/{siteId}/findNewAlarmLog",
+      "semantics": "首页总览中的告警摘要来源。",
+      "failHint": "告警摘要源不可达，请检查告警日志接口。"
+    },
+    "rules": {
+      "zhName": "规则配置源",
+      "sourceEndpoint": "docs/hvac-rules-v1.yaml",
+      "semantics": "规则引擎加载的规则文件来源。",
+      "failHint": "规则配置不可读，建议功能已降级。"
+    },
+    "dashboardOverview": {
+      "zhName": "总览聚合源（BFF内部）",
+      "sourceEndpoint": "/bff/v1/sites/{siteId}/dashboard/overview",
+      "semantics": "recommendations 对总览聚合结果的内部依赖状态。",
+      "failHint": "总览聚合不可用，建议结果可能不完整。"
+    },
+    "anomalySummary": {
+      "zhName": "异常聚合源（BFF内部）",
+      "sourceEndpoint": "/bff/v1/sites/{siteId}/anomalies/summary",
+      "semantics": "recommendations 对异常聚合结果的内部依赖状态。",
+      "failHint": "异常聚合不可用，建议结果可能不完整。"
+    }
+  },
+  "aliases": {
+    "subsystemInfo": "subsystemSummary"
+  },
+  "metricFieldCnMap": {
+    "chilled_delta_t_c": "冷冻水温差",
+    "cooling_delta_t_c": "冷却水温差",
+    "station_cop": "冷站COP",
+    "station_total_power_kw": "冷站实时总功率"
+  },
+  "dynamicRules": {
+    "metric": {
+      "regex": "^metric\\.([a-z0-9_]+)$",
+      "zhNameTemplate": "规则指标：{field_cn_or_key}",
+      "defaultSourceEndpoint": "ruleMetrics",
+      "failHintTemplate": "{field_cn_or_key}指标不可用，请检查字段映射或上游链路。"
+    }
+  },
+  "fallback": {
+    "zhName": "未收录来源",
+    "semantics": "来源语义未收录，仅用于技术诊断。",
+    "failHint": "来源语义未收录，请先完成口径校准后再业务化展示。",
+    "riskHint": "未收录 key 禁止直接业务化展示。"
+  },
+  "opaqueKeysForBusinessView": [
+    "ruleMetrics",
+    "dashboardOverview",
+    "anomalySummary"
+  ],
+  "riskItems": [
+    {
+      "id": "P0-SS-01",
+      "level": "P0",
+      "title": "同 key 多译名导致排障语义漂移",
+      "mitigation": "强制使用标准中文名，别名统一归并。"
+    },
+    {
+      "id": "P0-SS-02",
+      "level": "P0",
+      "title": "技术中间 key 被直接业务化展示",
+      "mitigation": "将中间 key 仅用于诊断语境，禁止直接出现在业务结论。"
+    },
+    {
+      "id": "P1-SS-01",
+      "level": "P1",
+      "title": "新增 metric.* 未同步中文名",
+      "mitigation": "启用动态模板并定期同步 field-dictionary。"
+    }
+  ]
+}
+

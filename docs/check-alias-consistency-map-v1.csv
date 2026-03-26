@@ -1,0 +1,4 @@
+main_command,latest_alias,equivalent,evidence_path,checker_command,selftest_equivalent,affects_default_release,notes
+release-ready-check,release-ready-latest-check,yes,scripts/chiller_ctl.sh#L1923-L1930|scripts/chiller_ctl.sh#L1603-L1617|apps/chiller-bff/package.json#L16,npm run check:release-ready,yes,no,both commands dispatch same release_ready_check_cmd
+release-ready-sync-check,release-ready-sync-latest-check,yes,scripts/chiller_ctl.sh#L1931-L1937|scripts/chiller_ctl.sh#L1619-L1633|apps/chiller-bff/package.json#L17,npm run check:release-ready-sync,yes,no,both commands dispatch same release_ready_sync_check_cmd
+verify-gates-check,verify-gates-latest-check,yes,scripts/chiller_ctl.sh#L1974-L1980|scripts/chiller_ctl.sh#L434-L448|apps/chiller-bff/package.json#L19,npm run check:verify-gates,yes,no,both commands dispatch same verify_gates_check_cmd

@@ -1,0 +1,177 @@
+{
+  "version": "1.0.0",
+  "packId": "sprint1-alarm-page-hvac-pack-v1",
+  "scope": "Sprint1 alarm page copy pack",
+  "pageRecommendation": {
+    "fitAsSprint1SecondPage": true,
+    "reason": {
+      "zh": "趋势页先承接判断链，告警页更适合作为第二个页面承接风险入口与分派入口。",
+      "en": "The trend page should land first for the judgment chain, while the alarm page fits naturally as the second page for risk intake and dispatch.",
+      "vi": "Trang xu huong nen di truoc de dung chuoi phan doan, con trang bao dong phu hop lam trang thu hai de nhan rui ro va dieu phoi."
+    }
+  },
+  "boundary": {
+    "includeAlarmDetailPage": false,
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  },
+  "fieldScope": {
+    "allowedRoots": [
+      "counts",
+      "latestEvents",
+      "freshness",
+      "sourceStatus",
+      "reasons[]",
+      "advisories[]"
+    ],
+    "primaryFields": [
+      "counts.total",
+      "counts.high",
+      "counts.medium",
+      "counts.low",
+      "latestEvents.length",
+      "freshness.stale",
+      "freshness.latestTimestamp",
+      "freshness.ageHours",
+      "sourceStatus.overall"
+    ]
+  },
+  "priorityOrder": [
+    "stale",
+    "degraded",
+    "empty",
+    "normal"
+  ],
+  "header": {
+    "title": {
+      "zh": "告警总览",
+      "en": "Alarm Overview",
+      "vi": "Tong quan bao dong"
+    },
+    "subtitle": {
+      "zh": "先看数据是否新鲜，再看最近告警与等级分布。",
+      "en": "Check freshness first, then review recent alarms and severity mix.",
+      "vi": "Kiem tra do moi du lieu truoc, sau do xem bao dong gan nhat va phan bo muc do."
+    }
+  },
+  "recentList": {
+    "title": {
+      "zh": "最近告警",
+      "en": "Recent Alarms",
+      "vi": "Bao dong gan nhat"
+    },
+    "subtitle": {
+      "zh": "按最新发生时间排序，只作为值班入口，不替代告警详情页。",
+      "en": "Sorted by most recent occurrence. Use it as a duty entry point, not a detail page.",
+      "vi": "Sap xep theo thoi diem phat sinh moi nhat. Chi dung lam diem vao cho truc, khong thay the trang chi tiet."
+    }
+  },
+  "classes": [
+    {
+      "id": "normal",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "counts.total > 0 OR latestEvents.length > 0"
+        ]
+      },
+      "stateDescription": {
+        "zh": "告警数据新鲜且来源正常，当前页面可作为值班入口查看告警分布与最近事件。",
+        "en": "Alarm data is fresh and the source chain is healthy. This page can be used as the duty entry for severity mix and recent events.",
+        "vi": "Du lieu bao dong con moi va chuoi nguon binh thuong. Trang nay co the dung lam diem vao truc de xem phan bo muc do va su kien gan nhat."
+      },
+      "listDescription": {
+        "zh": "列表按发生时间倒序展示最近告警，用来快速判断是否集中在同一设备或同一来源。",
+        "en": "The list is sorted by occurred time in descending order and is used to quickly judge whether alarms cluster on the same device or source.",
+        "vi": "Danh sach duoc sap xep giam dan theo thoi diem phat sinh, dung de nhin nhanh xem bao dong co tap trung vao cung thiet bi hoac cung nguon hay khong."
+      },
+      "firstAction": {
+        "zh": "先扫一遍 high/medium/low 分布，再看最近 3 条告警是否集中在同一来源。",
+        "en": "Scan the high/medium/low split first, then check whether the latest three alarms come from the same source.",
+        "vi": "Xem nhanh phan bo high/medium/low truoc, sau do kiem tra 3 bao dong moi nhat co tap trung vao cung mot nguon hay khong."
+      }
+    },
+    {
+      "id": "degraded",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall != 'ok' OR sourceStatus.overall is missing"
+        ]
+      },
+      "stateDescription": {
+        "zh": "当前告警链路处于降级态，计数或最近告警列表可能不完整；可以看，但不要当完整放行依据。",
+        "en": "The alarm chain is currently degraded. Counts or recent alarm rows may be incomplete, so use this page for triage but not as the sole release basis.",
+        "vi": "Chuoi bao dong hien dang o trang thai giam cap. So dem hoac danh sach bao dong gan nhat co the chua day du, vi vay chi nen dung de phan luong, khong nen dung lam can cu phat hanh duy nhat."
+      },
+      "listDescription": {
+        "zh": "最近告警列表可能缺项、缺等级或缺时间，不要把空白直接解读为现场无风险。",
+        "en": "Recent alarm rows may miss entries, severity, or timestamps. Do not read blanks as proof that the site is risk-free.",
+        "vi": "Danh sach bao dong gan nhat co the thieu ban ghi, thieu muc do hoac thieu thoi gian. Khong duoc hieu o trong la khong co rui ro tai hien truong."
+      },
+      "firstAction": {
+        "zh": "先确认 sourceStatus 是否为 partial/failed，再决定是先补链路还是先人工核对最近告警。",
+        "en": "Check whether sourceStatus is partial or failed first, then decide whether to fix the chain or manually verify recent alarms.",
+        "vi": "Kiem tra truoc xem sourceStatus co phai la partial hay failed khong, sau do moi quyet dinh sua chuoi nguon hay doi soat thu cong cac bao dong gan nhat."
+      }
+    },
+    {
+      "id": "stale",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == true"
+        ]
+      },
+      "stateDescription": {
+        "zh": "当前告警数据已陈旧，应先视为历史参考，不要直接据此判断现场已恢复或仍在恶化。stale 不等于系统故障。",
+        "en": "Alarm data is stale and should be treated as historical reference first. Do not use it alone to claim the site has recovered or worsened. Stale does not mean a system fault.",
+        "vi": "Du lieu bao dong da cu va truoc tien chi nen xem la tham chieu lich su. Khong duoc chi dua vao no de ket luan hien truong da hoi phuc hay dang xau di. Stale khong dong nghia voi loi he thong."
+      },
+      "listDescription": {
+        "zh": "当前列表更像历史快照，可能与现场状态不同步。",
+        "en": "The current list behaves more like a historical snapshot and may be out of sync with the live site state.",
+        "vi": "Danh sach hien tai giong anh chup lich su hon va co the khong dong bo voi trang thai song cua hien truong."
+      },
+      "firstAction": {
+        "zh": "先重跑告警检查或刷新数据，再确认 freshness 恢复后再决定是否派单。",
+        "en": "Rerun the alarm check or refresh the data first, then decide on dispatch only after freshness recovers.",
+        "vi": "Chay lai kiem tra bao dong hoac lam moi du lieu truoc, sau do chi quyet dinh phan cong khi freshness da hoi phuc."
+      }
+    },
+    {
+      "id": "empty",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "counts.total == 0",
+          "latestEvents.length == 0"
+        ]
+      },
+      "stateDescription": {
+        "zh": "当前未见活动告警。它表示最近告警流为空，不等于站点绝对无风险。",
+        "en": "No active alarm is currently visible. It means the recent alarm feed is empty, not that the site is absolutely risk-free.",
+        "vi": "Hien chua thay bao dong dang hoat dong. Dieu nay co nghia la luong bao dong gan nhat dang trong, khong co nghia la tram hoan toan khong co rui ro."
+      },
+      "listDescription": {
+        "zh": "空列表表示当前没有可展示的活动告警；如需确认风险是否真正解除，仍要结合趋势页。",
+        "en": "An empty list means there is no active alarm row to show now. Use the trend page as well if you need to confirm that the risk has really cleared.",
+        "vi": "Danh sach trong co nghia la hien tai khong co dong bao dong hoat dong de hien thi. Neu can xac nhan rui ro da thuc su duoc go bo, van phai ket hop voi trang xu huong."
+      },
+      "firstAction": {
+        "zh": "先确认 freshness/sourceStatus 正常，再结合趋势页看关键指标是否稳定。",
+        "en": "Confirm freshness and sourceStatus are normal first, then check key metrics on the trend page for stability.",
+        "vi": "Xac nhan freshness va sourceStatus binh thuong truoc, sau do xem cac chi so chinh tren trang xu huong co on dinh hay khong."
+      }
+    }
+  ],
+  "fallback": {
+    "whenNoClassMatched": "degraded"
+  }
+}

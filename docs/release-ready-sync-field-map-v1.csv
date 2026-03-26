@@ -1,0 +1,14 @@
+row_type,sync_output_field,source_step,raw_path_or_derivation,release_impact,missing_default_behavior,affects_default_release,notes
+map,decision,release-ready,derived_from_steps.releaseReady.exitCode_eq_0,advisory,default_to_NO_GO_when_ready_step_failed,no,decision only reflects release-ready step not full sync chain
+map,exitCode,release-ready|check|latest,derived_from_readyRc_checkRc_latestRc_all_zero,blocking,default_to_1_when_any_step_failed,yes,hard gate for sync result
+map,inputs.strictFreshness,sync_input,$.inputs.strictFreshness,info,default_to_false,no,from command arg --strict-freshness
+map,inputs.runtimeRequired,sync_input,$.inputs.runtimeRequired,info,default_to_false,no,from command arg --runtime-required
+map,steps.releaseReady.ok,release-ready,$.steps.releaseReady.ok,blocking,default_to_false,yes,true only when release-ready command exit 0
+map,steps.releaseReady.exitCode,release-ready,$.steps.releaseReady.exitCode,blocking,default_to_1,yes,source rc from release_ready_cmd
+map,steps.releaseReadyCheck.ok,check,$.steps.releaseReadyCheck.ok,blocking,default_to_false,yes,true only when release-ready-check exit 0
+map,steps.releaseReadyCheck.exitCode,check,$.steps.releaseReadyCheck.exitCode,blocking,default_to_1,yes,source rc from release_ready_check_cmd
+map,steps.releaseReadyLatest.ok,latest,$.steps.releaseReadyLatest.ok,blocking,default_to_false,yes,true only when release-ready-latest --json exit 0
+map,steps.releaseReadyLatest.exitCode,latest,$.steps.releaseReadyLatest.exitCode,blocking,default_to_1,yes,source rc from release_ready_latest_cmd
+map,releaseReady,release-ready,$.releaseReady,advisory,default_to_null,no,slurpfile ready first object or null
+map,releaseReadyLatest,latest,$.releaseReadyLatest,advisory,default_to_null,no,slurpfile latest first object or null
+rule,sync_gate_boundary,release-ready|check|latest,exitCode_is_final_gate_not_decision,blocking,if_exitCode_missing_then_1,yes,for release use exitCode not decision

@@ -1,0 +1,25 @@
+section,field_key,source_path,status,blocking,fallback_strategy,display_name
+top_summary,total_devices,"/bff/v1/sites/{siteId}/dashboard/overview -> deviceSummary.totalDevices; fallback /bff/v1/sites/{siteId}/system/topology -> summary.totalDevices",ready,no,"优先取 overview.deviceSummary.totalDevices; topology.summary.totalDevices 仅作兜底和校验",设备总数
+top_summary,running_device_count,"未在当前 BFF 合同暴露；仅在数据建模文档已定义",missing,no,"显示 -- / 待补齐; 禁止用 groups.length 或四类设备数推算",运行设备数
+top_summary,alarm_device_count,"未在当前 BFF 合同暴露；仅在数据建模文档已定义",missing,no,"显示 -- / 待补齐; 禁止用 overview.alarmSummary.total 代替",报警设备数
+device_counts,chiller_count,"/bff/v1/sites/{siteId}/dashboard/overview -> deviceSummary.chillerCount; fallback /bff/v1/sites/{siteId}/system/topology -> summary.chillerCount",ready,no,"overview 优先; topology 兜底",冷机数
+device_counts,chilled_pump_count,"/bff/v1/sites/{siteId}/dashboard/overview -> deviceSummary.chilledPumpCount; fallback /bff/v1/sites/{siteId}/system/topology -> summary.chilledPumpCount",ready,no,"overview 优先; topology 兜底",冷冻泵数
+device_counts,cooling_pump_count,"/bff/v1/sites/{siteId}/dashboard/overview -> deviceSummary.coolingPumpCount; fallback /bff/v1/sites/{siteId}/system/topology -> summary.coolingPumpCount",ready,no,"overview 优先; topology 兜底",冷却泵数
+device_counts,cooling_tower_count,"/bff/v1/sites/{siteId}/dashboard/overview -> deviceSummary.coolingTowerCount; fallback /bff/v1/sites/{siteId}/system/topology -> summary.coolingTowerCount",ready,no,"overview 优先; topology 兜底",冷却塔数
+device_groups,topology_group_id,"/bff/v1/sites/{siteId}/system/topology -> groups[].id",ready,no,"直接作为 skeleton key 使用",分组项ID
+device_groups,topology_group_name,"/bff/v1/sites/{siteId}/system/topology -> groups[].name",ready,no,"直接作为 skeleton 标题使用",分组项名称
+device_groups,topology_group_type,"/bff/v1/sites/{siteId}/system/topology -> groups[].type",partial,no,"只用于粗分组; 禁止据此推断实体/虚拟或运行态",分组类型
+device_groups,topology_group_floor,"/bff/v1/sites/{siteId}/system/topology -> groups[].floor",ready,no,"缺失时显示 unknown; 不影响首版布局",分组楼层
+device_list_tree_skeleton,topology_node_id,"/bff/v1/sites/{siteId}/system/topology -> nodes[].id",ready,no,"直接作为树节点 key 使用",树节点ID
+device_list_tree_skeleton,topology_node_label,"/bff/v1/sites/{siteId}/system/topology -> nodes[].label",ready,no,"直接作为树节点标题使用",树节点名称
+device_list_tree_skeleton,topology_node_count,"/bff/v1/sites/{siteId}/system/topology -> nodes[].count",ready,no,"count 为 null 时显示 --",树节点数量
+device_list_tree_skeleton,topology_node_downstream,"/bff/v1/sites/{siteId}/system/topology -> nodes[].downstream",ready,no,"末端为 null 时不绘制下游连线",下游节点
+device_list_tree_skeleton,is_virtual,"期望字段: device list item.is_virtual",missing,no,"列表仅作为 skeleton; 不做实体/虚拟过滤; 禁止按名称猜测",是否虚拟设备
+device_list_tree_skeleton,run_status_text,"期望字段: device list item.run_status_text",missing,no,"不渲染运行态 pill; 保留占位",运行状态
+device_list_tree_skeleton,alarm_status_text,"期望字段: device list item.alarm_status_text",missing,no,"不渲染报警态 pill; 保留占位",报警状态
+freshness_source_status,overview_latest_timestamp,"/bff/v1/sites/{siteId}/dashboard/overview -> freshness.latestTimestamp",ready,no,"作为页面 freshness 主锚点",页面数据时间
+freshness_source_status,overview_stale,"/bff/v1/sites/{siteId}/dashboard/overview -> freshness.stale",ready,no,"true 时显示数据陈旧提示",页面陈旧标记
+freshness_source_status,overview_source_status,"/bff/v1/sites/{siteId}/dashboard/overview -> sourceStatus.overall",ready,no,"作为页面总体 sourceStatus",页面源状态
+freshness_source_status,topology_source_status,"/bff/v1/sites/{siteId}/system/topology -> sourceStatus.overall",ready,no,"作为拓扑子区块 sourceStatus",拓扑源状态
+freshness_source_status,topology_devices_source,"/bff/v1/sites/{siteId}/system/topology -> sourceStatus.sources[key=devices]",ready,no,"展开态展示设备源明细",设备源明细
+freshness_source_status,topology_generated_at_proxy,"/bff/v1/sites/{siteId}/system/topology -> generatedAt",partial,no,"仅展示为接口响应时间; 不当作真实 freshness",拓扑响应时间

@@ -1,0 +1,32 @@
+.el-menu {
+  .el-menu-item {
+    background-color: transparent;
+  }
+  .el-menu-item:hover {
+    background: linear-gradient( to right, rgba(13,255,207,1), rgba(13,255,207,0)) !important;
+  }
+  .el-menu-item.is-active {
+    background: linear-gradient( to right, rgba(13,255,207,1), rgba(13,255,207,0)) !important;
+  }
+}
+
+.navbars {
+  width: 200px;
+  height: 1030px;
+  .el-menu-demo {
+    .el-menu-item {
+      min-width: 0;
+      background-color: transparent;
+    }
+    .el-menu-item.is-active {
+      background: linear-gradient( to right, rgba(13,255,207,1), rgba(13,255,207,0)) !important;
+    }
+    .el-submenu__title {
+      height: 50px;
+      background-color: transparent !important;
+    }
+    .el-submenu__title:hover {
+      background: linear-gradient( to right, rgba(13,255,207,1), rgba(13,255,207,0)) !important;
+    }
+  }
+}

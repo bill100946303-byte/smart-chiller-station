@@ -1,0 +1,152 @@
+@font-face {
+    font-family: "al_element-icons2"; /* Project id 4661749 */
+    /* Color fonts */
+    src: url('iconfont.woff2?t=1728980073283') format('woff2'),
+    url('iconfont.woff?t=1728980073283') format('woff'),
+    url('iconfont.ttf?t=1728980073283') format('truetype');
+}
+
+.al_element-icons2 {
+    font-family: "al_element-icons2" !important;
+    font-size: 16px;
+    font-style: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.al_icon2dianwei:before {
+    content: "\e604";
+}
+
+.al_icon2xuehua:before {
+    content: "\e697";
+}
+
+.al_icon2fl-dian:before {
+    content: "\e63a";
+}
+
+.al_icon2fanhui1:before {
+    content: "\e619";
+}
+
+.al_icon2zhongzhishaixuan:before {
+    content: "\e68b";
+}
+
+.al_icon2xiangmu:before {
+    content: "\e801";
+}
+
+.al_icon2daoru:before {
+    content: "\e66c";
+}
+
+.al_icon2daochu:before {
+    content: "\e687";
+}
+
+.al_icon2caidan:before {
+    content: "\e636";
+}
+
+.al_icon2xiangmuxuanze:before {
+    content: "\e67a";
+}
+
+.al_icon2gouxuan2x:before {
+    content: "\e62f";
+}
+
+.al_icon2fanhui12:before {
+    content: "\e600";
+}
+
+.al_icon2fanhui:before {
+    content: "\e800";
+}
+
+.al_icon2a-anniuic_24shujugailanweixuanzhong:before {
+    content: "\e602";
+}
+
+.al_icon2beng-copy:before {
+    content: "\e617";
+}
+
+.al_icon2xitongnengxiao:before {
+    content: "\e6f7";
+}
+
+.al_icon2xianpinghengshuai:before {
+    content: "\e698";
+}
+
+.al_icon2lengdongbeng:before {
+    content: "\e618";
+}
+
+.al_icon2shineiwendu:before {
+    content: "\e61b";
+}
+
+.al_icon2zhuji:before {
+    content: "\e61e";
+}
+
+.al_icon2shiqiuwendu:before {
+    content: "\e613";
+}
+
+.al_icon2shiwaishidu:before {
+    content: "\e615";
+}
+
+.al_icon2shuiwenhengkong:before {
+    content: "\e614";
+}
+
+.al_icon2paihang-:before {
+    content: "\e603";
+}
+
+.al_icon2gaishu:before {
+    content: "\e75c";
+}
+
+.al_icon2pie-month:before {
+    content: "\e670";
+}
+
+.al_icon2baojingxinxi2:before {
+    content: "\e616";
+}
+
+.al_icon2zhankai1:before {
+    content: "\e639";
+}
+
+.al_icon2jia:before {
+    content: "\36354";
+}
+
+.al_icon2jian2:before {
+    content: "\e60e";
+}
+
+.al_icon2chuangkouzuidahua:before {
+    content: "\e60f";
+}
+
+.al_icon2a-16x16wendu:before {
+    content: "\e610";
+}
+
+.al_icon2a-16x16shidu:before {
+    content: "\e611";
+}
+
+.al_icon2leibiaoweixuanzhongchadiao:before {
+    content: "\e6ca";
+}
+

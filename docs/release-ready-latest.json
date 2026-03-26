@@ -1,0 +1,40 @@
+{
+  "version": "v1.0",
+  "generatedAt": "2026-03-12T21:40:47Z",
+  "decision": "GO",
+  "exitCode": 0,
+  "reasons": [],
+  "advisories": [],
+  "inputs": {
+    "strictFreshness": false,
+    "runtimeRequired": false
+  },
+  "verifyGatesOk": true,
+  "consistencyOk": true,
+  "diffClass": "stable",
+  "decisionChanged": false,
+  "hasPrevious": true,
+  "checks": {
+    "verifyGatesRc": 0,
+    "releaseSnapshotRc": 0,
+    "snapshotConsistencyRc": 0,
+    "snapshotDiffRc": 0,
+    "snapshotDecision": "GO",
+    "snapshotExitCode": 0,
+    "consistencyDecision": "GO",
+    "consistencyExitCode": 0,
+    "diffClass": "stable",
+    "diffExitCode": 0,
+    "runtimeReady": true,
+    "exampleReady": false
+  },
+  "artifacts": {
+    "releaseReadyLatestJson": "/Users/billchow/Documents/智慧冷冻站/docs/release-ready-latest.json",
+    "releaseReadyLatestMd": "/Users/billchow/Documents/智慧冷冻站/docs/release-ready-latest.md",
+    "releaseSnapshotLatestJson": "/Users/billchow/Documents/智慧冷冻站/docs/release-snapshot-latest.json",
+    "releaseSnapshotConsistencyLatestJson": "/Users/billchow/Documents/智慧冷冻站/docs/release-snapshot-consistency-latest.json",
+    "releaseSnapshotDiffLatestJson": "/Users/billchow/Documents/智慧冷冻站/docs/release-snapshot-diff-latest.json",
+    "runtimeProbePath": "/Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/openapi/examples/real-link-ready-probe-report.json",
+    "verifyGatesLogPath": "/Users/billchow/Documents/智慧冷冻站/docs/release-ready-verify-gates.log"
+  }
+}

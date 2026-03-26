@@ -1,0 +1,8 @@
+key,meaning,source,is_blocking,missing_default_behavior,release_impact
+decision,release-ready 最终放行结论 GO/NO-GO,docs/release-snapshot-latest.json:decision,true,default_to_NO_GO,NO-GO blocks release
+exitCode,与 decision 对齐的退出码 0/1,docs/release-snapshot-latest.json:exitCode,true,default_to_1,1 blocks release
+reasons,阻断原因数组,docs/release-snapshot-latest.json:reasons,true,default_to_[release_ready_field_missing:reasons],non-empty indicates blocking root causes
+diffClass,本次对比上次快照变化分类,docs/release-snapshot-diff-latest.json:diffClass,false,default_to_error,advisory trend only not an independent blocker
+decisionChanged,本次与上次主结论是否变化,docs/release-snapshot-diff-latest.json:decisionChanged,false,default_to_null,advisory explainability only
+consistencyOk,latest 与 index 最新条目一致性是否通过,derived_from_docs/release-snapshot-consistency-latest.json(decision==GO and all match checks true),true,default_to_false,false blocks release due to inconsistent snapshot chain
+verifyGatesOk,基础门禁复核是否通过,docs/release-snapshot-latest.json:checks.verifyGatesOk,true,default_to_false,false blocks release due to gate verification failure

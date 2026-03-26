@@ -1,0 +1,25 @@
+{
+  "version": "v19.2",
+  "mode": "normal",
+  "generatedAt": "2026-03-12T06:06:46Z",
+  "siteId": "126lnoffice",
+  "runtimeUnavailable": false,
+  "entry": {"mode": "shell", "port3001Ok": true},
+  "contract": {"ok": true},
+  "stack": {
+    "ok": true,
+    "legacyHealthStatus": "404",
+    "bffHealthStatus": "200",
+    "frontendStatus": "200"
+  },
+  "probe": {"ok": true, "file": "/tmp/chiller_probe_acceptance.json"},
+  "readiness": {"nonDegradedReady": true, "ndFailedCount": 0},
+  "badge": {"globalPass": true, "path": "/Users/billchow/Documents/智慧冷冻站/docs/ui-badge-state-v1.8.json"},
+  "endpoints": {
+    "overview": {"status": "200", "overall": "ok", "ok": true},
+    "trends": {"status": "200", "overall": "ok", "ok": true},
+    "anomalies": {"status": "200", "overall": "ok", "ok": true},
+    "recommendations": {"status": "200", "overall": "ok", "ok": true}
+  },
+  "overallPass": true
+}

@@ -1,0 +1,291 @@
+{
+  "version": "1.0.0",
+  "copybookId": "sprint1-anomalies-list-copy-v1",
+  "scope": "Sprint1 anomalies list duty copy",
+  "dutyRecommendation": {
+    "fitForDirectDutyUse": true,
+    "reason": {
+      "zh": "首版列表已具备 stale、degraded、无告警和缺列回退口径，足以支持值班入口使用。",
+      "en": "The first list version already covers stale, degraded, no-alarm, and field-fallback wording, so it is sufficient for direct duty entry use.",
+      "vi": "Ban dau cua danh sach da co cach noi cho stale, degraded, no-alarm va fallback khi thieu truong, nen du de dung lam diem vao truc."
+    }
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  },
+  "fieldScope": {
+    "allowedRoots": [
+      "list",
+      "items",
+      "freshness",
+      "sourceStatus"
+    ],
+    "listMeta": [
+      "list.total",
+      "list.hasMissingOptionalFields",
+      "list.missingOptionalFields[]"
+    ],
+    "itemsOptionalFields": [
+      "items[].title",
+      "items[].source",
+      "items[].occurredAt",
+      "items[].severity"
+    ]
+  },
+  "priorityOrder": [
+    "stale",
+    "degraded",
+    "field_gap_non_blocking",
+    "no_alarm",
+    "normal_with_data"
+  ],
+  "classes": [
+    {
+      "id": "normal_with_data",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "items.length > 0",
+          "list.hasMissingOptionalFields != true"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "列表已就绪",
+          "sub": "可直接值班查看"
+        },
+        "en": {
+          "main": "List Ready",
+          "sub": "Use for duty now"
+        },
+        "vi": {
+          "main": "Danh sach da san sang",
+          "sub": "Co the dung de truc ngay"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "告警列表：NORMAL_WITH_DATA",
+          "sub": "当前列表有数据、来源正常且时效正常，可作为值班入口查看最近告警与等级分布。"
+        },
+        "en": {
+          "main": "Alarm List: NORMAL_WITH_DATA",
+          "sub": "The list has rows, source health is normal, and freshness is good, so it can be used as the duty entry for recent alarms and severity mix."
+        },
+        "vi": {
+          "main": "Danh sach bao dong: NORMAL_WITH_DATA",
+          "sub": "Danh sach hien co du lieu, nguon binh thuong va do moi tot, nen co the dung lam diem vao truc de xem bao dong gan nhat va phan bo muc do."
+        }
+      },
+      "firstAction": {
+        "zh": "先看最近 3 条是否来自同一来源，再看高等级告警是否连续出现。",
+        "en": "Check whether the latest three rows come from the same source first, then see whether high-severity alarms are repeating.",
+        "vi": "Truoc tien xem 3 dong moi nhat co den tu cung mot nguon hay khong, sau do xem bao dong muc cao co lap lai lien tuc khong."
+      }
+    },
+    {
+      "id": "no_alarm",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "list.total == 0",
+          "items.length == 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "当前无告警",
+          "sub": "先看趋势确认"
+        },
+        "en": {
+          "main": "No Alarm Now",
+          "sub": "Confirm with trends"
+        },
+        "vi": {
+          "main": "Hien khong co bao dong",
+          "sub": "Can doi chieu voi xu huong"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "告警列表：NO_ALARM",
+          "sub": "当前未见可展示的活动告警，这表示最近告警流为空，不等于站点绝对无风险。"
+        },
+        "en": {
+          "main": "Alarm List: NO_ALARM",
+          "sub": "No active alarm row is currently visible. It means the recent alarm feed is empty, not that the site is absolutely risk-free."
+        },
+        "vi": {
+          "main": "Danh sach bao dong: NO_ALARM",
+          "sub": "Hien chua thay dong bao dong hoat dong nao. Dieu nay co nghia la luong bao dong gan nhat dang trong, khong co nghia la tram hoan toan khong co rui ro."
+        }
+      },
+      "firstAction": {
+        "zh": "先确认 freshness 和 sourceStatus 都正常，再去趋势页看关键指标是否稳定。",
+        "en": "Confirm freshness and sourceStatus are both normal first, then check the trend page for key metric stability.",
+        "vi": "Xac nhan freshness va sourceStatus deu binh thuong truoc, sau do sang trang xu huong de xem cac chi so chinh co on dinh khong."
+      }
+    },
+    {
+      "id": "degraded",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall != 'ok' OR sourceStatus.overall is missing"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "列表降级中",
+          "sub": "先查链路状态"
+        },
+        "en": {
+          "main": "List Degraded",
+          "sub": "Check pipeline first"
+        },
+        "vi": {
+          "main": "Danh sach dang giam cap",
+          "sub": "Kiem tra chuoi nguon truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "告警列表：DEGRADED",
+          "sub": "当前列表链路处于降级态，列表行数、来源或时间列可能不完整；可以用于初筛，但不要当完整依据。"
+        },
+        "en": {
+          "main": "Alarm List: DEGRADED",
+          "sub": "The list pipeline is degraded, so row count, source, or time columns may be incomplete. Use it for triage, not as a complete basis."
+        },
+        "vi": {
+          "main": "Danh sach bao dong: DEGRADED",
+          "sub": "Chuoi danh sach dang o trang thai giam cap, vi vay so dong, cot nguon hoac cot thoi gian co the chua day du. Chi nen dung de sang loc ban dau, khong nen xem la can cu day du."
+        }
+      },
+      "firstAction": {
+        "zh": "先看 sourceStatus 是否为 partial/failed，再决定先补链路还是先人工核对关键告警。",
+        "en": "Check whether sourceStatus is partial or failed first, then decide whether to repair the pipeline or manually verify key alarms.",
+        "vi": "Kiem tra truoc xem sourceStatus co phai la partial hay failed khong, sau do moi quyet dinh sua chuoi nguon hay doi soat thu cong cac bao dong chinh."
+      }
+    },
+    {
+      "id": "stale",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == true"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "列表已陈旧",
+          "sub": "先刷新再判断"
+        },
+        "en": {
+          "main": "List Is Stale",
+          "sub": "Refresh before judging"
+        },
+        "vi": {
+          "main": "Danh sach da cu",
+          "sub": "Lam moi truoc khi danh gia"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "告警列表：STALE",
+          "sub": "当前列表更像历史快照，应先视为参考信息，不要直接据此判断现场已恢复或仍在恶化。stale 不等于系统故障。"
+        },
+        "en": {
+          "main": "Alarm List: STALE",
+          "sub": "The current list behaves more like a historical snapshot. Treat it as reference first and do not use it alone to claim the site has recovered or worsened. Stale does not mean a system fault."
+        },
+        "vi": {
+          "main": "Danh sach bao dong: STALE",
+          "sub": "Danh sach hien tai giong anh chup lich su hon. Hay xem no la thong tin tham khao truoc va khong duoc chi dua vao no de ket luan hien truong da hoi phuc hay dang xau di. Stale khong dong nghia voi loi he thong."
+        }
+      },
+      "firstAction": {
+        "zh": "先重跑列表数据或运行态检查，确认 freshness 恢复后再决定是否派单。",
+        "en": "Rerun list data or runtime checks first, then decide on dispatch only after freshness recovers.",
+        "vi": "Chay lai du lieu danh sach hoac kiem tra runtime truoc, sau do chi quyet dinh phan cong khi freshness da hoi phuc."
+      }
+    },
+    {
+      "id": "field_gap_non_blocking",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "items.length > 0",
+          "list.hasMissingOptionalFields == true"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "列表字段待补",
+          "sub": "可看但有缺列"
+        },
+        "en": {
+          "main": "Fields Need Fill",
+          "sub": "Usable with gaps"
+        },
+        "vi": {
+          "main": "Truong danh sach can bo sung",
+          "sub": "Van dung duoc nhung con thieu cot"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "告警列表：FIELD_GAP_NON_BLOCKING",
+          "sub": "当前列表可用，但个别非阻断列存在缺值，应回退为通用文案，不要继续沿用“字段缺口严重”的旧说法。"
+        },
+        "en": {
+          "main": "Alarm List: FIELD_GAP_NON_BLOCKING",
+          "sub": "The list is usable, but some non-blocking columns are missing. Fallback copy should be used, and the old severe field-gap wording should not be reused."
+        },
+        "vi": {
+          "main": "Danh sach bao dong: FIELD_GAP_NON_BLOCKING",
+          "sub": "Danh sach van dung duoc, nhung mot so cot khong gay chan dang bi thieu. Nen dung van ban du phong va khong tiep tuc dung cach noi cu ve thieu truong nghiem trong."
+        }
+      },
+      "firstAction": {
+        "zh": "先按回退文案把缺失列展示出来，再看是否影响本轮值班判断。",
+        "en": "Render the missing columns with fallback copy first, then judge whether the gap affects this duty round.",
+        "vi": "Truoc tien hien thi cac cot thieu bang van ban du phong, sau do danh gia xem khoang trong nay co anh huong den lan truc nay hay khong."
+      }
+    }
+  ],
+  "fieldFallbacks": {
+    "title": {
+      "zh": "告警事件",
+      "en": "Alarm Event",
+      "vi": "Su kien bao dong"
+    },
+    "source": {
+      "zh": "未知来源",
+      "en": "Unknown Source",
+      "vi": "Nguon khong ro"
+    },
+    "occurredAt": {
+      "zh": "--",
+      "en": "--",
+      "vi": "--"
+    },
+    "severity": {
+      "zh": "未知",
+      "en": "Unknown",
+      "vi": "Khong ro"
+    }
+  },
+  "fallback": {
+    "whenNoClassMatched": "degraded"
+  }
+}

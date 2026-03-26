@@ -1,0 +1,10 @@
+{
+  "specVersion": "1.0.0",
+  "status": "pass",
+  "summary": {
+    "failOn": "blocking",
+    "blockingCount": 0,
+    "warningCount": 0
+  },
+  "results": []
+}

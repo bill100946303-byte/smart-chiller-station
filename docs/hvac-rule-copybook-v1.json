@@ -1,0 +1,69 @@
+{
+  "copybookVersion": "1.0.0",
+  "ruleSetRef": "hvac-rules-v1@1.0.1",
+  "ruleCopy": {
+    "low-delta-t-chilled-loop": {
+      "nameZh": "冷冻侧低温差",
+      "descriptionZh": "在有一定负荷时，冷冻水供回水温差持续偏低，通常表示换热利用不足或旁通偏大。",
+      "opsAdviceZh": "先查末端阀门与旁通，再校核供水温度设定。"
+    },
+    "pump-frequency-too-high": {
+      "nameZh": "冷冻泵高频低效",
+      "descriptionZh": "冷冻泵频率长期偏高，但温差提升有限，存在输配侧能耗偏高风险。",
+      "opsAdviceZh": "下调泵频并观察压差/舒适度，复核压差传感器。"
+    },
+    "cooling-side-low-efficiency": {
+      "nameZh": "冷却侧效率偏低",
+      "descriptionZh": "冷却侧功率投入较高但散热效果偏弱，导致系统COP被拉低。",
+      "opsAdviceZh": "优化塔风机分级与冷却水设定，检查冷凝器污垢。"
+    },
+    "frequent-start-stop": {
+      "nameZh": "设备频繁启停",
+      "descriptionZh": "主机或水泵在短时间内反复启停，可能引发控制震荡与设备磨损。",
+      "opsAdviceZh": "启用最小启停锁定时间，放宽控制死区。"
+    },
+    "stale-data-detection": {
+      "nameZh": "数据新鲜度不足",
+      "descriptionZh": "关键指标更新时间滞后或缺失，当前建议结论可信度下降。",
+      "opsAdviceZh": "优先恢复数据链路，再执行节能优化动作。"
+    }
+  },
+  "skippedCopy": {
+    "upstream_unreachable": [
+      "上游数据源暂不可达，本条规则已跳过；请先恢复BFF/legacy连接后重试。",
+      "当前采集链路中断，规则判定暂停；建议先检查服务健康与网络连通性。",
+      "未获取到可用上游数据，无法完成诊断；请确认8098/8787端口与接口状态。"
+    ],
+    "field_missing_or_invalid": [
+      "缺少规则所需关键字段或字段值无效，本条规则已跳过。",
+      "指标数据不完整（空值/非法值），暂不输出诊断结论；请补齐采集映射。",
+      "规则输入字段校验未通过，建议先排查字段口径与单位映射。"
+    ],
+    "unknown": [
+      "本条规则暂未完成解释映射，请联系运维查看原始规则日志。",
+      "规则状态未识别，系统已安全降级为仅展示基础信息。",
+      "当前诊断类型未知，建议先核对规则版本与前端词典版本是否一致。"
+    ]
+  },
+  "riskMapping": {
+    "risk": {
+      "high": "高风险",
+      "medium": "中风险",
+      "low": "低风险"
+    },
+    "severity": {
+      "critical": "紧急",
+      "major": "重要",
+      "minor": "提示"
+    },
+    "displayPolicy": "主标签展示risk，详情区展示severity，禁止同页面使用第二套中文映射。"
+  },
+  "fallbackCopy": {
+    "unknownRuleId": {
+      "title": "规则诊断（未命名）",
+      "description": "该规则已触发，但当前版本暂无中文说明，请查看证据详情。",
+      "opsAdvice": "请联系运维确认规则词典是否需要更新。"
+    },
+    "unknownSkippedCategory": "当前规则暂不可执行，系统已降级处理，请稍后重试。"
+  }
+}

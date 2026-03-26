@@ -1,0 +1,14 @@
+{
+  "version": "v1.0",
+  "generatedAt": "2026-03-12T21:41:42.831Z",
+  "source": "latest_file",
+  "decision": "GO",
+  "summaryClass": "ready",
+  "exitCode": 0,
+  "reasons": [],
+  "advisories": [],
+  "firstAction": "可以按当前默认策略进入发布动作。",
+  "consistencyOk": true,
+  "upstreamGeneratedAt": "2026-03-12T21:41:42.493Z",
+  "upstreamPath": "/Users/billchow/Documents/智慧冷冻站/docs/release-command-center-latest.json"
+}

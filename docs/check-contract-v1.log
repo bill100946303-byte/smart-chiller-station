@@ -1,0 +1,30 @@
+
+> chiller-bff@0.1.0 check:contract
+> node scripts/check-contract.js
+
+Contract validation passed for 5 examples using bff-v1.yaml
+I18N safety notices (1):
+- I18N_ASSERTION: Primary rendering must use key/ok/status/category; message/error are diagnostic details only.
+Source key scan report:
+- uniqueKeys=19
+- alarmDiagnosis: count=2, sample=/bff/v1/sites/{siteId}/dashboard/overview.sourceStatus.sources[3].key
+- alarms: count=1, sample=/bff/v1/sites/{siteId}/dashboard/overview.sourceStatus.sources[2].key
+- alarmSeveritySplit: count=1, sample=/bff/v1/sites/{siteId}/anomalies/summary.sourceStatus.sources[2].key
+- anomalySummary: count=1, sample=/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[2].key
+- dashboardOverview: count=1, sample=/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[1].key
+- devices: count=1, sample=/bff/v1/sites/{siteId}/dashboard/overview.sourceStatus.sources[1].key
+- energy: count=1, sample=/bff/v1/sites/{siteId}/dashboard/overview.sourceStatus.sources[0].key
+- energyCurve: count=1, sample=/bff/v1/sites/{siteId}/dashboard/trends.sourceStatus.sources[0].key
+- latestAlarmLog: count=1, sample=/bff/v1/sites/{siteId}/anomalies/summary.sourceStatus.sources[1].key
+- metric.chilled_delta_t_c: count=1, sample=/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[4].key
+- metric.cooling_delta_t_c: count=1, sample=/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[5].key
+- metric.station_cop: count=1, sample=/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[6].key
+- metric.station_total_power_kw: count=1, sample=/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[7].key
+- ruleMetrics: count=1, sample=/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[3].key
+- rules: count=1, sample=/bff/v1/sites/{siteId}/recommendations.sourceStatus.sources[0].key
+- runParams: count=1, sample=/bff/v1/sites/{siteId}/dashboard/trends.sourceStatus.sources[1].key
+- subsystemSummary: count=1, sample=/bff/v1/sites/{siteId}/anomalies/summary.sourceStatus.sources[0].key
+- trendBaseline: count=1, sample=/bff/v1/sites/{siteId}/dashboard/trends.sourceStatus.sources[2].key
+- trendQuality: count=1, sample=/bff/v1/sites/{siteId}/dashboard/trends.sourceStatus.sources[3].key
+Source key drift warnings: none
+Source key scan JSON written: /Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/openapi/examples/source-key-scan-report.json

@@ -1,0 +1,161 @@
+{
+  "site": {
+    "siteId": "126lnoffice",
+    "siteName": "126lnoffice"
+  },
+  "generatedAt": "2026-03-11T16:33:37.578Z",
+  "summary": {
+    "total": 0,
+    "highRisk": 0,
+    "criticalSeverity": 0
+  },
+  "cards": [],
+  "ruleEvaluation": {
+    "rulesLoaded": true,
+    "error": null,
+    "ruleSetId": "hvac-rules-v1",
+    "version": "1.0.1",
+    "totalEnabledRules": 5,
+    "matchedRuleIds": [],
+    "skippedRuleIds": [
+      "low-delta-t-chilled-loop",
+      "pump-frequency-too-high",
+      "cooling-side-low-efficiency",
+      "stale-data-detection"
+    ],
+    "skippedRuleDetails": [
+      {
+        "ruleId": "low-delta-t-chilled-loop",
+        "reason": "missing-metric",
+        "missingMetrics": [
+          {
+            "metric": "chilled_delta_t_c",
+            "category": "upstream_unreachable",
+            "message": "upstream_unreachable: Legacy request error: TypeError: fetch failed"
+          },
+          {
+            "metric": "station_total_power_kw",
+            "category": "field_missing_or_invalid",
+            "message": "field_missing_or_invalid: metric station_total_power_kw missing in upstream payload"
+          }
+        ]
+      },
+      {
+        "ruleId": "pump-frequency-too-high",
+        "reason": "missing-metric",
+        "missingMetrics": [
+          {
+            "metric": "chilled_delta_t_c",
+            "category": "upstream_unreachable",
+            "message": "upstream_unreachable: Legacy request error: TypeError: fetch failed"
+          }
+        ]
+      },
+      {
+        "ruleId": "cooling-side-low-efficiency",
+        "reason": "missing-metric",
+        "missingMetrics": [
+          {
+            "metric": "cooling_delta_t_c",
+            "category": "upstream_unreachable",
+            "message": "upstream_unreachable: Legacy request error: TypeError: fetch failed"
+          },
+          {
+            "metric": "station_cop",
+            "category": "upstream_unreachable",
+            "message": "upstream_unreachable: Legacy request error: TypeError: fetch failed"
+          }
+        ]
+      },
+      {
+        "ruleId": "stale-data-detection",
+        "reason": "missing-metric",
+        "missingMetrics": [
+          {
+            "metric": "unknown_metric_x",
+            "category": "unknown",
+            "message": null
+          }
+        ]
+      }
+    ],
+    "missingMetricPolicy": "skip_rule"
+  },
+  "sourceStatus": {
+    "overall": "partial",
+    "sources": [
+      {
+        "key": "rules",
+        "endpoint": "/Users/billchow/Documents/智慧冷冻站/docs/hvac-rules-v1.yaml",
+        "ok": true,
+        "status": null,
+        "message": "hvac-rules-v1@1.0.1",
+        "error": null,
+        "rows": 5
+      },
+      {
+        "key": "dashboardOverview",
+        "endpoint": "/bff/v1/sites/126lnoffice/dashboard/overview",
+        "ok": false,
+        "status": 502,
+        "message": null,
+        "error": "dashboardOverview unavailable: 502",
+        "rows": 3
+      },
+      {
+        "key": "anomalySummary",
+        "endpoint": "/bff/v1/sites/126lnoffice/anomalies/summary",
+        "ok": false,
+        "status": null,
+        "message": "failed",
+        "error": "anomalySummary unavailable",
+        "rows": 2
+      },
+      {
+        "key": "ruleMetrics",
+        "endpoint": "/zsqy/homepage/126lnoffice/getEquipmentEnergyStatisticsCurve;/zsqy/homepage/126lnoffice/getEnergyStatisticsCurve;/zsqy/homepage/126lnoffice/getRunParamsCurve",
+        "ok": false,
+        "status": null,
+        "message": "failed",
+        "error": "ruleMetrics unavailable",
+        "rows": 3
+      },
+      {
+        "key": "metric.chilled_delta_t_c",
+        "endpoint": "/zsqy/homepage/126lnoffice/getEquipmentEnergyStatisticsCurve",
+        "ok": false,
+        "status": null,
+        "message": "upstream_unreachable: Legacy request error: TypeError: fetch failed",
+        "error": "upstream unreachable",
+        "rows": null
+      },
+      {
+        "key": "metric.cooling_delta_t_c",
+        "endpoint": "/zsqy/homepage/126lnoffice/getEquipmentEnergyStatisticsCurve",
+        "ok": false,
+        "status": null,
+        "message": "upstream_unreachable: Legacy request error: TypeError: fetch failed",
+        "error": "upstream unreachable",
+        "rows": null
+      },
+      {
+        "key": "metric.station_cop",
+        "endpoint": "/zsqy/homepage/126lnoffice/getEquipmentEnergyStatisticsCurve",
+        "ok": false,
+        "status": null,
+        "message": "upstream_unreachable: Legacy request error: TypeError: fetch failed",
+        "error": "upstream unreachable",
+        "rows": null
+      },
+      {
+        "key": "metric.station_total_power_kw",
+        "endpoint": "/zsqy/homepage/126lnoffice/getEquipmentEnergyStatisticsCurve",
+        "ok": false,
+        "status": null,
+        "message": "field_missing_or_invalid: metric station_total_power_kw missing in upstream payload",
+        "error": "field missing in upstream payload",
+        "rows": null
+      }
+    ]
+  }
+}

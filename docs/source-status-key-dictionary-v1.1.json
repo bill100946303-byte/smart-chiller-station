@@ -1,0 +1,230 @@
+{
+  "version": "1.1.0",
+  "description": "SourceStatus 中文映射字典收敛版（含短标签、别名、状态短句、折叠摘要策略）",
+  "canonicalKeys": {
+    "energy": {
+      "shortLabel": "能耗总览",
+      "fullLabel": "能耗总览来源",
+      "priority": 10,
+      "sourceEndpoint": "/zsqy/homepage/{siteId}/getEquipmentEnergyStatisticsCurve",
+      "semantics": "首页能耗卡片与核心实时量上游来源。",
+      "failHint": "能耗总览源不可达，请检查站点能耗接口。"
+    },
+    "runParams": {
+      "shortLabel": "运行参数",
+      "fullLabel": "运行参数趋势来源",
+      "priority": 20,
+      "sourceEndpoint": "/zsqy/homepage/{siteId}/getRunParamsCurve",
+      "semantics": "温差等运行参数趋势来源。",
+      "failHint": "运行参数趋势源不可达，请检查参数曲线接口。"
+    },
+    "latestAlarmLog": {
+      "shortLabel": "最新告警",
+      "fullLabel": "最新告警日志来源",
+      "priority": 30,
+      "sourceEndpoint": "/zsqy/qsAlarmlog/{siteId}/findNewAlarmLog",
+      "semantics": "最新告警事件明细来源。",
+      "failHint": "最新告警日志不可达，请检查告警日志接口。"
+    },
+    "subsystemSummary": {
+      "shortLabel": "子系统",
+      "fullLabel": "子系统概览来源",
+      "priority": 40,
+      "sourceEndpoint": "/{siteId}/getAllSubsystemInfo",
+      "semantics": "子系统在线/离线与告警汇总来源。",
+      "failHint": "子系统概览不可达，请检查子系统汇总接口。"
+    },
+    "ruleMetrics": {
+      "shortLabel": "规则聚合",
+      "fullLabel": "规则指标聚合来源",
+      "priority": 50,
+      "sourceEndpoint": "/zsqy/homepage/{siteId}/getEquipmentEnergyStatisticsCurve + getEnergyStatisticsCurve + getRunParamsCurve",
+      "semantics": "规则前置聚合输入来源。",
+      "failHint": "规则指标聚合源不可达，建议诊断可能降级。"
+    },
+    "metric.chilled_delta_t_c": {
+      "shortLabel": "冷冻温差",
+      "fullLabel": "规则指标：冷冻水温差",
+      "priority": 60,
+      "sourceEndpoint": "/zsqy/homepage/{siteId}/getEquipmentEnergyStatisticsCurve",
+      "semantics": "规则评估所需冷冻水温差可用性。",
+      "failHint": "冷冻水温差指标不可用，请检查温差点位或上游链路。"
+    },
+    "metric.cooling_delta_t_c": {
+      "shortLabel": "冷却温差",
+      "fullLabel": "规则指标：冷却水温差",
+      "priority": 70,
+      "sourceEndpoint": "/zsqy/homepage/{siteId}/getEquipmentEnergyStatisticsCurve",
+      "semantics": "规则评估所需冷却水温差可用性。",
+      "failHint": "冷却水温差指标不可用，请检查温差点位或上游链路。"
+    },
+    "metric.station_cop": {
+      "shortLabel": "冷站COP",
+      "fullLabel": "规则指标：冷站COP",
+      "priority": 80,
+      "sourceEndpoint": "/zsqy/homepage/{siteId}/getEquipmentEnergyStatisticsCurve",
+      "semantics": "规则评估所需 COP 可用性。",
+      "failHint": "冷站COP指标不可用，请检查COP字段或上游链路。"
+    },
+    "metric.station_total_power_kw": {
+      "shortLabel": "总站功率",
+      "fullLabel": "规则指标：冷站实时总功率",
+      "priority": 90,
+      "sourceEndpoint": "/zsqy/homepage/{siteId}/getEquipmentEnergyStatisticsCurve",
+      "semantics": "规则评估所需总功率可用性。",
+      "failHint": "冷站总功率指标不可用，请检查总功率字段或上游链路。"
+    },
+    "energyCurve": {
+      "shortLabel": "能耗趋势",
+      "fullLabel": "能耗趋势来源",
+      "priority": 100,
+      "sourceEndpoint": "/zsqy/homepage/{siteId}/getEnergyStatisticsCurve",
+      "semantics": "功率等能耗趋势来源。",
+      "failHint": "能耗趋势源不可达，请检查能耗曲线接口。"
+    },
+    "devices": {
+      "shortLabel": "设备清单",
+      "fullLabel": "设备清单来源",
+      "priority": 110,
+      "sourceEndpoint": "/zsqy/drinfo/{siteId}/findObject",
+      "semantics": "设备数量/类型与拓扑节点来源。",
+      "failHint": "设备清单源不可达，请检查设备台账接口。"
+    },
+    "alarms": {
+      "shortLabel": "告警摘要",
+      "fullLabel": "告警摘要来源",
+      "priority": 120,
+      "sourceEndpoint": "/zsqy/qsAlarmlog/{siteId}/findNewAlarmLog",
+      "semantics": "首页总览告警摘要来源。",
+      "failHint": "告警摘要源不可达，请检查告警日志接口。"
+    },
+    "rules": {
+      "shortLabel": "规则配置",
+      "fullLabel": "规则配置来源",
+      "priority": 130,
+      "sourceEndpoint": "docs/hvac-rules-v1.yaml",
+      "semantics": "规则引擎规则文件来源。",
+      "failHint": "规则配置不可读，建议功能已降级。"
+    },
+    "dashboardOverview": {
+      "shortLabel": "总览聚合",
+      "fullLabel": "总览聚合内部来源",
+      "priority": 140,
+      "sourceEndpoint": "/bff/v1/sites/{siteId}/dashboard/overview",
+      "semantics": "recommendations 对总览聚合的内部依赖。",
+      "failHint": "总览聚合不可用，建议结果可能不完整。"
+    },
+    "anomalySummary": {
+      "shortLabel": "异常聚合",
+      "fullLabel": "异常聚合内部来源",
+      "priority": 150,
+      "sourceEndpoint": "/bff/v1/sites/{siteId}/anomalies/summary",
+      "semantics": "recommendations 对异常聚合的内部依赖。",
+      "failHint": "异常聚合不可用，建议结果可能不完整。"
+    }
+  },
+  "aliases": {
+    "subsystemInfo": "subsystemSummary"
+  },
+  "statusClassifier": {
+    "order": [
+      "normal",
+      "field_invalid",
+      "upstream_unreachable",
+      "upstream_service_error",
+      "state_abnormal"
+    ],
+    "rules": [
+      {
+        "id": "normal",
+        "shortText": "正常",
+        "when": "ok === true && !error"
+      },
+      {
+        "id": "field_invalid",
+        "shortText": "字段缺失或无效",
+        "when": "message/error contains field_missing_or_invalid"
+      },
+      {
+        "id": "upstream_unreachable",
+        "shortText": "上游不可达",
+        "when": "message/error contains upstream_unreachable|fetch failed|timeout|ECONN|ENOTFOUND"
+      },
+      {
+        "id": "upstream_service_error",
+        "shortText": "上游服务异常",
+        "when": "status >= 500 or status in [502,503,504]"
+      },
+      {
+        "id": "state_abnormal",
+        "shortText": "状态异常",
+        "when": "ok === false and none of above matched"
+      }
+    ]
+  },
+  "summaryPolicy": {
+    "formula": {
+      "total": "sources.length",
+      "abnormal": "count(classification != normal)",
+      "hard_block": "count(classification in [upstream_unreachable, upstream_service_error])",
+      "field_issue": "count(classification == field_invalid)"
+    },
+    "summaryText": {
+      "all_ok": "来源正常（0/{total}）",
+      "has_issue": "来源异常（{abnormal}/{total}）",
+      "subline": "阻塞 {hard_block} · 字段问题 {field_issue}"
+    },
+    "toneRule": {
+      "good": "abnormal == 0",
+      "warn": "abnormal > 0"
+    }
+  },
+  "dynamicMetric": {
+    "regex": "^metric\\.([a-z0-9_]+)$",
+    "shortLabelTemplate": "{field_short_cn_or_default}",
+    "fullLabelTemplate": "规则指标：{field_cn_or_key}",
+    "defaultShortLabel": "规则指标",
+    "defaultSourceEndpoint": "ruleMetrics",
+    "failHintTemplate": "{field_cn_or_key}指标不可用，请检查字段映射或上游链路。",
+    "fieldCnMap": {
+      "chilled_delta_t_c": "冷冻水温差",
+      "cooling_delta_t_c": "冷却水温差",
+      "station_cop": "冷站COP",
+      "station_total_power_kw": "冷站实时总功率"
+    },
+    "fieldShortCnMap": {
+      "chilled_delta_t_c": "冷冻温差",
+      "cooling_delta_t_c": "冷却温差",
+      "station_cop": "冷站COP",
+      "station_total_power_kw": "总站功率"
+    }
+  },
+  "fallback": {
+    "shortLabel": "未收录",
+    "fullLabelTemplate": "未收录来源（{rawKey}）",
+    "failHint": "来源语义未收录，请先完成口径校准后再业务化展示。",
+    "riskHint": "未收录 key 禁止直接用于业务结论。"
+  },
+  "opaqueKeysForBusinessView": [
+    "ruleMetrics",
+    "dashboardOverview",
+    "anomalySummary"
+  ],
+  "v1Diff": {
+    "added": [
+      "shortLabel/fullLabel 双标签",
+      "key priority 排序字段",
+      "statusClassifier 状态短句规则",
+      "summaryPolicy 折叠态公式与 tone 规则"
+    ],
+    "adjusted": [
+      "subsystemInfo 收敛为 subsystemSummary 兼容别名",
+      "metric.* 模板增加短标签映射"
+    ],
+    "compatible": [
+      "保持 v1 key 语义与失败主提示主旨不变",
+      "不改字段定义与 null_strategy"
+    ]
+  }
+}
+

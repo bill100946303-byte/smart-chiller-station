@@ -1,0 +1,164 @@
+{
+  "version": "1.1.0",
+  "copybookId": "hvac-release-snapshot-index-copy-v1.1",
+  "scope": "release-snapshot-index duty copy",
+  "fieldScope": {
+    "required": [
+      "summary.go",
+      "summary.noGo",
+      "summary.unknown",
+      "summary.shown"
+    ]
+  },
+  "classificationOrder": [
+    "history_unknown",
+    "history_mixed",
+    "history_ok"
+  ],
+  "classes": [
+    {
+      "id": "history_ok",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "summary.shown > 0",
+          "summary.go > 0",
+          "summary.noGo == 0",
+          "summary.unknown == 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "历史稳定可放行",
+          "sub": "近次快照全GO",
+          "firstAction": "按窗口发布"
+        },
+        "en": {
+          "main": "History Stable",
+          "sub": "Recent snapshots are GO",
+          "firstAction": "Release in window"
+        },
+        "vi": {
+          "main": "Lich su on dinh",
+          "sub": "Snapshot gan day deu GO",
+          "firstAction": "Phat hanh theo cua so"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "历史快照结论：OK",
+          "sub": "当前展示窗口内无 NO-GO/UNKNOWN，历史放行信号稳定。",
+          "firstAction": "执行本次 live 复核后，按标准发布流程推进。"
+        },
+        "en": {
+          "main": "Snapshot History: OK",
+          "sub": "No NO-GO/UNKNOWN in the current window and release signals are stable.",
+          "firstAction": "Run live verification for this round, then proceed with normal release flow."
+        },
+        "vi": {
+          "main": "Ket luan lich su snapshot: OK",
+          "sub": "Trong cua so hien tai khong co NO-GO/UNKNOWN, tin hieu phat hanh on dinh.",
+          "firstAction": "Kiem tra live cho dot nay, sau do theo quy trinh phat hanh thong thuong."
+        }
+      }
+    },
+    {
+      "id": "history_mixed",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "summary.shown > 0",
+          "summary.unknown == 0",
+          "summary.go > 0",
+          "summary.noGo > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "历史结论混合",
+          "sub": "GO与NO-GO并存",
+          "firstAction": "先看最近NO-GO"
+        },
+        "en": {
+          "main": "Mixed History",
+          "sub": "GO and NO-GO coexist",
+          "firstAction": "Check latest NO-GO"
+        },
+        "vi": {
+          "main": "Lich su hon hop",
+          "sub": "GO va NO-GO dong thoi",
+          "firstAction": "Xem NO-GO moi nhat"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "历史快照结论：MIXED",
+          "sub": "当前窗口同时存在 GO 与 NO-GO，发布风险不连续。",
+          "firstAction": "先定位最近一次 NO-GO 的 reason，再决定是否进入发布窗口。"
+        },
+        "en": {
+          "main": "Snapshot History: MIXED",
+          "sub": "Both GO and NO-GO appear in the current window, indicating inconsistent release risk.",
+          "firstAction": "Locate reasons of the latest NO-GO first, then decide whether to enter release window."
+        },
+        "vi": {
+          "main": "Ket luan lich su snapshot: MIXED",
+          "sub": "Trong cua so hien tai co ca GO va NO-GO, rui ro phat hanh khong lien tuc.",
+          "firstAction": "Xac dinh reason cua NO-GO gan nhat truoc, roi moi quyet dinh vao cua so phat hanh."
+        }
+      }
+    },
+    {
+      "id": "history_unknown",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "summary.shown == 0",
+          "summary.unknown > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "历史状态未知",
+          "sub": "含未知或无样本",
+          "firstAction": "先补采快照"
+        },
+        "en": {
+          "main": "History Unknown",
+          "sub": "Unknown or no samples",
+          "firstAction": "Collect snapshots first"
+        },
+        "vi": {
+          "main": "Lich su chua ro",
+          "sub": "Co unknown hoac khong co mau",
+          "firstAction": "Lay them snapshot truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "历史快照结论：UNKNOWN",
+          "sub": "当前窗口存在未知快照或样本不足，历史趋势不可直接用于放行。",
+          "firstAction": "先补齐有效快照（建议至少3条）并重算 index。"
+        },
+        "en": {
+          "main": "Snapshot History: UNKNOWN",
+          "sub": "Unknown snapshots or insufficient samples exist, so trend cannot be used directly for release.",
+          "firstAction": "Collect enough valid snapshots (recommended >=3) and recompute the index."
+        },
+        "vi": {
+          "main": "Ket luan lich su snapshot: UNKNOWN",
+          "sub": "Co snapshot unknown hoac thieu mau, xu huong khong the dung truc tiep de quyet dinh phat hanh.",
+          "firstAction": "Bo sung du snapshot hop le (de xuat >=3) roi tinh lai index."
+        }
+      }
+    }
+  ],
+  "mobileBudget": {
+    "zhMaxChars": 18
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

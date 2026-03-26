@@ -1,0 +1,76 @@
+{
+  "site": {
+    "siteId": "126lnoffice",
+    "siteName": "6期1栋冷站"
+  },
+  "generatedAt": "2026-03-13T14:58:50.672Z",
+  "energyCards": {
+    "currentCop": 5.24,
+    "totalPowerKw": 7.9,
+    "currentLoadRate": null,
+    "totalElectricityKwh": 53.84,
+    "savingPotentialPct": null,
+    "activeAnomalyCount": 3,
+    "chilledDeltaT": 0.9,
+    "coolingDeltaT": 1.4
+  },
+  "deviceSummary": {
+    "totalDevices": 59,
+    "chillerCount": 1,
+    "chilledPumpCount": 1,
+    "coolingPumpCount": 1,
+    "coolingTowerCount": 1
+  },
+  "alarmSummary": {
+    "total": 3,
+    "high": 1,
+    "medium": 1,
+    "low": 1
+  },
+  "freshness": {
+    "latestTimestamp": "2025-11-08T08:07:00.000Z",
+    "stale": true,
+    "ageHours": 2975.5
+  },
+  "sourceStatus": {
+    "overall": "partial",
+    "sources": [
+      {
+        "key": "energy",
+        "endpoint": "/zsqy/homepage/126lnoffice/getEquipmentEnergyStatisticsCurve",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "error": null,
+        "rows": 4
+      },
+      {
+        "key": "devices",
+        "endpoint": "/zsqy/drinfo/126lnoffice/findObject",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "error": null,
+        "rows": 59
+      },
+      {
+        "key": "alarms",
+        "endpoint": "/zsqy/qsAlarmlog/126lnoffice/findNewAlarmLog",
+        "ok": false,
+        "status": 500,
+        "message": null,
+        "error": "Legacy request failed: 500",
+        "rows": null
+      },
+      {
+        "key": "alarmDiagnosis",
+        "endpoint": "/zsqy/qsAlarmlog/126lnoffice/findNewAlarmLog",
+        "ok": false,
+        "status": null,
+        "message": "upstream_unreachable: timeout",
+        "error": "network timeout",
+        "rows": null
+      }
+    ]
+  }
+}

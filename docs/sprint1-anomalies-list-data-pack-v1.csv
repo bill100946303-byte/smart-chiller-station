@@ -1,0 +1,8 @@
+field_key,source_candidate,current_status,blocking,fallback_strategy,display_name,notes
+id,"/zsqy/qsAlarmlog/{dbName}/findNewAlarmLog.id; /bff/v1/sites/{siteId}/anomalies/summary.latestEvents[].id",partial,yes,"缺失时只允许 UI 临时 key；禁止详情跳转和持久选择态",告警ID,"最小字段集合；当前无独立 list 端点"
+title,"/bff/v1/sites/{siteId}/anomalies/summary.latestEvents[].title; fallback=regId + reg/subinfo 组合生成",partial,yes,"缺值回退为 告警事件",告警标题,"当前为 contract-only 字段，尚未收敛进字段字典主键"
+severity,"qsAlarmlog.alarmLevel + 映射规则; /bff/v1/sites/{siteId}/anomalies/summary.latestEvents[].severity",partial,yes,"由 BFF 统一映射到 critical|major|minor；前端不兼容双枚举",告警等级,"当前字典口径与 summary/high-medium-low 示例存在漂移"
+occurredAt,"/zsqy/qsAlarmlog/{dbName}/findNewAlarmLog.time; /bff/v1/sites/{siteId}/anomalies/summary.latestEvents[].occurredAt",partial,yes,"缺值显示 --，不得伪造最近时间",告警发生时间,"最小字段集合"
+source,"/bff/v1/sites/{siteId}/anomalies/summary.latestEvents[].source; fallback=regId 反查设备/点位",partial,yes,"缺值回退为 未知来源",告警来源,"当前为 contract-only 字段，尚未收敛进字段字典主键"
+acknowledged,"当前未发现稳定 source candidate",missing,no,"首版固定返回 null 或不返回；前端隐藏确认态列/筛选",已确认/已处理,"当前真缺失"
+state,"/zsqy/qsAlarmlog/{dbName}/findNewAlarmLog.alarmstate",partial,no,"首版可返回 null；前端隐藏状态列/筛选",异常状态,"field-dictionary 已定义 anomaly_state，但当前 BFF 未暴露"

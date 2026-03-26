@@ -1,0 +1,172 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-release-ready-brief-copy-v1",
+  "scope": "release-ready brief duty copy",
+  "fieldScope": {
+    "required": [
+      "decision",
+      "exitCode",
+      "reasons[]",
+      "advisories[]"
+    ]
+  },
+  "priorityOrder": [
+    "blocked",
+    "review_required",
+    "ready"
+  ],
+  "classes": [
+    {
+      "id": "blocked",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "decision == 'NO-GO'",
+          "exitCode == 1",
+          "reasons.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "发布受阻",
+          "sub": "存在阻断项",
+          "firstAction": "先修复首个reason"
+        },
+        "en": {
+          "main": "Blocked",
+          "sub": "Blocking items exist",
+          "firstAction": "Fix first reason"
+        },
+        "vi": {
+          "main": "Bi chan phat hanh",
+          "sub": "Ton tai muc chan",
+          "firstAction": "Sua reason dau tien"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "放行状态：BLOCKED",
+          "sub": "当前存在阻断信号，暂不允许放行。",
+          "firstAction": "先按 reasons 第一项排障，再重跑发布判定。"
+        },
+        "en": {
+          "main": "Release Status: BLOCKED",
+          "sub": "Blocking signals are present, so release is not allowed now.",
+          "firstAction": "Troubleshoot the first item in reasons, then rerun release decision."
+        },
+        "vi": {
+          "main": "Trang thai phat hanh: BLOCKED",
+          "sub": "Dang co tin hieu chan, tam thoi khong duoc phat hanh.",
+          "firstAction": "Xu ly muc dau trong reasons, sau do chay lai phan quyet phat hanh."
+        }
+      }
+    },
+    {
+      "id": "review_required",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "blocked"
+        ],
+        "conditions": [
+          "decision == 'GO'",
+          "exitCode == 0",
+          "reasons.length == 0",
+          "advisories.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "可放行需复核",
+          "sub": "存在提示项",
+          "firstAction": "先看advisories"
+        },
+        "en": {
+          "main": "Review Needed",
+          "sub": "Advisories present",
+          "firstAction": "Review advisories"
+        },
+        "vi": {
+          "main": "Can ra soat",
+          "sub": "Co canh bao",
+          "firstAction": "Xem advisories"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "放行状态：REVIEW_REQUIRED",
+          "sub": "主结论为 GO，但有提示项，需人工复核后放行。",
+          "firstAction": "先确认 advisories 的影响范围，再执行放行。"
+        },
+        "en": {
+          "main": "Release Status: REVIEW_REQUIRED",
+          "sub": "Decision is GO, but advisories require manual review before release.",
+          "firstAction": "Confirm advisory impact first, then proceed with release."
+        },
+        "vi": {
+          "main": "Trang thai phat hanh: REVIEW_REQUIRED",
+          "sub": "Decision la GO nhung co canh bao, can ra soat thu cong truoc khi phat hanh.",
+          "firstAction": "Xac nhan anh huong cua advisories truoc, roi moi phat hanh."
+        }
+      }
+    },
+    {
+      "id": "ready",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "blocked",
+          "review_required"
+        ],
+        "conditions": [
+          "decision == 'GO'",
+          "exitCode == 0",
+          "reasons.length == 0",
+          "advisories.length == 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "可直接放行",
+          "sub": "门禁已清",
+          "firstAction": "按窗口发布"
+        },
+        "en": {
+          "main": "Ready",
+          "sub": "Gates clear",
+          "firstAction": "Release in window"
+        },
+        "vi": {
+          "main": "San sang phat hanh",
+          "sub": "Cong da sach",
+          "firstAction": "Phat hanh theo cua so"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "放行状态：READY",
+          "sub": "当前无阻断、无提示项，可按标准流程放行。",
+          "firstAction": "先确认发布窗口，再按标准步骤执行。"
+        },
+        "en": {
+          "main": "Release Status: READY",
+          "sub": "No blockers or advisories now, ready for standard release flow.",
+          "firstAction": "Confirm release window, then execute standard steps."
+        },
+        "vi": {
+          "main": "Trang thai phat hanh: READY",
+          "sub": "Khong co blocker hay advisory, san sang theo quy trinh phat hanh chuan.",
+          "firstAction": "Xac nhan cua so phat hanh, sau do thuc hien cac buoc chuan."
+        }
+      }
+    }
+  ],
+  "fallback": {
+    "whenNoClassMatched": "review_required"
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

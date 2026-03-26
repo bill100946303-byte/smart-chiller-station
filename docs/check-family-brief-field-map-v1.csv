@@ -1,0 +1,10 @@
+brief_field,source_field_path_or_logic,release_impact,requiredness,missing_default_behavior,fail_open_or_closed,affects_default_release,notes
+generatedAt,$.generatedAt,advisory,required,default_to_unknown_and_set_freshness_state_unknown,fail-open,no,brief freshness anchor timestamp
+overall,$.overall,blocking,required,default_to_FAIL,fail-closed,yes,primary gate summary
+passedCount,$.passedCount,blocking,required,default_to_0,fail-closed,yes,passed checks count
+totalCount,$.totalCount,blocking,required,default_to_0_and_treat_not_releasable,fail-closed,yes,total checks count
+freshness.state,derived_from_generatedAt_via_ageMinutes_thresholds_fresh_lt30_warn_30_to_59_stale_ge60_unknown,advisory_default_blocking_strict,required,default_to_unknown,fail-open_default_strict_fail-closed,no_default,strict mode may upgrade to blocking when state!=fresh
+failedCount,derived_count_of_$.checks_where_ok_not_true,advisory,required,recompute_from_checks_else_0,fail-open,no,brief failure quantity
+topFailedChecks[],derived_first_3_of_$.checks_where_ok_not_true_select_script,advisory,optional,default_to_empty_array,fail-open,no,high-signal failed checks preview
+rule,threshold_baseline_warn30_stale60,acceptance-snapshot-freshness-policy-v1.md,NA,NA,NA,no,shared freshness baseline
+summary,counts,blocking=3|warning=4,NA,NA,NA,no,warning includes advisory and strict-conditional items

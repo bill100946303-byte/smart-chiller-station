@@ -1,0 +1,159 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-verify-gates-json-copy-v1",
+  "scope": "verify-gates-json duty copy",
+  "fieldScope": {
+    "required": [
+      "overall",
+      "passedCount",
+      "totalCount",
+      "gates[].ok"
+    ]
+  },
+  "classes": [
+    {
+      "id": "all_pass",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "overall == 'PASS'",
+          "passedCount == totalCount",
+          "passedCount > 0",
+          "all(gates[].ok == true)"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "门禁全通过",
+          "sub": "全部校验成功",
+          "firstAction": "进入放行确认"
+        },
+        "en": {
+          "main": "All Pass",
+          "sub": "All checks succeeded",
+          "firstAction": "Start release confirmation"
+        },
+        "vi": {
+          "main": "Tat ca cong dat",
+          "sub": "Moi kiem tra deu thanh cong",
+          "firstAction": "Bat dau xac nhan phat hanh"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Verify-Gates 状态：ALL_PASS",
+          "sub": "门禁总结果为 PASS，且所有 gate 均通过。",
+          "firstAction": "按发布窗口执行下一步放行流程。"
+        },
+        "en": {
+          "main": "Verify-Gates Status: ALL_PASS",
+          "sub": "Overall result is PASS and every gate is passed.",
+          "firstAction": "Proceed to the next release step in the release window."
+        },
+        "vi": {
+          "main": "Trang thai Verify-Gates: ALL_PASS",
+          "sub": "Ket qua tong la PASS va moi gate deu dat.",
+          "firstAction": "Tiep tuc buoc phat hanh tiep theo trong cua so phat hanh."
+        }
+      }
+    },
+    {
+      "id": "partial_fail",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "overall == 'FAIL'",
+          "passedCount > 0",
+          "passedCount < totalCount",
+          "exists(gates[].ok == false)",
+          "exists(gates[].ok == true)"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "门禁部分失败",
+          "sub": "通过与失败并存",
+          "firstAction": "先修失败gate"
+        },
+        "en": {
+          "main": "Partial Fail",
+          "sub": "Passed and failed mixed",
+          "firstAction": "Fix failed gates first"
+        },
+        "vi": {
+          "main": "Cong loi mot phan",
+          "sub": "Vua dat vua loi",
+          "firstAction": "Sua gate loi truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Verify-Gates 状态：PARTIAL_FAIL",
+          "sub": "总结果为 FAIL，当前存在部分 gate 通过、部分 gate 失败。",
+          "firstAction": "先定位 gates[].ok=false 的项并修复，再重跑 verify-gates。"
+        },
+        "en": {
+          "main": "Verify-Gates Status: PARTIAL_FAIL",
+          "sub": "Overall is FAIL with a mix of passed and failed gates.",
+          "firstAction": "Fix items where gates[].ok=false, then rerun verify-gates."
+        },
+        "vi": {
+          "main": "Trang thai Verify-Gates: PARTIAL_FAIL",
+          "sub": "Tong the la FAIL, co gate dat va gate loi dong thoi.",
+          "firstAction": "Xu ly cac muc gates[].ok=false truoc, sau do chay lai verify-gates."
+        }
+      }
+    },
+    {
+      "id": "all_fail",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "overall == 'FAIL'",
+          "passedCount == 0",
+          "totalCount > 0",
+          "all(gates[].ok == false)"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "门禁全失败",
+          "sub": "暂无可放行条件",
+          "firstAction": "先停发并排障"
+        },
+        "en": {
+          "main": "All Fail",
+          "sub": "No release condition met",
+          "firstAction": "Stop release and troubleshoot"
+        },
+        "vi": {
+          "main": "Tat ca cong loi",
+          "sub": "Chua dat dieu kien phat hanh",
+          "firstAction": "Dung phat hanh va xu ly su co"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Verify-Gates 状态：ALL_FAIL",
+          "sub": "总结果为 FAIL，且所有 gate 均未通过。",
+          "firstAction": "立即停止放行，按 gate 顺序逐项恢复后再重跑。"
+        },
+        "en": {
+          "main": "Verify-Gates Status: ALL_FAIL",
+          "sub": "Overall is FAIL and all gates are failing.",
+          "firstAction": "Stop release immediately and recover gates one by one before rerun."
+        },
+        "vi": {
+          "main": "Trang thai Verify-Gates: ALL_FAIL",
+          "sub": "Tong the la FAIL va tat ca gate deu loi.",
+          "firstAction": "Dung phat hanh ngay, khoi phuc tung gate roi chay lai."
+        }
+      }
+    }
+  ],
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

@@ -1,0 +1,287 @@
+{
+  "version": "1.0.0",
+  "copybookId": "sprint1-alarm-page-iteration1-copy-v1",
+  "scope": "Sprint1 alarm page iteration1 duty copy",
+  "demoRecommendation": {
+    "fitForDutyOpsDemo": true,
+    "reason": {
+      "zh": "真实列表链路已接入，且五类状态已能字段级区分，适合直接给值班/运营演示。",
+      "en": "The real list pipeline is connected and the five states can already be separated by field-level conditions, so it is suitable for direct duty and operations demo.",
+      "vi": "Chuoi danh sach thuc te da duoc ket noi va nam trang thai da co the tach ro bang dieu kien cap truong, nen phu hop de demo truc tiep cho truc va van hanh."
+    }
+  },
+  "probeEvidence": {
+    "siteId": "126lnoffice",
+    "sampledAt": "2026-03-13",
+    "unfilteredList": {
+      "itemsLength": 3,
+      "filters": {
+        "severity": null,
+        "state": null
+      },
+      "freshnessStale": true,
+      "sourceOverall": "ok"
+    },
+    "filteredMediumList": {
+      "itemsLength": 0,
+      "filters": {
+        "severity": "medium",
+        "state": null
+      },
+      "freshnessStale": false,
+      "sourceOverall": "ok"
+    }
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  },
+  "fieldScope": {
+    "allowedRoots": [
+      "items",
+      "filters",
+      "freshness",
+      "sourceStatus",
+      "counts"
+    ],
+    "countsAdapterFields": [
+      "counts.total",
+      "counts.filteredTotal"
+    ]
+  },
+  "priorityOrder": [
+    "list_stale",
+    "list_degraded",
+    "list_filtered",
+    "list_empty",
+    "list_ready"
+  ],
+  "classes": [
+    {
+      "id": "list_ready",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "items.length > 0",
+          "filters.severity is null",
+          "filters.state is null"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "列表已就绪",
+          "sub": "可直接查看"
+        },
+        "en": {
+          "main": "List Ready",
+          "sub": "Ready to review"
+        },
+        "vi": {
+          "main": "Danh sach da san sang",
+          "sub": "Co the xem ngay"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "告警页：LIST_READY",
+          "sub": "当前列表已接入、链路正常且数据不陈旧，可直接用于值班查看最近告警与等级分布。"
+        },
+        "en": {
+          "main": "Alarm Page: LIST_READY",
+          "sub": "The list is connected, the source chain is healthy, and the data is not stale, so it can be used directly for duty review of recent alarms and severity mix."
+        },
+        "vi": {
+          "main": "Trang bao dong: LIST_READY",
+          "sub": "Danh sach da duoc ket noi, chuoi nguon binh thuong va du lieu khong cu, nen co the dung truc tiep de truc va xem bao dong gan nhat cung phan bo muc do."
+        }
+      },
+      "firstAction": {
+        "zh": "先看最近 3 条是否来自同一来源，再判断是否需要转到趋势页做验证。",
+        "en": "Check whether the latest three rows come from the same source first, then decide whether to move to the trend page for validation.",
+        "vi": "Truoc tien xem 3 dong moi nhat co den tu cung mot nguon hay khong, sau do moi quyet dinh co can chuyen sang trang xu huong de xac minh hay khong."
+      }
+    },
+    {
+      "id": "list_filtered",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "filters.severity is not null OR filters.state is not null"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "筛选结果中",
+          "sub": "先看筛选条件"
+        },
+        "en": {
+          "main": "Filtered View",
+          "sub": "Check filters first"
+        },
+        "vi": {
+          "main": "Dang xem ket qua loc",
+          "sub": "Kiem tra bo loc truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "告警页：LIST_FILTERED",
+          "sub": "当前列表处于筛选视图，显示的是条件命中的结果；即使结果为空，也不等于全站无告警。"
+        },
+        "en": {
+          "main": "Alarm Page: LIST_FILTERED",
+          "sub": "The list is in a filtered view and shows only rows matched by the current conditions. Even if the result is empty, it does not mean the whole site has no alarms."
+        },
+        "vi": {
+          "main": "Trang bao dong: LIST_FILTERED",
+          "sub": "Danh sach hien dang o che do loc va chi hien thi cac dong khop voi dieu kien hien tai. Ngay ca khi ket qua trong, dieu do khong co nghia la toan tram khong co bao dong."
+        }
+      },
+      "firstAction": {
+        "zh": "先口头确认当前 severity/state 筛选条件，再决定是保留筛选查看还是回到全量列表。",
+        "en": "Confirm the current severity/state filters first, then decide whether to keep the filtered view or return to the full list.",
+        "vi": "Truoc tien xac nhan bang loi noi dieu kien loc severity/state hien tai, sau do moi quyet dinh giu nguyen che do loc hay quay lai danh sach day du."
+      }
+    },
+    {
+      "id": "list_stale",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == true"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "列表已陈旧",
+          "sub": "先刷新再说"
+        },
+        "en": {
+          "main": "List Is Stale",
+          "sub": "Refresh first"
+        },
+        "vi": {
+          "main": "Danh sach da cu",
+          "sub": "Lam moi truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "告警页：LIST_STALE",
+          "sub": "当前列表已接入，但列表时间戳显示数据陈旧，应先按历史参考解读，不要直接据此下实时判断。stale 不等于系统故障。"
+        },
+        "en": {
+          "main": "Alarm Page: LIST_STALE",
+          "sub": "The list is connected, but its timestamp shows stale data. Treat it as historical reference first and do not use it alone for real-time judgment. Stale does not mean a system fault."
+        },
+        "vi": {
+          "main": "Trang bao dong: LIST_STALE",
+          "sub": "Danh sach da duoc ket noi, nhung moc thoi gian cho thay du lieu da cu. Hay xem no la tham chieu lich su truoc va khong duoc chi dua vao no de phan doan thoi gian thuc. Stale khong dong nghia voi loi he thong."
+        }
+      },
+      "firstAction": {
+        "zh": "先刷新列表或重跑运行态检查，确认 freshness 恢复后再向值班/运营解释当前风险。",
+        "en": "Refresh the list or rerun runtime checks first, then explain the current risk to duty or operations only after freshness recovers.",
+        "vi": "Lam moi danh sach hoac chay lai kiem tra runtime truoc, sau do chi giai thich rui ro hien tai cho truc/van hanh khi freshness da hoi phuc."
+      }
+    },
+    {
+      "id": "list_degraded",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall != 'ok' OR sourceStatus.overall is missing"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "列表已降级",
+          "sub": "先查来源"
+        },
+        "en": {
+          "main": "List Degraded",
+          "sub": "Check sources first"
+        },
+        "vi": {
+          "main": "Danh sach da giam cap",
+          "sub": "Kiem tra nguon truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "告警页：LIST_DEGRADED",
+          "sub": "当前列表链路处于 partial 或 failed，行数、来源列或时间列可能不完整；可用于初筛，不可当完整依据。"
+        },
+        "en": {
+          "main": "Alarm Page: LIST_DEGRADED",
+          "sub": "The list pipeline is partial or failed, so row count, source, or time columns may be incomplete. Use it for triage, not as a complete basis."
+        },
+        "vi": {
+          "main": "Trang bao dong: LIST_DEGRADED",
+          "sub": "Chuoi danh sach hien dang partial hoac failed, vi vay so dong, cot nguon hoac cot thoi gian co the chua day du. Chi nen dung de sang loc ban dau, khong nen xem la can cu day du."
+        }
+      },
+      "firstAction": {
+        "zh": "先确认 sourceStatus 是 partial 还是 failed，再决定先补链路还是先人工核对关键告警。",
+        "en": "Confirm whether sourceStatus is partial or failed first, then decide whether to repair the pipeline or manually verify key alarms.",
+        "vi": "Xac nhan truoc sourceStatus la partial hay failed, sau do moi quyet dinh sua chuoi nguon hay doi soat thu cong cac bao dong chinh."
+      }
+    },
+    {
+      "id": "list_empty",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "freshness.stale == false",
+          "sourceStatus.overall == 'ok'",
+          "items.length == 0",
+          "counts.filteredTotal == 0",
+          "filters.severity is null",
+          "filters.state is null"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "当前无告警",
+          "sub": "不是永久无风险"
+        },
+        "en": {
+          "main": "No Alarm Now",
+          "sub": "Not zero risk forever"
+        },
+        "vi": {
+          "main": "Hien khong co bao dong",
+          "sub": "Khong phai khong rui ro mai"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "告警页：LIST_EMPTY",
+          "sub": "当前未见可展示的活动告警，这表示全量列表为空，不等于站点绝对无风险。"
+        },
+        "en": {
+          "main": "Alarm Page: LIST_EMPTY",
+          "sub": "No active alarm row is currently visible. It means the full list is empty now, not that the site is absolutely risk-free."
+        },
+        "vi": {
+          "main": "Trang bao dong: LIST_EMPTY",
+          "sub": "Hien chua thay dong bao dong hoat dong nao. Dieu nay co nghia la danh sach day du hien dang trong, khong co nghia la tram hoan toan khong co rui ro."
+        }
+      },
+      "firstAction": {
+        "zh": "先确认没有筛选条件残留，再去趋势页看关键指标是否稳定。",
+        "en": "Confirm that no filters are still applied first, then check key metric stability on the trend page.",
+        "vi": "Xac nhan truoc rang khong con bo loc nao dang duoc ap dung, sau do sang trang xu huong de xem cac chi so chinh co on dinh hay khong."
+      }
+    }
+  ],
+  "fallback": {
+    "whenNoClassMatched": "list_degraded"
+  }
+}

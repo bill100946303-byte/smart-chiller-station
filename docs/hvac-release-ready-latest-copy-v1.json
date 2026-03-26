@@ -1,0 +1,170 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-release-ready-latest-copy-v1",
+  "scope": "release-snapshot-latest duty copy",
+  "fieldScope": {
+    "required": [
+      "decision",
+      "exitCode",
+      "reasons[]",
+      "generatedAt"
+    ]
+  },
+  "priorityOrder": [
+    "latest_blocked",
+    "latest_unknown",
+    "latest_ready"
+  ],
+  "classes": [
+    {
+      "id": "latest_blocked",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "decision == 'NO-GO'",
+          "exitCode == 1",
+          "reasons.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "最新快照受阻",
+          "sub": "当前不可放行",
+          "firstAction": "先处理首个reason"
+        },
+        "en": {
+          "main": "Latest Blocked",
+          "sub": "Release not allowed now",
+          "firstAction": "Handle the first reason"
+        },
+        "vi": {
+          "main": "Snapshot moi bi chan",
+          "sub": "Hien tai khong duoc phat hanh",
+          "firstAction": "Xu ly reason dau tien"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "最新快照状态：BLOCKED",
+          "sub": "最新快照显示阻断条件已命中，当前禁止放行。",
+          "firstAction": "先按 reasons 首项排障，再重跑 release-snapshot-latest。"
+        },
+        "en": {
+          "main": "Latest Snapshot Status: BLOCKED",
+          "sub": "The latest snapshot contains blocking conditions, so release is blocked.",
+          "firstAction": "Troubleshoot the first item in reasons, then rerun release-snapshot-latest."
+        },
+        "vi": {
+          "main": "Trang thai snapshot moi nhat: BLOCKED",
+          "sub": "Snapshot moi nhat co dieu kien chan, vi vay phat hanh bi chan.",
+          "firstAction": "Xu ly muc dau trong reasons, sau do chay lai release-snapshot-latest."
+        }
+      }
+    },
+    {
+      "id": "latest_unknown",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "decision is missing or decision not in ['GO','NO-GO']",
+          "exitCode is missing or exitCode not in [0,1]",
+          "generatedAt is missing or generatedAt == ''",
+          "decision == 'GO' && exitCode == 1",
+          "decision == 'NO-GO' && exitCode == 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "最新状态未知",
+          "sub": "快照字段异常",
+          "firstAction": "先重采最新快照"
+        },
+        "en": {
+          "main": "Latest Unknown",
+          "sub": "Snapshot fields invalid",
+          "firstAction": "Regenerate latest snapshot"
+        },
+        "vi": {
+          "main": "Trang thai moi chua ro",
+          "sub": "Truong snapshot khong hop le",
+          "firstAction": "Tao lai snapshot moi nhat"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "最新快照状态：UNKNOWN",
+          "sub": "最新快照字段缺失、取值异常或决策与退出码不一致，无法直接用于放行。",
+          "firstAction": "先重跑 release-snapshot 生成有效快照，再判定放行。"
+        },
+        "en": {
+          "main": "Latest Snapshot Status: UNKNOWN",
+          "sub": "Latest snapshot has missing/invalid fields or decision-exitCode mismatch, so it cannot be used directly for release.",
+          "firstAction": "Rerun release-snapshot to regenerate a valid latest snapshot before deciding release."
+        },
+        "vi": {
+          "main": "Trang thai snapshot moi nhat: UNKNOWN",
+          "sub": "Snapshot moi nhat thieu/sai truong hoac khong khop giua decision va exitCode, khong the dung truc tiep de quyet dinh phat hanh.",
+          "firstAction": "Chay lai release-snapshot de tao snapshot hop le truoc khi quyet dinh phat hanh."
+        }
+      }
+    },
+    {
+      "id": "latest_ready",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "latest_blocked",
+          "latest_unknown"
+        ],
+        "conditions": [
+          "decision == 'GO'",
+          "exitCode == 0",
+          "reasons.length == 0",
+          "generatedAt exists and generatedAt != ''"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "最新快照就绪",
+          "sub": "可进入放行",
+          "firstAction": "按窗口执行发布"
+        },
+        "en": {
+          "main": "Latest Ready",
+          "sub": "Ready for release",
+          "firstAction": "Release in window"
+        },
+        "vi": {
+          "main": "Snapshot moi san sang",
+          "sub": "San sang de phat hanh",
+          "firstAction": "Phat hanh theo cua so"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "最新快照状态：READY",
+          "sub": "最新快照结论为 GO 且无阻断原因，可进入标准放行流程。",
+          "firstAction": "先做发布窗口确认，再按标准步骤放行。"
+        },
+        "en": {
+          "main": "Latest Snapshot Status: READY",
+          "sub": "Latest snapshot is GO with no blocking reasons, ready for standard release flow.",
+          "firstAction": "Run release-window confirmation first, then proceed with standard release steps."
+        },
+        "vi": {
+          "main": "Trang thai snapshot moi nhat: READY",
+          "sub": "Snapshot moi nhat la GO va khong co ly do chan, san sang cho quy trinh phat hanh chuan.",
+          "firstAction": "Xac nhan cua so phat hanh truoc, sau do phat hanh theo cac buoc chuan."
+        }
+      }
+    }
+  ],
+  "fallback": {
+    "whenNoClassMatched": "latest_unknown"
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

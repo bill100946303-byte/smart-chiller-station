@@ -1,0 +1,254 @@
+{
+  "id": "4661749",
+  "name": "1",
+  "font_family": "al_element-icons2",
+  "css_prefix_text": "al_icon2",
+  "description": "云平台 UI 图标",
+  "glyphs": [
+    {
+      "icon_id": "42327870",
+      "name": "AI改图-窗口最大化-114x115",
+      "font_class": "AIgaitu-chuangkouzuidahua-114x1151",
+      "unicode": "e61c",
+      "unicode_decimal": 58908
+    },
+    {
+      "icon_id": "10163987",
+      "name": "点位",
+      "font_class": "dianwei",
+      "unicode": "e604",
+      "unicode_decimal": 58884
+    },
+    {
+      "icon_id": "7261746",
+      "name": "雪花",
+      "font_class": "xuehua",
+      "unicode": "e697",
+      "unicode_decimal": 59031
+    },
+    {
+      "icon_id": "3171243",
+      "name": "电",
+      "font_class": "fl-dian",
+      "unicode": "e63a",
+      "unicode_decimal": 58938
+    },
+    {
+      "icon_id": "2488125",
+      "name": "返回",
+      "font_class": "fanhui1",
+      "unicode": "e619",
+      "unicode_decimal": 58905
+    },
+    {
+      "icon_id": "28225193",
+      "name": "重制筛选",
+      "font_class": "zhongzhishaixuan",
+      "unicode": "e68b",
+      "unicode_decimal": 59019
+    },
+    {
+      "icon_id": "35608985",
+      "name": "项目",
+      "font_class": "xiangmu",
+      "unicode": "e801",
+      "unicode_decimal": 59393
+    },
+    {
+      "icon_id": "3926241",
+      "name": "导入",
+      "font_class": "daoru",
+      "unicode": "e66c",
+      "unicode_decimal": 58988
+    },
+    {
+      "icon_id": "7472095",
+      "name": "导出",
+      "font_class": "daochu",
+      "unicode": "e687",
+      "unicode_decimal": 59015
+    },
+    {
+      "icon_id": "5943829",
+      "name": "菜单",
+      "font_class": "caidan",
+      "unicode": "e636",
+      "unicode_decimal": 58934
+    },
+    {
+      "icon_id": "22760490",
+      "name": "冷站概述",
+      "font_class": "xiangmuxuanze",
+      "unicode": "e67a",
+      "unicode_decimal": 59002
+    },
+    {
+      "icon_id": "20286835",
+      "name": "保存勾选",
+      "font_class": "gouxuan2x",
+      "unicode": "e62f",
+      "unicode_decimal": 58927
+    },
+    {
+      "icon_id": "201639",
+      "name": "3.1 返回",
+      "font_class": "fanhui12",
+      "unicode": "e600",
+      "unicode_decimal": 58880
+    },
+    {
+      "icon_id": "12201319",
+      "name": "返回",
+      "font_class": "fanhui",
+      "unicode": "e800",
+      "unicode_decimal": 59392
+    },
+    {
+      "icon_id": "32460024",
+      "name": "概述",
+      "font_class": "a-anniuic_24shujugailanweixuanzhong",
+      "unicode": "e602",
+      "unicode_decimal": 58882
+    },
+    {
+      "icon_id": "5255120",
+      "name": "冷却泵",
+      "font_class": "beng-copy",
+      "unicode": "e617",
+      "unicode_decimal": 58903
+    },
+    {
+      "icon_id": "26435760",
+      "name": "系统能效",
+      "font_class": "xitongnengxiao",
+      "unicode": "e6f7",
+      "unicode_decimal": 59127
+    },
+    {
+      "icon_id": "37166168",
+      "name": "线平衡率",
+      "font_class": "xianpinghengshuai",
+      "unicode": "e698",
+      "unicode_decimal": 59032
+    },
+    {
+      "icon_id": "38842119",
+      "name": "冷冻泵",
+      "font_class": "lengdongbeng",
+      "unicode": "e618",
+      "unicode_decimal": 58904
+    },
+    {
+      "icon_id": "41685654",
+      "name": "室内温度",
+      "font_class": "shineiwendu",
+      "unicode": "e61b",
+      "unicode_decimal": 58907
+    },
+    {
+      "icon_id": "41687188",
+      "name": "主机",
+      "font_class": "zhuji",
+      "unicode": "e61e",
+      "unicode_decimal": 58910
+    },
+    {
+      "icon_id": "41683661",
+      "name": "湿球温度",
+      "font_class": "shiqiuwendu",
+      "unicode": "e613",
+      "unicode_decimal": 58899
+    },
+    {
+      "icon_id": "41685272",
+      "name": "室外湿度",
+      "font_class": "shiwaishidu",
+      "unicode": "e615",
+      "unicode_decimal": 58901
+    },
+    {
+      "icon_id": "41670020",
+      "name": "水温衡控",
+      "font_class": "shuiwenhengkong",
+      "unicode": "e614",
+      "unicode_decimal": 58900
+    },
+    {
+      "icon_id": "3695430",
+      "name": "排行",
+      "font_class": "paihang-",
+      "unicode": "e603",
+      "unicode_decimal": 58883
+    },
+    {
+      "icon_id": "4900338",
+      "name": "概述",
+      "font_class": "gaishu",
+      "unicode": "e75c",
+      "unicode_decimal": 59228
+    },
+    {
+      "icon_id": "12217972",
+      "name": "pie-month",
+      "font_class": "pie-month",
+      "unicode": "e670",
+      "unicode_decimal": 58992
+    },
+    {
+      "icon_id": "16671652",
+      "name": "报警信息",
+      "font_class": "baojingxinxi2",
+      "unicode": "e616",
+      "unicode_decimal": 58902
+    },
+    {
+      "icon_id": "15657524",
+      "name": "展开",
+      "font_class": "zhankai1",
+      "unicode": "e639",
+      "unicode_decimal": 58937
+    },
+    {
+      "icon_id": "1269",
+      "name": "加",
+      "font_class": "jia",
+      "unicode": "36354",
+      "unicode_decimal": 222036
+    },
+    {
+      "icon_id": "17937296",
+      "name": "减2",
+      "font_class": "jian2",
+      "unicode": "e60e",
+      "unicode_decimal": 58894
+    },
+    {
+      "icon_id": "41657608",
+      "name": "窗口最大化",
+      "font_class": "chuangkouzuidahua",
+      "unicode": "e60f",
+      "unicode_decimal": 58895
+    },
+    {
+      "icon_id": "41663524",
+      "name": "温度",
+      "font_class": "a-16x16wendu",
+      "unicode": "e610",
+      "unicode_decimal": 58896
+    },
+    {
+      "icon_id": "41663932",
+      "name": "湿度",
+      "font_class": "a-16x16shidu",
+      "unicode": "e611",
+      "unicode_decimal": 58897
+    },
+    {
+      "icon_id": "26358533",
+      "name": "类表未选中差掉",
+      "font_class": "leibiaoweixuanzhongchadiao",
+      "unicode": "e6ca",
+      "unicode_decimal": 59082
+    }
+  ]
+}

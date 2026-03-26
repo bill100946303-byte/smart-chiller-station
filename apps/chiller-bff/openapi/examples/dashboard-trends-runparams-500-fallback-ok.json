@@ -1,0 +1,66 @@
+{
+  "site": {
+    "siteId": "126lnoffice",
+    "siteName": "6期1栋冷站"
+  },
+  "range": "24h",
+  "series": [
+    {
+      "metric": "totalPowerKw",
+      "label": "Total Power",
+      "points": [
+        { "t": "2026-03-12T00:00:00.000Z", "v": 712.2 },
+        { "t": "2026-03-12T01:00:00.000Z", "v": 705.8 }
+      ]
+    },
+    {
+      "metric": "chilledDeltaT",
+      "label": "Chilled Delta-T",
+      "points": [
+        { "t": "2026-03-12T00:00:00.000Z", "v": 4.3 },
+        { "t": "2026-03-12T01:00:00.000Z", "v": 4.1 }
+      ]
+    },
+    {
+      "metric": "coolingDeltaT",
+      "label": "Cooling Delta-T",
+      "points": [
+        { "t": "2026-03-12T00:00:00.000Z", "v": 3.6 },
+        { "t": "2026-03-12T01:00:00.000Z", "v": 3.4 }
+      ]
+    }
+  ],
+  "stats": [
+    { "metric": "totalPowerKw", "latest": 705.8, "min": 705.8, "max": 712.2 },
+    { "metric": "chilledDeltaT", "latest": 4.1, "min": 4.1, "max": 4.3 },
+    { "metric": "coolingDeltaT", "latest": 3.4, "min": 3.4, "max": 3.6 }
+  ],
+  "freshness": {
+    "latestTimestamp": "2026-03-12T01:00:00.000Z",
+    "stale": false,
+    "ageHours": 0.5
+  },
+  "sourceStatus": {
+    "overall": "partial",
+    "sources": [
+      {
+        "key": "energyCurve",
+        "endpoint": "/zsqy/homepage/126lnoffice/getEnergyStatisticsCurve",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "error": null,
+        "rows": 24
+      },
+      {
+        "key": "runParams",
+        "endpoint": "/zsqy/homepage/126lnoffice/getRunParamsCurve",
+        "ok": false,
+        "status": 500,
+        "message": null,
+        "error": "Legacy request failed: 500",
+        "rows": null
+      }
+    ]
+  }
+}

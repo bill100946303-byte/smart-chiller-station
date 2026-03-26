@@ -1,0 +1,168 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-verify-gates-latest-copy-v1",
+  "scope": "verify-gates-latest duty copy",
+  "fieldScope": {
+    "required": [
+      "overall",
+      "failedCount",
+      "failedGates[]",
+      "generatedAt"
+    ]
+  },
+  "priorityOrder": [
+    "latest_fail",
+    "latest_warn",
+    "latest_ok"
+  ],
+  "classes": [
+    {
+      "id": "latest_ok",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "overall == 'PASS'",
+          "failedCount == 0",
+          "failedGates.length == 0",
+          "generatedAt exists and generatedAt != ''",
+          "generatedAt != 'unknown'"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "最新门禁正常",
+          "sub": "失败项为0",
+          "firstAction": "进入放行确认"
+        },
+        "en": {
+          "main": "Latest OK",
+          "sub": "Zero failed gates",
+          "firstAction": "Start release confirmation"
+        },
+        "vi": {
+          "main": "Cong moi nhat binh thuong",
+          "sub": "So gate loi bang 0",
+          "firstAction": "Bat dau xac nhan phat hanh"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Verify-Gates-Latest 状态：LATEST_OK",
+          "sub": "最新门禁整体为 PASS，且 failedGates 为空，可继续发布流程。",
+          "firstAction": "按发布窗口推进下一步放行动作。"
+        },
+        "en": {
+          "main": "Verify-Gates-Latest Status: LATEST_OK",
+          "sub": "Latest gate result is PASS with empty failedGates, ready to continue release flow.",
+          "firstAction": "Proceed to the next release action in the release window."
+        },
+        "vi": {
+          "main": "Trang thai Verify-Gates-Latest: LATEST_OK",
+          "sub": "Ket qua gate moi nhat la PASS va failedGates rong, co the tiep tuc quy trinh phat hanh.",
+          "firstAction": "Tiep tuc buoc phat hanh tiep theo trong cua so phat hanh."
+        }
+      }
+    },
+    {
+      "id": "latest_warn",
+      "trigger": {
+        "mode": "all+any+not",
+        "not": [
+          "latest_fail"
+        ],
+        "any": [
+          "generatedAt is missing or generatedAt == ''",
+          "generatedAt == 'unknown'",
+          "overall not in ['PASS','FAIL']"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "最新门禁告警",
+          "sub": "时间或状态待核",
+          "firstAction": "先刷新latest"
+        },
+        "en": {
+          "main": "Latest Warn",
+          "sub": "Time/state needs review",
+          "firstAction": "Refresh latest first"
+        },
+        "vi": {
+          "main": "Canh bao gate moi",
+          "sub": "Can xem lai thoi gian/trang thai",
+          "firstAction": "Lam moi latest truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Verify-Gates-Latest 状态：LATEST_WARN",
+          "sub": "当前无明确失败项，但 generatedAt 或 overall 存在可疑值，需复核。",
+          "firstAction": "先重跑 verify-gates --json 刷新 latest，再做放行判断。"
+        },
+        "en": {
+          "main": "Verify-Gates-Latest Status: LATEST_WARN",
+          "sub": "No explicit gate failure, but generatedAt or overall is suspicious and needs review.",
+          "firstAction": "Rerun verify-gates --json to refresh latest before release judgment."
+        },
+        "vi": {
+          "main": "Trang thai Verify-Gates-Latest: LATEST_WARN",
+          "sub": "Khong co loi gate ro rang, nhung generatedAt hoac overall dang nghi ngo va can ra soat.",
+          "firstAction": "Chay lai verify-gates --json de lam moi latest truoc khi phan quyet phat hanh."
+        }
+      }
+    },
+    {
+      "id": "latest_fail",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "overall == 'FAIL'",
+          "failedCount > 0",
+          "failedGates.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "最新门禁失败",
+          "sub": "存在失败gate",
+          "firstAction": "先修复failedGates"
+        },
+        "en": {
+          "main": "Latest Fail",
+          "sub": "Failed gates detected",
+          "firstAction": "Fix failedGates first"
+        },
+        "vi": {
+          "main": "Gate moi nhat that bai",
+          "sub": "Phat hien gate loi",
+          "firstAction": "Sua failedGates truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Verify-Gates-Latest 状态：LATEST_FAIL",
+          "sub": "最新门禁存在失败项，当前不可放行。",
+          "firstAction": "优先处理 failedGates 首项，清零失败后再重跑。"
+        },
+        "en": {
+          "main": "Verify-Gates-Latest Status: LATEST_FAIL",
+          "sub": "Latest gate result contains failures, so release is blocked now.",
+          "firstAction": "Fix the first item in failedGates and rerun after failures are cleared."
+        },
+        "vi": {
+          "main": "Trang thai Verify-Gates-Latest: LATEST_FAIL",
+          "sub": "Ket qua gate moi nhat co loi, hien tai khong the phat hanh.",
+          "firstAction": "Xu ly muc dau trong failedGates va chay lai sau khi da xoa loi."
+        }
+      }
+    }
+  ],
+  "fallback": {
+    "whenNoClassMatched": "latest_warn"
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

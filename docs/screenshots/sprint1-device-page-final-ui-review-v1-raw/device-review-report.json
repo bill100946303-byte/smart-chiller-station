@@ -1,0 +1,246 @@
+{
+  "locale": "zh-CN",
+  "captures": [
+    {
+      "name": "desktop-normal",
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/screenshots/sprint1-device-page-final-ui-review-v1-raw/desktop-normal.png",
+      "state": {
+        "url": "http://127.0.0.1:3001/devices",
+        "title": "Chiller Shell V1",
+        "body": "冷站系统\n驾驶舱\n趋势分析\n告警页\n设备总览\n系统总览\n退出登录\n盛世绿能 · 冷冻站智能系统\n优化运行中\n2026/03/14 21:01\n语言\n中文\nEnglish\nTiếng Việt\n来源状态：3/3 正常\n能耗总览来源：数据正常；设备清单来源：数据正常；告警摘要来源：数据正常\n设备总览\n\nSprint 1 先承接设备摘要、拓扑骨架和真实设备列表，详情与控制操作后置。\n\n设备总数\n\n59\n项\n聚合数据已就绪\n\n冷机数量\n\n3\n项\n冷机\n\n冷冻泵数量\n\n3\n项\n冷冻泵\n\n冷却泵数量\n\n3\n项\n冷却泵\n\n冷却塔数量\n\n4\n项\n冷却塔\n\n数据新鲜度\n\nfresh\n2026-03-14T13:01:00.000Z\n系统骨架\n\n系统骨架区承接 system/topology，帮助值班先看主链路和设备规模。\n\nChiller Cluster\n\n正常\n\n3 项\nChilled Pumps\n\n正常\n\n3 项\nBuilding Load\n\n正常\n\n-- 项\nCooling Pumps\n\n正常\n\n3 项\nCooling Towers (CTF+CTE+CTHDE)\n\n正常\n\n4 项\n楼层与分组\n\n楼层与分组只显示骨架清单，不代表完整运行态设备树。\n\n10楼\n\n30项\n\n楼顶\n\n29项\n\n设备列表\n系统类型\n全部\n其他\n冷机\n冷冻泵\n冷却塔\n冷却泵\n楼层\n全部\n10楼\n楼顶\n设备总数 59项\n8项\n12项\n20项\n\n设备列表当前以 drinfo 主数据为准，运行/报警状态仍保持 unknown 占位。 · 页 1/5\n\n设备\n系统类型\n楼层\n楼栋\n在线状态\n办公室01\nBGS01\n其他\n10楼\n6期1栋\nunknown\n办公室02\nBGS02\n其他\n10楼\n6期1栋\nunknown\n办公室03\nBGS03\n其他\n10楼\n6期1栋\nunknown\n办公室04\nBGS04\n其他\n10楼\n6期1栋\nunknown\n办公室05\nBGS05\n其他\n10楼\n6期1栋\nunknown\n办公室06\nBGS06\n其他\n10楼\n6期1栋\nunknown\n1#冷水机\nCH1\n冷机\n楼顶\n6期1栋\nunknown\nCH总电量\nCHE\n冷机\n楼顶\n6期1栋\nunknown\nCH1电量\nCHE1\n冷机\n楼顶\n6期1栋\nunknown\n1#冷冻泵\nCHP1\n冷冻泵\n楼顶\n6期1栋\nunknown\nCHP总电量\nCHPE\n冷冻泵\n楼顶\n6期1栋\nunknown\nCHP1电量\nCHPE1\n冷冻泵\n楼顶\n6期1栋\nunknown\n上一页\n页 1/5\n下一页",
+        "resources": [
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12"
+        ]
+      }
+    },
+    {
+      "name": "desktop-filter-type",
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/screenshots/sprint1-device-page-final-ui-review-v1-raw/desktop-filter-type.png",
+      "state": {
+        "url": "http://127.0.0.1:3001/devices",
+        "title": "Chiller Shell V1",
+        "body": "冷站系统\n驾驶舱\n趋势分析\n告警页\n设备总览\n系统总览\n退出登录\n盛世绿能 · 冷冻站智能系统\n优化运行中\n2026/03/14 21:01\n语言\n中文\nEnglish\nTiếng Việt\n来源状态：3/3 正常\n能耗总览来源：数据正常；设备清单来源：数据正常；告警摘要来源：数据正常\n设备总览\n\nSprint 1 先承接设备摘要、拓扑骨架和真实设备列表，详情与控制操作后置。\n\n设备总数\n\n59\n项\n聚合数据已就绪\n\n冷机数量\n\n3\n项\n冷机\n\n冷冻泵数量\n\n3\n项\n冷冻泵\n\n冷却泵数量\n\n3\n项\n冷却泵\n\n冷却塔数量\n\n4\n项\n冷却塔\n\n数据新鲜度\n\nfresh\n2026-03-14T13:01:00.000Z\n系统骨架\n\n系统骨架区承接 system/topology，帮助值班先看主链路和设备规模。\n\nChiller Cluster\n\n正常\n\n3 项\nChilled Pumps\n\n正常\n\n3 项\nBuilding Load\n\n正常\n\n-- 项\nCooling Pumps\n\n正常\n\n3 项\nCooling Towers (CTF+CTE+CTHDE)\n\n正常\n\n4 项\n楼层与分组\n\n楼层与分组只显示骨架清单，不代表完整运行态设备树。\n\n10楼\n\n30项\n\n楼顶\n\n29项\n\n设备列表\n系统类型\n全部\n其他\n冷机\n冷冻泵\n冷却塔\n冷却泵\n楼层\n全部\n10楼\n楼顶\n设备总数 3项\n8项\n12项\n20项\n\n设备列表当前以 drinfo 主数据为准，运行/报警状态仍保持 unknown 占位。 · 页 1/1\n\n设备\n系统类型\n楼层\n楼栋\n在线状态\n1#冷水机\nCH1\n冷机\n楼顶\n6期1栋\nunknown\nCH总电量\nCHE\n冷机\n楼顶\n6期1栋\nunknown\nCH1电量\nCHE1\n冷机\n楼顶\n6期1栋\nunknown\n上一页\n页 1/1\n下一页",
+        "resources": [
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology"
+        ]
+      }
+    },
+    {
+      "name": "desktop-filter-floor",
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/screenshots/sprint1-device-page-final-ui-review-v1-raw/desktop-filter-floor.png",
+      "state": {
+        "url": "http://127.0.0.1:3001/devices",
+        "title": "Chiller Shell V1",
+        "body": "冷站系统\n驾驶舱\n趋势分析\n告警页\n设备总览\n系统总览\n退出登录\n盛世绿能 · 冷冻站智能系统\n优化运行中\n2026/03/14 21:01\n语言\n中文\nEnglish\nTiếng Việt\n来源状态：3/3 正常\n能耗总览来源：数据正常；设备清单来源：数据正常；告警摘要来源：数据正常\n设备总览\n\nSprint 1 先承接设备摘要、拓扑骨架和真实设备列表，详情与控制操作后置。\n\n设备总数\n\n59\n项\n聚合数据已就绪\n\n冷机数量\n\n3\n项\n冷机\n\n冷冻泵数量\n\n3\n项\n冷冻泵\n\n冷却泵数量\n\n3\n项\n冷却泵\n\n冷却塔数量\n\n4\n项\n冷却塔\n\n数据新鲜度\n\nfresh\n2026-03-14T13:01:00.000Z\n系统骨架\n\n系统骨架区承接 system/topology，帮助值班先看主链路和设备规模。\n\nChiller Cluster\n\n正常\n\n3 项\nChilled Pumps\n\n正常\n\n3 项\nBuilding Load\n\n正常\n\n-- 项\nCooling Pumps\n\n正常\n\n3 项\nCooling Towers (CTF+CTE+CTHDE)\n\n正常\n\n4 项\n楼层与分组\n\n楼层与分组只显示骨架清单，不代表完整运行态设备树。\n\n10楼\n\n30项\n\n楼顶\n\n29项\n\n设备列表\n系统类型\n全部\n其他\n冷机\n冷冻泵\n冷却塔\n冷却泵\n楼层\n全部\n10楼\n楼顶\n设备总数 3项\n8项\n12项\n20项\n\n设备列表当前以 drinfo 主数据为准，运行/报警状态仍保持 unknown 占位。 · 页 1/1\n\n设备\n系统类型\n楼层\n楼栋\n在线状态\n1#冷水机\nCH1\n冷机\n楼顶\n6期1栋\nunknown\nCH总电量\nCHE\n冷机\n楼顶\n6期1栋\nunknown\nCH1电量\nCHE1\n冷机\n楼顶\n6期1栋\nunknown\n上一页\n页 1/1\n下一页",
+        "resources": [
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller&floor=%E6%A5%BC%E9%A1%B6"
+        ]
+      }
+    },
+    {
+      "name": "desktop-filtered-empty",
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/screenshots/sprint1-device-page-final-ui-review-v1-raw/desktop-filtered-empty.png",
+      "state": {
+        "url": "http://127.0.0.1:3001/devices",
+        "title": "Chiller Shell V1",
+        "body": "冷站系统\n驾驶舱\n趋势分析\n告警页\n设备总览\n系统总览\n退出登录\n盛世绿能 · 冷冻站智能系统\n优化运行中\n2026/03/14 21:01\n语言\n中文\nEnglish\nTiếng Việt\n来源状态：3/3 正常\n能耗总览来源：数据正常；设备清单来源：数据正常；告警摘要来源：数据正常\n设备总览\n\nSprint 1 先承接设备摘要、拓扑骨架和真实设备列表，详情与控制操作后置。\n\n设备总数\n\n59\n项\n聚合数据已就绪\n\n冷机数量\n\n3\n项\n冷机\n\n冷冻泵数量\n\n3\n项\n冷冻泵\n\n冷却泵数量\n\n3\n项\n冷却泵\n\n冷却塔数量\n\n4\n项\n冷却塔\n\n数据新鲜度\n\nfresh\n2026-03-14T13:01:00.000Z\n系统骨架\n\n系统骨架区承接 system/topology，帮助值班先看主链路和设备规模。\n\nChiller Cluster\n\n正常\n\n3 项\nChilled Pumps\n\n正常\n\n3 项\nBuilding Load\n\n正常\n\n-- 项\nCooling Pumps\n\n正常\n\n3 项\nCooling Towers (CTF+CTE+CTHDE)\n\n正常\n\n4 项\n楼层与分组\n\n楼层与分组只显示骨架清单，不代表完整运行态设备树。\n\n10楼\n\n30项\n\n楼顶\n\n29项\n\n设备列表\n系统类型\n全部\n其他\n冷机\n冷冻泵\n冷却塔\n冷却泵\n楼层\n全部\n10楼\n楼顶\n设备总数 0项\n8项\n12项\n20项\n\n设备列表当前以 drinfo 主数据为准，运行/报警状态仍保持 unknown 占位。 · 页 1/1\n\n当前筛选条件下没有设备记录。",
+        "resources": [
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller&floor=%E6%A5%BC%E9%A1%B6",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller&floor=10%E6%A5%BC"
+        ]
+      }
+    },
+    {
+      "name": "desktop-page-size-20",
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/screenshots/sprint1-device-page-final-ui-review-v1-raw/desktop-page-size-20.png",
+      "state": {
+        "url": "http://127.0.0.1:3001/devices",
+        "title": "Chiller Shell V1",
+        "body": "冷站系统\n驾驶舱\n趋势分析\n告警页\n设备总览\n系统总览\n退出登录\n盛世绿能 · 冷冻站智能系统\n优化运行中\n2026/03/14 21:01\n语言\n中文\nEnglish\nTiếng Việt\n来源状态：3/3 正常\n能耗总览来源：数据正常；设备清单来源：数据正常；告警摘要来源：数据正常\n设备总览\n\nSprint 1 先承接设备摘要、拓扑骨架和真实设备列表，详情与控制操作后置。\n\n设备总数\n\n59\n项\n聚合数据已就绪\n\n冷机数量\n\n3\n项\n冷机\n\n冷冻泵数量\n\n3\n项\n冷冻泵\n\n冷却泵数量\n\n3\n项\n冷却泵\n\n冷却塔数量\n\n4\n项\n冷却塔\n\n数据新鲜度\n\nfresh\n2026-03-14T13:01:00.000Z\n系统骨架\n\n系统骨架区承接 system/topology，帮助值班先看主链路和设备规模。\n\nChiller Cluster\n\n正常\n\n3 项\nChilled Pumps\n\n正常\n\n3 项\nBuilding Load\n\n正常\n\n-- 项\nCooling Pumps\n\n正常\n\n3 项\nCooling Towers (CTF+CTE+CTHDE)\n\n正常\n\n4 项\n楼层与分组\n\n楼层与分组只显示骨架清单，不代表完整运行态设备树。\n\n10楼\n\n30项\n\n楼顶\n\n29项\n\n设备列表\n系统类型\n全部\n其他\n冷机\n冷冻泵\n冷却塔\n冷却泵\n楼层\n全部\n10楼\n楼顶\n设备总数 0项\n8项\n12项\n20项\n\n设备列表当前以 drinfo 主数据为准，运行/报警状态仍保持 unknown 占位。 · 页 1/1\n\n当前筛选条件下没有设备记录。",
+        "resources": [
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller&floor=%E6%A5%BC%E9%A1%B6",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller&floor=10%E6%A5%BC",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=20&type=chiller&floor=10%E6%A5%BC"
+        ]
+      }
+    },
+    {
+      "name": "mobile-normal",
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/screenshots/sprint1-device-page-final-ui-review-v1-raw/mobile-normal.png",
+      "state": {
+        "url": "http://127.0.0.1:3001/devices",
+        "title": "Chiller Shell V1",
+        "body": "冷站系统\n驾驶舱\n趋势分析\n告警页\n设备总览\n系统总览\n退出登录\n盛世绿能 · 冷冻站智能系统\n优化运行中\n2026/03/14 21:01\n语言\n中文\nEnglish\nTiếng Việt\n来源状态：3/3 正常\n能耗总览来源：数据正常；设备清单来源：数据正常；告警摘要来源：数据正常\n设备总览\n\nSprint 1 先承接设备摘要、拓扑骨架和真实设备列表，详情与控制操作后置。\n\n设备总数\n\n59\n项\n聚合数据已就绪\n\n冷机数量\n\n3\n项\n冷机\n\n冷冻泵数量\n\n3\n项\n冷冻泵\n\n冷却泵数量\n\n3\n项\n冷却泵\n\n冷却塔数量\n\n4\n项\n冷却塔\n\n数据新鲜度\n\nfresh\n2026-03-14T13:01:00.000Z\n系统骨架\n\n系统骨架区承接 system/topology，帮助值班先看主链路和设备规模。\n\nChiller Cluster\n\n正常\n\n3 项\nChilled Pumps\n\n正常\n\n3 项\nBuilding Load\n\n正常\n\n-- 项\nCooling Pumps\n\n正常\n\n3 项\nCooling Towers (CTF+CTE+CTHDE)\n\n正常\n\n4 项\n楼层与分组\n\n楼层与分组只显示骨架清单，不代表完整运行态设备树。\n\n10楼\n\n30项\n\n楼顶\n\n29项\n\n设备列表\n系统类型\n全部\n其他\n冷机\n冷冻泵\n冷却塔\n冷却泵\n楼层\n全部\n10楼\n楼顶\n设备总数 59项\n8项\n12项\n20项\n\n设备列表当前以 drinfo 主数据为准，运行/报警状态仍保持 unknown 占位。 · 页 1/5\n\n设备\n系统类型\n楼层\n楼栋\n在线状态\n办公室01\nBGS01\n其他\n10楼\n6期1栋\nunknown\n办公室02\nBGS02\n其他\n10楼\n6期1栋\nunknown\n办公室03\nBGS03\n其他\n10楼\n6期1栋\nunknown\n办公室04\nBGS04\n其他\n10楼\n6期1栋\nunknown\n办公室05\nBGS05\n其他\n10楼\n6期1栋\nunknown\n办公室06\nBGS06\n其他\n10楼\n6期1栋\nunknown\n1#冷水机\nCH1\n冷机\n楼顶\n6期1栋\nunknown\nCH总电量\nCHE\n冷机\n楼顶\n6期1栋\nunknown\nCH1电量\nCHE1\n冷机\n楼顶\n6期1栋\nunknown\n1#冷冻泵\nCHP1\n冷冻泵\n楼顶\n6期1栋\nunknown\nCHP总电量\nCHPE\n冷冻泵\n楼顶\n6期1栋\nunknown\nCHP1电量\nCHPE1\n冷冻泵\n楼顶\n6期1栋\nunknown\n上一页\n页 1/5\n下一页",
+        "resources": [
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller&floor=%E6%A5%BC%E9%A1%B6",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller&floor=10%E6%A5%BC",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=20&type=chiller&floor=10%E6%A5%BC",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=20&floor=10%E6%A5%BC",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=20",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12"
+        ]
+      }
+    },
+    {
+      "name": "mobile-filter-floor",
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/screenshots/sprint1-device-page-final-ui-review-v1-raw/mobile-filter-floor.png",
+      "state": {
+        "url": "http://127.0.0.1:3001/devices",
+        "title": "Chiller Shell V1",
+        "body": "冷站系统\n驾驶舱\n趋势分析\n告警页\n设备总览\n系统总览\n退出登录\n盛世绿能 · 冷冻站智能系统\n优化运行中\n2026/03/14 21:01\n语言\n中文\nEnglish\nTiếng Việt\n来源状态：3/3 正常\n能耗总览来源：数据正常；设备清单来源：数据正常；告警摘要来源：数据正常\n设备总览\n\nSprint 1 先承接设备摘要、拓扑骨架和真实设备列表，详情与控制操作后置。\n\n设备总数\n\n59\n项\n聚合数据已就绪\n\n冷机数量\n\n3\n项\n冷机\n\n冷冻泵数量\n\n3\n项\n冷冻泵\n\n冷却泵数量\n\n3\n项\n冷却泵\n\n冷却塔数量\n\n4\n项\n冷却塔\n\n数据新鲜度\n\nfresh\n2026-03-14T13:01:00.000Z\n系统骨架\n\n系统骨架区承接 system/topology，帮助值班先看主链路和设备规模。\n\nChiller Cluster\n\n正常\n\n3 项\nChilled Pumps\n\n正常\n\n3 项\nBuilding Load\n\n正常\n\n-- 项\nCooling Pumps\n\n正常\n\n3 项\nCooling Towers (CTF+CTE+CTHDE)\n\n正常\n\n4 项\n楼层与分组\n\n楼层与分组只显示骨架清单，不代表完整运行态设备树。\n\n10楼\n\n30项\n\n楼顶\n\n29项\n\n设备列表\n系统类型\n全部\n其他\n冷机\n冷冻泵\n冷却塔\n冷却泵\n楼层\n全部\n10楼\n楼顶\n设备总数 29项\n8项\n12项\n20项\n\n设备列表当前以 drinfo 主数据为准，运行/报警状态仍保持 unknown 占位。 · 页 1/3\n\n设备\n系统类型\n楼层\n楼栋\n在线状态\n1#冷水机\nCH1\n冷机\n楼顶\n6期1栋\nunknown\nCH总电量\nCHE\n冷机\n楼顶\n6期1栋\nunknown\nCH1电量\nCHE1\n冷机\n楼顶\n6期1栋\nunknown\n1#冷冻泵\nCHP1\n冷冻泵\n楼顶\n6期1栋\nunknown\nCHP总电量\nCHPE\n冷冻泵\n楼顶\n6期1栋\nunknown\nCHP1电量\nCHPE1\n冷冻泵\n楼顶\n6期1栋\nunknown\nCT总电量\nCTE\n冷却塔\n楼顶\n6期1栋\nunknown\nCT1电量\nCTE1\n冷却塔\n楼顶\n6期1栋\nunknown\n1#冷却塔风机\nCTF1\n冷却塔\n楼顶\n6期1栋\nunknown\n冷站总散热量\nCTHDE\n冷却塔\n楼顶\n6期1栋\nunknown\n1#冷却泵\nCWP1\n冷却泵\n楼顶\n6期1栋\nunknown\nCWP总电量\nCWPE\n冷却泵\n楼顶\n6期1栋\nunknown\n上一页\n页 1/3\n下一页",
+        "resources": [
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller&floor=%E6%A5%BC%E9%A1%B6",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller&floor=10%E6%A5%BC",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=20&type=chiller&floor=10%E6%A5%BC",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=20&floor=10%E6%A5%BC",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=20",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&floor=%E6%A5%BC%E9%A1%B6"
+        ]
+      }
+    },
+    {
+      "name": "mobile-filtered-empty",
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/screenshots/sprint1-device-page-final-ui-review-v1-raw/mobile-filtered-empty.png",
+      "state": {
+        "url": "http://127.0.0.1:3001/devices",
+        "title": "Chiller Shell V1",
+        "body": "冷站系统\n驾驶舱\n趋势分析\n告警页\n设备总览\n系统总览\n退出登录\n盛世绿能 · 冷冻站智能系统\n优化运行中\n2026/03/14 21:01\n语言\n中文\nEnglish\nTiếng Việt\n来源状态：3/3 正常\n能耗总览来源：数据正常；设备清单来源：数据正常；告警摘要来源：数据正常\n设备总览\n\nSprint 1 先承接设备摘要、拓扑骨架和真实设备列表，详情与控制操作后置。\n\n设备总数\n\n59\n项\n聚合数据已就绪\n\n冷机数量\n\n3\n项\n冷机\n\n冷冻泵数量\n\n3\n项\n冷冻泵\n\n冷却泵数量\n\n3\n项\n冷却泵\n\n冷却塔数量\n\n4\n项\n冷却塔\n\n数据新鲜度\n\nfresh\n2026-03-14T13:01:00.000Z\n系统骨架\n\n系统骨架区承接 system/topology，帮助值班先看主链路和设备规模。\n\nChiller Cluster\n\n正常\n\n3 项\nChilled Pumps\n\n正常\n\n3 项\nBuilding Load\n\n正常\n\n-- 项\nCooling Pumps\n\n正常\n\n3 项\nCooling Towers (CTF+CTE+CTHDE)\n\n正常\n\n4 项\n楼层与分组\n\n楼层与分组只显示骨架清单，不代表完整运行态设备树。\n\n10楼\n\n30项\n\n楼顶\n\n29项\n\n设备列表\n系统类型\n全部\n其他\n冷机\n冷冻泵\n冷却塔\n冷却泵\n楼层\n全部\n10楼\n楼顶\n设备总数 0项\n8项\n12项\n20项\n\n设备列表当前以 drinfo 主数据为准，运行/报警状态仍保持 unknown 占位。 · 页 1/1\n\n当前筛选条件下没有设备记录。",
+        "resources": [
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller&floor=%E6%A5%BC%E9%A1%B6",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller&floor=10%E6%A5%BC",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=20&type=chiller&floor=10%E6%A5%BC",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=20&floor=10%E6%A5%BC",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=20",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&floor=%E6%A5%BC%E9%A1%B6",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller&floor=%E6%A5%BC%E9%A1%B6",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/system/topology",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview",
+          "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/devices/list?page=1&pageSize=12&type=chiller&floor=10%E6%A5%BC"
+        ]
+      }
+    }
+  ]
+}

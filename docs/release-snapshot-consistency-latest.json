@@ -1,0 +1,34 @@
+{
+  "version": "v1.0",
+  "generatedAt": "2026-03-12T21:40:47.065Z",
+  "decision": "GO",
+  "exitCode": 0,
+  "reasons": [],
+  "checks": {
+    "latestExists": true,
+    "indexExists": true,
+    "indexHasEntries": true,
+    "decisionMatch": true,
+    "reasonsMatch": true,
+    "advisoriesMatch": true
+  },
+  "latest": {
+    "decision": "GO",
+    "reasons": [],
+    "advisories": [
+      "runtime_optional_mode",
+      "runtime_unavailable_snapshot_present"
+    ],
+    "generatedAt": "2026-03-12T21:40:46.862Z"
+  },
+  "indexNewest": {
+    "fileName": "release-snapshot-20260313-054040.json",
+    "decision": "GO",
+    "reasons": [],
+    "advisories": [
+      "runtime_optional_mode",
+      "runtime_unavailable_snapshot_present"
+    ],
+    "generatedAt": "2026-03-12T21:40:46.862Z"
+  }
+}

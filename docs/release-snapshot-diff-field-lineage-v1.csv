@@ -1,0 +1,20 @@
+row_type,diff_field,current_source,previous_source,compute_expression,meaning,release_impact,default_when_previous_missing
+lineage,diff.current_file,index.entries[0].fileName,N/A,value(current.fileName),当前快照文件名,info,current only
+lineage,diff.previous_file,N/A,index.entries[1].fileName,value(previous.fileName),上一条快照文件名,info,null
+lineage,diff.has_previous,index.entries,N/A,len(entries)>=2,是否有可比历史样本,advisory,false
+lineage,diff.current_decision,index.entries[0].decision,N/A,value(current.decision),当前快照决策位,blocking when NO-GO or UNKNOWN,value(current.decision)
+lineage,diff.previous_decision,N/A,index.entries[1].decision,value(previous.decision),上一条快照决策位,info,null
+lineage,diff.decision_transition,index.entries[0].decision,index.entries[1].decision,concat(previous.decision->current.decision),决策变化方向,advisory,N/A(insufficient_history)
+lineage,diff.decision_changed,index.entries[0].decision,index.entries[1].decision,current.decision!=previous.decision,决策是否变化,advisory,false
+lineage,diff.reasons_added,index.entries[0].reasons,index.entries[1].reasons,set(current.reasons)-set(previous.reasons),新增阻断原因,advisory if current GO else follows current_decision,[]
+lineage,diff.reasons_removed,index.entries[0].reasons,index.entries[1].reasons,set(previous.reasons)-set(current.reasons),移除的阻断原因,info,[]
+lineage,diff.advisories_added,index.entries[0].advisories,index.entries[1].advisories,set(current.advisories)-set(previous.advisories),新增提示项,advisory,[]
+lineage,diff.advisories_removed,index.entries[0].advisories,index.entries[1].advisories,set(previous.advisories)-set(current.advisories),移除的提示项,info,[]
+lineage,diff.strict_freshness_changed,index.entries[0].strictFreshness,index.entries[1].strictFreshness,current.strictFreshness!=previous.strictFreshness,strict freshness 策略是否变化,advisory,false
+lineage,diff.runtime_required_changed,index.entries[0].runtimeRequired,index.entries[1].runtimeRequired,current.runtimeRequired!=previous.runtimeRequired,runtimeRequired 是否变化,advisory,false
+lineage,diff.generated_at_delta_sec,index.entries[0].generatedAt,index.entries[1].generatedAt,toEpoch(current.generatedAt)-toEpoch(previous.generatedAt),两次快照时间间隔（秒）,info,null
+boundary,diff.status,index.entries,index.entries[1],if len(entries)<2 then insufficient_history else ok,diff 判定状态,advisory when insufficient_history,insufficient_history
+boundary,diff.release_decision,index.entries[0].decision,diff.status,if current.decision in [NO-GO|UNKNOWN] then NO-GO else GO,最终仍以当前快照主决策为准,blocking when NO-GO or UNKNOWN,follows current_decision
+missing_default,diff.insufficient_history,index.entries,index.entries[1],len(entries)<2,无上一次快照,advisory when current GO,true
+missing_default,diff.reason_code,index.entries,index.entries[1],if len(entries)<2 then insufficient_history,缺历史统一原因码,advisory,insufficient_history
+missing_default,diff.null_fill,index.entries[0],index.entries[1],set transition/delta fields null and set arrays empty,缺历史时空值填充规范,info,transition=null delta=null arrays=[]

@@ -1,0 +1,36 @@
+=== Chiller Stack Check ===
+siteId=126lnoffice
+legacy=http://127.0.0.1:8098
+bff=http://127.0.0.1:8787
+frontend=http://127.0.0.1:5173
+frontendExpectServer=vite
+autoBoot=0
+
+[FAIL] legacy health: unreachable (http://127.0.0.1:8098/healthz)
+[FAIL] bff health: unreachable (http://127.0.0.1:8787/healthz)
+[FAIL] frontend entry: unreachable (http://127.0.0.1:5173/)
+[WARN] frontend server header check skipped: no response headers
+
+[OK] bff contract check passed
+[OK] bff probe executed
+[INFO] sourceStatus overall => overview:failed trends:failed anomalies:failed recommendations:partial
+[INFO] recommendation cards => 0
+
+--- bff log tail ---
+
+> chiller-bff@0.1.0 dev
+> node src/server.js
+
+[chiller-bff] listening on http://127.0.0.1:8787
+--- frontend log tail ---
+
+> chiller-shell-v1@0.1.0 dev
+> vite --host 127.0.0.1 --port 5175
+
+error when starting dev server:
+Error: listen EPERM: operation not permitted 127.0.0.1:5175
+    at Server.setupListenHandle [as _listen2] (node:net:1986:21)
+    at listenInCluster (node:net:2065:12)
+    at node:net:2274:7
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+=== Summary: FAIL=3, WARN=1 ===

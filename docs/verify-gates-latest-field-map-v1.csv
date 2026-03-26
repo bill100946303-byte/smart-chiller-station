@@ -1,0 +1,12 @@
+latest_field,source_field_path,release_impact,missing_default_behavior,affects_default_release,notes
+overall,$.overall,blocking,default_to_FAIL,yes,top-level gate summary used by release checks
+passedCount,$.passedCount,blocking,default_to_0,yes,count of passed gates
+failedCount,$.failedCount (or recompute from length($.failedGates // [])),advisory,default_to_0,no,diagnostic count for failed gates
+failedGates[],$.failedGates[] (or recompute from $.gates[] where ok!=true),advisory,default_to_empty_array,no,diagnostic failed gate list
+gates[].name,$.gates[].name,info,fail_closed_if_missing_or_unknown,yes,semantic key of gate item
+gates[].ok,$.gates[].ok,blocking,default_to_false,yes,pass flag per gate
+gates[].exitCode,$.gates[].exitCode,blocking,default_to_1,yes,raw command rc per gate
+generatedAt,$.generatedAt,info,default_to_unknown,no,snapshot generation time
+rule,overall_pass_consistency_with_passedCount,N/A,if_mismatch_treat_as_FAIL,yes,overall PASS requires expected passed gate count
+rule,failedCount_equals_length_failedGates,N/A,flag_warning_if_mismatch,no,data integrity check
+rule,failedGates_equals_gates_where_ok_false,N/A,flag_warning_if_mismatch,no,data integrity check

@@ -1,0 +1,46 @@
+{
+  "version": "v1.0",
+  "generatedAt": "2026-03-12T16:30:10Z",
+  "overall": "PASS",
+  "passedCount": 7,
+  "totalCount": 7,
+  "gates": [
+    {
+      "name": "acceptance-report",
+      "ok": true,
+      "exitCode": 0
+    },
+    {
+      "name": "status-json",
+      "ok": true,
+      "exitCode": 0
+    },
+    {
+      "name": "release-snapshot",
+      "ok": true,
+      "exitCode": 0
+    },
+    {
+      "name": "release-snapshot-index",
+      "ok": true,
+      "exitCode": 0
+    },
+    {
+      "name": "release-snapshot-diff",
+      "ok": true,
+      "exitCode": 0
+    },
+    {
+      "name": "release-snapshot-consistency",
+      "ok": true,
+      "exitCode": 0
+    },
+    {
+      "name": "release-ready-brief",
+      "ok": true,
+      "exitCode": 0
+    }
+  ],
+  "failedGates": [],
+  "failedCount": 0
+}

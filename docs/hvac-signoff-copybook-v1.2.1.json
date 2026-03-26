@@ -1,0 +1,331 @@
+{
+  "version": "1.2.1",
+  "copybookId": "hvac-signoff-copybook-v1.2.1",
+  "basedOn": {
+    "signoffCopybook": "hvac-signoff-copybook-v1.2@1.2.0",
+    "ruleCopybook": "hvac-rule-copybook-v1.3@1.3.0",
+    "decisionRef": "v1.8-signoff-decision@2026-03-12",
+    "preflightRef": "v1.8-release-preflight@v1.8"
+  },
+  "statusOrder": [
+    "NOT_READY",
+    "READY_WITH_RISK",
+    "READY"
+  ],
+  "fieldScope": {
+    "required": [
+      "sourceStatus.overall",
+      "ruleEvaluation.rulesLoaded",
+      "ruleEvaluation.matchedRuleIds",
+      "ruleEvaluation.skippedRuleIds",
+      "ruleEvaluation.skippedRuleDetails[].missingMetrics[].metric",
+      "overview.freshness.stale",
+      "trends.freshness.stale",
+      "anomalies.freshness.stale"
+    ],
+    "optional": [
+      "evidence.ndFailedCount",
+      "cards[].ruleId",
+      "cards[].id",
+      "overview.energyCards.currentCop",
+      "trends.stats[].latest",
+      "trends.series[].points[].v",
+      "preflight.gates.stackOk",
+      "preflight.gates.runtimeRequired",
+      "preflight.readiness.attribution",
+      "preflight.readiness.ndFailedCount"
+    ]
+  },
+  "derivedFlags": {
+    "freshnessStale": "any([overview.freshness.stale, trends.freshness.stale, anomalies.freshness.stale] == true)",
+    "staleRuleHit": "ruleEvaluation.matchedRuleIds includes 'stale-data-detection' OR cards[].ruleId == 'stale-data-detection' OR cards[].id == 'rec-data-stale-01'",
+    "copMissing": "exists(ruleEvaluation.skippedRuleDetails[].missingMetrics[].metric == 'station_cop')",
+    "envProbeUnreachable": "(preflight.gates.stackOk == false) OR (preflight.readiness.attribution == 'upstream_interface' AND preflight.readiness.ndFailedCount > 0)"
+  },
+  "renderPolicy": {
+    "primaryFirst": true,
+    "order": [
+      "primaryCopy",
+      "environmentSubcopy"
+    ],
+    "showEnvironmentSubcopyWhen": "envProbeUnreachable == true",
+    "environmentSubcopyCannotOverrideStatus": true
+  },
+  "mobileShortBudget": {
+    "zhEquivalentMax": {
+      "title": 12,
+      "oneLiner": 22,
+      "nextAction": 22
+    }
+  },
+  "statuses": {
+    "NOT_READY": {
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "sourceStatus.overall != 'ok'",
+          "ruleEvaluation.rulesLoaded != true",
+          "freshnessStale == true",
+          "staleRuleHit == true",
+          "evidence.ndFailedCount > 0 (if present)"
+        ]
+      },
+      "copy": {
+        "zh": {
+          "title": "未达非降级可运行",
+          "oneLiner": "当前仍有链路或数据质量阻塞，暂不满足签收条件。",
+          "nextAction": "先修复上游/缺失指标并连续复测两次（间隔>=5分钟）。"
+        },
+        "en": {
+          "title": "Not Ready for Non-Degraded Run",
+          "oneLiner": "Blocking issues still exist in source connectivity or data quality, so signoff is not allowed yet.",
+          "nextAction": "Fix upstream/missing metrics and pass two consecutive checks (>=5 min apart)."
+        },
+        "vi": {
+          "title": "Chua dat dieu kien van hanh phi suy giam",
+          "oneLiner": "Van con diem nghen ve ket noi nguon hoac chat luong du lieu, chua du dieu kien ky nhan.",
+          "nextAction": "Sua nguon/thieu chi so va dat 2 lan kiem tra lien tiep (cach nhau >=5 phut)."
+        }
+      },
+      "mobileShort": {
+        "zh": {
+          "title": "未达签收条件",
+          "oneLiner": "链路或数据仍阻塞",
+          "nextAction": "先修复后连测2次"
+        },
+        "en": {
+          "title": "Not Ready",
+          "oneLiner": "Pipeline or data is still blocked",
+          "nextAction": "Fix first, pass 2 consecutive checks"
+        },
+        "vi": {
+          "title": "Chua san sang",
+          "oneLiner": "Du lieu hoac ket noi van bi nghen",
+          "nextAction": "Sua truoc, dat 2 lan lien tiep"
+        }
+      },
+      "environmentSubcopy": {
+        "zh": {
+          "title": "环境受限",
+          "oneLiner": "运行态探针暂不可达，诊断基于当前后端状态。",
+          "nextAction": "先完成探针连通，再复测签收门槛。"
+        },
+        "en": {
+          "title": "Environment Limited",
+          "oneLiner": "Runtime probe is temporarily unreachable; diagnosis uses currently available backend status.",
+          "nextAction": "Restore probe reachability, then rerun signoff checks."
+        },
+        "vi": {
+          "title": "Moi truong bi gioi han",
+          "oneLiner": "Probe runtime tam thoi khong truy cap duoc; chan doan dua tren backend hien co.",
+          "nextAction": "Khoi phuc ket noi probe roi kiem tra ky nhan lai."
+        }
+      }
+    },
+    "READY_WITH_RISK": {
+      "trigger": {
+        "mode": "all+any",
+        "all": [
+          "sourceStatus.overall == 'ok'",
+          "ruleEvaluation.rulesLoaded == true",
+          "freshnessStale == false"
+        ],
+        "any": [
+          "ruleEvaluation.skippedRuleIds.length > 0",
+          "copMissing == true",
+          "staleRuleHit == true"
+        ]
+      },
+      "copy": {
+        "zh": {
+          "title": "可运行（有风险提示）",
+          "oneLiner": "系统主链路可用，但仍有规则可评估性风险，建议按边界执行。",
+          "nextAction": "先消除 skipped/COP 缺失，再恢复高风险调参节奏。"
+        },
+        "en": {
+          "title": "Runnable with Risk Notice",
+          "oneLiner": "Core pipeline is available, but rule evaluability risks remain and require bounded operations.",
+          "nextAction": "Clear skipped/COP-missing conditions before resuming high-risk tuning pace."
+        },
+        "vi": {
+          "title": "Co the van hanh (con canh bao rui ro)",
+          "oneLiner": "Chuoi du lieu chinh da san sang, nhung van con rui ro ve kha nang danh gia rule.",
+          "nextAction": "Xu ly xong skipped/thieu COP truoc khi tro lai nhip dieu chinh rui ro cao."
+        }
+      },
+      "mobileShort": {
+        "zh": {
+          "title": "可运行但有风险",
+          "oneLiner": "主链路可用，评估有风险",
+          "nextAction": "先清跳过与COP缺失"
+        },
+        "en": {
+          "title": "Runnable with Risk",
+          "oneLiner": "Core path is up, evaluability risk remains",
+          "nextAction": "Clear skipped and COP-missing first"
+        },
+        "vi": {
+          "title": "Van hanh co rui ro",
+          "oneLiner": "Chuoi chinh san sang, van co rui ro danh gia",
+          "nextAction": "Xu ly skipped va COP thieu truoc"
+        }
+      },
+      "environmentSubcopy": {
+        "zh": {
+          "title": "环境受限",
+          "oneLiner": "运行态探针受限，风险判断按现有后端信号保守处理。",
+          "nextAction": "环境恢复后再复核风险级别。"
+        },
+        "en": {
+          "title": "Environment Limited",
+          "oneLiner": "Runtime probe is constrained; risk judgement is conservatively derived from available backend signals.",
+          "nextAction": "Re-check risk level after probe connectivity is restored."
+        },
+        "vi": {
+          "title": "Moi truong bi gioi han",
+          "oneLiner": "Probe runtime bi gioi han; danh gia rui ro duoc xu ly than trong theo tin hieu backend hien co.",
+          "nextAction": "Sau khi khoi phuc probe, danh gia lai muc rui ro."
+        }
+      }
+    },
+    "READY": {
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "sourceStatus.overall == 'ok'",
+          "ruleEvaluation.rulesLoaded == true",
+          "ruleEvaluation.skippedRuleIds.length == 0",
+          "freshnessStale == false",
+          "staleRuleHit == false",
+          "copMissing == false",
+          "evidence.ndFailedCount == 0 (if present)"
+        ]
+      },
+      "copy": {
+        "zh": {
+          "title": "系统已达非降级可运行",
+          "oneLiner": "当前签收门槛已通过，可按非降级态口径稳定运行。",
+          "nextAction": "冻结版本点并按常规巡检节奏持续监控。"
+        },
+        "en": {
+          "title": "System Reached Non-Degraded Runnable State",
+          "oneLiner": "Signoff gates are passed and the system can run under non-degraded criteria.",
+          "nextAction": "Freeze baseline and continue standard monitoring cadence."
+        },
+        "vi": {
+          "title": "He thong da dat trang thai van hanh phi suy giam",
+          "oneLiner": "Cac cong ky nhan da dat, he thong co the van hanh on dinh theo tieu chi phi suy giam.",
+          "nextAction": "Dong bang moc phien ban va duy tri giam sat theo lich thuong le."
+        }
+      },
+      "mobileShort": {
+        "zh": {
+          "title": "已达非降级运行",
+          "oneLiner": "签收门槛通过，可稳定运行",
+          "nextAction": "冻结版本并常规巡检"
+        },
+        "en": {
+          "title": "Non-Degraded Ready",
+          "oneLiner": "Signoff gates passed, stable to run",
+          "nextAction": "Freeze baseline and keep routine checks"
+        },
+        "vi": {
+          "title": "Dat phi suy giam",
+          "oneLiner": "Da qua cong ky nhan, van hanh on dinh",
+          "nextAction": "Dong bang baseline va giam sat dinh ky"
+        }
+      },
+      "environmentSubcopy": {
+        "zh": {
+          "title": "环境受限",
+          "oneLiner": "运行态探针暂不可达，不影响当前非降级签收结论。",
+          "nextAction": "保持例行复测并关注探针恢复。"
+        },
+        "en": {
+          "title": "Environment Limited",
+          "oneLiner": "Runtime probe is temporarily unreachable; current non-degraded signoff remains valid.",
+          "nextAction": "Continue routine checks and monitor probe recovery."
+        },
+        "vi": {
+          "title": "Moi truong bi gioi han",
+          "oneLiner": "Probe runtime tam thoi khong truy cap duoc; ket luan ky nhan phi suy giam hien tai van hop le.",
+          "nextAction": "Tiep tuc tai kiem tra dinh ky va theo doi khoi phuc probe."
+        }
+      }
+    }
+  },
+  "zeroValueButPresent": {
+    "purpose": "Explain zero value as valid reading when source is healthy, to avoid false 'missing' interpretation.",
+    "trigger": {
+      "mode": "all",
+      "conditions": [
+        "sourceStatus.sources[key='metric.station_cop'].ok == true",
+        "overview.energyCards.currentCop == 0 OR trends.stats[metric='currentCop'].latest == 0 OR trends.series[metric='currentCop'].points[*].v contains 0",
+        "not exists(ruleEvaluation.skippedRuleDetails[].missingMetrics[].metric == 'station_cop')"
+      ]
+    },
+    "copy": {
+      "zh": {
+        "title": "值为0但数据有效",
+        "oneLiner": "0 表示当前读数，不等于字段缺失。",
+        "nextAction": "先确认 sourceStatus=ok，再结合趋势判断。"
+      },
+      "en": {
+        "title": "Zero Value, Data Present",
+        "oneLiner": "A value of 0 is a valid reading, not a missing field.",
+        "nextAction": "Confirm sourceStatus=ok, then judge with trend context."
+      },
+      "vi": {
+        "title": "Gia tri 0 nhung du lieu hop le",
+        "oneLiner": "Gia tri 0 la so do hop le, khong phai thieu truong.",
+        "nextAction": "Xac nhan sourceStatus=ok, sau do danh gia theo xu huong."
+      }
+    },
+    "mobileShort": {
+      "zh": {
+        "title": "0值有效",
+        "oneLiner": "0值不等于缺失",
+        "nextAction": "先看sourceStatus=ok"
+      },
+      "en": {
+        "title": "Zero Is Valid",
+        "oneLiner": "Zero does not mean missing",
+        "nextAction": "Check sourceStatus=ok first"
+      },
+      "vi": {
+        "title": "Gia tri 0 hop le",
+        "oneLiner": "0 khong co nghia la thieu",
+        "nextAction": "Kiem tra sourceStatus=ok truoc"
+      }
+    }
+  },
+  "passBadgeText": {
+    "zh-CN": "非降级态：通过",
+    "en-US": "Non-Degraded: PASS",
+    "vi-VN": "Phi suy giam: Dat"
+  },
+  "compatibility": {
+    "stateNamesRetained": true,
+    "stateCountRetained": 3,
+    "v1_2KeysRetained": true,
+    "nonBreakingChange": true
+  },
+  "diffFromV1_2": {
+    "added": [
+      "三档 environmentSubcopy（运行态探针不可达副文案）",
+      "envProbeUnreachable 派生标记",
+      "renderPolicy（先主结论后环境说明）"
+    ],
+    "unchanged": [
+      "NOT_READY / READY_WITH_RISK / READY 三档触发框架",
+      "不改 ruleId、阈值、evaluator",
+      "保留 v1.2 copy 与 mobileShort 字段兼容",
+      "zeroValueButPresent 逻辑与文案保持"
+    ]
+  },
+  "rollback": {
+    "current": "hvac-signoff-copybook-v1.2.1@1.2.1",
+    "target": "hvac-signoff-copybook-v1.2@1.2.0",
+    "strategy": "前端切回 v1.2 文案文件；规则引擎判定不受影响。"
+  }
+}

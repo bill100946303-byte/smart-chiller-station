@@ -1,0 +1,11 @@
+summary_field,source_command,release_impact,requiredness,missing_default_behavior,fail_open_or_closed,affects_default_release,notes
+generatedAt,check-family snapshot producer (writer not fixed in current repo); validated by npm run check:check-family,info,required,default_to_unknown_for_display,fail-open,no,timestamp field for freshness/explainability
+overall,aggregated from all checks[*] execution results; validated by npm run check:check-family,blocking,required,default_to_FAIL,fail-closed,yes,enum PASS|FAIL
+passedCount,derived as count(checks[*].ok==true); validated by npm run check:check-family,blocking,required,default_to_0,fail-closed,yes,must match computed okCount
+totalCount,derived as checks.length; validated by npm run check:check-family,blocking,required,default_to_0_and_fail,fail-closed,yes,must be >=1 and equal checks.length
+checks[].script,script identifier consumed by npm run check:check-family and mapped to npm run <script>,blocking,required,default_to_unknown_script_and_fail,fail-closed,yes,must match ^check:[a-z0-9-]+$ and be unique
+checks[].name,display alias derived from checks[].script by trimming prefix check:,advisory,optional,derive_from_script_else_unknown,fail-open,no,compatibility/display layer field
+checks[].ok,execution status from npm run <checks[].script> (exitCode==0),blocking,required,default_to_false,fail-closed,yes,boolean pass flag per check item
+checks[].exitCode,raw process exit code from npm run <checks[].script>,blocking,required,default_to_1,fail-closed,yes,integer rc per check item
+rule,required_script_presence(check:contract|check:verify-gates|check:release-ready-latest-check),blocking,required,missing_required_script_fail,fail-closed,yes,enforced by check-check-family
+summary,counts,blocking=6|warning=2,NA,NA,NA,no,warning count = advisory + info

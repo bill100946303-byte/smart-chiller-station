@@ -1,0 +1,138 @@
+{
+  "site": {
+    "siteId": "126lnoffice",
+    "siteName": "126lnoffice"
+  },
+  "generatedAt": "2026-03-14T13:36:25.882Z",
+  "tree": {
+    "id": "126lnoffice",
+    "label": "冷站系统126lnoffice",
+    "nodeType": "root",
+    "parentId": null,
+    "deviceIdRef": null,
+    "deviceCode": null,
+    "deviceName": null,
+    "systemType": null,
+    "floorName": null,
+    "buildingName": null,
+    "status": "unknown",
+    "lastReportAt": null,
+    "childCount": 2,
+    "children": [
+      {
+        "id": "15",
+        "label": "中会议室",
+        "nodeType": "device",
+        "parentId": "126lnoffice",
+        "deviceIdRef": "15",
+        "deviceCode": "ZHYS",
+        "deviceName": "中会议室",
+        "systemType": "other",
+        "floorName": "10楼",
+        "buildingName": "6期1栋",
+        "status": "unknown",
+        "lastReportAt": null,
+        "childCount": 2,
+        "children": [
+          {
+            "id": "ZHYS-502-40169",
+            "label": "运行",
+            "nodeType": "point",
+            "parentId": "15",
+            "deviceIdRef": "15",
+            "deviceCode": null,
+            "deviceName": null,
+            "systemType": null,
+            "floorName": null,
+            "buildingName": null,
+            "status": "unknown",
+            "lastReportAt": null,
+            "childCount": 0,
+            "children": []
+          },
+          {
+            "id": "15-IsShowAlarm",
+            "label": "是否显示报警",
+            "nodeType": "point",
+            "parentId": "15",
+            "deviceIdRef": "15",
+            "deviceCode": null,
+            "deviceName": null,
+            "systemType": null,
+            "floorName": null,
+            "buildingName": null,
+            "status": "unknown",
+            "lastReportAt": null,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "44",
+        "label": "总电表",
+        "nodeType": "device",
+        "parentId": "126lnoffice",
+        "deviceIdRef": "44",
+        "deviceCode": "EM1",
+        "deviceName": "总电表",
+        "systemType": "other",
+        "floorName": "10楼",
+        "buildingName": "6期1栋",
+        "status": "unknown",
+        "lastReportAt": null,
+        "childCount": 1,
+        "children": [
+          {
+            "id": "EM1-506-40645",
+            "label": "功率",
+            "nodeType": "point",
+            "parentId": "44",
+            "deviceIdRef": "44",
+            "deviceCode": null,
+            "deviceName": null,
+            "systemType": null,
+            "floorName": null,
+            "buildingName": null,
+            "status": "unknown",
+            "lastReportAt": null,
+            "childCount": 0,
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  "filters": {
+    "build": 1,
+    "floor": 1
+  },
+  "freshness": {
+    "latestTimestamp": "2026-03-14T13:36:25.750Z",
+    "stale": false,
+    "ageHours": 0
+  },
+  "sourceStatus": {
+    "overall": "ok",
+    "sources": [
+      {
+        "key": "devicesTree",
+        "endpoint": "/api/device/126lnoffice/data/tree?build=1&floor=1&mock=false",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "error": null,
+        "rows": 30
+      },
+      {
+        "key": "devicesCatalog",
+        "endpoint": "/zsqy/drinfo/126lnoffice/findObject?pageCurrent=1&pageSize=200",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "error": null,
+        "rows": 59
+      }
+    ]
+  }
+}

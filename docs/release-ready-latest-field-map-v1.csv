@@ -1,0 +1,18 @@
+row_type,latest_readable_field,release_ready_raw_path,release_impact,missing_default_behavior,affects_default_release,consistency_rule
+map,decision,$.decision,blocking,default_to_NO_GO,yes,decision==GO => exitCode==0 else exitCode==1
+map,exitCode,$.exitCode,blocking,default_to_1,yes,exitCode in [0|1] and aligned with decision
+map,reasons,$.reasons[],blocking,default_to_[release_ready_field_missing:reasons],yes,len(reasons)==0 => decision GO else NO-GO
+map,advisories,$.advisories[],advisory,default_to_empty_array,no,N/A
+map,strictFreshness,$.inputs.strictFreshness,info,default_to_false,no,N/A
+map,runtimeRequired,$.inputs.runtimeRequired,info,default_to_true,yes,runtimeRequired=true with runtimeReady!=true should block
+map,snapshotDecision,$.checks.snapshotDecision,advisory,default_to_UNKNOWN,no,N/A
+map,consistencyDecision,$.checks.consistencyDecision,blocking,default_to_UNKNOWN,yes,consistencyDecision should be GO when consistencyOk=true
+map,diffClass,$.diffClass (mirror $.checks.diffClass),advisory,default_to_error,no,$.diffClass == $.checks.diffClass
+map,runtimeReady,$.checks.runtimeReady,conditional,default_to_null,conditional,runtimeRequired=true and runtimeReady!=true => blocking
+map,exampleReady,$.checks.exampleReady,advisory,default_to_null,no,N/A
+map,verifyGatesOk,$.verifyGatesOk,blocking,default_to_false,yes,$.verifyGatesOk == ($.checks.verifyGatesRc==0)
+map,consistencyOk,$.consistencyOk,blocking,default_to_false,yes,$.consistencyOk == ($.checks.snapshotConsistencyRc==0 && $.checks.consistencyDecision==GO)
+map,decisionChanged,$.decisionChanged (mirror $.checks.decisionChanged),advisory,default_to_null,no,$.decisionChanged == $.checks.decisionChanged
+map,hasPrevious,$.hasPrevious,advisory,default_to_null,no,N/A
+rule,top_level_vs_checks_mirror,$.diffClass|$.decisionChanged,$.checks.diffClass|$.checks.decisionChanged,N/A,no,top-level mirror fields must equal checks fields
+rule,blocking_fail_closed,$.decision|$.exitCode|$.reasons|$.verifyGatesOk|$.consistencyOk,N/A,missing_any_blocks_release,yes,missing blocking fields => treat as NO-GO

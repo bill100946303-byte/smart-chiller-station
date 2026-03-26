@@ -1,0 +1,17 @@
+source_layer,old_source_value,bff_final_value,frontend_display_value,allow_dual_enum,missing_default_behavior,summary_unified,list_unified,recent_feed_unified,notes
+getAllSubsystemInfo.alarmInfo.name,紧急,critical,"zh:紧急; en:Critical; vi:Khẩn cấp",no,"N/A",yes,yes,yes,旧中文等级直接映射
+getAllSubsystemInfo.alarmInfo.name,严重,major,"zh:严重; en:Major; vi:Nghiêm trọng",no,"N/A",yes,yes,yes,旧中文等级直接映射
+getAllSubsystemInfo.alarmInfo.name,一般,minor,"zh:一般; en:Minor; vi:Thông thường",no,"N/A",yes,yes,yes,旧中文等级直接映射
+getAllSubsystemInfo.alarmInfo.name,正常,normal,"zh:正常; en:Normal; vi:Bình thường",no,"N/A",yes,yes,yes,旧中文等级直接映射
+qsAlarmlog.alarmLevel,紧急,critical,"zh:紧急; en:Critical; vi:Khẩn cấp",no,"N/A",yes,yes,yes,按 field-dictionary 目标枚举归一
+qsAlarmlog.alarmLevel,严重,major,"zh:严重; en:Major; vi:Nghiêm trọng",no,"N/A",yes,yes,yes,按 field-dictionary 目标枚举归一
+qsAlarmlog.alarmLevel,一般,minor,"zh:一般; en:Minor; vi:Thông thường",no,"N/A",yes,yes,yes,按 field-dictionary 目标枚举归一
+qsAlarmlog.alarmLevel,正常,normal,"zh:正常; en:Normal; vi:Bình thường",no,"N/A",yes,yes,yes,按 field-dictionary 目标枚举归一
+current_summary_alias,high,critical,"zh:紧急; en:Critical; vi:Khẩn cấp",no,"N/A",yes,yes,yes,当前 sample/AlarmPage 临时别名；只允许内部映射
+current_summary_alias,medium,major,"zh:严重; en:Major; vi:Nghiêm trọng",no,"N/A",yes,yes,yes,当前 sample/AlarmPage 临时别名；只允许内部映射
+current_summary_alias,low,minor,"zh:一般; en:Minor; vi:Thông thường",no,"N/A",yes,yes,yes,当前 sample/AlarmPage 临时别名；只允许内部映射
+normalized_contract,critical,critical,"zh:紧急; en:Critical; vi:Khẩn cấp",no,"default_to_minor_when_missing",yes,yes,yes,最终对外合同允许值
+normalized_contract,major,major,"zh:严重; en:Major; vi:Nghiêm trọng",no,"default_to_minor_when_missing",yes,yes,yes,最终对外合同允许值
+normalized_contract,minor,minor,"zh:一般; en:Minor; vi:Thông thường",no,"default_to_minor_when_missing",yes,yes,yes,最终对外合同允许值
+normalized_contract,normal,normal,"zh:正常; en:Normal; vi:Bình thường",no,"default_to_minor_when_missing",yes,yes,yes,最终对外合同允许值
+missing_or_unknown,"null|unknown|empty",minor,"zh:一般; en:Minor; vi:Thông thường",no,"default_to_minor_when_missing",yes,yes,yes,跟随 field-dictionary.csv 的 use_default_minor

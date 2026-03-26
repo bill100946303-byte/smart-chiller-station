@@ -1,0 +1,183 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-check-family-consistency-copy-v1",
+  "scope": "check-family consistency duty copy",
+  "fieldScope": {
+    "required": [
+      "family.overall",
+      "family.passedCount",
+      "family.totalCount",
+      "brief.overall",
+      "brief.passedCount",
+      "brief.totalCount",
+      "brief.failedCount",
+      "brief.topFailedChecks[]"
+    ],
+    "baseFieldsOnly": [
+      "overall",
+      "passedCount",
+      "totalCount",
+      "failedCount",
+      "topFailedChecks[]"
+    ]
+  },
+  "priorityOrder": [
+    "family_fail_brief_pass",
+    "family_pass_brief_fail",
+    "consistent_pass"
+  ],
+  "classes": [
+    {
+      "id": "consistent_pass",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "family_fail_brief_pass",
+          "family_pass_brief_fail"
+        ],
+        "conditions": [
+          "family.overall == 'PASS'",
+          "brief.overall == 'PASS'",
+          "family.passedCount == family.totalCount",
+          "brief.passedCount == family.passedCount",
+          "brief.totalCount == family.totalCount",
+          "brief.failedCount == 0",
+          "brief.topFailedChecks.length == 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "口径一致通过",
+          "sub": "可按流程播报"
+        },
+        "en": {
+          "main": "Consistency Pass",
+          "sub": "Safe to report"
+        },
+        "vi": {
+          "main": "Nhat quan da dat",
+          "sub": "Co the thong bao"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Consistency 状态：CONSISTENT_PASS",
+          "sub": "family 与 brief 关键计数一致且均为通过态，可按标准节奏对外播报。"
+        },
+        "en": {
+          "main": "Consistency Status: CONSISTENT_PASS",
+          "sub": "Family and brief are aligned on key counts and both pass, safe for standard external reporting."
+        },
+        "vi": {
+          "main": "Trang thai Consistency: CONSISTENT_PASS",
+          "sub": "Family va brief dong nhat ve chi so chinh va deu pass, co the thong bao theo quy trinh chuan."
+        }
+      },
+      "firstAction": {
+        "zh": "先记录本轮一致性结果，再进入后续放行步骤。",
+        "en": "Log this consistency result first, then continue release steps.",
+        "vi": "Ghi nhan ket qua nhat quan truoc, sau do tiep tuc buoc phat hanh."
+      }
+    },
+    {
+      "id": "family_pass_brief_fail",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "family.overall == 'PASS'",
+          "family.passedCount == family.totalCount",
+          "brief.overall == 'FAIL'",
+          "brief.failedCount > 0",
+          "brief.topFailedChecks.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "简报误阻断",
+          "sub": "family已通过"
+        },
+        "en": {
+          "main": "Brief False Block",
+          "sub": "Family already pass"
+        },
+        "vi": {
+          "main": "Brief chan sai",
+          "sub": "Family da pass"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Consistency 状态：FAMILY_PASS_BRIEF_FAIL",
+          "sub": "family 显示通过但 brief 显示失败，属于口径冲突，禁止按 brief 直接外发。"
+        },
+        "en": {
+          "main": "Consistency Status: FAMILY_PASS_BRIEF_FAIL",
+          "sub": "Family passes while brief fails. This is a consistency conflict and must not be externally sent as final."
+        },
+        "vi": {
+          "main": "Trang thai Consistency: FAMILY_PASS_BRIEF_FAIL",
+          "sub": "Family pass nhung brief fail. Day la xung dot nhat quan, khong duoc gui ra ngoai theo brief."
+        }
+      },
+      "firstAction": {
+        "zh": "先重跑 check-family 与 check-family-brief，再按最新一致结果决定播报。",
+        "en": "Rerun check-family and check-family-brief first, then decide by refreshed aligned results.",
+        "vi": "Chay lai check-family va check-family-brief truoc, sau do moi quyet dinh theo ket qua dong nhat moi."
+      }
+    },
+    {
+      "id": "family_fail_brief_pass",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "family.overall == 'FAIL'",
+          "family.passedCount < family.totalCount",
+          "brief.overall == 'PASS'",
+          "brief.failedCount == 0",
+          "brief.topFailedChecks.length == 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "疑似误放行",
+          "sub": "family失败brief通过"
+        },
+        "en": {
+          "main": "Possible False GO",
+          "sub": "Family fail brief pass"
+        },
+        "vi": {
+          "main": "Nghi ngo cho phep sai",
+          "sub": "Family fail brief pass"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Consistency 状态：FAMILY_FAIL_BRIEF_PASS",
+          "sub": "family 已失败但 brief 显示通过，存在误发高风险，必须立即阻断。"
+        },
+        "en": {
+          "main": "Consistency Status: FAMILY_FAIL_BRIEF_PASS",
+          "sub": "Family fails but brief shows pass. This is high-risk for false release and must be blocked immediately."
+        },
+        "vi": {
+          "main": "Trang thai Consistency: FAMILY_FAIL_BRIEF_PASS",
+          "sub": "Family that bai nhung brief bao pass. Rui ro phat hanh sai cao, phai chan ngay."
+        }
+      },
+      "firstAction": {
+        "zh": "立即停止对外放行口播，重跑双文件校验并修复 topFailedChecks 映射后再评估。",
+        "en": "Stop external release messaging now, rerun dual checks, then reassess after topFailedChecks mapping is corrected.",
+        "vi": "Dung thong bao phat hanh ra ngoai ngay, chay lai kiem tra hai file va sua anh xa topFailedChecks truoc khi danh gia lai."
+      }
+    }
+  ],
+  "fallback": {
+    "whenNoClassMatched": "family_fail_brief_pass"
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

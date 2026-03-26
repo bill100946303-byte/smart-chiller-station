@@ -1,0 +1,190 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-release-ready-copy-v1",
+  "scope": "release readiness duty copy",
+  "fieldScope": {
+    "primary": [
+      "decision",
+      "reasons[]",
+      "advisories[]",
+      "checks.verifyGatesOk",
+      "checks.preflightPass",
+      "releaseGate.decision",
+      "releaseGate.advisories[]",
+      "statusSummary.strictFreshnessPreview"
+    ],
+    "legacyCompatible": [
+      "preflightPass",
+      "releaseGate.decision",
+      "releaseGate.reasons[]",
+      "releaseGate.advisories[]"
+    ]
+  },
+  "priorityOrder": [
+    "blocked",
+    "review_required",
+    "ready"
+  ],
+  "classes": [
+    {
+      "id": "blocked",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "decision == 'NO-GO'",
+          "reasons.length > 0",
+          "checks.verifyGatesOk == false",
+          "checks.preflightPass == false",
+          "releaseGate.decision == 'NO-GO' (if present)",
+          "preflightPass == false (legacy)"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "发布受阻",
+          "sub": "存在阻断条件",
+          "firstAction": "先修复首个阻断项"
+        },
+        "en": {
+          "main": "Blocked",
+          "sub": "Blocking conditions exist",
+          "firstAction": "Fix the first blocker"
+        },
+        "vi": {
+          "main": "Bi chan phat hanh",
+          "sub": "Ton tai dieu kien chan",
+          "firstAction": "Xu ly blocker dau tien"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "放行状态：BLOCKED",
+          "sub": "当前存在阻断原因或关键门禁未通过，不能进入发布。",
+          "firstAction": "先处理首个 reason 并重跑 release-snapshot 复核。"
+        },
+        "en": {
+          "main": "Release Status: BLOCKED",
+          "sub": "Blocking reasons or failed critical gates are present, so release cannot proceed.",
+          "firstAction": "Resolve the first reason and rerun release-snapshot for verification."
+        },
+        "vi": {
+          "main": "Trang thai phat hanh: BLOCKED",
+          "sub": "Dang co ly do chan hoac cong quan trong chua dat, khong the tiep tuc phat hanh.",
+          "firstAction": "Xu ly reason dau tien va chay lai release-snapshot de xac nhan."
+        }
+      }
+    },
+    {
+      "id": "review_required",
+      "trigger": {
+        "mode": "all+any+not",
+        "not": [
+          "blocked"
+        ],
+        "all": [
+          "(decision == 'GO' OR releaseGate.decision == 'GO')",
+          "checks.verifyGatesOk == true (if present)",
+          "checks.preflightPass == true (if present)"
+        ],
+        "any": [
+          "advisories.length > 0",
+          "releaseGate.advisories.length > 0 (if present)",
+          "statusSummary.strictFreshnessPreview == true"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "可放行需复核",
+          "sub": "存在提示项",
+          "firstAction": "先复核提示再发布"
+        },
+        "en": {
+          "main": "Review Needed",
+          "sub": "Advisories present",
+          "firstAction": "Review advisories first"
+        },
+        "vi": {
+          "main": "Can ra soat",
+          "sub": "Co muc canh bao",
+          "firstAction": "Ra soat canh bao truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "放行状态：REVIEW_REQUIRED",
+          "sub": "主决策为 GO，但存在告警/提示项，需人工复核后放行。",
+          "firstAction": "先确认 advisories 的影响边界，再执行发布确认。"
+        },
+        "en": {
+          "main": "Release Status: REVIEW_REQUIRED",
+          "sub": "Core decision is GO, but advisories are present and require manual review before release.",
+          "firstAction": "Confirm advisory impact boundaries first, then run release confirmation."
+        },
+        "vi": {
+          "main": "Trang thai phat hanh: REVIEW_REQUIRED",
+          "sub": "Quyet dinh chinh la GO nhung co canh bao, can ra soat thu cong truoc khi phat hanh.",
+          "firstAction": "Xac nhan pham vi anh huong cua advisories truoc, roi moi xac nhan phat hanh."
+        }
+      }
+    },
+    {
+      "id": "ready",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "blocked",
+          "review_required"
+        ],
+        "all": [
+          "(decision == 'GO' OR releaseGate.decision == 'GO')",
+          "reasons.length == 0 (and releaseGate.reasons.length == 0 if present)",
+          "advisories.length == 0 (and releaseGate.advisories.length == 0 if present)",
+          "checks.verifyGatesOk == true (if present)",
+          "checks.preflightPass == true (if present)"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "可直接放行",
+          "sub": "门禁与提示均清",
+          "firstAction": "按窗口执行发布"
+        },
+        "en": {
+          "main": "Ready",
+          "sub": "Gates and advisories clear",
+          "firstAction": "Release in window"
+        },
+        "vi": {
+          "main": "San sang phat hanh",
+          "sub": "Cong va canh bao deu sach",
+          "firstAction": "Phat hanh theo cua so"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "放行状态：READY",
+          "sub": "当前门禁通过且无阻断/提示项，可进入标准放行流程。",
+          "firstAction": "按发布窗口执行并同步值班群结论。"
+        },
+        "en": {
+          "main": "Release Status: READY",
+          "sub": "All gates pass with no blockers/advisories, ready for standard release flow.",
+          "firstAction": "Execute in release window and sync the decision to the duty channel."
+        },
+        "vi": {
+          "main": "Trang thai phat hanh: READY",
+          "sub": "Tat ca cong da dat va khong co blocker/advisory, san sang cho quy trinh phat hanh chuan.",
+          "firstAction": "Thuc hien theo cua so phat hanh va thong bao ket luan cho nhom truc."
+        }
+      }
+    }
+  ],
+  "fallback": {
+    "whenNoClassMatched": "review_required"
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

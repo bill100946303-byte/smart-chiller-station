@@ -1,0 +1,543 @@
+{
+  "version": "1.0.1",
+  "source_files": [
+    "/Users/billchow/Documents/智慧冷冻站/docs/冷站系统2.0-数据建模-拓扑-v1.md",
+    "/Users/billchow/Documents/智慧冷冻站/docs/bff-aggregation-design.md"
+  ],
+  "special_marks": {
+    "totalElectricity_risk": "legacy field totalElectricity is semantically cumulative energy (kWh), not real-time power; unify on station_total_energy_kwh.",
+    "coolingTower_composite_rule": "cooling tower is modeled as composite: CTF(fan real device) + CTE(energy virtual device) + CTHDE(heat rejection virtual device)."
+  },
+  "fields": [
+    {
+      "field_name": "site_id",
+      "field_name_cn": "站点ID",
+      "unit": "-",
+      "source": "path:{siteId}; zsqy_v1.appmanager.appid",
+      "refresh_frequency": "实时请求",
+      "null_strategy": "never_null",
+      "is_p0": true,
+      "note": "BFF主键，当前示例为126lnoffice/126"
+    },
+    {
+      "field_name": "site_name",
+      "field_name_cn": "站点名称",
+      "unit": "-",
+      "source": "zsqy_v1.appmanager.appName",
+      "refresh_frequency": "实时请求",
+      "null_strategy": "use_default_empty_string",
+      "is_p0": true,
+      "note": "站点展示名"
+    },
+    {
+      "field_name": "generated_at",
+      "field_name_cn": "数据生成时间",
+      "unit": "-",
+      "source": "BFF聚合层生成时间",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "never_null",
+      "is_p0": true,
+      "note": "ISO8601，带时区"
+    },
+    {
+      "field_name": "alarm_data_stale",
+      "field_name_cn": "告警数据陈旧标记",
+      "unit": "-",
+      "source": "zsqy_v1.qs_alarmlog + getAllSubsystemInfo时间对比",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "use_default_false",
+      "is_p0": true,
+      "note": "true表示最新告警超阈值(如24h/72h)"
+    },
+    {
+      "field_name": "total_devices",
+      "field_name_cn": "设备总数",
+      "unit": "台",
+      "source": "126lnoffice.drinfo",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "use_default_0",
+      "is_p0": true,
+      "note": "设备清单计数"
+    },
+    {
+      "field_name": "operational_device_count",
+      "field_name_cn": "运行类设备数",
+      "unit": "台",
+      "source": "126lnoffice.drinfo.typeYT=1",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "use_default_0",
+      "is_p0": true,
+      "note": "实体设备数量"
+    },
+    {
+      "field_name": "meter_device_count",
+      "field_name_cn": "计量/虚拟设备数",
+      "unit": "台",
+      "source": "126lnoffice.drinfo.typeYT=2",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "use_default_0",
+      "is_p0": true,
+      "note": "虚拟/计量设备数量"
+    },
+    {
+      "field_name": "device_type_count",
+      "field_name_cn": "设备类型数",
+      "unit": "个",
+      "source": "126lnoffice.drtypeinfo + drinfo",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "use_default_0",
+      "is_p0": true,
+      "note": "按已挂设备去重"
+    },
+    {
+      "field_name": "alarm_critical_count",
+      "field_name_cn": "紧急告警数",
+      "unit": "条",
+      "source": "/{dbName}/getAllSubsystemInfo.alarmInfo",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "use_default_0",
+      "is_p0": true,
+      "note": "中文等级映射到critical"
+    },
+    {
+      "field_name": "alarm_major_count",
+      "field_name_cn": "严重告警数",
+      "unit": "条",
+      "source": "/{dbName}/getAllSubsystemInfo.alarmInfo",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "use_default_0",
+      "is_p0": true,
+      "note": "中文等级映射到major"
+    },
+    {
+      "field_name": "alarm_minor_count",
+      "field_name_cn": "一般告警数",
+      "unit": "条",
+      "source": "/{dbName}/getAllSubsystemInfo.alarmInfo",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "use_default_0",
+      "is_p0": true,
+      "note": "中文等级映射到minor"
+    },
+    {
+      "field_name": "alarm_normal_count",
+      "field_name_cn": "正常条目数",
+      "unit": "条",
+      "source": "/{dbName}/getAllSubsystemInfo.alarmInfo",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "use_default_0",
+      "is_p0": true,
+      "note": "中文等级映射到normal"
+    },
+    {
+      "field_name": "latest_alarm_time",
+      "field_name_cn": "最近告警时间",
+      "unit": "-",
+      "source": "/zsqy/qsAlarmlog/{dbName}/findNewAlarmLog.time",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "use_default_null",
+      "is_p0": true,
+      "note": "无数据返回null"
+    },
+    {
+      "field_name": "wet_bulb_temp_c",
+      "field_name_cn": "湿球温度",
+      "unit": "℃",
+      "source": "126lnoffice.qstag.506-40689; alias:WetBulbTemperature(type=99)",
+      "refresh_frequency": "5分钟",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "环境基础量"
+    },
+    {
+      "field_name": "outdoor_temp_c",
+      "field_name_cn": "室外温度",
+      "unit": "℃",
+      "source": "126lnoffice.qstag.RHT-506-40165",
+      "refresh_frequency": "5分钟",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "环境基础量"
+    },
+    {
+      "field_name": "outdoor_humidity_pct",
+      "field_name_cn": "室外湿度",
+      "unit": "%",
+      "source": "126lnoffice.qstag.RHH-506-40163",
+      "refresh_frequency": "5分钟",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "环境基础量"
+    },
+    {
+      "field_name": "dew_point_temp_c",
+      "field_name_cn": "露点温度",
+      "unit": "℃",
+      "source": "126lnoffice.qstag.TDTemperature; zsqy_v1.energy_statistics_hour.type=80",
+      "refresh_frequency": "5分钟/1小时",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "由温湿度公式计算"
+    },
+    {
+      "field_name": "chilled_supply_temp_c",
+      "field_name_cn": "冷冻供水温度",
+      "unit": "℃",
+      "source": "126lnoffice.qstag.506-40673",
+      "refresh_frequency": "5分钟",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "冷冻总管供水"
+    },
+    {
+      "field_name": "chilled_return_temp_c",
+      "field_name_cn": "冷冻回水温度",
+      "unit": "℃",
+      "source": "126lnoffice.qstag.506-40675",
+      "refresh_frequency": "5分钟",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "冷冻总管回水"
+    },
+    {
+      "field_name": "chilled_delta_t_c",
+      "field_name_cn": "冷冻水温差",
+      "unit": "℃",
+      "source": "126lnoffice.qstag.chilledWaterTemperatureDifference; zsqy_v1.energy_statistics_hour.type=3",
+      "refresh_frequency": "5分钟/1小时",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "定义=回水-供水"
+    },
+    {
+      "field_name": "cooling_supply_temp_c",
+      "field_name_cn": "冷却供水温度",
+      "unit": "℃",
+      "source": "126lnoffice.qstag.506-40677",
+      "refresh_frequency": "5分钟",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "冷却总管供水"
+    },
+    {
+      "field_name": "cooling_return_temp_c",
+      "field_name_cn": "冷却回水温度",
+      "unit": "℃",
+      "source": "126lnoffice.qstag.506-40679",
+      "refresh_frequency": "5分钟",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "冷却总管回水"
+    },
+    {
+      "field_name": "cooling_delta_t_c",
+      "field_name_cn": "冷却水温差",
+      "unit": "℃",
+      "source": "126lnoffice.qstag.chilledOutWaterTemperatureDifference; zsqy_v1.energy_statistics_hour.type=4",
+      "refresh_frequency": "5分钟/1小时",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "定义=供水-回水"
+    },
+    {
+      "field_name": "station_total_power_kw",
+      "field_name_cn": "冷站实时总功率",
+      "unit": "kW",
+      "source": "126lnoffice.qstag.totalPower; zsqy_v1.energy_statistics_hour.type=2",
+      "refresh_frequency": "5分钟/1小时",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "CH+CHP+CWP+CTF功率求和"
+    },
+    {
+      "field_name": "station_total_energy_kwh",
+      "field_name_cn": "冷站累计总电能",
+      "unit": "kWh",
+      "source": "126lnoffice.qstag.totalElectricity; 126lnoffice.qstag.electricEnergyOfCoolingStation; zsqy_v1.energy_statistics_day.type=34",
+      "refresh_frequency": "5分钟/1天",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "口径风险: 旧字段名totalElectricity文字含义为实时总电量，但实际是累计电能，前后端统一用station_total_energy_kwh"
+    },
+    {
+      "field_name": "chiller_power_kw",
+      "field_name_cn": "冷机实时总功率",
+      "unit": "kW",
+      "source": "126lnoffice.qstag.totalChPower; zsqy_v1.energy_statistics_hour.type=59",
+      "refresh_frequency": "5分钟/1小时",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "冷机群功率"
+    },
+    {
+      "field_name": "chilled_pump_power_kw",
+      "field_name_cn": "冷冻泵实时总功率",
+      "unit": "kW",
+      "source": "126lnoffice.qstag.totalChpPower; zsqy_v1.energy_statistics_hour.type=60",
+      "refresh_frequency": "5分钟/1小时",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "冷冻泵群功率"
+    },
+    {
+      "field_name": "cooling_pump_power_kw",
+      "field_name_cn": "冷却泵实时总功率",
+      "unit": "kW",
+      "source": "126lnoffice.qstag.totalCwpPower; zsqy_v1.energy_statistics_hour.type=62",
+      "refresh_frequency": "5分钟/1小时",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "冷却泵群功率"
+    },
+    {
+      "field_name": "cooling_tower_power_kw",
+      "field_name_cn": "冷却塔实时总功率",
+      "unit": "kW",
+      "source": "126lnoffice.qstag.totalCtPower; zsqy_v1.energy_statistics_hour.type=61",
+      "refresh_frequency": "5分钟/1小时",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "组合建模规则: 当前无独立CT塔体实例，按CTF(风机)+CTE(电量虚拟)+CTHDE(散热量虚拟)组合聚合"
+    },
+    {
+      "field_name": "max_chilled_pump_freq_hz",
+      "field_name_cn": "冷冻泵近60分钟最大频率",
+      "unit": "Hz",
+      "source": "/zsqy/homepage/{dbName}/getEnergyStatisticsCurve + getRunParamsCurve（冷冻泵频率曲线）",
+      "refresh_frequency": "5分钟",
+      "null_strategy": "use_default_0",
+      "is_p0": true,
+      "note": "规则引擎字段，最近60分钟窗口最大值；缺失时返回0"
+    },
+    {
+      "field_name": "chiller_start_stop_count_60m",
+      "field_name_cn": "冷机近60分钟启停次数",
+      "unit": "次",
+      "source": "/zsqy/homepage/{dbName}/getEnergyStatisticsCurve + getRunParamsCurve（冷机运行状态曲线）",
+      "refresh_frequency": "5分钟",
+      "null_strategy": "use_default_0",
+      "is_p0": true,
+      "note": "规则引擎字段，状态0/1切换次数；缺失时返回0"
+    },
+    {
+      "field_name": "chilled_pump_start_stop_count_60m",
+      "field_name_cn": "冷冻泵近60分钟启停次数",
+      "unit": "次",
+      "source": "/zsqy/homepage/{dbName}/getEnergyStatisticsCurve + getRunParamsCurve（冷冻泵运行状态曲线）",
+      "refresh_frequency": "5分钟",
+      "null_strategy": "use_default_0",
+      "is_p0": true,
+      "note": "规则引擎字段，状态0/1切换次数；缺失时返回0"
+    },
+    {
+      "field_name": "cooling_pump_start_stop_count_60m",
+      "field_name_cn": "冷却泵近60分钟启停次数",
+      "unit": "次",
+      "source": "/zsqy/homepage/{dbName}/getEnergyStatisticsCurve + getRunParamsCurve（冷却泵运行状态曲线）",
+      "refresh_frequency": "5分钟",
+      "null_strategy": "use_default_0",
+      "is_p0": true,
+      "note": "规则引擎字段，状态0/1切换次数；缺失时返回0"
+    },
+    {
+      "field_name": "station_cooling_capacity_kw",
+      "field_name_cn": "冷站实时总冷量",
+      "unit": "kW",
+      "source": "126lnoffice.qstag.totalCoolingCapacity; zsqy_v1.energy_statistics_hour.type=11",
+      "refresh_frequency": "5分钟/1小时",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "推荐公式=冷冻流量*冷冻温差*1.163；当前现场长期为0时返回null"
+    },
+    {
+      "field_name": "station_heat_rejection_kw",
+      "field_name_cn": "冷站瞬时散热量",
+      "unit": "kW",
+      "source": "126lnoffice.qstag.instantaneousHeatDissipation; zsqy_v1.energy_statistics_hour.type=31",
+      "refresh_frequency": "5分钟/1小时",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "推荐公式=冷却流量*冷却温差*1.163；当前现场长期为0时返回null"
+    },
+    {
+      "field_name": "station_cop",
+      "field_name_cn": "冷站COP",
+      "unit": "-",
+      "source": "126lnoffice.qstag.coldStationCop; zsqy_v1.energy_statistics_hour.type=12",
+      "refresh_frequency": "5分钟/1小时",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "分母<=0返回null，禁止Infinity"
+    },
+    {
+      "field_name": "thermal_unbalance_rate_pct",
+      "field_name_cn": "热不平衡率",
+      "unit": "%",
+      "source": "126lnoffice.qstag.thermalUnbalanceRate; zsqy_v1.energy_statistics_hour.type=13",
+      "refresh_frequency": "5分钟/1小时",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "分母<=0返回null，禁止Infinity"
+    },
+    {
+      "field_name": "running_device_count",
+      "field_name_cn": "运行设备数",
+      "unit": "台",
+      "source": "126lnoffice.drinfo + reg(run点)+qstag+subinfo(subid=25)",
+      "refresh_frequency": "5分钟",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "规则统计字段"
+    },
+    {
+      "field_name": "alarm_device_count",
+      "field_name_cn": "报警设备数",
+      "unit": "台",
+      "source": "126lnoffice.drinfo + reg(reg_DrShowType in 2/3 or Isalarm=1)+qstag+subinfo",
+      "refresh_frequency": "5分钟",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "规则统计字段"
+    },
+    {
+      "field_name": "trend_ts",
+      "field_name_cn": "趋势点时间",
+      "unit": "-",
+      "source": "/zsqy/homepage/{dbName}/getEnergyStatisticsCurve; getRunParamsCurve",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "drop_point_if_ts_invalid",
+      "is_p0": true,
+      "note": "统一到yyyy-MM-dd HH:mm"
+    },
+    {
+      "field_name": "trend_value",
+      "field_name_cn": "趋势点数值",
+      "unit": "-",
+      "source": "/zsqy/homepage/{dbName}/getEnergyStatisticsCurve; getRunParamsCurve",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "原始空值保留null"
+    },
+    {
+      "field_name": "trend_latest",
+      "field_name_cn": "序列最新值",
+      "unit": "-",
+      "source": "BFF聚合计算",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "由points末点得出"
+    },
+    {
+      "field_name": "trend_min",
+      "field_name_cn": "序列最小值",
+      "unit": "-",
+      "source": "BFF聚合计算",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "忽略null后计算"
+    },
+    {
+      "field_name": "trend_max",
+      "field_name_cn": "序列最大值",
+      "unit": "-",
+      "source": "BFF聚合计算",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "忽略null后计算"
+    },
+    {
+      "field_name": "anomaly_alarm_id",
+      "field_name_cn": "异常ID",
+      "unit": "-",
+      "source": "/zsqy/qsAlarmlog/{dbName}/findNewAlarmLog.id",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "drop_item_if_missing_id",
+      "is_p0": true,
+      "note": "异常事件主键"
+    },
+    {
+      "field_name": "anomaly_occurred_at",
+      "field_name_cn": "异常发生时间",
+      "unit": "-",
+      "source": "/zsqy/qsAlarmlog/{dbName}/findNewAlarmLog.time",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "drop_item_if_invalid_time",
+      "is_p0": true,
+      "note": "统一时区格式"
+    },
+    {
+      "field_name": "anomaly_reg_id",
+      "field_name_cn": "异常变量ID",
+      "unit": "-",
+      "source": "/zsqy/qsAlarmlog/{dbName}/findNewAlarmLog.regId",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "可用于回查reg定义"
+    },
+    {
+      "field_name": "anomaly_severity",
+      "field_name_cn": "异常等级",
+      "unit": "-",
+      "source": "qsAlarmlog.alarmLevel + 映射规则",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "use_default_minor",
+      "is_p0": true,
+      "note": "枚举: critical/major/minor/normal"
+    },
+    {
+      "field_name": "anomaly_state",
+      "field_name_cn": "异常状态",
+      "unit": "-",
+      "source": "/zsqy/qsAlarmlog/{dbName}/findNewAlarmLog.alarmstate",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "0恢复/1进行中(按旧系统约定)"
+    },
+    {
+      "field_name": "anomaly_value",
+      "field_name_cn": "异常值",
+      "unit": "-",
+      "source": "/zsqy/qsAlarmlog/{dbName}/findNewAlarmLog.alarmvalue",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "return_null",
+      "is_p0": true,
+      "note": "原值透传字符串"
+    },
+    {
+      "field_name": "has_recent_alarms",
+      "field_name_cn": "是否存在近期异常",
+      "unit": "-",
+      "source": "BFF聚合计算",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "use_default_false",
+      "is_p0": true,
+      "note": "按阈值窗口(如24h)计算"
+    },
+    {
+      "field_name": "work_order_linked",
+      "field_name_cn": "是否有关联工单",
+      "unit": "-",
+      "source": "/zsqy/qsworkorder/{dbName}/findWorkOrderList(可选)",
+      "refresh_frequency": "每次请求",
+      "null_strategy": "use_default_false",
+      "is_p0": true,
+      "note": "首期可降级false"
+    },
+    {
+      "field_name": "cooling_tower_composite_members",
+      "field_name_cn": "冷却塔组合成员",
+      "unit": "-",
+      "source": "126lnoffice.drinfo + drtypeinfo(CTF/CTE/CTHDE)",
+      "refresh_frequency": "配置更新",
+      "null_strategy": "return_null",
+      "is_p0": false,
+      "note": "规则字段: 组合成员建议包含 fan, energy_meter_virtual, heat_rejection_virtual"
+    }
+  ]
+}

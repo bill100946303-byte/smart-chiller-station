@@ -1,0 +1,313 @@
+{
+  "version": "1.2.0",
+  "basedOn": "1.1.0",
+  "description": "SourceStatus 标签层增强版（short/full 双层映射，key 收敛规则保持不变）",
+  "convergence": {
+    "unchangedFrom": "v1.1",
+    "canonicalKeys": [
+      "energy",
+      "runParams",
+      "latestAlarmLog",
+      "subsystemSummary",
+      "ruleMetrics",
+      "metric.chilled_delta_t_c",
+      "metric.cooling_delta_t_c",
+      "metric.station_cop",
+      "metric.station_total_power_kw",
+      "energyCurve",
+      "devices",
+      "alarms",
+      "rules",
+      "dashboardOverview",
+      "anomalySummary",
+      "alarmDiagnosis",
+      "trendBaseline",
+      "trendQuality",
+      "alarmSeveritySplit"
+    ],
+    "aliases": {
+      "subsystemInfo": "subsystemSummary"
+    }
+  },
+  "labels": {
+    "energy": {
+      "shortLabel": "能耗总览",
+      "fullLabel": "能耗总览来源"
+    },
+    "runParams": {
+      "shortLabel": "运行参数",
+      "fullLabel": "运行参数趋势来源"
+    },
+    "latestAlarmLog": {
+      "shortLabel": "最新告警",
+      "fullLabel": "最新告警日志来源"
+    },
+    "subsystemSummary": {
+      "shortLabel": "子系统",
+      "fullLabel": "子系统概览来源"
+    },
+    "ruleMetrics": {
+      "shortLabel": "规则聚合",
+      "fullLabel": "规则指标聚合来源"
+    },
+    "metric.chilled_delta_t_c": {
+      "shortLabel": "冷冻温差",
+      "fullLabel": "规则指标：冷冻水温差"
+    },
+    "metric.cooling_delta_t_c": {
+      "shortLabel": "冷却温差",
+      "fullLabel": "规则指标：冷却水温差"
+    },
+    "metric.station_cop": {
+      "shortLabel": "冷站COP",
+      "fullLabel": "规则指标：冷站COP"
+    },
+    "metric.station_total_power_kw": {
+      "shortLabel": "总站功率",
+      "fullLabel": "规则指标：冷站实时总功率"
+    },
+    "energyCurve": {
+      "shortLabel": "能耗趋势",
+      "fullLabel": "能耗趋势来源"
+    },
+    "devices": {
+      "shortLabel": "设备清单",
+      "fullLabel": "设备清单来源"
+    },
+    "alarms": {
+      "shortLabel": "告警摘要",
+      "fullLabel": "告警摘要来源"
+    },
+    "rules": {
+      "shortLabel": "规则配置",
+      "fullLabel": "规则配置来源"
+    },
+    "dashboardOverview": {
+      "shortLabel": "总览聚合",
+      "fullLabel": "总览聚合内部来源"
+    },
+    "anomalySummary": {
+      "shortLabel": "异常聚合",
+      "fullLabel": "异常聚合内部来源"
+    },
+    "alarmDiagnosis": {
+      "shortLabel": "告警诊断",
+      "fullLabel": "告警诊断来源"
+    },
+    "trendBaseline": {
+      "shortLabel": "趋势基线",
+      "fullLabel": "趋势基线来源"
+    },
+    "trendQuality": {
+      "shortLabel": "趋势质量",
+      "fullLabel": "趋势质量来源"
+    },
+    "alarmSeveritySplit": {
+      "shortLabel": "告警分级",
+      "fullLabel": "告警等级拆分来源"
+    }
+  },
+  "metricTemplate": {
+    "regex": "^metric\\.([a-z0-9_]+)$",
+    "shortLabelRule": "fieldShortCnMap[field] || defaultShortLabel",
+    "fullLabelRule": "fieldCnMap[field] ? `规则指标：${fieldCnMap[field]}` : `规则指标：${field}`",
+    "defaultShortLabel": "规则指标",
+    "unknownFallback": {
+      "shortLabel": "规则指标",
+      "fullLabelTemplate": "规则指标：{snake_case}",
+      "riskHint": "未收录 metric 禁止直接用于业务结论。"
+    },
+    "fieldCnMap": {
+      "chilled_delta_t_c": "冷冻水温差",
+      "cooling_delta_t_c": "冷却水温差",
+      "station_cop": "冷站COP",
+      "station_total_power_kw": "冷站实时总功率"
+    },
+    "fieldShortCnMap": {
+      "chilled_delta_t_c": "冷冻温差",
+      "cooling_delta_t_c": "冷却温差",
+      "station_cop": "冷站COP",
+      "station_total_power_kw": "总站功率"
+    }
+  },
+  "fallback": {
+    "shortLabel": "未收录",
+    "fullLabelTemplate": "未收录来源（{rawKey}）",
+    "riskHint": "未收录 key 禁止直接用于业务结论。"
+  },
+  "renderingPolicy": {
+    "collapsed": {
+      "labelField": "shortLabel",
+      "reason": "移动端优先，提升密度与可扫读性。"
+    },
+    "expanded": {
+      "labelField": "fullLabel",
+      "reason": "排障与解释优先，保留完整语义。"
+    }
+  },
+  "i18nLite": {
+    "defaultLocale": "zh-CN",
+    "supportedLocales": [
+      "zh-CN",
+      "en-US",
+      "vi-VN"
+    ],
+    "top10Keys": {
+      "energy": {
+        "zh-CN": {
+          "shortLabel": "能耗总览",
+          "fullLabel": "能耗总览来源"
+        },
+        "en-US": {
+          "shortLabel": "Energy",
+          "fullLabel": "Energy Overview Source"
+        },
+        "vi-VN": {
+          "shortLabel": "Năng lượng",
+          "fullLabel": "Nguồn tổng quan năng lượng"
+        }
+      },
+      "runParams": {
+        "zh-CN": {
+          "shortLabel": "运行参数",
+          "fullLabel": "运行参数趋势来源"
+        },
+        "en-US": {
+          "shortLabel": "Params",
+          "fullLabel": "Runtime Parameter Trend Source"
+        },
+        "vi-VN": {
+          "shortLabel": "Tham số",
+          "fullLabel": "Nguồn xu hướng tham số vận hành"
+        }
+      },
+      "latestAlarmLog": {
+        "zh-CN": {
+          "shortLabel": "最新告警",
+          "fullLabel": "最新告警日志来源"
+        },
+        "en-US": {
+          "shortLabel": "Alarms",
+          "fullLabel": "Latest Alarm Log Source"
+        },
+        "vi-VN": {
+          "shortLabel": "Báo động",
+          "fullLabel": "Nguồn nhật ký báo động mới nhất"
+        }
+      },
+      "subsystemSummary": {
+        "zh-CN": {
+          "shortLabel": "子系统",
+          "fullLabel": "子系统概览来源"
+        },
+        "en-US": {
+          "shortLabel": "Subsys",
+          "fullLabel": "Subsystem Summary Source"
+        },
+        "vi-VN": {
+          "shortLabel": "Phân hệ",
+          "fullLabel": "Nguồn tổng quan phân hệ"
+        }
+      },
+      "ruleMetrics": {
+        "zh-CN": {
+          "shortLabel": "规则聚合",
+          "fullLabel": "规则指标聚合来源"
+        },
+        "en-US": {
+          "shortLabel": "Rule Agg",
+          "fullLabel": "Rule Metrics Aggregation Source"
+        },
+        "vi-VN": {
+          "shortLabel": "Tổng hợp luật",
+          "fullLabel": "Nguồn tổng hợp chỉ số luật"
+        }
+      },
+      "metric.chilled_delta_t_c": {
+        "zh-CN": {
+          "shortLabel": "冷冻温差",
+          "fullLabel": "规则指标：冷冻水温差"
+        },
+        "en-US": {
+          "shortLabel": "CHW dT",
+          "fullLabel": "Rule Metric: Chilled Water Delta-T"
+        },
+        "vi-VN": {
+          "shortLabel": "DeltaT lạnh",
+          "fullLabel": "Chỉ số luật: chênh nhiệt nước lạnh"
+        }
+      },
+      "metric.cooling_delta_t_c": {
+        "zh-CN": {
+          "shortLabel": "冷却温差",
+          "fullLabel": "规则指标：冷却水温差"
+        },
+        "en-US": {
+          "shortLabel": "CW dT",
+          "fullLabel": "Rule Metric: Cooling Water Delta-T"
+        },
+        "vi-VN": {
+          "shortLabel": "DeltaT giải nhiệt",
+          "fullLabel": "Chỉ số luật: chênh nhiệt nước giải nhiệt"
+        }
+      },
+      "metric.station_cop": {
+        "zh-CN": {
+          "shortLabel": "冷站COP",
+          "fullLabel": "规则指标：冷站COP"
+        },
+        "en-US": {
+          "shortLabel": "COP",
+          "fullLabel": "Rule Metric: Station COP"
+        },
+        "vi-VN": {
+          "shortLabel": "COP trạm",
+          "fullLabel": "Chỉ số luật: COP trạm lạnh"
+        }
+      },
+      "metric.station_total_power_kw": {
+        "zh-CN": {
+          "shortLabel": "总站功率",
+          "fullLabel": "规则指标：冷站实时总功率"
+        },
+        "en-US": {
+          "shortLabel": "Power",
+          "fullLabel": "Rule Metric: Station Total Power"
+        },
+        "vi-VN": {
+          "shortLabel": "Công suất trạm",
+          "fullLabel": "Chỉ số luật: tổng công suất trạm lạnh"
+        }
+      },
+      "alarms": {
+        "zh-CN": {
+          "shortLabel": "告警摘要",
+          "fullLabel": "告警摘要来源"
+        },
+        "en-US": {
+          "shortLabel": "Alarm Sum",
+          "fullLabel": "Alarm Summary Source"
+        },
+        "vi-VN": {
+          "shortLabel": "Tổng báo động",
+          "fullLabel": "Nguồn tóm tắt báo động"
+        }
+      }
+    }
+  },
+  "v11Diff": {
+    "added": [
+      "renderingPolicy（折叠态/展开态标签优先级）",
+      "metricTemplate 的 short/full 双生成规则",
+      "i18nLite（中英越 10 个高频 key 对照）"
+    ],
+    "adjusted": [
+      "将 key 标签体系抽离为 labels 独立层，便于前端按视图态消费"
+    ],
+    "compatible": [
+      "key 收敛规则与别名关系保持 v1.1 不变",
+      "状态分类和摘要策略保持 v1.1 不变",
+      "不改字段定义与 null_strategy"
+    ]
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "version": "v1.0",
+  "generatedAt": "2026-03-12T21:41:42.493Z",
+  "source": "aggregated_latest",
+  "decision": "GO",
+  "summaryClass": "ready",
+  "exitCode": 0,
+  "reasons": [],
+  "advisories": [],
+  "firstAction": "可以按当前默认策略进入发布动作。",
+  "gates": {
+    "syncCheckFamily": {
+      "ok": true,
+      "exitCode": 0
+    },
+    "syncReleaseReadyConsistency": {
+      "ok": true,
+      "exitCode": 0
+    },
+    "syncReleaseReadyLatestCheck": {
+      "ok": true,
+      "exitCode": 0
+    },
+    "releaseReadyLatestCheck": {
+      "ok": true,
+      "exitCode": 0
+    },
+    "releaseReadyConsistency": {
+      "ok": true,
+      "exitCode": 0
+    },
+    "releaseReadyLatest": {
+      "ok": true,
+      "exitCode": 0
+    },
+    "releaseReadyLatestCheckPayload": {
+      "ok": true,
+      "exitCode": 0
+    },
+    "releaseReadyConsistencyPayload": {
+      "ok": true,
+      "exitCode": 0
+    },
+    "checkFamily": {
+      "ok": true,
+      "exitCode": 0
+    },
+    "checkFamilyBrief": {
+      "ok": true,
+      "exitCode": 0
+    }
+  },
+  "releaseReadyLatest": {
+    "decision": "GO",
+    "exitCode": 0,
+    "generatedAt": "2026-03-12T21:40:47Z",
+    "reasons": [],
+    "advisories": [],
+    "consistencyOk": true,
+    "verifyGatesOk": true
+  },
+  "releaseReadyLatestCheck": {
+    "source": "latest_file",
+    "decision": "GO",
+    "exitCode": 0,
+    "generatedAt": "2026-03-12T21:41:42.133Z",
+    "consistencyOk": true,
+    "verifyGatesOk": true
+  },
+  "releaseReadyConsistency": {
+    "decision": "GO",
+    "exitCode": 0,
+    "generatedAt": "2026-03-12T21:41:41.962Z",
+    "reasons": []
+  },
+  "checkFamilyLatest": {
+    "overall": "PASS",
+    "passedCount": 17,
+    "totalCount": 17,
+    "generatedAt": "2026-03-12T21:41:41.432Z"
+  },
+  "checkFamilyBriefLatest": {
+    "overall": "PASS",
+    "failedCount": 0,
+    "freshnessState": "fresh",
+    "generatedAt": "2026-03-12T21:41:40.895Z"
+  },
+  "artifacts": {
+    "releaseReadyLatestPath": "/Users/billchow/Documents/智慧冷冻站/docs/release-ready-latest.json",
+    "releaseReadyLatestCheckPath": "/Users/billchow/Documents/智慧冷冻站/docs/release-ready-latest-check.json",
+    "releaseReadyConsistencyPath": "/Users/billchow/Documents/智慧冷冻站/docs/release-ready-consistency-latest.json",
+    "checkFamilyPath": "/Users/billchow/Documents/智慧冷冻站/docs/check-family-latest.json",
+    "checkFamilyBriefPath": "/Users/billchow/Documents/智慧冷冻站/docs/check-family-brief-latest.json"
+  }
+}

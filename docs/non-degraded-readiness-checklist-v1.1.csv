@@ -1,0 +1,47 @@
+field,required,pass_condition,fail_reason_template,owner
+overview.sourceStatus.overall,yes,"value == ok","overview.sourceStatus.overall={actual}, expected=ok",bff
+trends.sourceStatus.overall,yes,"value == ok","trends.sourceStatus.overall={actual}, expected=ok",bff
+anomalies.sourceStatus.overall,yes,"value == ok","anomalies.sourceStatus.overall={actual}, expected=ok",bff
+recommendations.sourceStatus.overall,yes,"value == ok","recommendations.sourceStatus.overall={actual}, expected=ok",bff
+overview.sourceStatus.sources.length,yes,"value >= 1","overview.sourceStatus.sources.length={actual}, expected>=1",bff
+trends.sourceStatus.sources.length,yes,"value >= 1","trends.sourceStatus.sources.length={actual}, expected>=1",bff
+anomalies.sourceStatus.sources.length,yes,"value >= 1","anomalies.sourceStatus.sources.length={actual}, expected>=1",bff
+recommendations.sourceStatus.sources.length,yes,"value >= 1","recommendations.sourceStatus.sources.length={actual}, expected>=1",bff
+recommendations.sourceStatus.sources[key=rules].ok,yes,"value == true","rules source not healthy, ok={actual}",bff
+recommendations.sourceStatus.sources[key=dashboardOverview].ok,yes,"value == true","dashboardOverview source not healthy, ok={actual}",bff
+recommendations.sourceStatus.sources[key=anomalySummary].ok,yes,"value == true","anomalySummary source not healthy, ok={actual}",bff
+recommendations.sourceStatus.sources[key=ruleMetrics].ok,yes,"value == true","ruleMetrics source not healthy, ok={actual}",bff
+recommendations.sourceStatus.sources[key=metric.chilled_delta_t_c].ok,yes,"value == true","metric.chilled_delta_t_c source not healthy, ok={actual}",legacy
+recommendations.sourceStatus.sources[key=metric.cooling_delta_t_c].ok,yes,"value == true","metric.cooling_delta_t_c source not healthy, ok={actual}",legacy
+recommendations.sourceStatus.sources[key=metric.station_cop].ok,yes,"value == true","metric.station_cop source not healthy, ok={actual}",legacy
+recommendations.sourceStatus.sources[key=metric.station_total_power_kw].ok,yes,"value == true","metric.station_total_power_kw source not healthy, ok={actual}",legacy
+overview.freshness.latestTimestamp,yes,"isISO8601(value) == true","overview.freshness.latestTimestamp invalid: {actual}",bff
+trends.freshness.latestTimestamp,yes,"isISO8601(value) == true","trends.freshness.latestTimestamp invalid: {actual}",bff
+anomalies.freshness.latestTimestamp,yes,"isISO8601(value) == true","anomalies.freshness.latestTimestamp invalid: {actual}",bff
+overview.freshness.stale,yes,"value == false","overview.freshness.stale={actual}, expected=false",bff
+trends.freshness.stale,yes,"value == false","trends.freshness.stale={actual}, expected=false",bff
+anomalies.freshness.stale,yes,"value == false","anomalies.freshness.stale={actual}, expected=false",bff
+overview.freshness.ageHours,yes,"isFinite(value) && value >= 0 && value <= 24","overview.freshness.ageHours={actual}, expected 0..24",bff
+trends.freshness.ageHours,yes,"isFinite(value) && value >= 0 && value <= 24","trends.freshness.ageHours={actual}, expected 0..24",bff
+anomalies.freshness.ageHours,yes,"isFinite(value) && value >= 0 && value <= 24","anomalies.freshness.ageHours={actual}, expected 0..24",bff
+trends.series.length,yes,"value >= 3","trends.series.length={actual}, expected>=3",bff
+trends.series[*].metric,yes,"containsAll(value,[totalPowerKw,currentCop,chilledDeltaT])","trends.series metrics missing required core set: {actual}",bff
+trends.series[metric=totalPowerKw].points.length,yes,"value >= 1","totalPowerKw points empty",legacy
+trends.series[metric=currentCop].points.length,yes,"value >= 1","currentCop points empty",legacy
+trends.series[metric=chilledDeltaT].points.length,yes,"value >= 1","chilledDeltaT points empty",legacy
+trends.series[*].points[*].t,yes,"all(isISO8601(value))","trend point timestamp invalid",bff
+trends.series[metric=totalPowerKw].points[*].v,yes,"existsFinite(value) == true","totalPowerKw has no finite point value",legacy
+trends.series[metric=currentCop].points[*].v,yes,"existsFinite(value) == true","currentCop has no finite point value",legacy
+trends.series[metric=chilledDeltaT].points[*].v,yes,"existsFinite(value) == true","chilledDeltaT has no finite point value",legacy
+recommendations.ruleEvaluation.rulesLoaded,yes,"value == true","ruleEvaluation.rulesLoaded={actual}, expected=true",bff
+recommendations.ruleEvaluation.error,yes,"value == null","ruleEvaluation.error should be null, actual={actual}",bff
+recommendations.ruleEvaluation.totalEnabledRules,yes,"isInteger(value) && value >= 1","totalEnabledRules={actual}, expected>=1",bff
+recommendations.ruleEvaluation.skippedRuleIds.length,yes,"value == 0","skippedRuleIds.length={actual}, expected=0",bff
+recommendations.ruleEvaluation.skippedRuleDetails.length,yes,"value == 0","skippedRuleDetails.length={actual}, expected=0",bff
+recommendations.ruleEvaluation.skippedRuleDetails[*].missingMetrics[*].category,no,"allIn(value,[upstream_unreachable,field_missing_or_invalid,unknown])","invalid missingMetrics.category enum: {actual}",bff
+trends.sourceStatus.sources[key=runParams].status,yes,"value != 500","runParams upstream returned 500; primary incident owner=legacy",legacy
+trends.sourceStatus.sources[key=runParams],yes,"if status==500 then ok==false && error not empty && trends.sourceStatus.overall in [partial,failed]","runParams=500 but BFF sourceStatus mapping incomplete",bff
+trends.sourceStatus.sources[key=runParams].status,yes,"if value==500 then UI shows localized '上游服务异常' and degraded badge","runParams=500 but shell did not render degraded/upstream error state",shell
+recommendations.sourceStatus.sources[key=metric.station_cop],yes,"exists(value) && value.ok==true && (value.status==null || value.status < 500)","station_cop source unreachable or upstream error (ok={ok}, status={status})",legacy
+overview.energyCards.currentCop,yes,"isFinite(value) && value > 0","station_cop value invalid or non-positive: {actual}",bff
+crossSite.station_cop.comparability_guard,yes,"if compareMode==singleSite then pass; if compareMode==crossSite then sameTimeWindow==true && sameSamplingFrequency==true && sameMissingStrategy==true && sameErrorCategoryRule==true","station_cop cross-site comparability preconditions not met; block comparison output",shell

@@ -1,0 +1,159 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-example-ready-options-v1",
+  "scope": "candidate wording options for example_not_ready",
+  "fieldScope": {
+    "required": [
+      "decision",
+      "summaryClass",
+      "reasons[]",
+      "advisories[]",
+      "generatedAt"
+    ]
+  },
+  "selectionNote": "These three options describe the same current runtime fact pattern with different wording policies for example_not_ready.",
+  "options": [
+    {
+      "id": "keep_as_review_required",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "decision == 'GO'",
+          "summaryClass == 'review_required'",
+          "reasons.length == 0",
+          "advisories contains 'example_not_ready'",
+          "generatedAt exists and generatedAt != ''"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "保留待复核",
+          "sub": "example仍提示"
+        },
+        "en": {
+          "main": "Keep Review",
+          "sub": "Example still advises"
+        },
+        "vi": {
+          "main": "Giu o muc can ra soat",
+          "sub": "Example van con nhac"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "候选口径：KEEP_AS_REVIEW_REQUIRED",
+          "sub": "继续把 example_not_ready 视为非阻断但需复核的提示，整体口径仍保持 review_required。"
+        },
+        "en": {
+          "main": "Candidate Policy: KEEP_AS_REVIEW_REQUIRED",
+          "sub": "Continue treating example_not_ready as a non-blocking but review-required hint, so the overall wording remains review_required."
+        },
+        "vi": {
+          "main": "Chinh sach de xuat: KEEP_AS_REVIEW_REQUIRED",
+          "sub": "Tiep tuc xem example_not_ready la mot nhac nho khong chan nhung can ra soat, vi vay cach noi tong the van la review_required."
+        }
+      },
+      "firstAction": {
+        "zh": "先沿用 review_required 口径值班播报，同时备注仅剩 example_not_ready。",
+        "en": "Continue duty messaging with the review_required wording first, while noting that only example_not_ready remains.",
+        "vi": "Truoc mat tiep tuc thong bao truc theo cach noi review_required, dong thoi ghi chu rang chi con example_not_ready."
+      }
+    },
+    {
+      "id": "downgrade_to_note",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "decision == 'GO'",
+          "summaryClass == 'review_required'",
+          "reasons.length == 0",
+          "advisories contains 'example_not_ready'",
+          "generatedAt exists and generatedAt != ''"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "降为注记",
+          "sub": "结论仍可推进"
+        },
+        "en": {
+          "main": "Downgrade to Note",
+          "sub": "Conclusion can proceed"
+        },
+        "vi": {
+          "main": "Ha xuong muc ghi chu",
+          "sub": "Ket luan van co the tiep tuc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "候选口径：DOWNGRADE_TO_NOTE",
+          "sub": "把 example_not_ready 从复核主结论降为补充注记，主结论仍以 GO/可推进为主。"
+        },
+        "en": {
+          "main": "Candidate Policy: DOWNGRADE_TO_NOTE",
+          "sub": "Downgrade example_not_ready from the main review conclusion to a supporting note, while keeping GO/proceed as the main message."
+        },
+        "vi": {
+          "main": "Chinh sach de xuat: DOWNGRADE_TO_NOTE",
+          "sub": "Ha example_not_ready tu ket luan review chinh xuong thanh ghi chu bo sung, trong khi van giu GO/co the tiep tuc la thong diep chinh."
+        }
+      },
+      "firstAction": {
+        "zh": "先用可推进加附注 example_not_ready 的方式播报，再观察是否还需保留 review_required 标签。",
+        "en": "Use can-proceed plus example_not_ready note first, then observe whether the review_required label still needs to stay.",
+        "vi": "Truoc mat thong bao theo cach co the tiep tuc cong ghi chu example_not_ready, sau do quan sat xem co can giu nhan review_required hay khong."
+      }
+    },
+    {
+      "id": "remove_from_runtime_release",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "decision == 'GO'",
+          "reasons.length == 0",
+          "advisories contains 'example_not_ready'",
+          "generatedAt exists and generatedAt != ''"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "移出口径",
+          "sub": "runtime不再背此提示"
+        },
+        "en": {
+          "main": "Remove from Runtime",
+          "sub": "Runtime stops carrying it"
+        },
+        "vi": {
+          "main": "Loai khoi runtime",
+          "sub": "Runtime khong con mang nhac nay"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "候选口径：REMOVE_FROM_RUNTIME_RELEASE",
+          "sub": "把 example_not_ready 从 runtime release 解释层移除，避免它继续把当前 GO 态表述成待复核。"
+        },
+        "en": {
+          "main": "Candidate Policy: REMOVE_FROM_RUNTIME_RELEASE",
+          "sub": "Remove example_not_ready from the runtime release interpretation layer so it no longer keeps the current GO state framed as review-required."
+        },
+        "vi": {
+          "main": "Chinh sach de xuat: REMOVE_FROM_RUNTIME_RELEASE",
+          "sub": "Loai example_not_ready khoi lop dien giai runtime release de no khong tiep tuc khien trang thai GO hien tai bi dien giai thanh can ra soat."
+        }
+      },
+      "firstAction": {
+        "zh": "若主控确认该提示已无运行态意义，可将其移出 runtime release 文案并改走注记或历史说明。",
+        "en": "If control confirms this hint no longer matters for runtime state, remove it from runtime release wording and move it to note/history only.",
+        "vi": "Neu chu tri xac nhan nhac nho nay khong con y nghia doi voi runtime hien tai, hay loai no khoi van ban runtime release va chuyen sang ghi chu hoac lich su."
+      }
+    }
+  ],
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

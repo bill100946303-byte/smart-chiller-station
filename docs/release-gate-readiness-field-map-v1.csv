@@ -1,0 +1,21 @@
+row_type,release_gate_field,readiness_field,decision_impact_default,decision_impact_strict,trigger_condition,notes
+map,contractOk,N/A(contract gate),NO-GO when false,NO-GO when false,contractOk=false,独立于readiness字段
+map,canonicalExists,readiness.nonDegradedReady|readiness.ndFailedCount readable prerequisite,NO-GO when false,NO-GO when false,canonicalExists=false,canonical文件缺失触发canonical_missing
+map,canonicalOverallPass,readiness.nonDegradedReady + readiness.ndFailedCount aggregated in canonical.overallPass,NO-GO when false,NO-GO when false,canonicalOverallPass=false,触发canonical_not_pass
+map,unavailableSnapshotPresent,N/A(diagnostic),Advisory,Advisory,unavailable snapshot file exists,触发runtime_unavailable_snapshot_present
+map,canonicalGeneratedAt,N/A(freshness input),Advisory in default,Blocking when non-fresh in strict,generatedAt parsed for age/freshness,缺失时freshness=unknown
+map,canonicalAgeMin,N/A(derived from generatedAt),Advisory in default,Blocking when non-fresh in strict,age compared with 30/60 threshold,数值缺失转null
+map,freshness,N/A(fresh|warn|stale|unknown),Advisory for warn,NO-GO when !=fresh,freshness state evaluated,strict模式触发freshness_not_fresh_strict
+map,strictFreshness,N/A(policy switch),Advisory-level config,Enables freshness blocking,strictFreshness=true,策略开关字段
+map,reasons[],Indirect mapping to readiness/contract/freshness failures,NO-GO explanation,NO-GO explanation,reasons array non-empty,阻断解释层
+map,advisories[],Indirect mapping to diagnostics/freshness hints,Advisory only,Advisory only,advisories array non-empty,非阻断解释层
+map,decision,Aggregates readiness + contract + freshness policy,GO/NO-GO final,GO/NO-GO final,decision computed by gate,最终放行位
+map,exitCode,Same as decision,0 for GO 1 for NO-GO,0 for GO 1 for NO-GO,exitCode computed by gate,脚本退出码
+strict_upgrade,freshness(warn),N/A,Advisory(freshness_warn),NO-GO(reason=freshness_not_fresh_strict),30<=canonicalAgeMin<60,从advisory升级为blocking
+strict_upgrade,freshness(stale),N/A,Usually non-blocking in default,NO-GO(reason=freshness_not_fresh_strict),canonicalAgeMin>=60,从可继续升级为blocking
+strict_upgrade,freshness(unknown),N/A,Usually non-blocking in default,NO-GO(reason=freshness_not_fresh_strict),generatedAt missing/invalid,从不确定升级为blocking
+missing_default,canonical file missing,readiness fields unavailable,NO-GO(reason=canonical_missing),NO-GO(reason=canonical_missing),canonicalExists=false,缺失即阻断
+missing_default,canonical.overallPass missing,readiness mapping unavailable in gate,false via jq default then NO-GO,same as default,canonicalOverallPass defaults to false,触发canonical_not_pass
+missing_default,canonical.generatedAt missing,N/A,canonicalAgeMin=null freshness=unknown (usually non-blocking),NO-GO(reason=freshness_not_fresh_strict),generatedAt empty/unparseable,strict下阻断
+missing_default,contract check failed,N/A,NO-GO(reason=contract_not_ok),NO-GO(reason=contract_not_ok),accept-contract command failed,与readiness独立
+missing_default,unavailable snapshot missing,N/A,no advisory,no advisory,unavailableSnapshotPresent=false,对decision无影响

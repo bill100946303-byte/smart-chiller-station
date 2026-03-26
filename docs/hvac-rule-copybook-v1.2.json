@@ -1,0 +1,253 @@
+{
+  "copybookVersion": "1.2.0",
+  "basedOn": "hvac-rule-copybook-v1.1@1.1.0",
+  "ruleSetRef": "hvac-rules-v1@1.0.1",
+  "ruleCopy": {
+    "low-delta-t-chilled-loop": {
+      "nameZh": "冷冻侧低温差",
+      "descriptionZh": "在有一定负荷时，冷冻水温差持续偏低，通常表示换热利用不足或旁通偏大。",
+      "opsAdviceZh": "先查末端阀门与旁通，再校核供水温度设定。",
+      "executionChecklist": {
+        "step1": "看指标：连续15分钟检查 chilled_delta_t_c 与 station_total_power_kw 是否稳定落入触发区间。",
+        "step2": "做动作：优先检查末端阀门/旁通；冷冻供水设定每次仅调整0.5°C。",
+        "step3": "验效果：观察30分钟，温差回升且舒适度无明显投诉。"
+      },
+      "shortText": {
+        "shortTitle": "冷冻低温差",
+        "shortReason": "温差低且负荷不低",
+        "shortAction": "查旁通并微调供水"
+      }
+    },
+    "pump-frequency-too-high": {
+      "nameZh": "冷冻泵高频低效",
+      "descriptionZh": "泵频长期偏高但温差提升有限，输配能耗可能偏高。",
+      "opsAdviceZh": "下调泵频并观察压差/舒适度，复核压差传感器。",
+      "executionChecklist": {
+        "step1": "看指标：检查 max_chilled_pump_freq_hz 与 chilled_delta_t_c 的20分钟趋势。",
+        "step2": "做动作：按2Hz级差逐步下调泵频，并校核压差传感器与设定点。",
+        "step3": "验效果：连续20分钟温差不恶化、压差与末端舒适度满足要求。"
+      },
+      "shortText": {
+        "shortTitle": "泵频高低效",
+        "shortReason": "泵频高但换热提升小",
+        "shortAction": "每次降2Hz并看压差"
+      }
+    },
+    "cooling-side-low-efficiency": {
+      "nameZh": "冷却侧效率偏低",
+      "descriptionZh": "冷却侧功率投入较高但散热效果偏弱，系统COP被拖低。",
+      "opsAdviceZh": "优化塔风机分级与冷却水设定，检查冷凝器污垢。",
+      "executionChecklist": {
+        "step1": "看指标：同屏核对 cooling_delta_t_c、cooling_tower_power_kw、station_cop 的20分钟表现。",
+        "step2": "做动作：优化塔风机分级与冷却水设定，设定温度单次调整不超过0.5°C；检查冷凝器结垢。",
+        "step3": "验效果：1小时内COP提升且冷却侧温差不再持续偏低。"
+      },
+      "shortText": {
+        "shortTitle": "冷却侧低效",
+        "shortReason": "散热弱且COP偏低",
+        "shortAction": "调塔风机并查冷凝器"
+      }
+    },
+    "frequent-start-stop": {
+      "nameZh": "设备频繁启停",
+      "descriptionZh": "主机或水泵短时反复启停，存在控制震荡和设备损耗风险。",
+      "opsAdviceZh": "启用最小启停锁定时间，放宽控制死区。",
+      "executionChecklist": {
+        "step1": "看指标：检查 chiller_start_stop_count_60m、chilled_pump_start_stop_count_60m、cooling_pump_start_stop_count_60m。",
+        "step2": "做动作：启用最小启停锁定(建议>=10分钟)并放宽死区；禁止连续人工强制启停。",
+        "step3": "验效果：连续2小时启停次数回落至阈值以内，且告警不再新增。"
+      },
+      "shortText": {
+        "shortTitle": "频繁启停",
+        "shortReason": "短时启停次数过多",
+        "shortAction": "启用最小启停锁定"
+      }
+    },
+    "stale-data-detection": {
+      "nameZh": "数据新鲜度不足",
+      "descriptionZh": "关键输入数据滞后或缺失，建议可信度下降。",
+      "opsAdviceZh": "优先恢复数据链路，再执行节能优化动作。",
+      "executionChecklist": {
+        "step1": "看指标：核对 overview_data_age_min、anomalies_data_age_min、critical_metric_missing_count_5m。",
+        "step2": "做动作：优先恢复采集链路与适配器；数据未恢复前禁止进行大幅节能调参。",
+        "step3": "验效果：连续30分钟时效恢复阈值内，缺失计数稳定下降。"
+      },
+      "shortText": {
+        "shortTitle": "数据不新鲜",
+        "shortReason": "关键数据滞后或缺失",
+        "shortAction": "先恢复链路再调参"
+      }
+    }
+  },
+  "placementTemplates": {
+    "recommendation": {
+      "titlePattern": "{nameZh}",
+      "summaryPattern": "{descriptionZh}",
+      "opsPattern": "执行建议：{step1}；{step2}；{step3}",
+      "shortPattern": "{shortTitle}｜{shortReason}｜{shortAction}"
+    },
+    "ruleSkip": {
+      "summaryPattern": "{skipTemplate}",
+      "opsPattern": "排障顺序：{orderStep1} -> {orderStep2} -> {orderStep3}",
+      "shortPattern": "{main}｜{detail}｜{action}"
+    }
+  },
+  "skippedPlaybook": {
+    "upstream_unreachable": {
+      "order": [
+        "服务：确认BFF/legacy进程与健康检查。",
+        "网络：确认目标主机可达与路由策略。",
+        "端口：确认8787/8098监听和接口连通。"
+      ],
+      "templates": [
+        "上游服务不可达，规则已跳过。请按“服务 -> 网络 -> 端口”顺序排障后重试。",
+        "当前链路中断，暂不输出诊断结论。先确认健康检查，再核对端口连通。",
+        "未获取到上游有效数据，规则执行暂停。建议优先恢复BFF/legacy可达性。"
+      ],
+      "shortCopy": {
+        "main": "上游不可达",
+        "detail": "未取到上游数据，规则已跳过",
+        "action": "按服务→网络→端口顺序排障"
+      }
+    },
+    "field_missing_or_invalid": {
+      "order": [
+        "字段映射：确认规则字段与聚合字段一一对应。",
+        "单位口径：确认kW/kWh/°C等单位无混用。",
+        "采样有效性：确认采样周期、空值比例与时间戳连续性。"
+      ],
+      "templates": [
+        "关键字段缺失或无效，规则已跳过。请按“映射 -> 单位 -> 采样”顺序排查。",
+        "诊断输入不完整，暂不出结论。建议先修复字段映射与单位口径。",
+        "当前数据质量不满足规则执行条件，请先完成采样链路校验。"
+      ],
+      "shortCopy": {
+        "main": "字段异常",
+        "detail": "关键字段缺失或值无效，已跳过",
+        "action": "先查映射，再核单位与采样"
+      }
+    },
+    "unknown": {
+      "order": [
+        "版本：确认规则版本与前端词典版本一致。",
+        "词典：确认ruleId或skippedCategory已被收录。",
+        "合同：确认recommendations合同字段未被破坏。"
+      ],
+      "templates": [
+        "未识别的跳过类型，系统已降级。请先核对版本与词典收录。",
+        "当前状态缺少映射模板，请检查规则版本和前端合同实现。",
+        "规则状态未知，建议按“版本 -> 词典 -> 合同”顺序完成核查。"
+      ],
+      "shortCopy": {
+        "main": "状态未识别",
+        "detail": "未匹配词典模板，已降级展示",
+        "action": "按版本→词典→合同顺序核查"
+      }
+    }
+  },
+  "riskMapping": {
+    "risk": {
+      "high": "高风险",
+      "medium": "中风险",
+      "low": "低风险"
+    },
+    "severity": {
+      "critical": "紧急",
+      "major": "重要",
+      "minor": "提示"
+    }
+  },
+  "riskNarrativePolicy": {
+    "high": {
+      "mustInclude": [
+        "优先级：P1",
+        "操作边界"
+      ],
+      "template": "优先级：P1。先在安全边界内执行恢复动作。操作边界：单次调整不超过既定步长，调整后至少观察30分钟。",
+      "tone": "明确、克制、可执行"
+    },
+    "medium": {
+      "mustAvoid": [
+        "立即停机",
+        "严重事故"
+      ],
+      "template": "建议在当班窗口内处理，按检查单逐项执行并记录结果。",
+      "tone": "建议式、不过度告警"
+    },
+    "low": {
+      "mustAvoid": [
+        "紧急处置",
+        "立刻处理"
+      ],
+      "template": "建议纳入例行巡检，持续观察趋势变化。",
+      "tone": "巡检式、轻量提醒"
+    }
+  },
+  "fallbackCopy": {
+    "unknownRuleId": {
+      "title": "规则诊断（未命名）",
+      "description": "该规则已触发，但当前版本暂无中文检查单。",
+      "opsAdvice": "请联系运维更新词典后再执行调参。",
+      "shortText": {
+        "shortTitle": "规则未收录",
+        "shortReason": "当前版本暂无短句词典",
+        "shortAction": "请更新词典后再执行"
+      }
+    },
+    "unknownSkippedCategory": "当前规则暂不可执行，系统已降级处理，请先核对版本与合同。"
+  },
+  "compatibility": {
+    "v1_1KeysRetained": true,
+    "addedKeys": [
+      "ruleCopy.<ruleId>.shortText.shortTitle",
+      "ruleCopy.<ruleId>.shortText.shortReason",
+      "ruleCopy.<ruleId>.shortText.shortAction",
+      "skippedPlaybook.<category>.shortCopy.main",
+      "skippedPlaybook.<category>.shortCopy.detail",
+      "skippedPlaybook.<category>.shortCopy.action",
+      "placementTemplates.recommendation.shortPattern",
+      "placementTemplates.ruleSkip.shortPattern",
+      "fallbackCopy.unknownRuleId.shortText",
+      "diffFromV1_1"
+    ],
+    "nonBreakingChange": true
+  },
+  "diffFromV1": {
+    "added": [
+      "每条规则的3步执行建议",
+      "每个skipped category的排障顺序",
+      "高风险文案必须包含优先级与操作边界约束",
+      "Recommendation/RuleSkip落点模板"
+    ],
+    "adjusted": [
+      "运维建议从短句升级为执行检查单",
+      "RuleSkip模板从提示型升级为排障流程型"
+    ],
+    "unchanged": [
+      "规则阈值和逻辑不变",
+      "recommendations合同字段不变"
+    ]
+  },
+  "diffFromV1_1": {
+    "added": [
+      "每条规则新增 shortTitle/shortReason/shortAction 三件套",
+      "每个 skipped category 新增 main/detail/action 短文案",
+      "Recommendation/RuleSkip 增加 shortPattern 展示模板",
+      "fallback 增加 unknownRuleId.shortText"
+    ],
+    "adjusted": [
+      "文案策略从执行检查单优先扩展为短句优先，适配移动端展开态",
+      "中低风险语气保持中性表达，避免泛化“紧急”措辞"
+    ],
+    "unchanged": [
+      "规则阈值与判定逻辑不变",
+      "recommendations 合同结构与字段不变",
+      "v1.1 原有键全部兼容可用"
+    ]
+  },
+  "rollback": {
+    "current": "hvac-rule-copybook-v1.2@1.2.0",
+    "target": "hvac-rule-copybook-v1.1@1.1.0",
+    "strategy": "前端回退词典文件，不影响规则引擎判定。"
+  }
+}

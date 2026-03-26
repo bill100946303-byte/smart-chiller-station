@@ -1,0 +1,18 @@
+{
+  "contractOk": true,
+  "canonicalExists": true,
+  "canonicalOverallPass": true,
+  "unavailableSnapshotPresent": true,
+  "canonicalGeneratedAt": "2026-03-12T06:06:46Z",
+  "canonicalAgeMin": 934,
+  "freshness": "stale",
+  "freshWarnMin": 30,
+  "freshStaleMin": 60,
+  "strictFreshness": false,
+  "reasons": [],
+  "advisories": [
+    "runtime_unavailable_snapshot_present"
+  ],
+  "decision": "GO",
+  "exitCode": 0
+}

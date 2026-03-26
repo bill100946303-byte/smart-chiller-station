@@ -1,0 +1,46 @@
+{
+  "cases": [
+    {
+      "id": "empty-sources-allowed",
+      "description": "Allowed contract shape for payloads that have no upstream sources.",
+      "sourceStatus": {
+        "overall": "ok",
+        "sources": []
+      }
+    },
+    {
+      "id": "missing-key-with-null-status-fallback",
+      "description": "Non-contract drift sample. Frontend should fallback to endpoint label in folded summary.",
+      "sourceStatus": {
+        "overall": "partial",
+        "sources": [
+          {
+            "endpoint": "/zsqy/qsAlarmlog/126lnoffice/findNewAlarmLog",
+            "ok": false,
+            "status": null,
+            "message": "upstream_unreachable: timeout",
+            "error": "network timeout",
+            "rows": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "missing-key-with-500-status-fallback",
+      "description": "Non-contract drift sample with http status. Frontend should still fallback to endpoint label.",
+      "sourceStatus": {
+        "overall": "partial",
+        "sources": [
+          {
+            "endpoint": "/zsqy/homepage/126lnoffice/getEnergyStatisticsCurve",
+            "ok": false,
+            "status": 500,
+            "message": null,
+            "error": "Legacy request failed: 500",
+            "rows": null
+          }
+        ]
+      }
+    }
+  ]
+}

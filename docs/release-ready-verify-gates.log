@@ -1,0 +1,39 @@
+== Gate Verify ==
+[1/7] acceptance-report contract
+
+> chiller-bff@0.1.0 check:acceptance-report
+> node scripts/check-acceptance-report.js
+
+Acceptance report validation passed: ../../docs/v19.2-acceptance-report.json
+[2/7] status-json contract
+
+> chiller-bff@0.1.0 check:status-json
+> node scripts/check-status-json.js
+
+Status-json contract validation passed for 3 modes
+[3/7] release-snapshot contract
+
+> chiller-bff@0.1.0 check:release-snapshot
+> node scripts/check-release-snapshot.js
+
+Release snapshot validation passed: ../../docs/release-snapshot-latest.json
+[4/7] release-snapshot-index contract
+
+> chiller-bff@0.1.0 check:release-snapshot-index
+> node scripts/check-release-snapshot-index.js
+
+Release snapshot index validation passed: ../../docs/release-snapshot-index-latest.json
+[5/7] release-snapshot-diff contract
+
+> chiller-bff@0.1.0 check:release-snapshot-diff
+> node scripts/check-release-snapshot-diff.js
+
+Release snapshot diff validation passed: /Users/billchow/Documents/智慧冷冻站/docs/release-snapshot-diff-latest.json
+[6/7] release-snapshot consistency
+[7/7] release-ready-brief contract
+
+> chiller-bff@0.1.0 check:release-ready-brief
+> node scripts/check-release-ready-brief.js
+
+Release-ready-brief validation passed: /Users/billchow/Documents/智慧冷冻站/docs/release-ready-sync-latest.json
+[OK] verify-gates passed

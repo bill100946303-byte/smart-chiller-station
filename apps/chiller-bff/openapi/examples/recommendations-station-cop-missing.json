@@ -1,0 +1,70 @@
+{
+  "site": {
+    "siteId": "126lnoffice",
+    "siteName": "126lnoffice"
+  },
+  "generatedAt": "2026-03-12T03:20:00.000Z",
+  "summary": {
+    "total": 0,
+    "highRisk": 0,
+    "criticalSeverity": 0
+  },
+  "cards": [],
+  "ruleEvaluation": {
+    "rulesLoaded": true,
+    "error": null,
+    "ruleSetId": "hvac-rules-v1",
+    "version": "1.0.1",
+    "totalEnabledRules": 5,
+    "matchedRuleIds": [],
+    "skippedRuleIds": [
+      "cooling-side-low-efficiency"
+    ],
+    "skippedRuleDetails": [
+      {
+        "ruleId": "cooling-side-low-efficiency",
+        "reason": "missing-metric",
+        "missingMetrics": [
+          {
+            "metric": "station_cop",
+            "category": "field_missing_or_invalid",
+            "message": "field_missing_or_invalid: metric station_cop missing in upstream payload"
+          }
+        ]
+      }
+    ],
+    "missingMetricPolicy": "skip_rule"
+  },
+  "sourceStatus": {
+    "overall": "partial",
+    "sources": [
+      {
+        "key": "rules",
+        "endpoint": "/Users/billchow/Documents/智慧冷冻站/docs/hvac-rules-v1.yaml",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "error": null,
+        "rows": 5
+      },
+      {
+        "key": "ruleMetrics",
+        "endpoint": "/zsqy/homepage/126lnoffice/getEquipmentEnergyStatisticsCurve;/zsqy/homepage/126lnoffice/getEnergyStatisticsCurve;/zsqy/homepage/126lnoffice/getRunParamsCurve",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "error": null,
+        "rows": 3
+      },
+      {
+        "key": "metric.station_cop",
+        "endpoint": "/zsqy/homepage/126lnoffice/getEquipmentEnergyStatisticsCurve",
+        "ok": false,
+        "status": 200,
+        "message": "field_missing_or_invalid: metric station_cop missing in upstream payload",
+        "error": "field missing in upstream payload",
+        "rows": null
+      }
+    ]
+  }
+}

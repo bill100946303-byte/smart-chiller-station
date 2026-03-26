@@ -1,0 +1,172 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-release-snapshot-diff-copy-v1",
+  "scope": "release snapshot diff duty copy",
+  "fieldScope": {
+    "required": [
+      "decisionChanged",
+      "added",
+      "removed"
+    ]
+  },
+  "classificationOrder": [
+    "risk_up",
+    "recovery",
+    "stable"
+  ],
+  "classes": [
+    {
+      "id": "stable",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "decisionChanged == false",
+          "added.length == 0",
+          "removed.length == 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "状态稳定",
+          "sub": "本轮无变化",
+          "firstAction": "按常规巡检"
+        },
+        "en": {
+          "main": "Stable",
+          "sub": "No changes this run",
+          "firstAction": "Keep routine checks"
+        },
+        "vi": {
+          "main": "On dinh",
+          "sub": "Lan nay khong doi",
+          "firstAction": "Tiep tuc kiem tra dinh ky"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "快照差异结论：STABLE",
+          "sub": "决策未变化，且无新增/移除项，当前状态连续稳定。",
+          "firstAction": "保持当前发布节奏，并继续按班次巡检。"
+        },
+        "en": {
+          "main": "Snapshot Diff: STABLE",
+          "sub": "Decision is unchanged with no added/removed items, indicating continuous stability.",
+          "firstAction": "Keep current release cadence and continue shift-based checks."
+        },
+        "vi": {
+          "main": "Ket luan diff snapshot: STABLE",
+          "sub": "Decision khong doi va khong co muc them/xoa, trang thai dang on dinh lien tuc.",
+          "firstAction": "Giu nhip phat hanh hien tai va tiep tuc kiem tra theo ca."
+        }
+      }
+    },
+    {
+      "id": "risk_up",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "decisionChanged == true",
+          "added.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "风险上升",
+          "sub": "出现新增项",
+          "firstAction": "先看新增key"
+        },
+        "en": {
+          "main": "Risk Up",
+          "sub": "New items added",
+          "firstAction": "Check added keys first"
+        },
+        "vi": {
+          "main": "Rui ro tang",
+          "sub": "Co muc moi them",
+          "firstAction": "Xem key moi truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "快照差异结论：RISK_UP",
+          "sub": "决策发生变化且存在新增项，风险较上一轮上升。",
+          "firstAction": "先按新增 key 逐条排障，再重跑快照确认是否回落。"
+        },
+        "en": {
+          "main": "Snapshot Diff: RISK_UP",
+          "sub": "Decision changed with added items, showing higher risk than previous run.",
+          "firstAction": "Troubleshoot newly added keys first, then rerun snapshot to verify rollback."
+        },
+        "vi": {
+          "main": "Ket luan diff snapshot: RISK_UP",
+          "sub": "Decision da doi va co muc moi them, rui ro cao hon lan truoc.",
+          "firstAction": "Xu ly key moi truoc, sau do chay lai snapshot de xac nhan da giam rui ro."
+        }
+      }
+    },
+    {
+      "id": "recovery",
+      "trigger": {
+        "mode": "all",
+        "conditions": [
+          "decisionChanged == true",
+          "added.length == 0",
+          "removed.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "状态恢复",
+          "sub": "阻断项减少",
+          "firstAction": "先做live复核"
+        },
+        "en": {
+          "main": "Recovered",
+          "sub": "Blocking items reduced",
+          "firstAction": "Run live recheck"
+        },
+        "vi": {
+          "main": "Da phuc hoi",
+          "sub": "Muc chan da giam",
+          "firstAction": "Kiem tra live lai"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "快照差异结论：RECOVERY",
+          "sub": "决策发生变化且仅有移除项，阻断信号较上一轮回落。",
+          "firstAction": "先执行 live 复核确认恢复持续，再恢复常规发布节奏。"
+        },
+        "en": {
+          "main": "Snapshot Diff: RECOVERY",
+          "sub": "Decision changed with removed-only items, indicating blocking signals are easing.",
+          "firstAction": "Run live verification first, then return to normal release cadence if recovery persists."
+        },
+        "vi": {
+          "main": "Ket luan diff snapshot: RECOVERY",
+          "sub": "Decision da doi va chi co muc bi loai bo, tin hieu chan dang giam.",
+          "firstAction": "Kiem tra live truoc, neu phuc hoi on dinh thi quay lai nhip phat hanh thong thuong."
+        }
+      }
+    }
+  ],
+  "fallback": {
+    "id": "stable_with_non_decision_delta",
+    "trigger": {
+      "mode": "all",
+      "conditions": [
+        "decisionChanged == false",
+        "added.length + removed.length > 0"
+      ]
+    },
+    "suggestion": "Render stable main copy and append a note for non-decision-level deltas."
+  },
+  "mobileBudget": {
+    "zhMaxChars": 18
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

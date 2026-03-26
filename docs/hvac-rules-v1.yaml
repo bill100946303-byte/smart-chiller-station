@@ -1,0 +1,260 @@
+apiVersion: hvac.rules/v1
+metadata:
+  ruleSetId: hvac-rules-v1
+  version: 1.0.1
+  siteScope: site-level
+  timezone: Asia/Shanghai
+  ownerThread: HVAC-Rules
+  description: >
+    First-pass HVAC rule engine for anomaly detection and recommendation generation.
+    Rules are designed to be consumed directly by BFF /recommendations.
+  coveredRuleClasses:
+    - low_delta_t
+    - high_pump_frequency
+    - low_cooling_side_efficiency
+    - frequent_start_stop
+    - stale_data
+
+consumerContract:
+  targetEndpoint: GET /bff/v1/sites/{siteId}/recommendations
+  cardSchema:
+    requiredFields:
+      - id
+      - title
+      - priority
+      - category
+      - reason
+      - evidence
+      - actions
+      - relatedDevices
+      - severity
+      - risk
+  severityEnum: [critical, major, minor]
+  riskEnum: [high, medium, low]
+  priorityEnum: [high, medium, low]
+
+defaults:
+  evaluateEvery: 5m
+  minConsecutiveHit: 3
+  clearConsecutiveHit: 2
+  missingMetricPolicy: skip_rule
+
+rules:
+  - ruleId: low-delta-t-chilled-loop
+    name: Chilled loop low delta-T
+    class: low_delta_t
+    enabled: true
+    severity: major
+    riskLevel: medium
+    triggerConditions:
+      logic: all
+      conditions:
+        - metric: chilled_delta_t_c
+          operator: "<"
+          thresholdKey: chilled_delta_t_low_c
+          duration: 15m
+        - metric: station_total_power_kw
+          operator: ">"
+          thresholdKey: min_load_kw
+          duration: 15m
+    thresholds:
+      chilled_delta_t_low_c: 2.0
+      min_load_kw: 120
+    suggestedActions:
+      - Check secondary-side valve opening and balancing.
+      - Verify chilled water supply setpoint is not overly low.
+      - Reduce excessive bypass and rebalance low-load terminals.
+    bffCard:
+      id: rec-low-delta-t-01
+      title: Improve chilled-water delta-T
+      priority: high
+      category: setpoint
+      reason: Chilled-water delta-T remains below healthy range under non-trivial load.
+      evidence:
+        - "chilled_delta_t_c < 2.0C for 15m"
+        - "station_total_power_kw > 120kW"
+      actions:
+        - Check valve opening and balancing in secondary loop.
+        - Tune chilled supply setpoint and avoid overcooling.
+        - Inspect bypass condition and close unnecessary bypass flow.
+      relatedDevices: []
+      severity: major
+      risk: medium
+
+  - ruleId: pump-frequency-too-high
+    name: Pump frequency too high at weak thermal transfer
+    class: high_pump_frequency
+    enabled: true
+    severity: major
+    riskLevel: medium
+    triggerConditions:
+      logic: all
+      conditions:
+        - metric: max_chilled_pump_freq_hz
+          operator: ">"
+          thresholdKey: high_freq_hz
+          duration: 20m
+        - metric: chilled_delta_t_c
+          operator: "<"
+          thresholdKey: weak_delta_t_c
+          duration: 20m
+    thresholds:
+      high_freq_hz: 48
+      weak_delta_t_c: 2.5
+    suggestedActions:
+      - Enable tighter VFD reset logic based on delta-T/COP.
+      - Reduce pump speed stepwise and monitor end-device comfort.
+      - Check differential pressure sensor calibration.
+    bffCard:
+      id: rec-pump-frequency-01
+      title: Reduce excessive chilled-pump frequency
+      priority: medium
+      category: pump
+      reason: Pump speed is high while heat transfer gain is weak, indicating avoidable transport energy.
+      evidence:
+        - "max_chilled_pump_freq_hz > 48Hz for 20m"
+        - "chilled_delta_t_c < 2.5C for 20m"
+      actions:
+        - Apply delta-T guided pump VFD reset.
+        - Lower pump frequency in small steps and verify pressure/comfort.
+        - Validate DP sensor and setpoint drift.
+      relatedDevices: []
+      severity: major
+      risk: medium
+
+  - ruleId: cooling-side-low-efficiency
+    name: Cooling side low efficiency
+    class: low_cooling_side_efficiency
+    enabled: true
+    severity: major
+    riskLevel: medium
+    triggerConditions:
+      logic: all
+      conditions:
+        - metric: cooling_delta_t_c
+          operator: "<"
+          thresholdKey: cooling_delta_t_low_c
+          duration: 20m
+        - metric: cooling_tower_power_kw
+          operator: ">"
+          thresholdKey: cooling_tower_power_high_kw
+          duration: 20m
+        - metric: station_cop
+          operator: "<"
+          thresholdKey: station_cop_low
+          duration: 20m
+    thresholds:
+      cooling_delta_t_low_c: 2.0
+      cooling_tower_power_high_kw: 25
+      station_cop_low: 3.0
+    suggestedActions:
+      - Check tower fan staging and condenser-water reset logic.
+      - Inspect condenser tube fouling and side-stream filtration.
+      - Verify cooling-water flow balance and sensor bias.
+    bffCard:
+      id: rec-cooling-eff-01
+      title: Improve cooling-side heat rejection efficiency
+      priority: high
+      category: cooling-side
+      reason: Cooling side consumes meaningful power but rejects heat inefficiently, dragging overall COP.
+      evidence:
+        - "cooling_delta_t_c < 2.0C for 20m"
+        - "cooling_tower_power_kw > 25kW for 20m"
+        - "station_cop < 3.0 for 20m"
+      actions:
+        - Tune tower fan staging and condenser-water setpoint reset.
+        - Check condenser fouling and water treatment condition.
+        - Rebalance condenser-water flow and verify sensor calibration.
+      relatedDevices: []
+      severity: major
+      risk: medium
+
+  - ruleId: frequent-start-stop
+    name: Frequent start-stop on critical equipment
+    class: frequent_start_stop
+    enabled: true
+    severity: critical
+    riskLevel: high
+    triggerConditions:
+      logic: any
+      conditions:
+        - metric: chiller_start_stop_count_60m
+          operator: ">"
+          thresholdKey: chiller_max_count_per_hour
+          duration: 60m
+        - metric: chilled_pump_start_stop_count_60m
+          operator: ">"
+          thresholdKey: pump_max_count_per_hour
+          duration: 60m
+        - metric: cooling_pump_start_stop_count_60m
+          operator: ">"
+          thresholdKey: pump_max_count_per_hour
+          duration: 60m
+    thresholds:
+      chiller_max_count_per_hour: 4
+      pump_max_count_per_hour: 6
+    suggestedActions:
+      - Enforce minimum run-time and stop-time lockouts.
+      - Review control deadband/hysteresis to avoid short cycling.
+      - Check unstable sensor points feeding sequence logic.
+    bffCard:
+      id: rec-short-cycling-01
+      title: Stop short-cycling of chillers/pumps
+      priority: high
+      category: stability
+      reason: Frequent start-stop indicates unstable sequence control and increases wear/energy loss.
+      evidence:
+        - "chiller_start_stop_count_60m > 4 OR pump_start_stop_count_60m > 6"
+      actions:
+        - Apply minimum on/off lockout timers.
+        - Widen sequence deadband and remove oscillating control points.
+        - Inspect sensors that drive lead-lag and staging decisions.
+      relatedDevices: []
+      severity: critical
+      risk: high
+
+  - ruleId: stale-data-detection
+    name: Data freshness degraded
+    class: stale_data
+    enabled: true
+    severity: major
+    riskLevel: high
+    triggerConditions:
+      logic: any
+      conditions:
+        - metric: overview_data_age_min
+          operator: ">"
+          thresholdKey: overview_max_age_min
+          duration: 10m
+        - metric: anomalies_data_age_min
+          operator: ">"
+          thresholdKey: anomalies_max_age_min
+          duration: 10m
+        - metric: critical_metric_missing_count_5m
+          operator: ">"
+          thresholdKey: critical_metric_missing_max
+          duration: 10m
+    thresholds:
+      overview_max_age_min: 45
+      anomalies_max_age_min: 60
+      critical_metric_missing_max: 4
+    suggestedActions:
+      - Mark recommendation output as stale and downgrade optimization confidence.
+      - Check legacy adapter connectivity and upstream query timeout.
+      - Verify latest timestamp flow for alarm and trend sources.
+    bffCard:
+      id: rec-data-stale-01
+      title: Data is stale, verify ingestion and adapters
+      priority: high
+      category: data-quality
+      reason: Key input data is stale or missing; optimization recommendations may be unreliable.
+      evidence:
+        - "overview_data_age_min > 45 OR anomalies_data_age_min > 60"
+        - "critical_metric_missing_count_5m > 4"
+      actions:
+        - Surface stale status in UI and pause aggressive optimization advice.
+        - Validate upstream adapter health and query latency.
+        - Check timestamp alignment of overview/trend/alarm pipelines.
+      relatedDevices: []
+      severity: major
+      risk: high

@@ -1,0 +1,86 @@
+{
+  "site": {
+    "siteId": "126lnoffice",
+    "siteName": "126lnoffice"
+  },
+  "generatedAt": "2026-03-13T13:30:10.259Z",
+  "counts": {
+    "total": 3,
+    "critical": 3,
+    "major": 0,
+    "minor": 0,
+    "normal": 0
+  },
+  "latestEvents": [
+    {
+      "id": "59775",
+      "title": "Alarm event",
+      "severity": "critical",
+      "state": "0",
+      "occurredAt": "2025-11-08T08:07:00.000Z",
+      "source": "Unknown",
+      "regId": "32",
+      "value": "1"
+    },
+    {
+      "id": "59774",
+      "title": "Alarm event",
+      "severity": "critical",
+      "state": "0",
+      "occurredAt": "2025-11-08T06:58:20.000Z",
+      "source": "Unknown",
+      "regId": "32",
+      "value": "1"
+    }
+  ],
+  "diagnosisFlags": {
+    "staleAlarmFeed": true,
+    "missingHighSeverity": false
+  },
+  "freshness": {
+    "latestTimestamp": "2025-11-08T08:07:00.000Z",
+    "stale": true,
+    "ageHours": 2975.5
+  },
+  "sourceStatus": {
+    "overall": "partial",
+    "sources": [
+      {
+        "key": "subsystemSummary",
+        "endpoint": "/126lnoffice/getAllSubsystemInfo",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "error": null,
+        "rows": 3
+      },
+      {
+        "key": "latestAlarmLog",
+        "endpoint": "/zsqy/qsAlarmlog/126lnoffice/findNewAlarmLog",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "error": null,
+        "rows": 3
+      },
+      {
+        "key": "alarmSeveritySplit",
+        "endpoint": "/zsqy/qsAlarmlog/126lnoffice/findNewAlarmLog",
+        "ok": false,
+        "status": 500,
+        "message": null,
+        "error": "Legacy request failed: 500",
+        "rows": null
+      },
+      {
+        "key": "alarmDiagnosis",
+        "endpoint": "/zsqy/qsAlarmlog/126lnoffice/findNewAlarmLog",
+        "ok": false,
+        "status": null,
+        "message": "upstream_unreachable: timeout",
+        "error": "network timeout",
+        "rows": null
+      }
+    ]
+  }
+}

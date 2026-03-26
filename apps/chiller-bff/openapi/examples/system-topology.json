@@ -1,0 +1,61 @@
+{
+  "site": {
+    "siteId": "126lnoffice",
+    "siteName": "126lnoffice"
+  },
+  "generatedAt": "2026-03-11T15:45:00.000Z",
+  "summary": {
+    "totalDevices": 0,
+    "chillerCount": 0,
+    "chilledPumpCount": 0,
+    "coolingPumpCount": 0,
+    "coolingTowerCount": 0
+  },
+  "groups": [],
+  "nodes": [
+    {
+      "id": "chiller",
+      "label": "Chiller Cluster",
+      "count": 0,
+      "downstream": "chilledPump"
+    },
+    {
+      "id": "chilledPump",
+      "label": "Chilled Pumps",
+      "count": 0,
+      "downstream": "load"
+    },
+    {
+      "id": "load",
+      "label": "Building Load",
+      "count": null,
+      "downstream": "coolingPump"
+    },
+    {
+      "id": "coolingPump",
+      "label": "Cooling Pumps",
+      "count": 0,
+      "downstream": "coolingTower"
+    },
+    {
+      "id": "coolingTower",
+      "label": "Cooling Towers (CTF+CTE+CTHDE)",
+      "count": 0,
+      "downstream": null
+    }
+  ],
+  "sourceStatus": {
+    "overall": "failed",
+    "sources": [
+      {
+        "key": "devices",
+        "endpoint": "/zsqy/drinfo/126lnoffice/findObject",
+        "ok": false,
+        "status": null,
+        "message": null,
+        "error": "Legacy request error: TypeError: fetch failed",
+        "rows": null
+      }
+    ]
+  }
+}

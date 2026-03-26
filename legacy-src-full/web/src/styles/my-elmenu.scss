@@ -1,0 +1,96 @@
+// .el-menu {
+//   .el-menu-item {
+//     background-color: transparent;
+//   }
+//   .el-menu-item:hover {
+//     @if Number(flag)==0 {
+//       background: linear-gradient(to right,
+//           rgba(56, 107, 225, 1),
+//           rgba(56, 107, 225, 0)) !important;
+//     }
+
+//     @else{
+//       background: #f66;
+//     }
+//     // background: linear-gradient( to right, rgba(56,107,225,1), rgba(56,107,225,0)) !important;
+//   }
+//   .el-menu-item.is-active {
+//     background: linear-gradient( to right, rgba(56,107,225,1), rgba(56,107,225,0)) !important;
+//   }
+// }
+
+// .navbars {
+//   width: 200px;
+//   height: 1030px;
+//   .el-menu-demo {
+//     .el-menu-item {
+//       min-width: 0;
+//       background-color: transparent;
+//     }
+//     .el-menu-item.is-active {
+//       background: linear-gradient( to right, rgba(56,107,225,1), rgba(56,107,225,0)) !important;
+//     }
+//     .el-submenu__title {
+//       height: 50px;
+//       background-color: transparent !important;
+//     }
+//     .el-submenu__title:hover {
+//       background: linear-gradient( to right, rgba(56,107,225,1), rgba(56,107,225,0)) !important;
+//     }
+//   }
+// }
+$background:linear-gradient(to right, rgba(56, 107, 225, 1), rgba(56, 107, 225, 0)) !important;
+$background1:linear-gradient(to right, rgba(13, 179, 255, 1), rgba(13, 179, 255, 0)) !important;
+$background2:linear-gradient(to right, rgba(13, 255, 207, 1), rgba(13, 255, 207, 0)) !important;
+$background3:linear-gradient(to right, rgba(186, 126, 255, 1), rgba(186, 126, 255, 0)) !important;
+$background4:linear-gradient(to right, rgba(58, 64, 101, 1), rgba(58, 64, 101, 0)) !important;
+
+
+
+$commonbg:#202632;
+$commonbg1:#0D2239;
+$commonbg2:#0D2F39;
+$commonbg3:#31345E;
+$commonbg4:#464e78;
+
+@mixin menuitem-hover {
+  background: $background;
+
+  [flag='1'] & {
+    background: $background1;
+  }
+
+  [flag='2'] & {
+    background: $background2;
+  }
+
+  [flag='3'] & {
+    background: $background3;
+  }
+
+  [flag='4'] & {
+    background: $background4;
+  }
+
+
+}
+
+@mixin commonitem {
+  background: $commonbg;
+
+  [flag='1'] & {
+    background: $commonbg1;
+  }
+
+  [flag='2'] & {
+    background: $commonbg2;
+  }
+
+  [flag='3'] & {
+    background: $commonbg3;
+  }
+
+  [flag='4'] & {
+    background: $commonbg4;
+  }
+}

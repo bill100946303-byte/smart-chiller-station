@@ -1,0 +1,14 @@
+json_field,source_logic,release_impact,missing_default_behavior,affects_default_release,notes
+version,literal_v1_0_from_verify_gates_cmd,info,fail_closed_if_missing,no,schema/version marker
+generatedAt,date_u_timestamp_in_verify_gates_cmd,info,fail_closed_if_missing,no,snapshot timestamp
+overall,derived_from_passedCount_eq_totalCount_7,blocking,default_to_FAIL,yes,final gate summary
+passedCount,count_of_rc1_to_rc7_equal_zero,blocking,default_to_0,yes,count of passed gates
+totalCount,constant_7_in_verify_gates_cmd,blocking,default_to_7_and_validate,yes,gate cardinality baseline
+gates[].name,static_gate_registry_7_items,info,fail_closed_if_missing_or_unknown,yes,semantic key for each gate item
+gates[].ok,derived_from_each_gate_exitCode_eq_0,blocking,default_to_false,yes,boolean pass/fail per gate
+gates[].exitCode,raw_per_gate_command_exit_code,blocking,default_to_1,yes,integer rc per gate
+failedGates[],derived_from_gates_select_ok_not_true_then_name,advisory,default_to_empty_array_and_recompute_from_gates,no,diagnostic failed gate list
+failedCount,derived_from_length_of_failedGates,advisory,default_to_0_and_recompute_from_failedGates,no,diagnostic failed count
+rule,failedCount_equals_length_failedGates,N/A,flag_warning_if_mismatch,no,data integrity rule
+rule,failedCount_equals_totalCount_minus_passedCount,N/A,flag_warning_if_mismatch,no,data integrity rule
+rule,failedGates_subset_of_gates_name_where_ok_false,N/A,flag_warning_if_unknown_gate,no,data integrity rule

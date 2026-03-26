@@ -1,0 +1,19 @@
+{
+  "version": "v1.0",
+  "generatedAt": "2026-03-12T21:41:40.895Z",
+  "source": "check-family-latest",
+  "sourcePath": "/Users/billchow/Documents/智慧冷冻站/docs/check-family-latest.json",
+  "sourceGeneratedAt": "2026-03-12T21:41:40.878Z",
+  "overall": "PASS",
+  "passedCount": 17,
+  "totalCount": 17,
+  "failedCount": 0,
+  "topFailedChecks": [],
+  "freshness": {
+    "state": "fresh",
+    "ageMinutes": 0,
+    "warnAgeMin": 30,
+    "staleAgeMin": 60,
+    "maxAgeMin": 60
+  }
+}

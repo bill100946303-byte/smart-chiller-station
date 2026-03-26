@@ -1,0 +1,184 @@
+{
+  "version": "1.1.0",
+  "copybookId": "hvac-check-family-copy-v1.1",
+  "scope": "check-family duty copy",
+  "fieldScope": {
+    "required": [
+      "overall",
+      "passedCount",
+      "totalCount",
+      "checks[].ok"
+    ]
+  },
+  "priorityOrder": [
+    "blocked",
+    "review_required",
+    "ready"
+  ],
+  "classes": [
+    {
+      "id": "ready",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "blocked",
+          "review_required"
+        ],
+        "conditions": [
+          "overall == 'PASS'",
+          "totalCount > 0",
+          "passedCount == totalCount",
+          "all(checks[].ok == true)"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "检查家族就绪",
+          "sub": "全项通过",
+          "firstAction": "按窗口推进发布"
+        },
+        "en": {
+          "main": "Check Family Ready",
+          "sub": "All checks passed",
+          "firstAction": "Proceed in release window"
+        },
+        "vi": {
+          "main": "Nhom kiem tra da san sang",
+          "sub": "Tat ca muc deu dat",
+          "firstAction": "Tiep tuc theo cua so phat hanh"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Check-Family 状态：READY",
+          "sub": "overall 为 PASS 且已通过数等于总数，当前可进入标准发布流程。",
+          "firstAction": "先确认放行窗口与操作人，再执行发布。"
+        },
+        "en": {
+          "main": "Check-Family Status: READY",
+          "sub": "Overall is PASS and passedCount equals totalCount, ready for standard release flow.",
+          "firstAction": "Confirm release window and operator first, then execute release."
+        },
+        "vi": {
+          "main": "Trang thai Check-Family: READY",
+          "sub": "Overall la PASS va passedCount bang totalCount, san sang cho quy trinh phat hanh chuan.",
+          "firstAction": "Xac nhan cua so phat hanh va nguoi thao tac truoc, sau do phat hanh."
+        }
+      }
+    },
+    {
+      "id": "blocked",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "overall == 'FAIL' && passedCount == 0 && totalCount > 0",
+          "all(checks[].ok == false)"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "检查家族阻断",
+          "sub": "关键项未通过",
+          "firstAction": "先修首个失败项"
+        },
+        "en": {
+          "main": "Check Family Blocked",
+          "sub": "Critical checks failed",
+          "firstAction": "Fix first failed check"
+        },
+        "vi": {
+          "main": "Nhom kiem tra bi chan",
+          "sub": "Muc quan trong khong dat",
+          "firstAction": "Sua muc loi dau tien"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Check-Family 状态：BLOCKED",
+          "sub": "当前为全量未通过态，发布应保持阻断。",
+          "firstAction": "先修复 checks 首个失败项，再重跑全套检查。"
+        },
+        "en": {
+          "main": "Check-Family Status: BLOCKED",
+          "sub": "Current state is full failure, release must remain blocked.",
+          "firstAction": "Fix the first failed check in checks, then rerun full checks."
+        },
+        "vi": {
+          "main": "Trang thai Check-Family: BLOCKED",
+          "sub": "Trang thai hien tai la that bai toan bo, can tiep tuc chan phat hanh.",
+          "firstAction": "Sua muc loi dau tien trong checks, sau do chay lai toan bo kiem tra."
+        }
+      }
+    },
+    {
+      "id": "review_required",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "blocked"
+        ],
+        "conditions": [
+          "totalCount > 0",
+          "passedCount > 0",
+          "passedCount < totalCount",
+          "exists(checks[].ok == false)"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "检查家族待复核",
+          "sub": "部分通过",
+          "firstAction": "先核对未通过项"
+        },
+        "en": {
+          "main": "Check Family Review",
+          "sub": "Partial pass detected",
+          "firstAction": "Review failed checks first"
+        },
+        "vi": {
+          "main": "Nhom kiem tra can ra soat",
+          "sub": "Phat hien dat mot phan",
+          "firstAction": "Ra soat cac muc chua dat truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Check-Family 状态：REVIEW_REQUIRED",
+          "sub": "当前为部分通过态，不应解读为可直接发布。",
+          "firstAction": "先定位未通过检查项并补测，通过后再进入放行确认。"
+        },
+        "en": {
+          "main": "Check-Family Status: REVIEW_REQUIRED",
+          "sub": "This is a partial pass state and must not be treated as directly releasable.",
+          "firstAction": "Locate failed checks and retest first, then move to release confirmation."
+        },
+        "vi": {
+          "main": "Trang thai Check-Family: REVIEW_REQUIRED",
+          "sub": "Day la trang thai dat mot phan, khong duoc hieu la co the phat hanh ngay.",
+          "firstAction": "Xac dinh muc chua dat va kiem tra bo sung truoc, sau do moi xac nhan phat hanh."
+        }
+      }
+    }
+  ],
+  "partialPassReminder": {
+    "trigger": {
+      "mode": "all",
+      "conditions": [
+        "totalCount > 0",
+        "passedCount > 0",
+        "passedCount < totalCount"
+      ]
+    },
+    "zh": "部分通过仅表示风险收敛中，不代表可直接发布。",
+    "en": "Partial pass means risk is being reduced, not that release is directly allowed.",
+    "vi": "Dat mot phan chi cho thay rui ro dang duoc giam, khong co nghia la duoc phat hanh ngay."
+  },
+  "fallback": {
+    "whenNoClassMatched": "review_required"
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

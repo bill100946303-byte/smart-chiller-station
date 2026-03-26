@@ -1,0 +1,762 @@
+{
+  "version": "1.0.0",
+  "compatible_with": "field-dictionary>=1.0.1",
+  "scope": [
+    "KPI",
+    "Trend",
+    "Anomaly",
+    "RuleDiagnosis"
+  ],
+  "constraints": {
+    "no_new_business_field": true,
+    "no_change_field_semantics": true,
+    "no_change_unit": true,
+    "no_change_null_strategy": true
+  },
+  "fields": [
+    {
+      "fieldKey": "station_total_power_kw",
+      "displayName": {
+        "zh": "冷站总功率",
+        "en": "Station Total Power",
+        "vi": "Tong cong suat tram"
+      },
+      "unitDisplay": {
+        "zh": "kW",
+        "en": "kW",
+        "vi": "kW"
+      },
+      "shortHint": {
+        "zh": "当前总电功率",
+        "en": "Real-time station power",
+        "vi": "Cong suat tuc thoi"
+      },
+      "semanticNote": "冷站实时总功率，主口径来自 totalPower；缺失时可走回退链路，仅用于连续性。",
+      "compareConstraint": "仅在时间窗、采样频率、缺失策略一致时可比；需同时披露主口径命中率与回退占比。"
+    },
+    {
+      "fieldKey": "station_total_energy_kwh",
+      "displayName": {
+        "zh": "冷站累计电能",
+        "en": "Station Total Energy",
+        "vi": "Dien nang tich luy tram"
+      },
+      "unitDisplay": {
+        "zh": "kWh",
+        "en": "kWh",
+        "vi": "kWh"
+      },
+      "shortHint": {
+        "zh": "累计量 非实时",
+        "en": "Cumulative, not instant",
+        "vi": "Luy ke, khong tuc thoi"
+      },
+      "semanticNote": "累计电能字段，历史别名 totalElectricity 易误读为实时电量，展示时必须标注“累计”。",
+      "compareConstraint": "不可直接比较绝对值；需转同时间窗增量并确认表计复位策略一致。"
+    },
+    {
+      "fieldKey": "station_cooling_capacity_kw",
+      "displayName": {
+        "zh": "冷站总冷量",
+        "en": "Station Cooling Capacity",
+        "vi": "Tong cong suat lanh tram"
+      },
+      "unitDisplay": {
+        "zh": "kW",
+        "en": "kW",
+        "vi": "kW"
+      },
+      "shortHint": {
+        "zh": "当前制冷输出",
+        "en": "Current cooling output",
+        "vi": "Cong suat lanh hien tai"
+      },
+      "semanticNote": "冷站实时总冷量；现场长期为 0 时按口径返回 null，不做 0 值误导。",
+      "compareConstraint": "比较前需确认两站均非长期空值，并统一缺失过滤规则。"
+    },
+    {
+      "fieldKey": "station_heat_rejection_kw",
+      "displayName": {
+        "zh": "冷站散热量",
+        "en": "Station Heat Rejection",
+        "vi": "Cong suat thai nhiet tram"
+      },
+      "unitDisplay": {
+        "zh": "kW",
+        "en": "kW",
+        "vi": "kW"
+      },
+      "shortHint": {
+        "zh": "当前散热能力",
+        "en": "Current heat rejection",
+        "vi": "Kha nang thai nhiet"
+      },
+      "semanticNote": "冷站瞬时散热量，来源可为测点或派生计算。",
+      "compareConstraint": "跨站点比较要求散热量计算口径一致，且采样粒度一致。"
+    },
+    {
+      "fieldKey": "station_cop",
+      "displayName": {
+        "zh": "冷站COP",
+        "en": "Station COP",
+        "vi": "COP tram lanh"
+      },
+      "unitDisplay": {
+        "zh": "-",
+        "en": "-",
+        "vi": "-"
+      },
+      "shortHint": {
+        "zh": "能效比 越高越优",
+        "en": "Efficiency ratio",
+        "vi": "Ty so hieu suat"
+      },
+      "semanticNote": "COP=冷量/功率；分母<=0 或非有限值返回 null，禁止 Infinity/NaN。",
+      "compareConstraint": "仅比较同时间窗且均剔除无效点后的统计值（如 P50/P90）。"
+    },
+    {
+      "fieldKey": "chilled_delta_t_c",
+      "displayName": {
+        "zh": "冷冻水温差",
+        "en": "Chilled Water Delta-T",
+        "vi": "Chenh nhiet nuoc lanh"
+      },
+      "unitDisplay": {
+        "zh": "℃",
+        "en": "degC",
+        "vi": "degC"
+      },
+      "shortHint": {
+        "zh": "回水减供水",
+        "en": "Return minus supply",
+        "vi": "Hoi tru cap"
+      },
+      "semanticNote": "定义为冷冻回水温度-冷冻供水温度。",
+      "compareConstraint": "需确保两站采用同一定义与同采样频率，且缺失处理一致。"
+    },
+    {
+      "fieldKey": "cooling_delta_t_c",
+      "displayName": {
+        "zh": "冷却水温差",
+        "en": "Cooling Water Delta-T",
+        "vi": "Chenh nhiet nuoc giai nhiet"
+      },
+      "unitDisplay": {
+        "zh": "℃",
+        "en": "degC",
+        "vi": "degC"
+      },
+      "shortHint": {
+        "zh": "供水减回水",
+        "en": "Supply minus return",
+        "vi": "Cap tru hoi"
+      },
+      "semanticNote": "定义为冷却供水温度-冷却回水温度。",
+      "compareConstraint": "需统一温差方向定义、采样频率和缺失策略后再比较。"
+    },
+    {
+      "fieldKey": "wet_bulb_temp_c",
+      "displayName": {
+        "zh": "湿球温度",
+        "en": "Wet Bulb Temperature",
+        "vi": "Nhiet do bau uot"
+      },
+      "unitDisplay": {
+        "zh": "℃",
+        "en": "degC",
+        "vi": "degC"
+      },
+      "shortHint": {
+        "zh": "环境边界条件",
+        "en": "Ambient boundary",
+        "vi": "Dieu kien moi truong"
+      },
+      "semanticNote": "环境基础量，影响冷却侧性能解释。",
+      "compareConstraint": "跨站对比需同时给出湿球温度，否则能效结论可能失真。"
+    },
+    {
+      "fieldKey": "outdoor_temp_c",
+      "displayName": {
+        "zh": "室外温度",
+        "en": "Outdoor Temperature",
+        "vi": "Nhiet do ngoai troi"
+      },
+      "unitDisplay": {
+        "zh": "℃",
+        "en": "degC",
+        "vi": "degC"
+      },
+      "shortHint": {
+        "zh": "室外干球温度",
+        "en": "Outdoor dry bulb",
+        "vi": "Nhiet do kho ben ngoai"
+      },
+      "semanticNote": "环境基础量，常与湿度/湿球温度联合解释。",
+      "compareConstraint": "对比时需保证同时间窗环境工况可比。"
+    },
+    {
+      "fieldKey": "outdoor_humidity_pct",
+      "displayName": {
+        "zh": "室外湿度",
+        "en": "Outdoor Humidity",
+        "vi": "Do am ngoai troi"
+      },
+      "unitDisplay": {
+        "zh": "%",
+        "en": "%",
+        "vi": "%"
+      },
+      "shortHint": {
+        "zh": "相对湿度",
+        "en": "Relative humidity",
+        "vi": "Do am tuong doi"
+      },
+      "semanticNote": "环境基础量，用于露点/湿球相关解释。",
+      "compareConstraint": "跨站比较需保证湿度采样频率和时间对齐一致。"
+    },
+    {
+      "fieldKey": "running_device_count",
+      "displayName": {
+        "zh": "运行设备数",
+        "en": "Running Device Count",
+        "vi": "So thiet bi dang chay"
+      },
+      "unitDisplay": {
+        "zh": "台",
+        "en": "units",
+        "vi": "thiet bi"
+      },
+      "shortHint": {
+        "zh": "当前运行台数",
+        "en": "Devices currently on",
+        "vi": "So thiet bi dang bat"
+      },
+      "semanticNote": "规则统计字段，按运行点位状态聚合。",
+      "compareConstraint": "需统一设备纳入范围和运行状态判定阈值。"
+    },
+    {
+      "fieldKey": "total_devices",
+      "displayName": {
+        "zh": "设备总数",
+        "en": "Total Devices",
+        "vi": "Tong so thiet bi"
+      },
+      "unitDisplay": {
+        "zh": "台",
+        "en": "units",
+        "vi": "thiet bi"
+      },
+      "shortHint": {
+        "zh": "设备台账规模",
+        "en": "Asset inventory size",
+        "vi": "Quy mo danh muc thiet bi"
+      },
+      "semanticNote": "设备清单计数，不代表在线/运行状态。",
+      "compareConstraint": "仅在设备建模边界一致时可比较（含虚拟设备纳入规则）。"
+    },
+    {
+      "fieldKey": "chiller_power_kw",
+      "displayName": {
+        "zh": "冷机总功率",
+        "en": "Chiller Power",
+        "vi": "Tong cong suat chiller"
+      },
+      "unitDisplay": {
+        "zh": "kW",
+        "en": "kW",
+        "vi": "kW"
+      },
+      "shortHint": {
+        "zh": "冷机群功率",
+        "en": "Chiller group power",
+        "vi": "Cong suat cum chiller"
+      },
+      "semanticNote": "冷机群实时总功率。",
+      "compareConstraint": "比较前需统一冷机纳入范围和采样粒度。"
+    },
+    {
+      "fieldKey": "chilled_pump_power_kw",
+      "displayName": {
+        "zh": "冷冻泵总功率",
+        "en": "CHW Pump Power",
+        "vi": "Tong cong suat bom nuoc lanh"
+      },
+      "unitDisplay": {
+        "zh": "kW",
+        "en": "kW",
+        "vi": "kW"
+      },
+      "shortHint": {
+        "zh": "冷冻泵群功率",
+        "en": "CHW pump group power",
+        "vi": "Cong suat bom nuoc lanh"
+      },
+      "semanticNote": "冷冻泵群实时总功率。",
+      "compareConstraint": "跨站比较需统一泵组边界及变频泵纳入规则。"
+    },
+    {
+      "fieldKey": "cooling_pump_power_kw",
+      "displayName": {
+        "zh": "冷却泵总功率",
+        "en": "CW Pump Power",
+        "vi": "Tong cong suat bom giai nhiet"
+      },
+      "unitDisplay": {
+        "zh": "kW",
+        "en": "kW",
+        "vi": "kW"
+      },
+      "shortHint": {
+        "zh": "冷却泵群功率",
+        "en": "CW pump group power",
+        "vi": "Cong suat bom giai nhiet"
+      },
+      "semanticNote": "冷却泵群实时总功率。",
+      "compareConstraint": "需统一泵组建模边界与缺失处理规则。"
+    },
+    {
+      "fieldKey": "cooling_tower_power_kw",
+      "displayName": {
+        "zh": "冷却塔组合功率",
+        "en": "Cooling Tower Composite Power",
+        "vi": "Cong suat tong hop thap giai nhiet"
+      },
+      "unitDisplay": {
+        "zh": "kW",
+        "en": "kW",
+        "vi": "kW"
+      },
+      "shortHint": {
+        "zh": "塔侧组合口径",
+        "en": "Composite tower metric",
+        "vi": "Chi so tong hop thap"
+      },
+      "semanticNote": "当前按 CTF+CTE+CTHDE 组合聚合，不等同单一物理塔体功率。",
+      "compareConstraint": "仅在两站均采用相同组合建模规则时可比较。"
+    },
+    {
+      "fieldKey": "trend_ts",
+      "displayName": {
+        "zh": "趋势时间点",
+        "en": "Trend Timestamp",
+        "vi": "Moc thoi gian xu huong"
+      },
+      "unitDisplay": {
+        "zh": "-",
+        "en": "-",
+        "vi": "-"
+      },
+      "shortHint": {
+        "zh": "序列时间轴",
+        "en": "Series time axis",
+        "vi": "Truc thoi gian chuoi"
+      },
+      "semanticNote": "趋势点时间字段，非法时间点按口径丢弃。",
+      "compareConstraint": "跨站比较必须时区一致、边界对齐一致。"
+    },
+    {
+      "fieldKey": "trend_value",
+      "displayName": {
+        "zh": "趋势点值",
+        "en": "Trend Point Value",
+        "vi": "Gia tri diem xu huong"
+      },
+      "unitDisplay": {
+        "zh": "随指标",
+        "en": "metric-based",
+        "vi": "theo chi so"
+      },
+      "shortHint": {
+        "zh": "需绑定具体指标",
+        "en": "Bind with metric key",
+        "vi": "Can gan voi key chi so"
+      },
+      "semanticNote": "通用趋势值容器，脱离 metric key 单独展示会丢失语义。",
+      "compareConstraint": "仅在同一 metric key、同一聚合方式下可比较。"
+    },
+    {
+      "fieldKey": "trend_min",
+      "displayName": {
+        "zh": "趋势最小值",
+        "en": "Trend Minimum",
+        "vi": "Gia tri nho nhat xu huong"
+      },
+      "unitDisplay": {
+        "zh": "随指标",
+        "en": "metric-based",
+        "vi": "theo chi so"
+      },
+      "shortHint": {
+        "zh": "序列最小统计",
+        "en": "Series minimum stat",
+        "vi": "Thong ke min chuoi"
+      },
+      "semanticNote": "对趋势点过滤 null 后的最小值统计。",
+      "compareConstraint": "必须保证同窗口、同采样、同缺失过滤后再比较。"
+    },
+    {
+      "fieldKey": "trend_max",
+      "displayName": {
+        "zh": "趋势最大值",
+        "en": "Trend Maximum",
+        "vi": "Gia tri lon nhat xu huong"
+      },
+      "unitDisplay": {
+        "zh": "随指标",
+        "en": "metric-based",
+        "vi": "theo chi so"
+      },
+      "shortHint": {
+        "zh": "序列最大统计",
+        "en": "Series maximum stat",
+        "vi": "Thong ke max chuoi"
+      },
+      "semanticNote": "对趋势点过滤 null 后的最大值统计。",
+      "compareConstraint": "仅在同一 metric key 与同聚合口径下可比较。"
+    },
+    {
+      "fieldKey": "alarm_critical_count",
+      "displayName": {
+        "zh": "紧急告警数",
+        "en": "Critical Alarm Count",
+        "vi": "So bao dong nghiem trong"
+      },
+      "unitDisplay": {
+        "zh": "条",
+        "en": "items",
+        "vi": "muc"
+      },
+      "shortHint": {
+        "zh": "最高风险告警",
+        "en": "Highest risk alarms",
+        "vi": "Bao dong muc cao nhat"
+      },
+      "semanticNote": "基于告警等级映射后的 critical 计数。",
+      "compareConstraint": "需统一 severity 映射规则及统计时间窗。"
+    },
+    {
+      "fieldKey": "alarm_major_count",
+      "displayName": {
+        "zh": "严重告警数",
+        "en": "Major Alarm Count",
+        "vi": "So bao dong muc major"
+      },
+      "unitDisplay": {
+        "zh": "条",
+        "en": "items",
+        "vi": "muc"
+      },
+      "shortHint": {
+        "zh": "高风险告警",
+        "en": "High risk alarms",
+        "vi": "Bao dong rui ro cao"
+      },
+      "semanticNote": "基于告警等级映射后的 major 计数。",
+      "compareConstraint": "比较前需对齐等级映射和去重规则。"
+    },
+    {
+      "fieldKey": "alarm_minor_count",
+      "displayName": {
+        "zh": "一般告警数",
+        "en": "Minor Alarm Count",
+        "vi": "So bao dong muc minor"
+      },
+      "unitDisplay": {
+        "zh": "条",
+        "en": "items",
+        "vi": "muc"
+      },
+      "shortHint": {
+        "zh": "中低风险告警",
+        "en": "Medium/low alarms",
+        "vi": "Bao dong trung thap"
+      },
+      "semanticNote": "基于告警等级映射后的 minor 计数。",
+      "compareConstraint": "需统一统计周期与告警分级映射后再比较。"
+    },
+    {
+      "fieldKey": "latest_alarm_time",
+      "displayName": {
+        "zh": "最近告警时间",
+        "en": "Latest Alarm Time",
+        "vi": "Thoi gian bao dong moi nhat"
+      },
+      "unitDisplay": {
+        "zh": "-",
+        "en": "-",
+        "vi": "-"
+      },
+      "shortHint": {
+        "zh": "最近一次触发",
+        "en": "Most recent trigger",
+        "vi": "Lan kich hoat gan nhat"
+      },
+      "semanticNote": "最近一条告警的时间戳，缺失时返回 null。",
+      "compareConstraint": "比较需统一时区和时间格式；不用于能效高低结论。"
+    },
+    {
+      "fieldKey": "anomaly_severity",
+      "displayName": {
+        "zh": "异常等级",
+        "en": "Anomaly Severity",
+        "vi": "Muc do bat thuong"
+      },
+      "unitDisplay": {
+        "zh": "-",
+        "en": "-",
+        "vi": "-"
+      },
+      "shortHint": {
+        "zh": "critical/major/minor",
+        "en": "critical/major/minor",
+        "vi": "critical/major/minor"
+      },
+      "semanticNote": "异常等级枚举，默认可降级为 minor。",
+      "compareConstraint": "仅在 severity 枚举与映射一致时可横向比较。"
+    },
+    {
+      "fieldKey": "anomaly_state",
+      "displayName": {
+        "zh": "异常状态",
+        "en": "Anomaly State",
+        "vi": "Trang thai bat thuong"
+      },
+      "unitDisplay": {
+        "zh": "-",
+        "en": "-",
+        "vi": "-"
+      },
+      "shortHint": {
+        "zh": "0恢复 1进行中",
+        "en": "0 closed, 1 active",
+        "vi": "0 ket thuc, 1 dang mo"
+      },
+      "semanticNote": "原始状态码，0=恢复，1=进行中（沿用旧系统约定）。",
+      "compareConstraint": "跨站比较前需先映射到统一文本状态后再统计。"
+    },
+    {
+      "fieldKey": "has_recent_alarms",
+      "displayName": {
+        "zh": "近期异常标记",
+        "en": "Recent Alarm Flag",
+        "vi": "Co bao dong gan day"
+      },
+      "unitDisplay": {
+        "zh": "-",
+        "en": "-",
+        "vi": "-"
+      },
+      "shortHint": {
+        "zh": "窗口内是否有告警",
+        "en": "Alarm exists in window",
+        "vi": "Co bao dong trong cua so"
+      },
+      "semanticNote": "按阈值窗口（如 24h）计算的布尔标记。",
+      "compareConstraint": "必须统一阈值窗口长度与时区后才可比较。"
+    },
+    {
+      "fieldKey": "max_chilled_pump_freq_hz",
+      "displayName": {
+        "zh": "冷冻泵最大频率(60m)",
+        "en": "Max CHW Pump Freq (60m)",
+        "vi": "Tan so max bom nuoc lanh (60m)"
+      },
+      "unitDisplay": {
+        "zh": "Hz",
+        "en": "Hz",
+        "vi": "Hz"
+      },
+      "shortHint": {
+        "zh": "近60分最大频率",
+        "en": "60m max frequency",
+        "vi": "Tan so lon nhat 60 phut"
+      },
+      "semanticNote": "规则引擎基础量，60 分钟窗口最大值；缺失按口径回填 0。",
+      "compareConstraint": "需统一窗口长度、采样频率和回填策略。"
+    },
+    {
+      "fieldKey": "chiller_start_stop_count_60m",
+      "displayName": {
+        "zh": "冷机启停次数(60m)",
+        "en": "Chiller Start/Stop Count (60m)",
+        "vi": "So lan bat/tat chiller (60m)"
+      },
+      "unitDisplay": {
+        "zh": "次",
+        "en": "times",
+        "vi": "lan"
+      },
+      "shortHint": {
+        "zh": "近60分启停次数",
+        "en": "60m start/stop count",
+        "vi": "So lan bat/tat 60 phut"
+      },
+      "semanticNote": "由 0/1 状态切换计数得出。",
+      "compareConstraint": "需统一状态判定阈值和计数窗口。"
+    },
+    {
+      "fieldKey": "chilled_pump_start_stop_count_60m",
+      "displayName": {
+        "zh": "冷冻泵启停次数(60m)",
+        "en": "CHW Pump Start/Stop Count (60m)",
+        "vi": "So lan bat/tat bom nuoc lanh (60m)"
+      },
+      "unitDisplay": {
+        "zh": "次",
+        "en": "times",
+        "vi": "lan"
+      },
+      "shortHint": {
+        "zh": "泵组启停频度",
+        "en": "Pump switching frequency",
+        "vi": "Tan suat bat/tat bom"
+      },
+      "semanticNote": "冷冻泵 60 分钟窗口启停计数。",
+      "compareConstraint": "跨站比较需统一泵状态定义和窗口长度。"
+    },
+    {
+      "fieldKey": "cooling_pump_start_stop_count_60m",
+      "displayName": {
+        "zh": "冷却泵启停次数(60m)",
+        "en": "CW Pump Start/Stop Count (60m)",
+        "vi": "So lan bat/tat bom giai nhiet (60m)"
+      },
+      "unitDisplay": {
+        "zh": "次",
+        "en": "times",
+        "vi": "lan"
+      },
+      "shortHint": {
+        "zh": "冷却泵启停频度",
+        "en": "CW pump switching",
+        "vi": "Tan suat bat/tat bom CW"
+      },
+      "semanticNote": "冷却泵 60 分钟窗口启停计数。",
+      "compareConstraint": "需统一窗口、阈值、缺失回填策略。"
+    },
+    {
+      "fieldKey": "thermal_unbalance_rate_pct",
+      "displayName": {
+        "zh": "热不平衡率",
+        "en": "Thermal Unbalance Rate",
+        "vi": "Ty le mat can bang nhiet"
+      },
+      "unitDisplay": {
+        "zh": "%",
+        "en": "%",
+        "vi": "%"
+      },
+      "shortHint": {
+        "zh": "系统负荷平衡度",
+        "en": "Load balance indicator",
+        "vi": "Chi so can bang tai"
+      },
+      "semanticNote": "分母<=0 返回 null；用于识别系统热力分配异常。",
+      "compareConstraint": "必须统一计算公式与有效点过滤规则。"
+    },
+    {
+      "fieldKey": "alarm_data_stale",
+      "displayName": {
+        "zh": "告警数据陈旧",
+        "en": "Alarm Data Stale",
+        "vi": "Du lieu bao dong cu"
+      },
+      "unitDisplay": {
+        "zh": "-",
+        "en": "-",
+        "vi": "-"
+      },
+      "shortHint": {
+        "zh": "告警源是否过期",
+        "en": "Alarm source freshness",
+        "vi": "Do tuoi nguon bao dong"
+      },
+      "semanticNote": "布尔可用性标记，true 表示告警数据超陈旧阈值。",
+      "compareConstraint": "仅在陈旧阈值定义一致时可横向比较。"
+    },
+    {
+      "fieldKey": "work_order_linked",
+      "displayName": {
+        "zh": "关联工单",
+        "en": "Work Order Linked",
+        "vi": "Da lien ket lenh cong viec"
+      },
+      "unitDisplay": {
+        "zh": "-",
+        "en": "-",
+        "vi": "-"
+      },
+      "shortHint": {
+        "zh": "异常是否挂单",
+        "en": "Has linked ticket",
+        "vi": "Da gan phieu xu ly"
+      },
+      "semanticNote": "可选来源字段，首期允许降级 false。",
+      "compareConstraint": "比较时需保证工单系统接入状态一致。"
+    },
+    {
+      "fieldKey": "alarm_device_count",
+      "displayName": {
+        "zh": "报警设备数",
+        "en": "Alarm Device Count",
+        "vi": "So thiet bi dang bao dong"
+      },
+      "unitDisplay": {
+        "zh": "台",
+        "en": "units",
+        "vi": "thiet bi"
+      },
+      "shortHint": {
+        "zh": "当前报警台数",
+        "en": "Devices in alarm",
+        "vi": "So thiet bi bao dong"
+      },
+      "semanticNote": "按设备告警状态聚合计数。",
+      "compareConstraint": "需统一设备筛选范围和告警判定标准。"
+    }
+  ],
+  "nonBusinessDirectFields": [
+    {
+      "fieldKey": "legacy.totalElectricity",
+      "riskLevel": "P0",
+      "whyNotDirect": "名称易被理解为实时电量，实际语义为累计电能。",
+      "frontendAlternative": "统一展示 fieldKey=station_total_energy_kwh，文案必须包含“累计”。"
+    },
+    {
+      "fieldKey": "cooling_tower_power_kw",
+      "riskLevel": "P0",
+      "whyNotDirect": "组合口径（CTF+CTE+CTHDE）不等同单塔体功率。",
+      "frontendAlternative": "展示为“冷却塔组合功率”，并在 tooltip 说明组合成员。"
+    },
+    {
+      "fieldKey": "trend_value",
+      "riskLevel": "P1",
+      "whyNotDirect": "通用容器字段，脱离 metric key 语义不完整。",
+      "frontendAlternative": "仅以“指标名 + trend_value”成对展示，不单独命名为业务指标。"
+    },
+    {
+      "fieldKey": "trend_min",
+      "riskLevel": "P1",
+      "whyNotDirect": "未绑定指标类型时无法判断单位与业务意义。",
+      "frontendAlternative": "展示为“某指标最小值”，标题必须包含具体指标名。"
+    },
+    {
+      "fieldKey": "trend_max",
+      "riskLevel": "P1",
+      "whyNotDirect": "未绑定指标类型时无法判断单位与业务意义。",
+      "frontendAlternative": "展示为“某指标最大值”，标题必须包含具体指标名。"
+    },
+    {
+      "fieldKey": "anomaly_state",
+      "riskLevel": "P1",
+      "whyNotDirect": "原始值是状态码（0/1），直接显示不具可读性。",
+      "frontendAlternative": "前端映射为“已恢复/进行中”，禁止直接显示数字码。"
+    },
+    {
+      "fieldKey": "alarm_data_stale",
+      "riskLevel": "P1",
+      "whyNotDirect": "属于数据可用性状态，不是业务事件强度。",
+      "frontendAlternative": "作为“数据新鲜度”徽标展示，不与告警数量混合。"
+    }
+  ]
+}

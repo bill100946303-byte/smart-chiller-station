@@ -1,0 +1,181 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-runtime-live-gap-copy-v1",
+  "scope": "runtime live but field gap duty copy",
+  "fieldScope": {
+    "required": [
+      "decision",
+      "summaryClass",
+      "reasons[]",
+      "advisories[]",
+      "generatedAt"
+    ],
+    "fieldGapHints": [
+      "runtime_ready_unknown_optional",
+      "example_not_ready",
+      "field_missing_or_invalid",
+      "release_ready_field_missing:*"
+    ]
+  },
+  "priorityOrder": [
+    "live_ok_blocked_field_gap",
+    "live_ok_partial_data",
+    "live_ok_review_required"
+  ],
+  "classes": [
+    {
+      "id": "live_ok_partial_data",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "live_ok_blocked_field_gap"
+        ],
+        "conditions": [
+          "decision == 'GO'",
+          "summaryClass == 'review_required'",
+          "reasons.length == 0",
+          "generatedAt exists and generatedAt != ''",
+          "advisories contains 'runtime_ready_unknown_optional' OR advisories contains 'example_not_ready' OR advisories contains 'field_missing_or_invalid'"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "运行已通数据不全",
+          "sub": "先解释再行动"
+        },
+        "en": {
+          "main": "Live OK Partial Data",
+          "sub": "Explain before action"
+        },
+        "vi": {
+          "main": "Runtime da thong du lieu chua du",
+          "sub": "Giai thich truoc khi hanh dong"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "运行态状态：LIVE_OK_PARTIAL_DATA",
+          "sub": "运行链路已通，但当前仍有部分字段未补齐，结论可参考但不宜过度外推。"
+        },
+        "en": {
+          "main": "Runtime Status: LIVE_OK_PARTIAL_DATA",
+          "sub": "The runtime path is reachable, but some fields are still incomplete, so the result is referable but should not be over-interpreted."
+        },
+        "vi": {
+          "main": "Trang thai runtime: LIVE_OK_PARTIAL_DATA",
+          "sub": "Duong runtime da thong, nhung mot so truong van chua day du, nen ket qua chi nen dung de tham khao va khong nen dien giai qua muc."
+        }
+      },
+      "firstAction": {
+        "zh": "先记录 advisory 所指的缺口字段，再按当前窗口补采或补映射。",
+        "en": "Record the field gaps indicated by advisories first, then backfill sampling or mapping in the current window.",
+        "vi": "Ghi lai cac truong thieu duoc advisories chi ra truoc, sau do bo sung lay mau hoac anh xa trong cua so hien tai."
+      }
+    },
+    {
+      "id": "live_ok_review_required",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "live_ok_blocked_field_gap",
+          "live_ok_partial_data"
+        ],
+        "conditions": [
+          "decision == 'GO'",
+          "summaryClass == 'review_required'",
+          "reasons.length == 0",
+          "advisories.length > 0 OR generatedAt is missing OR generatedAt == ''"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "运行已通待复核",
+          "sub": "字段证据待确认"
+        },
+        "en": {
+          "main": "Live OK Review",
+          "sub": "Field evidence needs review"
+        },
+        "vi": {
+          "main": "Runtime da thong can ra soat",
+          "sub": "Bang chung truong du lieu can xac nhan"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "运行态状态：LIVE_OK_REVIEW_REQUIRED",
+          "sub": "运行态已通，但当前字段证据仍不足以支持直接对外发布，需要人工复核。"
+        },
+        "en": {
+          "main": "Runtime Status: LIVE_OK_REVIEW_REQUIRED",
+          "sub": "The runtime path is reachable, but field-level evidence is still not strong enough for direct external release, so manual review is required."
+        },
+        "vi": {
+          "main": "Trang thai runtime: LIVE_OK_REVIEW_REQUIRED",
+          "sub": "Runtime da thong, nhung bang chung o muc truong du lieu van chua du de cong bo truc tiep, vi vay can ra soat thu cong."
+        }
+      },
+      "firstAction": {
+        "zh": "先核对 advisories 与 generatedAt，再决定是继续补证据还是进入发布。",
+        "en": "Verify advisories and generatedAt first, then decide whether to collect more evidence or proceed to release.",
+        "vi": "Kiem tra advisories va generatedAt truoc, sau do moi quyet dinh se bo sung bang chung hay tiep tuc phat hanh."
+      }
+    },
+    {
+      "id": "live_ok_blocked_field_gap",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "decision == 'NO-GO'",
+          "summaryClass == 'blocked'",
+          "reasons.length > 0"
+        ],
+        "preferredFieldGapHints": [
+          "reasons contains 'field_missing_or_invalid'",
+          "reasons contains 'release_ready_field_missing:'"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "运行已通但被阻断",
+          "sub": "字段缺口已升阻断"
+        },
+        "en": {
+          "main": "Live OK But Blocked",
+          "sub": "Field gap now blocks"
+        },
+        "vi": {
+          "main": "Runtime da thong nhung bi chan",
+          "sub": "Thieu truong da thanh blocker"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "运行态状态：LIVE_OK_BLOCKED_FIELD_GAP",
+          "sub": "运行链路虽可达，但字段缺口已升级为阻断条件，当前不能按已通误判为可发布。"
+        },
+        "en": {
+          "main": "Runtime Status: LIVE_OK_BLOCKED_FIELD_GAP",
+          "sub": "The runtime path is reachable, but field gaps have escalated into blocking conditions, so reachability must not be mistaken for releasability."
+        },
+        "vi": {
+          "main": "Trang thai runtime: LIVE_OK_BLOCKED_FIELD_GAP",
+          "sub": "Duong runtime van truy cap duoc, nhung thieu truong da tro thanh dieu kien chan, vi vay khong duoc nham kha nang truy cap voi kha nang phat hanh."
+        }
+      },
+      "firstAction": {
+        "zh": "先处理 reasons 中的字段缺口，再重跑同步/最新检查确认阻断是否解除。",
+        "en": "Fix the field gaps reflected in reasons first, then rerun sync/latest checks to confirm whether the block is cleared.",
+        "vi": "Xu ly cac thieu truong duoc neu trong reasons truoc, sau do chay lai sync/latest check de xac nhan blocker da duoc go hay chua."
+      }
+    }
+  ],
+  "fallback": {
+    "whenNoClassMatched": "live_ok_review_required"
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

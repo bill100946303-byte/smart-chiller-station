@@ -1,0 +1,58 @@
+{
+  "version": "v1.0",
+  "generatedAt": "2026-03-12T08:48:32.325Z",
+  "decision": "GO",
+  "exitCode": 0,
+  "reasons": [],
+  "advisories": [
+    "runtime_optional_mode",
+    "runtime_unavailable_snapshot_present"
+  ],
+  "inputs": {
+    "strictFreshness": false,
+    "runtimeRequired": false
+  },
+  "checks": {
+    "verifyGatesOk": true,
+    "preflightCommandExitCode": 0,
+    "preflightReportExists": true,
+    "preflightPass": true
+  },
+  "statusSummary": {
+    "entryMode": "shell",
+    "releaseDecision": "GO",
+    "overallPass": true,
+    "releaseGateSource": "live",
+    "strictFreshnessPreview": false,
+    "recommendedAction": "release candidate is ready under default policy"
+  },
+  "releaseGate": {
+    "decision": "GO",
+    "reasons": [],
+    "advisories": [
+      "runtime_unavailable_snapshot_present"
+    ],
+    "strictFreshness": false,
+    "freshness": "stale",
+    "source": "live"
+  },
+  "preflight": {
+    "preflightPass": true,
+    "gates": {
+      "stackOk": false,
+      "contractOk": true,
+      "statusJsonOk": true,
+      "shellOk": true,
+      "releaseGateOk": true,
+      "releaseGateStrictFreshness": false,
+      "runtimeRequired": false,
+      "readinessGateEnabled": false
+    }
+  },
+  "artifacts": {
+    "latestJson": "/Users/billchow/Documents/智慧冷冻站/docs/release-snapshot-latest.json",
+    "latestMd": "/Users/billchow/Documents/智慧冷冻站/docs/release-snapshot-latest.md",
+    "archiveJson": "/Users/billchow/Documents/智慧冷冻站/docs/release-snapshots/release-snapshot-20260312-164825.json",
+    "archiveMd": "/Users/billchow/Documents/智慧冷冻站/docs/release-snapshots/release-snapshot-20260312-164825.md"
+  }
+}

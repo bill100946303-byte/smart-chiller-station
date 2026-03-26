@@ -1,0 +1,172 @@
+{
+  "version": "1.0.0",
+  "copybookId": "hvac-release-ready-sync-copy-v1",
+  "scope": "release-ready sync voice copy",
+  "fieldScope": {
+    "required": [
+      "decision",
+      "reasons[]",
+      "advisories[]",
+      "exitCode"
+    ]
+  },
+  "priorityOrder": [
+    "sync_blocked",
+    "sync_review",
+    "sync_ready"
+  ],
+  "classes": [
+    {
+      "id": "sync_blocked",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "decision == 'NO-GO'",
+          "exitCode == 1",
+          "reasons.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "同步受阻",
+          "sub": "存在阻断项",
+          "firstStep": "先处理首个reason"
+        },
+        "en": {
+          "main": "Sync Blocked",
+          "sub": "Blocking items exist",
+          "firstStep": "Handle first reason"
+        },
+        "vi": {
+          "main": "Dong bo bi chan",
+          "sub": "Ton tai muc chan",
+          "firstStep": "Xu ly reason dau tien"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "同步状态：BLOCKED",
+          "sub": "当前同步结果存在阻断信号，暂不允许进入放行动作。",
+          "firstStep": "先按 reasons 首项排障，再重跑同步检查。"
+        },
+        "en": {
+          "main": "Sync Status: BLOCKED",
+          "sub": "Current sync result has blocking signals, so release actions must stop.",
+          "firstStep": "Troubleshoot the first item in reasons, then rerun sync checks."
+        },
+        "vi": {
+          "main": "Trang thai dong bo: BLOCKED",
+          "sub": "Ket qua dong bo hien tai co tin hieu chan, tam thoi khong duoc thuc hien thao tac phat hanh.",
+          "firstStep": "Xu ly muc dau trong reasons, sau do chay lai kiem tra dong bo."
+        }
+      }
+    },
+    {
+      "id": "sync_review",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "sync_blocked"
+        ],
+        "conditions": [
+          "decision == 'GO'",
+          "exitCode == 0",
+          "reasons.length == 0",
+          "advisories.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "同步需复核",
+          "sub": "存在提示项",
+          "firstStep": "先看advisories"
+        },
+        "en": {
+          "main": "Sync Review",
+          "sub": "Advisories exist",
+          "firstStep": "Review advisories first"
+        },
+        "vi": {
+          "main": "Dong bo can ra soat",
+          "sub": "Co muc canh bao",
+          "firstStep": "Xem advisories truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "同步状态：REVIEW_REQUIRED",
+          "sub": "同步主结论为 GO，但仍有提示项，需人工复核后执行放行。",
+          "firstStep": "先确认 advisories 影响范围，再继续发布确认。"
+        },
+        "en": {
+          "main": "Sync Status: REVIEW_REQUIRED",
+          "sub": "Sync decision is GO, but advisories remain and require manual review before release.",
+          "firstStep": "Confirm advisory impact first, then continue release confirmation."
+        },
+        "vi": {
+          "main": "Trang thai dong bo: REVIEW_REQUIRED",
+          "sub": "Quyet dinh dong bo la GO nhung van con canh bao, can ra soat thu cong truoc khi phat hanh.",
+          "firstStep": "Xac nhan pham vi anh huong cua advisories truoc, roi moi tiep tuc xac nhan phat hanh."
+        }
+      }
+    },
+    {
+      "id": "sync_ready",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "sync_blocked",
+          "sync_review"
+        ],
+        "conditions": [
+          "decision == 'GO'",
+          "exitCode == 0",
+          "reasons.length == 0",
+          "advisories.length == 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "同步已就绪",
+          "sub": "可执行放行",
+          "firstStep": "按窗口发布"
+        },
+        "en": {
+          "main": "Sync Ready",
+          "sub": "Ready to release",
+          "firstStep": "Release in window"
+        },
+        "vi": {
+          "main": "Dong bo da san sang",
+          "sub": "Co the phat hanh",
+          "firstStep": "Phat hanh theo cua so"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "同步状态：READY",
+          "sub": "同步结果无阻断且无提示项，可按标准流程执行放行。",
+          "firstStep": "先做发布窗口确认，再按标准步骤放行。"
+        },
+        "en": {
+          "main": "Sync Status: READY",
+          "sub": "Sync result has no blockers or advisories and is ready for standard release flow.",
+          "firstStep": "Run release-window confirmation first, then execute standard release steps."
+        },
+        "vi": {
+          "main": "Trang thai dong bo: READY",
+          "sub": "Ket qua dong bo khong co blocker hay advisory, san sang cho quy trinh phat hanh chuan.",
+          "firstStep": "Xac nhan cua so phat hanh truoc, sau do thuc hien cac buoc phat hanh chuan."
+        }
+      }
+    }
+  ],
+  "fallback": {
+    "whenNoClassMatched": "sync_review"
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

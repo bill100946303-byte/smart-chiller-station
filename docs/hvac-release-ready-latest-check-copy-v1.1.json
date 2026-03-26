@@ -1,0 +1,206 @@
+{
+  "version": "1.1.0",
+  "copybookId": "hvac-release-ready-latest-check-copy-v1.1",
+  "scope": "release-ready-latest-check voice copy",
+  "fieldScope": {
+    "required": [
+      "decision",
+      "exitCode",
+      "reasons[]",
+      "source"
+    ],
+    "sourceWhitelist": [
+      "live",
+      "latest_file",
+      "sync_latest",
+      "canonical",
+      "release_ready_latest"
+    ]
+  },
+  "priorityOrder": [
+    "blocked",
+    "review_required",
+    "ready"
+  ],
+  "classes": [
+    {
+      "id": "ready",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "blocked",
+          "review_required"
+        ],
+        "conditions": [
+          "decision == 'GO'",
+          "exitCode == 0",
+          "reasons.length == 0",
+          "source in ['live','latest_file','sync_latest','canonical','release_ready_latest']"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "最新检查就绪",
+          "sub": "可按流程放行",
+          "firstAction": "按窗口执行发布"
+        },
+        "en": {
+          "main": "Latest Check Ready",
+          "sub": "Ready for release flow",
+          "firstAction": "Release in window"
+        },
+        "vi": {
+          "main": "Kiem tra moi da san sang",
+          "sub": "San sang theo quy trinh phat hanh",
+          "firstAction": "Phat hanh theo cua so"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Latest-Check 状态：READY",
+          "sub": "主结论为 GO，且无阻断项、来源可信，可进入标准放行流程。",
+          "firstAction": "先确认发布窗口，再执行正式放行。"
+        },
+        "en": {
+          "main": "Latest-Check Status: READY",
+          "sub": "Decision is GO with no blockers and trusted source, ready for standard release flow.",
+          "firstAction": "Confirm release window first, then execute formal release."
+        },
+        "vi": {
+          "main": "Trang thai Latest-Check: READY",
+          "sub": "Decision la GO, khong co blocker va nguon tin cay, san sang cho quy trinh phat hanh chuan.",
+          "firstAction": "Xac nhan cua so phat hanh truoc, sau do phat hanh chinh thuc."
+        }
+      }
+    },
+    {
+      "id": "blocked",
+      "trigger": {
+        "mode": "any",
+        "conditions": [
+          "decision == 'NO-GO'",
+          "exitCode == 1",
+          "reasons.length > 0"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "最新检查受阻",
+          "sub": "存在阻断项",
+          "firstAction": "先处理首个reason"
+        },
+        "en": {
+          "main": "Latest Check Blocked",
+          "sub": "Blocking reasons detected",
+          "firstAction": "Handle first reason"
+        },
+        "vi": {
+          "main": "Kiem tra moi bi chan",
+          "sub": "Phat hien ly do chan",
+          "firstAction": "Xu ly reason dau tien"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Latest-Check 状态：BLOCKED",
+          "sub": "当前检查命中阻断条件，暂不允许放行。",
+          "firstAction": "先修复 reasons 首项，再重跑 latest-check。"
+        },
+        "en": {
+          "main": "Latest-Check Status: BLOCKED",
+          "sub": "Current check hits blocking conditions, so release is blocked now.",
+          "firstAction": "Fix the first item in reasons, then rerun latest-check."
+        },
+        "vi": {
+          "main": "Trang thai Latest-Check: BLOCKED",
+          "sub": "Kiem tra hien tai cham dieu kien chan, tam thoi khong duoc phat hanh.",
+          "firstAction": "Sua muc dau trong reasons, sau do chay lai latest-check."
+        }
+      }
+    },
+    {
+      "id": "review_required",
+      "trigger": {
+        "mode": "all+not",
+        "not": [
+          "blocked"
+        ],
+        "conditions": [
+          "decision == 'GO'",
+          "exitCode == 0",
+          "reasons.length == 0",
+          "source missing OR source not_in ['live','latest_file','sync_latest','canonical','release_ready_latest']"
+        ]
+      },
+      "mobileShort": {
+        "zh": {
+          "main": "最新检查待复核",
+          "sub": "来源待确认",
+          "firstAction": "先核对source"
+        },
+        "en": {
+          "main": "Latest Check Review",
+          "sub": "Source needs confirmation",
+          "firstAction": "Verify source first"
+        },
+        "vi": {
+          "main": "Kiem tra moi can ra soat",
+          "sub": "Can xac nhan nguon",
+          "firstAction": "Kiem tra source truoc"
+        }
+      },
+      "full": {
+        "zh": {
+          "main": "Latest-Check 状态：REVIEW_REQUIRED",
+          "sub": "主结论为 GO，但来源字段异常或未知，需人工复核后再放行。",
+          "firstAction": "先确认 source 与执行链路一致，再进入发布确认。"
+        },
+        "en": {
+          "main": "Latest-Check Status: REVIEW_REQUIRED",
+          "sub": "Decision is GO, but source is abnormal or unknown and requires manual review before release.",
+          "firstAction": "Confirm source matches execution path first, then proceed to release confirmation."
+        },
+        "vi": {
+          "main": "Trang thai Latest-Check: REVIEW_REQUIRED",
+          "sub": "Decision la GO nhung source bat thuong hoac khong ro, can ra soat thu cong truoc khi phat hanh.",
+          "firstAction": "Xac nhan source khop voi duong thuc thi truoc, roi moi vao buoc xac nhan phat hanh."
+        }
+      }
+    }
+  ],
+  "sourceAnomalyCopy": {
+    "id": "source_anomaly",
+    "trigger": {
+      "mode": "all",
+      "conditions": [
+        "decision == 'GO'",
+        "exitCode == 0",
+        "reasons.length == 0",
+        "source missing OR source not_in ['live','latest_file','sync_latest','canonical','release_ready_latest']"
+      ]
+    },
+    "zh": {
+      "main": "来源字段异常",
+      "sub": "source 异常表示来源标识不完整或不一致，不等于系统故障。",
+      "firstAction": "先核对数据链路来源，再决定是否放行。"
+    },
+    "en": {
+      "main": "Source Field Anomaly",
+      "sub": "Source anomaly means source labeling is incomplete or inconsistent, not a system outage.",
+      "firstAction": "Verify pipeline source first, then decide release action."
+    },
+    "vi": {
+      "main": "Bat Thuong Truong Source",
+      "sub": "Bat thuong source co nghia la nhan dang nguon chua day du hoac khong dong nhat, khong phai su co he thong.",
+      "firstAction": "Kiem tra nguon du lieu truoc, sau do moi quyet dinh hanh dong phat hanh."
+    }
+  },
+  "fallback": {
+    "whenNoClassMatched": "review_required"
+  },
+  "boundary": {
+    "changeRuleId": false,
+    "changeThresholds": false,
+    "changeEvaluator": false
+  }
+}

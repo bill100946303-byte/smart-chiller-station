@@ -1,0 +1,26 @@
+{
+  "version": "v1.8",
+  "generatedAt": "2026-03-12T21:40:46.811Z",
+  "gates": {
+    "stackOk": true,
+    "contractOk": true,
+    "statusJsonOk": true,
+    "shellOk": true,
+    "releaseGateOk": true,
+    "releaseGateStrictFreshness": false,
+    "runtimeRequired": false,
+    "readinessGateEnabled": false
+  },
+  "readiness": null,
+  "badge": null,
+  "releaseGate": {
+    "decision": "GO",
+    "exitCode": 0,
+    "reasons": [],
+    "advisories": [
+      "runtime_unavailable_snapshot_present"
+    ]
+  },
+  "runtimeArtifactsSkipped": true,
+  "preflightPass": true
+}

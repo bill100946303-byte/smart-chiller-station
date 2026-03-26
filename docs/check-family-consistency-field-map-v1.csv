@@ -1,0 +1,13 @@
+family_path,brief_path,rule,requiredness,release_impact,missing_default_behavior,fail_open_or_closed,row_type,evidence
+$.overall,$.overall,brief.overall_must_equal_family.overall,required,blocking,missing_or_invalid_field_fails_validation,fail-closed,contract_enforced,check-check-family-consistency.js
+$.passedCount,$.passedCount,brief.passedCount_must_equal_family.passedCount,required,blocking,missing_or_invalid_field_fails_validation,fail-closed,contract_enforced,check-check-family-consistency.js
+$.totalCount,$.totalCount,brief.totalCount_must_equal_family.totalCount,required,blocking,missing_or_invalid_field_fails_validation,fail-closed,contract_enforced,check-check-family-consistency.js
+"$.totalCount,$.passedCount",$.failedCount,brief.failedCount_must_equal_family.totalCount_minus_family.passedCount,required,blocking,missing_or_invalid_field_fails_validation,fail-closed,contract_enforced,check-check-family-consistency.js
+"$.checks[*].script,$.checks[*].ok",$.topFailedChecks[*],each_topFailedChecks_item_must_reference_failed_family_script,required,blocking,missing_or_invalid_array_or_member_fails_validation,fail-closed,contract_enforced,check-check-family-consistency.js
+$.overall,$.failedCount,if_family_overall_PASS_then_brief.failedCount_must_be_0,required,blocking,missing_or_invalid_field_fails_validation,fail-closed,contract_enforced,check-check-family-consistency.js
+$.overall,$.topFailedChecks,if_family_overall_PASS_then_brief.topFailedChecks_must_be_empty,required,blocking,missing_or_invalid_field_fails_validation,fail-closed,contract_enforced,check-check-family-consistency.js
+$.checks,$.topFailedChecks,brief.topFailedChecks_length_must_be_at_most_3,required,blocking,missing_or_invalid_array_fails_validation,fail-closed,contract_enforced,check-check-family-consistency.js
+$.checks[*].script,$.topFailedChecks[*],topFailedChecks_member_must_be_non_empty_string,required,blocking,missing_or_invalid_member_fails_validation,fail-closed,contract_enforced,check-check-family-consistency.js
+$.generatedAt,$.sourceGeneratedAt,brief.sourceGeneratedAt_should_equal_family.generatedAt,optional,advisory,missing_or_mismatch_warn_only,fail-open,advisory_recommended,sync-check-family-brief.js
+N/A,$.source,brief.source_should_equal_check-family-latest,optional,advisory,missing_or_mismatch_warn_only,fail-open,advisory_recommended,sync-check-family-brief.js
+N/A,$.sourcePath,brief.sourcePath_should_point_to_family_latest_path,optional,advisory,missing_or_mismatch_warn_only,fail-open,advisory_recommended,sync-check-family-brief.js

@@ -1,0 +1,88 @@
+{
+  "site": {
+    "siteId": "126lnoffice",
+    "siteName": "6期1栋冷站"
+  },
+  "generatedAt": "2026-03-13T14:58:50.642Z",
+  "range": "24h",
+  "series": [
+    {
+      "metric": "totalPowerKw",
+      "label": "Total Power",
+      "points": [
+        { "t": "2026-03-11T00:00:00.000Z", "v": 0.3 },
+        { "t": "2026-03-11T01:00:00.000Z", "v": 0.4 },
+        { "t": "2026-03-11T02:00:00.000Z", "v": 0.3 }
+      ]
+    },
+    {
+      "metric": "currentCop",
+      "label": "COP",
+      "points": [
+        { "t": "2026-03-11T00:00:00.000Z", "v": 5.22 },
+        { "t": "2026-03-11T01:00:00.000Z", "v": 5.18 },
+        { "t": "2026-03-11T02:00:00.000Z", "v": 5.24 }
+      ]
+    },
+    {
+      "metric": "chilledDeltaT",
+      "label": "Chilled Delta-T",
+      "points": [
+        { "t": "2026-03-11T00:00:00.000Z", "v": -1.1 },
+        { "t": "2026-03-11T01:00:00.000Z", "v": 0.0 },
+        { "t": "2026-03-11T02:00:00.000Z", "v": -1.1 }
+      ]
+    }
+  ],
+  "stats": [
+    { "metric": "totalPowerKw", "latest": 0.3, "min": 0.3, "max": 0.4 },
+    { "metric": "currentCop", "latest": 5.24, "min": 5.18, "max": 5.24 },
+    { "metric": "chilledDeltaT", "latest": -1.1, "min": -1.1, "max": 0.0 }
+  ],
+  "freshness": {
+    "latestTimestamp": "2026-03-11T02:00:00.000Z",
+    "stale": false,
+    "ageHours": 0.5
+  },
+  "sourceStatus": {
+    "overall": "partial",
+    "sources": [
+      {
+        "key": "energyCurve",
+        "endpoint": "/zsqy/homepage/126lnoffice/getEnergyStatisticsCurve",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "error": null,
+        "rows": 4
+      },
+      {
+        "key": "runParams",
+        "endpoint": "/zsqy/homepage/126lnoffice/getRunParamsCurve",
+        "ok": true,
+        "status": 200,
+        "message": "OK",
+        "error": null,
+        "rows": 4
+      },
+      {
+        "key": "trendBaseline",
+        "endpoint": "/zsqy/homepage/126lnoffice/getEnergyStatisticsCurve",
+        "ok": false,
+        "status": 502,
+        "message": null,
+        "error": "Legacy request failed: 502",
+        "rows": null
+      },
+      {
+        "key": "trendQuality",
+        "endpoint": "/zsqy/homepage/126lnoffice/getRunParamsCurve",
+        "ok": false,
+        "status": null,
+        "message": "upstream_unreachable: connection reset",
+        "error": "connection reset by peer",
+        "rows": null
+      }
+    ]
+  }
+}

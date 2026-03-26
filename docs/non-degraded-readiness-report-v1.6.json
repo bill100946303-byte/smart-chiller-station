@@ -1,0 +1,134 @@
+{
+  "generatedAt": "2026-03-12T02:14:40.167Z",
+  "input": "/tmp/chiller_probe.json",
+  "nonDegradedReady": false,
+  "attribution": "upstream_interface",
+  "nd": {
+    "failedCount": 9,
+    "failures": [
+      {
+        "id": "ND-002",
+        "path": "trends.sourceStatus.overall",
+        "reason": "expected \"ok\", got \"partial\""
+      },
+      {
+        "id": "ND-004",
+        "path": "recommendations.sourceStatus.overall",
+        "reason": "expected \"ok\", got \"partial\""
+      },
+      {
+        "id": "ND-008",
+        "path": "recommendations.sourceStatus.sources[key=metric.station_cop].ok",
+        "reason": "expected true, got false"
+      },
+      {
+        "id": "ND-009",
+        "path": "recommendations.sourceStatus.sources[key=metric.station_cop].status",
+        "reason": "status/ok not healthy: status=200, ok=false"
+      },
+      {
+        "id": "ND-021",
+        "path": "trends.series[metric=currentCop].points",
+        "reason": "expected at least 1 point"
+      },
+      {
+        "id": "ND-022",
+        "path": "trends.series[metric=currentCop].points[*].t",
+        "reason": "no valid timestamp points"
+      },
+      {
+        "id": "ND-023",
+        "path": "trends.series[metric=currentCop].points[*].v",
+        "reason": "no finite numeric values"
+      },
+      {
+        "id": "ND-027",
+        "path": "recommendations.ruleEvaluation.skippedRuleIds",
+        "reason": "expected empty, got length=1"
+      },
+      {
+        "id": "ND-028",
+        "path": "recommendations.ruleEvaluation.skippedRuleDetails",
+        "reason": "expected empty, got length=1"
+      }
+    ]
+  },
+  "m123": {
+    "dashboard": {
+      "M1": {
+        "value": "2/4",
+        "threshold": "<=0/4",
+        "pass": false
+      },
+      "M2": {
+        "value": 0,
+        "threshold": "0",
+        "pass": true
+      },
+      "M3": {
+        "value": "2/3 (66.7%)",
+        "threshold": ">=80% and non_empty_series>=2",
+        "pass": false,
+        "detail": {
+          "nonEmptySeries": 2,
+          "metrics": [
+            {
+              "metric": "totalPowerKw",
+              "validPointCount": 7,
+              "pass": true
+            },
+            {
+              "metric": "currentCop",
+              "validPointCount": 0,
+              "pass": false
+            },
+            {
+              "metric": "chilledDeltaT",
+              "validPointCount": 144,
+              "pass": true
+            }
+          ]
+        }
+      },
+      "pass": false
+    },
+    "systemOverview": {
+      "M1": {
+        "value": "0/1",
+        "threshold": "<=0/1",
+        "pass": true
+      },
+      "M2": {
+        "value": 0,
+        "threshold": "0",
+        "pass": true
+      },
+      "M3": {
+        "value": "2/3 (66.7%)",
+        "threshold": ">=80% (chain proxy)",
+        "pass": false,
+        "detail": {
+          "nonEmptySeries": 2,
+          "metrics": [
+            {
+              "metric": "totalPowerKw",
+              "validPointCount": 7,
+              "pass": true
+            },
+            {
+              "metric": "currentCop",
+              "validPointCount": 0,
+              "pass": false
+            },
+            {
+              "metric": "chilledDeltaT",
+              "validPointCount": 144,
+              "pass": true
+            }
+          ]
+        }
+      },
+      "pass": false
+    }
+  }
+}

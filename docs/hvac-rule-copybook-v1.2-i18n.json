@@ -1,0 +1,195 @@
+{
+  "version": "1.2.0-i18n-min",
+  "basedOn": "hvac-rule-copybook-v1.2@1.2.0",
+  "fallbackLocale": "zh-CN",
+  "supportedLocales": [
+    "en",
+    "vi"
+  ],
+  "coverage": {
+    "ruleShortTextFields": [
+      "ruleCopy.<ruleId>.shortText.shortTitle",
+      "ruleCopy.<ruleId>.shortText.shortReason",
+      "ruleCopy.<ruleId>.shortText.shortAction"
+    ],
+    "skippedShortCopyFields": [
+      "skippedPlaybook.<category>.shortCopy.main",
+      "skippedPlaybook.<category>.shortCopy.detail",
+      "skippedPlaybook.<category>.shortCopy.action"
+    ],
+    "riskShortFields": [
+      "riskMapping.risk.high",
+      "riskMapping.risk.medium",
+      "riskMapping.risk.low"
+    ]
+  },
+  "locales": {
+    "en": {
+      "ruleCopy": {
+        "low-delta-t-chilled-loop": {
+          "shortText": {
+            "shortTitle": "Low Delta-T",
+            "shortReason": "Low delta-T under load",
+            "shortAction": "Check bypass, tune CHWS setpoint"
+          }
+        },
+        "pump-frequency-too-high": {
+          "shortText": {
+            "shortTitle": "Pump Hz High",
+            "shortReason": "High Hz, limited heat-transfer gain",
+            "shortAction": "Reduce by 2Hz, watch dP"
+          }
+        },
+        "cooling-side-low-efficiency": {
+          "shortText": {
+            "shortTitle": "Cooling Side Low Eff.",
+            "shortReason": "Weak heat rejection, low COP",
+            "shortAction": "Tune tower fans, inspect condenser"
+          }
+        },
+        "frequent-start-stop": {
+          "shortText": {
+            "shortTitle": "Frequent Cycling",
+            "shortReason": "Too many starts/stops in short window",
+            "shortAction": "Enable min on/off lockout"
+          }
+        },
+        "stale-data-detection": {
+          "shortText": {
+            "shortTitle": "Stale Data",
+            "shortReason": "Key data delayed or missing",
+            "shortAction": "Restore data link before tuning"
+          }
+        }
+      },
+      "skippedPlaybook": {
+        "upstream_unreachable": {
+          "shortCopy": {
+            "main": "Upstream Down",
+            "detail": "No upstream data; rule skipped",
+            "action": "Check service -> network -> port"
+          }
+        },
+        "field_missing_or_invalid": {
+          "shortCopy": {
+            "main": "Field Invalid",
+            "detail": "Required fields missing/invalid; skipped",
+            "action": "Check mapping, units, then sampling"
+          }
+        },
+        "unknown": {
+          "shortCopy": {
+            "main": "Unknown Status",
+            "detail": "No template matched; downgraded view",
+            "action": "Check version -> dictionary -> contract"
+          }
+        }
+      },
+      "riskMapping": {
+        "risk": {
+          "high": "High risk",
+          "medium": "Medium risk",
+          "low": "Low risk"
+        }
+      }
+    },
+    "vi": {
+      "ruleCopy": {
+        "low-delta-t-chilled-loop": {
+          "shortText": {
+            "shortTitle": "Delta-T thấp",
+            "shortReason": "Delta-T thấp khi tải vẫn cao",
+            "shortAction": "Kiểm tra bypass, chỉnh nước cấp"
+          }
+        },
+        "pump-frequency-too-high": {
+          "shortText": {
+            "shortTitle": "Tần số bơm cao",
+            "shortReason": "Hz cao nhưng trao đổi nhiệt tăng ít",
+            "shortAction": "Giảm 2Hz mỗi bước, theo dõi dP"
+          }
+        },
+        "cooling-side-low-efficiency": {
+          "shortText": {
+            "shortTitle": "Giải nhiệt kém",
+            "shortReason": "Thải nhiệt yếu, COP thấp",
+            "shortAction": "Chỉnh quạt tháp, kiểm tra bình ngưng"
+          }
+        },
+        "frequent-start-stop": {
+          "shortText": {
+            "shortTitle": "Đóng cắt nhiều",
+            "shortReason": "Số lần start/stop quá dày",
+            "shortAction": "Bật khóa thời gian chạy/dừng tối thiểu"
+          }
+        },
+        "stale-data-detection": {
+          "shortText": {
+            "shortTitle": "Dữ liệu cũ",
+            "shortReason": "Thiếu hoặc trễ dữ liệu quan trọng",
+            "shortAction": "Khôi phục đường dữ liệu trước khi chỉnh"
+          }
+        }
+      },
+      "skippedPlaybook": {
+        "upstream_unreachable": {
+          "shortCopy": {
+            "main": "Nguồn không tới",
+            "detail": "Không có dữ liệu nguồn; đã bỏ qua",
+            "action": "Kiểm tra dịch vụ -> mạng -> cổng"
+          }
+        },
+        "field_missing_or_invalid": {
+          "shortCopy": {
+            "main": "Lỗi trường dữ liệu",
+            "detail": "Thiếu/sai trường bắt buộc; đã bỏ qua",
+            "action": "Kiểm tra map trường, đơn vị rồi lấy mẫu"
+          }
+        },
+        "unknown": {
+          "shortCopy": {
+            "main": "Trạng thái lạ",
+            "detail": "Không khớp mẫu từ điển; đã hạ cấp hiển thị",
+            "action": "Kiểm tra phiên bản -> từ điển -> hợp đồng"
+          }
+        }
+      },
+      "riskMapping": {
+        "risk": {
+          "high": "Rủi ro cao",
+          "medium": "Rủi ro trung bình",
+          "low": "Rủi ro thấp"
+        }
+      }
+    }
+  },
+  "zhFallbackWhitelist": [
+    "ruleCopy.<ruleId>.nameZh",
+    "ruleCopy.<ruleId>.descriptionZh",
+    "ruleCopy.<ruleId>.opsAdviceZh",
+    "ruleCopy.<ruleId>.executionChecklist.step1",
+    "ruleCopy.<ruleId>.executionChecklist.step2",
+    "ruleCopy.<ruleId>.executionChecklist.step3",
+    "skippedPlaybook.<category>.order[]",
+    "skippedPlaybook.<category>.templates[]",
+    "riskMapping.severity.critical",
+    "riskMapping.severity.major",
+    "riskMapping.severity.minor",
+    "riskNarrativePolicy.high",
+    "riskNarrativePolicy.medium",
+    "riskNarrativePolicy.low",
+    "fallbackCopy.unknownRuleId.title",
+    "fallbackCopy.unknownRuleId.description",
+    "fallbackCopy.unknownRuleId.opsAdvice",
+    "fallbackCopy.unknownRuleId.shortText.shortTitle",
+    "fallbackCopy.unknownRuleId.shortText.shortReason",
+    "fallbackCopy.unknownRuleId.shortText.shortAction",
+    "fallbackCopy.unknownSkippedCategory",
+    "placementTemplates.recommendation",
+    "placementTemplates.ruleSkip",
+    "compatibility",
+    "diffFromV1",
+    "diffFromV1_1",
+    "rollback"
+  ]
+}
