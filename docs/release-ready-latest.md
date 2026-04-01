@@ -7,7 +7,7 @@
 - snapshotDecision: `GO`
 - consistencyDecision: `GO`
 - diffClass: `stable`
-- runtimeReady: `true`
+- runtimeReady: `false`
 - exampleReady: `false`
 - reasons: `none`
-- advisories: `none`
+- advisories: `runtime_not_ready_optional`

@@ -1,11 +1,11 @@
 {
   "version": "v1.0",
-  "generatedAt": "2026-03-12T21:40:47.184Z",
+  "generatedAt": "2026-04-01T20:59:09.651Z",
   "hasPrevious": true,
   "diffClass": "stable",
   "current": {
-    "fileName": "release-snapshot-20260313-054040.json",
-    "generatedAt": "2026-03-12T21:40:46.862Z",
+    "fileName": "release-snapshot-20260402-045858.json",
+    "generatedAt": "2026-04-01T20:59:09.326Z",
     "decision": "GO",
     "reasons": [],
     "advisories": [
@@ -14,8 +14,8 @@
     ]
   },
   "previous": {
-    "fileName": "release-snapshot-20260313-053033.json",
-    "generatedAt": "2026-03-12T21:30:39.669Z",
+    "fileName": "release-snapshot-20260313-054040.json",
+    "generatedAt": "2026-03-12T21:40:46.862Z",
     "decision": "GO",
     "reasons": [],
     "advisories": [

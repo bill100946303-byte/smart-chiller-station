@@ -1,6 +1,6 @@
 {
   "version": "v1.0",
-  "generatedAt": "2026-03-12T21:40:47.065Z",
+  "generatedAt": "2026-04-01T20:59:09.526Z",
   "decision": "GO",
   "exitCode": 0,
   "reasons": [],
@@ -19,16 +19,16 @@
       "runtime_optional_mode",
       "runtime_unavailable_snapshot_present"
     ],
-    "generatedAt": "2026-03-12T21:40:46.862Z"
+    "generatedAt": "2026-04-01T20:59:09.326Z"
   },
   "indexNewest": {
-    "fileName": "release-snapshot-20260313-054040.json",
+    "fileName": "release-snapshot-20260402-045858.json",
     "decision": "GO",
     "reasons": [],
     "advisories": [
       "runtime_optional_mode",
       "runtime_unavailable_snapshot_present"
     ],
-    "generatedAt": "2026-03-12T21:40:46.862Z"
+    "generatedAt": "2026-04-01T20:59:09.326Z"
   }
 }

@@ -1,10 +1,12 @@
 {
   "version": "v1.0",
-  "generatedAt": "2026-03-12T21:40:47Z",
+  "generatedAt": "2026-04-01T20:59:09Z",
   "decision": "GO",
   "exitCode": 0,
   "reasons": [],
-  "advisories": [],
+  "advisories": [
+    "runtime_not_ready_optional"
+  ],
   "inputs": {
     "strictFreshness": false,
     "runtimeRequired": false
@@ -25,7 +27,7 @@
     "consistencyExitCode": 0,
     "diffClass": "stable",
     "diffExitCode": 0,
-    "runtimeReady": true,
+    "runtimeReady": false,
     "exampleReady": false
   },
   "artifacts": {
