@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node src/server.js",
     "start": "node src/server.js",
+    "test": "node --test",
     "check:contract": "node scripts/check-contract.js",
     "check:source-keys": "node scripts/check-source-key-consistency.js",
     "check:acceptance-report": "node scripts/check-acceptance-report.js",
@@ -22,6 +23,7 @@
     "check:check-family-brief": "node scripts/check-check-family-brief.js",
     "check:check-family-consistency": "node scripts/check-check-family-consistency.js",
     "check:check-family-freshness": "node scripts/check-check-family-freshness.js",
+    "check:optimize-l3-smoke": "node scripts/check-optimize-l3-smoke.js",
     "sync:check-family": "node scripts/sync-check-family.js",
     "sync:check-family-brief": "node scripts/sync-check-family-brief.js",
     "sync:release-ready-latest-check": "node scripts/sync-release-ready-latest-check.js",

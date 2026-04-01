@@ -548,8 +548,20 @@ export type DashboardOverviewDto = {
     currentLoadRate?: number | null;
     totalElectricityKwh?: number | null;
     savingPotentialPct?: number | null;
+    totalCoolingCapacity?: number | null;
     chilledDeltaT?: number | null;
     coolingDeltaT?: number | null;
+    chillerPowerKw?: number | null;
+    chilledPumpPowerKw?: number | null;
+    coolingPumpPowerKw?: number | null;
+    coolingTowerPowerKw?: number | null;
+    chillerCop?: number | null;
+    chilledPumpConveyingCoefficient?: number | null;
+    coolingTowerConveyingCoefficient?: number | null;
+    coolingPumpConveyingCoefficient?: number | null;
+    thermalUnbalanceRate?: number | null;
+    chilledSupplyTemp?: number | null;
+    coolingReturnTemp?: number | null;
     activeAnomalyCount?: number | null;
   };
   deviceSummary?: {
@@ -1124,6 +1136,169 @@ export type OptimizeDraftDetailsDto = {
     totalPowerKw?: number | null;
     steps?: string[];
   };
+  gate?: {
+    level?: "ready" | "caution" | "blocked" | string;
+    title?: string;
+    reason?: string;
+  };
+  baseline?: {
+    systemCop?: number | null;
+    totalPowerKw?: number | null;
+    chilledDeltaT?: number | null;
+    coolingDeltaT?: number | null;
+    chillerPowerKw?: number | null;
+    chilledPumpPowerKw?: number | null;
+    coolingPumpPowerKw?: number | null;
+    coolingTowerPowerKw?: number | null;
+    chilledSupplyTemp?: number | null;
+    coolingReturnTemp?: number | null;
+    thermalUnbalanceRate?: number | null;
+    activeAlarmCount?: number | null;
+  };
+  historyBenchmark?: {
+    status?: "ready" | "partial" | "unavailable" | string;
+    mode?: "load-band" | string;
+    ratedCoolingCapacityKw?: number | null;
+    requestedLoadRatePct?: number | null;
+    matchedBucketLabel?: string;
+    matchingTier?: "load-wetbulb-strict" | "load-wetbulb-relaxed" | "load-only-fallback" | "unavailable" | string;
+    fallbackLevel?: number | null;
+    requestedWetBulbC?: number | null;
+    matchedWetBulbBand?: string;
+    matchedWetBulbBands?: string[];
+    wetBulbToleranceC?: number | null;
+    confidence?: "high" | "medium" | "low" | string;
+    sampleWindow?: {
+      defaultMonths?: string[];
+      months?: string[];
+      maxMonths?: number | null;
+    } | string | string[];
+    sampleCount?: number | null;
+    referenceCop?: {
+      low?: number | null;
+      median?: number | null;
+      high?: number | null;
+    };
+    currentGap?: {
+      copDeltaToMedian?: number | null;
+      powerDeltaKwToMedian?: number | null;
+    };
+    note?: string;
+    links?: {
+      proportionHref?: {
+        href?: string;
+        enabled?: boolean;
+        label?: string;
+      };
+      compareHref?: {
+        href?: string;
+        enabled?: boolean;
+        label?: string;
+      };
+    };
+  };
+  benefitEstimate?: {
+    status?: "ready" | "partial" | "unavailable" | string;
+    opportunityLevel?: "low" | "medium" | "high" | string;
+    confidence?: "high" | "medium" | "low" | string;
+    expectedTargetCop?: number | null;
+    expectedTargetPowerKw?: number | null;
+    expectedPowerDeltaKw?: number | null;
+    expectedPowerDeltaPct?: number | null;
+    expectedCopDelta?: number | null;
+    basis?: {
+      matchingTier?: string;
+      fallbackLevel?: number | null;
+      sampleCount?: number | null;
+      monthCount?: number | null;
+      matchedWetBulbBand?: string;
+      matchedWetBulbBands?: string[];
+      requestedWetBulbC?: number | null;
+      wetBulbToleranceC?: number | null;
+    };
+    disclaimer?: string;
+  };
+  reviewReadiness?: {
+    status?: "ready" | "partial" | "unavailable" | string;
+    score?: number | null;
+    reason?: string;
+    missingSignals?: string[];
+    hints?: string[];
+  };
+  schemes?: Array<{
+    key?: string;
+    title?: string;
+    status?: "ready" | "caution" | "blocked" | string;
+    riskLevel?: "low" | "medium" | "high" | string;
+    focus?: string;
+    label?: string;
+    targetPowerKw?: number | null;
+    targetCop?: number | null;
+    powerDeltaPct?: number | null;
+    copDelta?: number | null;
+    deviceActions?: Array<{
+      system?: string;
+      action?: string;
+      target?: string;
+      reason?: string;
+      risk?: "low" | "medium" | "high" | string;
+      priority?: "high" | "medium" | "low" | string;
+      preconditions?: string[];
+    }>;
+    readiness?: {
+      score?: number | null;
+      level?: "ready" | "caution" | "blocked" | string;
+      reason?: string;
+      blockers?: string[];
+      checkpoints?: string[];
+    };
+    actions?: string[];
+    links?: {
+      devices?: {
+        href?: string;
+        enabled?: boolean;
+        label?: string;
+      };
+      trends?: {
+        href?: string;
+        enabled?: boolean;
+        label?: string;
+      };
+      scene?: {
+        href?: string;
+        enabled?: boolean;
+        label?: string;
+      };
+    };
+  }>;
+  ruleEvidence?: {
+    matchedCount?: number;
+    skippedCount?: number;
+    matchedRuleIds?: string[];
+    skippedRules?: Array<{
+      ruleId?: string;
+      reason?: string;
+      missingMetrics?: Array<{
+        metric?: string;
+        category?: "upstream_unreachable" | "field_missing_or_invalid" | "unknown" | string;
+        message?: string | null;
+      }>;
+    }>;
+    primaryCards?: Array<{
+      id?: string;
+      title?: string;
+      priority?: "high" | "medium" | "low" | string;
+      category?: string;
+      reason?: string;
+      actions?: string[];
+      evidence?: string[];
+      severity?: "critical" | "major" | "minor" | string;
+      risk?: string;
+      relatedDevices?: string[];
+      ruleId?: string | null;
+    }>;
+  };
+  draftLabel?: string;
   freshness?: FreshnessDto;
   sourceStatus?: SourceStatusDto;
   diagnostics?: string[];
@@ -1142,11 +1317,13 @@ function buildBffHeaders(headers?: HeadersInit): Headers {
   const merged = new Headers(headers);
   const session = getAuthSession();
   const currentProject = getCurrentProject(session);
+  const effectiveProjectKey =
+    currentProject?.modelKey || session?.defaultProjectKey || currentProject?.databaseKey;
   if (session?.userId) {
     merged.set("x-chiller-user-id", session.userId);
   }
-  if (currentProject?.databaseKey) {
-    merged.set("x-chiller-project-key", currentProject.databaseKey);
+  if (effectiveProjectKey) {
+    merged.set("x-chiller-project-key", effectiveProjectKey);
   }
   if (currentProject?.template) {
     merged.set("x-chiller-project-template", currentProject.template);
