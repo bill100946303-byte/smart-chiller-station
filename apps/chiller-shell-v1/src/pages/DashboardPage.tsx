@@ -1848,8 +1848,11 @@ export default function DashboardPage() {
   const heroMetaItems = [
     {
       key: "source",
-      className: coreSourceWarnActive ? "is-warn" : "is-good",
-      value: coreSourceWarnActive ? "核心值待复核" : "可直接判断"
+      className: coreSourceWarnActive || overviewUsingSnapshot ? "is-warn" : "is-good",
+      value:
+        overviewUsingSnapshot
+          ? `首页数据来源：快照${overviewSnapshotClock ? `（${overviewSnapshotClock}）` : ""}`
+          : "首页数据来源：实时"
     },
     {
       key: "auto-refresh",

@@ -1,0 +1,57 @@
+{
+  "checkedAt": "2026-04-01T20:52:15.829Z",
+  "siteId": "btwentyfive",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "appBaseUrl": "http://127.0.0.1:3006",
+  "cdpListUrl": "http://127.0.0.1:61392/json/list",
+  "api": {
+    "overview": {
+      "status": 200,
+      "currentCop": 0,
+      "totalPowerKw": 0.3,
+      "totalCoolingCapacity": 0,
+      "sourceOverall": "ok"
+    },
+    "optimize": {
+      "status": 501,
+      "code": "NOT_IMPLEMENTED",
+      "schemeCount": 3
+    }
+  },
+  "ui": {
+    "dashboard": {
+      "url": "http://127.0.0.1:3006/dashboard",
+      "onLoginPage": false,
+      "hasOpsBoard": true,
+      "hasEfficiencyBlock": true,
+      "hasSourceObservableField": true,
+      "cardCount": 13,
+      "allDash": false,
+      "sampleValues": [
+        "7.90",
+        "9.75",
+        "65.41",
+        "165.85",
+        "151.33",
+        "-- %",
+        "7430.1 kW",
+        "969.4 kW",
+        "3.2 / 4.6 °C",
+        "2台",
+        "0台",
+        "0项"
+      ],
+      "hasSnapshotHint": false
+    },
+    "optimizeDemo": {
+      "url": "http://127.0.0.1:3006/optimize-demo",
+      "onLoginPage": false,
+      "schemeCardCount": 3,
+      "readinessCount": 3,
+      "hasHistorySection": true,
+      "hasBenefitSection": true,
+      "hasDraftBoundaryHint": true,
+      "hasNoWhiteScreen": true
+    }
+  }
+}

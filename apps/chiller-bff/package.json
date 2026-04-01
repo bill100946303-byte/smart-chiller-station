@@ -24,6 +24,7 @@
     "check:check-family-consistency": "node scripts/check-check-family-consistency.js",
     "check:check-family-freshness": "node scripts/check-check-family-freshness.js",
     "check:optimize-l3-smoke": "node scripts/check-optimize-l3-smoke.js",
+    "check:b25-ui-smoke": "node scripts/check-b25-ui-smoke.js",
     "sync:check-family": "node scripts/sync-check-family.js",
     "sync:check-family-brief": "node scripts/sync-check-family-brief.js",
     "sync:release-ready-latest-check": "node scripts/sync-release-ready-latest-check.js",
