@@ -1,8 +1,13 @@
 import { Router } from "express";
+import { resolveSiteRuntimeConfig } from "../lib/site-runtime-config.js";
 import { getAnomalyList, getAnomalySummary } from "../services/anomalyService.js";
 import { getColdStationLog } from "../services/coldStationLogService.js";
 import { getDashboardOverview, getDashboardTrends } from "../services/dashboardService.js";
 import { getDeviceDetail, getDeviceList, getDeviceTree } from "../services/deviceService.js";
+import {
+  buildAssistantQueryResponse,
+  validateAssistantQueryRequest
+} from "../services/assistantService.js";
 import { getEnvironmentBuildings, getEnvironmentConditions } from "../services/environmentService.js";
 import { getEnergyAnalysisReport, getEnergyAnalysisTree } from "../services/energyAnalysisService.js";
 import {
@@ -56,6 +61,10 @@ function resolveSiteId(req, defaultSiteId) {
   return req.params.siteId || defaultSiteId;
 }
 
+function getRequestSiteConfig(req, baseConfig) {
+  return req.siteRuntimeConfig || baseConfig;
+}
+
 function formatDate(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -87,15 +96,99 @@ function normalizeDateTimeQuery(value, kind = "start") {
   return formatDateTimeQuery(new Date(), kind);
 }
 
-function readRealtimeRequestContext(req) {
+export function readRealtimeRequestContext(req) {
   const userIdHeader = req.get("x-chiller-user-id");
   const projectKeyHeader = req.get("x-chiller-project-key");
   const templateHeader = req.get("x-chiller-project-template");
+  const bodyContext = req.body && typeof req.body === "object" ? req.body.context : null;
+  const routeSiteId =
+    typeof req?.params?.siteId === "string" && req.params.siteId.trim() ? req.params.siteId.trim() : "";
+  const runtimeSourceConfig =
+    req.siteRuntimeConfig && typeof req.siteRuntimeConfig === "object"
+      ? req.siteRuntimeConfig.siteSourceConfig
+      : null;
+  const bodyUserId =
+    bodyContext && typeof bodyContext.userId === "string" ? bodyContext.userId.trim() : "";
+  const bodyProjectKey =
+    bodyContext && typeof bodyContext.projectKey === "string" ? bodyContext.projectKey.trim() : "";
+  const bodyTemplate =
+    bodyContext && typeof bodyContext.template === "string" ? bodyContext.template.trim() : "";
+  const runtimeProjectKey =
+    typeof runtimeSourceConfig?.modelKey === "string" && runtimeSourceConfig.modelKey.trim()
+      ? runtimeSourceConfig.modelKey.trim()
+      : typeof runtimeSourceConfig?.databaseKey === "string" && runtimeSourceConfig.databaseKey.trim()
+        ? runtimeSourceConfig.databaseKey.trim()
+        : "";
+  const runtimeTemplate =
+    typeof runtimeSourceConfig?.template === "string" && runtimeSourceConfig.template.trim()
+      ? runtimeSourceConfig.template.trim()
+      : "";
+  const normalizedHeaderProjectKey =
+    typeof projectKeyHeader === "string" && projectKeyHeader.trim() ? projectKeyHeader.trim() : "";
+  const shouldPreferRuntimeProjectKey =
+    runtimeProjectKey &&
+    (
+      !normalizedHeaderProjectKey ||
+      normalizedHeaderProjectKey === routeSiteId ||
+      normalizedHeaderProjectKey === runtimeSourceConfig?.databaseKey
+    );
   return {
-    userId: typeof userIdHeader === "string" ? userIdHeader.trim() : "",
-    projectKey: typeof projectKeyHeader === "string" ? projectKeyHeader.trim() : "",
-    template: typeof templateHeader === "string" ? templateHeader.trim() : ""
+    userId: typeof userIdHeader === "string" && userIdHeader.trim() ? userIdHeader.trim() : bodyUserId,
+    projectKey:
+      shouldPreferRuntimeProjectKey
+        ? runtimeProjectKey
+        : normalizedHeaderProjectKey || bodyProjectKey || runtimeProjectKey,
+    template:
+      typeof templateHeader === "string" && templateHeader.trim()
+        ? templateHeader.trim()
+        : bodyTemplate || runtimeTemplate
   };
+}
+
+function normalizeLegacyBaseUrlOverride(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+  const trimmed = value.trim().replace(/\/+$/, "");
+  if (!trimmed) {
+    return "";
+  }
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return "";
+    }
+    return parsed.toString().replace(/\/+$/, "");
+  } catch (_error) {
+    return "";
+  }
+}
+
+function readLegacyBaseUrlOverride(req) {
+  const headerValue = req.get("x-chiller-legacy-base-url");
+  const bodyContext = req.body && typeof req.body === "object" ? req.body.context : null;
+  const bodyValue =
+    bodyContext && typeof bodyContext.legacyBaseUrl === "string" ? bodyContext.legacyBaseUrl : "";
+  return normalizeLegacyBaseUrlOverride(
+    typeof headerValue === "string" && headerValue.trim() ? headerValue : bodyValue
+  );
+}
+
+function normalizeAssistantPromptOrigin(value) {
+  return String(value || "").trim().toLowerCase() === "suggested" ? "suggested" : "manual";
+}
+
+function buildAssistantLogEnvelope(event, payload = {}) {
+  return JSON.stringify({
+    ts: new Date().toISOString(),
+    event,
+    ...payload
+  });
+}
+
+function logAssistantEvent(event, payload = {}) {
+  // eslint-disable-next-line no-console
+  console.log(buildAssistantLogEnvelope(event, payload));
 }
 
 async function readRequestBodyBuffer(req) {
@@ -111,8 +204,9 @@ async function readRequestBodyBuffer(req) {
   });
 }
 
-export function buildV1Router(config) {
+export function buildV1Router(config, dependencies = {}) {
   const router = Router();
+  const { adminStore } = dependencies;
   const allowedTrendRanges = new Set(["24h", "7d", "30d"]);
   const allowedEnergyAnalysisDateTypes = new Set(["1", "2", "3", "4"]);
   const allowedEnergyEfficiencyTimeSpaces = new Set(["1", "2", "3"]);
@@ -132,11 +226,18 @@ export function buildV1Router(config) {
     "coolingWaterFlow"
   ]);
 
+  router.use("/sites/:siteId", (req, _res, next) => {
+    const siteId = resolveSiteId(req, config.defaultSiteId);
+    req.siteRuntimeConfig = resolveSiteRuntimeConfig(config, adminStore, siteId);
+    next();
+  });
+
   router.get("/sites/:siteId/dashboard/overview", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
-    const anomalies = await getAnomalySummary(config, siteId);
+    const siteConfig = getRequestSiteConfig(req, config);
+    const anomalies = await getAnomalySummary(siteConfig, siteId);
     const data = await getDashboardOverview(
-      config,
+      siteConfig,
       siteId,
       anomalies,
       readRealtimeRequestContext(req)
@@ -146,6 +247,7 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/dashboard/trends", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const range = String(req.query.range || "24h");
     if (!allowedTrendRanges.has(range)) {
       res.status(400).json({
@@ -160,12 +262,14 @@ export function buildV1Router(config) {
       });
       return;
     }
-    const data = await getDashboardTrends(config, siteId, range, readRealtimeRequestContext(req));
+    const data = await getDashboardTrends(siteConfig, siteId, range, readRealtimeRequestContext(req));
     res.json(data);
   });
 
   router.get("/sites/:siteId/cold-station-logs", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
+    const requestContext = readRealtimeRequestContext(req);
     const rawDate = req.query.date;
     if (rawDate != null && (typeof rawDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(rawDate.trim()))) {
       res.status(400).json({
@@ -181,12 +285,13 @@ export function buildV1Router(config) {
       return;
     }
     const date = normalizeDateQuery(rawDate);
-    const data = await getColdStationLog(config, siteId, date);
+    const data = await getColdStationLog(siteConfig, siteId, date, requestContext);
     res.json(data);
   });
 
   router.get("/sites/:siteId/operation-records", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const startDate = req.query.startDate;
     const endDate = req.query.endDate;
 
@@ -211,7 +316,7 @@ export function buildV1Router(config) {
     const pageSize = String(req.query.pageSize || "10");
     const drTypeId = typeof req.query.drTypeId === "string" ? req.query.drTypeId : "";
     const drId = typeof req.query.drId === "string" ? req.query.drId : "";
-    const data = await getOperationRecords(config, siteId, {
+    const data = await getOperationRecords(siteConfig, siteId, {
       page,
       pageSize,
       startDate: normalizeDateQuery(startDate),
@@ -224,27 +329,27 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/operation-records/device-types", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
-    const data = await getOperationRecordDeviceTypes(config, siteId);
+    const data = await getOperationRecordDeviceTypes(getRequestSiteConfig(req, config), siteId);
     res.json(data);
   });
 
   router.get("/sites/:siteId/operation-records/devices", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
     const drTypeId = typeof req.query.drTypeId === "string" ? req.query.drTypeId : "0";
-    const data = await getOperationRecordDevices(config, siteId, drTypeId);
+    const data = await getOperationRecordDevices(getRequestSiteConfig(req, config), siteId, drTypeId);
     res.json(data);
   });
 
   router.get("/sites/:siteId/energy-parameters", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
-    const data = await getEnergyParameters(config, siteId);
+    const data = await getEnergyParameters(getRequestSiteConfig(req, config), siteId);
     res.json(data);
   });
 
   router.put("/sites/:siteId/energy-parameters", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
     const payload = req.body || {};
-    const result = await updateEnergyParameters(config, siteId, payload);
+    const result = await updateEnergyParameters(getRequestSiteConfig(req, config), siteId, payload);
 
     if (!result.ok) {
       res.status(502).json({
@@ -267,13 +372,13 @@ export function buildV1Router(config) {
     const siteId = resolveSiteId(req, config.defaultSiteId);
     const page = String(req.query.page || "1");
     const pageSize = String(req.query.pageSize || "10");
-    const data = await getKnowledgeDocuments(config, siteId, { page, pageSize });
+    const data = await getKnowledgeDocuments(getRequestSiteConfig(req, config), siteId, { page, pageSize });
     res.json(data);
   });
 
   router.get("/sites/:siteId/knowledge/device-types", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
-    const data = await getKnowledgeDeviceTypes(config, siteId);
+    const data = await getKnowledgeDeviceTypes(getRequestSiteConfig(req, config), siteId);
     res.json(data);
   });
 
@@ -281,7 +386,7 @@ export function buildV1Router(config) {
     const siteId = resolveSiteId(req, config.defaultSiteId);
     const body = await readRequestBodyBuffer(req);
     const contentType = typeof req.headers["content-type"] === "string" ? req.headers["content-type"] : undefined;
-    const result = await createKnowledgeDocument(config, siteId, {
+    const result = await createKnowledgeDocument(getRequestSiteConfig(req, config), siteId, {
       contentType,
       body
     });
@@ -307,7 +412,7 @@ export function buildV1Router(config) {
     const siteId = resolveSiteId(req, config.defaultSiteId);
     const body = await readRequestBodyBuffer(req);
     const contentType = typeof req.headers["content-type"] === "string" ? req.headers["content-type"] : undefined;
-    const result = await updateKnowledgeDocument(config, siteId, {
+    const result = await updateKnowledgeDocument(getRequestSiteConfig(req, config), siteId, {
       contentType,
       body
     });
@@ -332,7 +437,7 @@ export function buildV1Router(config) {
   router.delete("/sites/:siteId/knowledge/documents/:documentId", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
     const documentId = typeof req.params.documentId === "string" ? req.params.documentId : "";
-    const result = await deleteKnowledgeDocument(config, siteId, documentId);
+    const result = await deleteKnowledgeDocument(getRequestSiteConfig(req, config), siteId, documentId);
 
     if (!result.ok) {
       res.status(502).json({
@@ -359,7 +464,7 @@ export function buildV1Router(config) {
     const state = typeof req.query.state === "string" ? req.query.state : "";
     const startDate = typeof req.query.startDate === "string" ? req.query.startDate : "";
     const endDate = typeof req.query.endDate === "string" ? req.query.endDate : "";
-    const data = await getWorkOrders(config, siteId, {
+    const data = await getWorkOrders(getRequestSiteConfig(req, config), siteId, {
       page,
       pageSize,
       id,
@@ -372,13 +477,13 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/work-orders/assignees", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
-    const data = await getWorkOrderAssignees(config, siteId);
+    const data = await getWorkOrderAssignees(getRequestSiteConfig(req, config), siteId);
     res.json(data);
   });
 
   router.post("/sites/:siteId/work-orders", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
-    const result = await createWorkOrder(config, siteId, req.body || {});
+    const result = await createWorkOrder(getRequestSiteConfig(req, config), siteId, req.body || {});
 
     if (!result.ok) {
       res.status(502).json({
@@ -404,7 +509,7 @@ export function buildV1Router(config) {
       ...(req.body || {}),
       id: orderId
     };
-    const result = await updateWorkOrder(config, siteId, payload);
+    const result = await updateWorkOrder(getRequestSiteConfig(req, config), siteId, payload);
 
     if (!result.ok) {
       res.status(502).json({
@@ -426,7 +531,7 @@ export function buildV1Router(config) {
   router.delete("/sites/:siteId/work-orders/:orderId", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
     const orderId = typeof req.params.orderId === "string" ? req.params.orderId : "";
-    const result = await deleteWorkOrder(config, siteId, orderId);
+    const result = await deleteWorkOrder(getRequestSiteConfig(req, config), siteId, orderId);
 
     if (!result.ok) {
       res.status(502).json({
@@ -447,7 +552,7 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/work-orders/export", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
-    const file = await getWorkOrderExport(config, siteId);
+    const file = await getWorkOrderExport(getRequestSiteConfig(req, config), siteId);
 
     if (!file.ok || !file.data) {
       res.status(502).json({
@@ -470,7 +575,7 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/environment/buildings", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
-    const data = await getEnvironmentBuildings(config, siteId);
+    const data = await getEnvironmentBuildings(getRequestSiteConfig(req, config), siteId);
     res.json(data);
   });
 
@@ -479,7 +584,7 @@ export function buildV1Router(config) {
     const buildingId = typeof req.query.buildingId === "string" ? req.query.buildingId : "";
     const cooledAir = typeof req.query.cooledAir === "string" ? req.query.cooledAir : "";
     const monitoringSite = typeof req.query.monitoringSite === "string" ? req.query.monitoringSite : "";
-    const data = await getEnvironmentConditions(config, siteId, {
+    const data = await getEnvironmentConditions(getRequestSiteConfig(req, config), siteId, {
       buildingId,
       cooledAir,
       monitoringSite
@@ -489,12 +594,13 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/energy-analysis/tree", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
-    const data = await getEnergyAnalysisTree(config, siteId);
+    const data = await getEnergyAnalysisTree(getRequestSiteConfig(req, config), siteId);
     res.json(data);
   });
 
   router.get("/sites/:siteId/energy-analysis", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const startDate = req.query.startDate;
     const endDate = req.query.endDate;
     const dateType = typeof req.query.dateType === "string" ? req.query.dateType.trim() : "1";
@@ -546,7 +652,7 @@ export function buildV1Router(config) {
       return;
     }
 
-    const data = await getEnergyAnalysisReport(config, siteId, {
+    const data = await getEnergyAnalysisReport(siteConfig, siteId, {
       startDate: normalizeDateQuery(startDate),
       endDate: normalizeDateQuery(endDate, normalizeDateQuery(startDate)),
       dateType,
@@ -557,6 +663,7 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/energy-efficiency/search", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const startDate = req.query.startDate;
     const endDate = req.query.endDate;
     const timeSpace = typeof req.query.timeSpace === "string" ? req.query.timeSpace.trim() : "1";
@@ -608,7 +715,7 @@ export function buildV1Router(config) {
       return;
     }
 
-    const data = await getEnergyEfficiencySearch(config, siteId, {
+    const data = await getEnergyEfficiencySearch(siteConfig, siteId, {
       startDate: normalizeDateQuery(startDate),
       endDate: normalizeDateQuery(endDate, normalizeDateQuery(startDate)),
       timeSpace,
@@ -619,6 +726,7 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/energy-efficiency/calendar", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const month = typeof req.query.month === "string" ? req.query.month.trim() : "";
 
     if (month && !/^\d{4}-\d{2}$/.test(month)) {
@@ -635,12 +743,13 @@ export function buildV1Router(config) {
       return;
     }
 
-    const data = await getEnergyEfficiencyCalendar(config, siteId, { month });
+    const data = await getEnergyEfficiencyCalendar(siteConfig, siteId, { month });
     res.json(data);
   });
 
   router.get("/sites/:siteId/energy-efficiency/calendar/pie", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const dateType = typeof req.query.dateType === "string" ? req.query.dateType.trim() : "1";
     const date = typeof req.query.date === "string" ? req.query.date.trim() : "";
 
@@ -673,12 +782,13 @@ export function buildV1Router(config) {
       return;
     }
 
-    const data = await getEnergyEfficiencyCalendarPie(config, siteId, { date, dateType });
+    const data = await getEnergyEfficiencyCalendarPie(siteConfig, siteId, { date, dateType });
     res.json(data);
   });
 
   router.get("/sites/:siteId/energy-efficiency/compare", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const deviceKey = typeof req.query.deviceKey === "string" ? req.query.deviceKey.trim() : "";
     const dates = typeof req.query.dates === "string"
       ? req.query.dates.split(",").map((item) => item.trim()).filter(Boolean)
@@ -711,7 +821,7 @@ export function buildV1Router(config) {
       return;
     }
 
-    const data = await getEnergyEfficiencyCompare(config, siteId, {
+    const data = await getEnergyEfficiencyCompare(siteConfig, siteId, {
       deviceKey,
       dates
     });
@@ -720,6 +830,7 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/energy-efficiency/proportion", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const dateType = typeof req.query.dateType === "string" ? req.query.dateType.trim() : "2";
     const date = typeof req.query.date === "string" ? req.query.date.trim() : "";
 
@@ -752,7 +863,7 @@ export function buildV1Router(config) {
       return;
     }
 
-    const data = await getEnergyEfficiencyProportion(config, siteId, {
+    const data = await getEnergyEfficiencyProportion(siteConfig, siteId, {
       date,
       dateType
     });
@@ -761,6 +872,7 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/energy-efficiency/imbalance", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const startDate = req.query.startDate;
     const endDate = req.query.endDate;
 
@@ -781,7 +893,7 @@ export function buildV1Router(config) {
       return;
     }
 
-    const data = await getEnergyEfficiencyImbalance(config, siteId, {
+    const data = await getEnergyEfficiencyImbalance(siteConfig, siteId, {
       startDate: normalizeDateQuery(startDate),
       endDate: normalizeDateQuery(endDate, normalizeDateQuery(startDate))
     });
@@ -790,6 +902,7 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/meter-readings", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const startTime = req.query.startTime;
     const endTime = req.query.endTime;
 
@@ -810,7 +923,7 @@ export function buildV1Router(config) {
       return;
     }
 
-    const data = await getMeterReadings(config, siteId, {
+    const data = await getMeterReadings(siteConfig, siteId, {
       startTime: normalizeDateTimeQuery(startTime, "start"),
       endTime: normalizeDateTimeQuery(endTime, "end")
     });
@@ -819,6 +932,7 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/meter-readings/export", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const startTime = req.query.startTime;
     const endTime = req.query.endTime;
 
@@ -839,7 +953,7 @@ export function buildV1Router(config) {
       return;
     }
 
-    const file = await getMeterReadingExport(config, siteId, {
+    const file = await getMeterReadingExport(siteConfig, siteId, {
       startTime: normalizeDateTimeQuery(startTime, "start"),
       endTime: normalizeDateTimeQuery(endTime, "end")
     });
@@ -865,6 +979,7 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/performance-reports", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const metric = typeof req.query.metric === "string" ? req.query.metric.trim() : "systemEfficiency";
     const startTime = req.query.startTime;
     const endTime = req.query.endTime;
@@ -904,7 +1019,7 @@ export function buildV1Router(config) {
       return;
     }
 
-    const data = await getPerformanceReport(config, siteId, {
+    const data = await getPerformanceReport(siteConfig, siteId, {
       metric,
       startTime: normalizeDateTimeQuery(startTime, "start"),
       endTime: normalizeDateTimeQuery(endTime, "end"),
@@ -918,6 +1033,7 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/performance-reports/export", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const startTime = req.query.startTime;
     const endTime = req.query.endTime;
     const language = typeof req.query.language === "string" ? req.query.language.trim() : "";
@@ -942,7 +1058,7 @@ export function buildV1Router(config) {
       return;
     }
 
-    const file = await getPerformanceReportExport(config, siteId, {
+    const file = await getPerformanceReportExport(siteConfig, siteId, {
       startTime: normalizeDateTimeQuery(startTime, "start"),
       endTime: normalizeDateTimeQuery(endTime, "end"),
       language,
@@ -972,6 +1088,7 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/report-records/reg-options", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const drTypeId = typeof req.query.drTypeId === "string" ? req.query.drTypeId.trim() : "";
     const drId = typeof req.query.drId === "string" ? req.query.drId.trim() : "";
 
@@ -988,12 +1105,13 @@ export function buildV1Router(config) {
       return;
     }
 
-    const data = await getReportRecordRegOptions(config, siteId, { drTypeId, drId });
+    const data = await getReportRecordRegOptions(siteConfig, siteId, { drTypeId, drId });
     res.json(data);
   });
 
   router.get("/sites/:siteId/report-records", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const startTime = req.query.startTime;
     const endTime = req.query.endTime;
     const drTypeId = typeof req.query.drTypeId === "string" ? req.query.drTypeId.trim() : "";
@@ -1034,7 +1152,7 @@ export function buildV1Router(config) {
 
     const page = String(req.query.page || "1");
     const pageSize = String(req.query.pageSize || "10");
-    const data = await getReportRecords(config, siteId, {
+    const data = await getReportRecords(siteConfig, siteId, {
       page,
       pageSize,
       startTime: normalizeDateTimeQuery(startTime, "start"),
@@ -1048,6 +1166,7 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/report-records/export", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const startTime = req.query.startTime;
     const endTime = req.query.endTime;
     const drTypeId = typeof req.query.drTypeId === "string" ? req.query.drTypeId.trim() : "";
@@ -1086,7 +1205,7 @@ export function buildV1Router(config) {
       return;
     }
 
-    const file = await getReportRecordExport(config, siteId, {
+    const file = await getReportRecordExport(siteConfig, siteId, {
       startTime: normalizeDateTimeQuery(startTime, "start"),
       endTime: normalizeDateTimeQuery(endTime, "end"),
       drTypeId,
@@ -1115,7 +1234,7 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/anomalies/summary", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
-    const data = await getAnomalySummary(config, siteId);
+    const data = await getAnomalySummary(getRequestSiteConfig(req, config), siteId);
     res.json(data);
   });
 
@@ -1125,7 +1244,7 @@ export function buildV1Router(config) {
     const pageSize = String(req.query.pageSize || "20");
     const severity = typeof req.query.severity === "string" ? req.query.severity : "";
     const state = typeof req.query.state === "string" ? req.query.state : "";
-    const data = await getAnomalyList(config, siteId, {
+    const data = await getAnomalyList(getRequestSiteConfig(req, config), siteId, {
       page,
       pageSize,
       severity,
@@ -1137,16 +1256,17 @@ export function buildV1Router(config) {
   router.get("/sites/:siteId/system/topology", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
     const requestContext = readRealtimeRequestContext(req);
-    const data = await getTopology(config, siteId, requestContext);
+    const data = await getTopology(getRequestSiteConfig(req, config), siteId, requestContext);
     res.json(data);
   });
 
   router.get("/sites/:siteId/system/diagram", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const requestContext = readRealtimeRequestContext(req);
     const layoutMode = typeof req.query.layoutMode === "string" ? req.query.layoutMode : "auto";
     const scope = typeof req.query.scope === "string" ? req.query.scope : "full";
-    const data = await getSystemDiagram(config, siteId, {
+    const data = await getSystemDiagram(siteConfig, siteId, {
       layoutMode,
       scope,
       projectKey: requestContext.projectKey
@@ -1156,6 +1276,8 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/scene/legacy-trend", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
+    const requestContext = readRealtimeRequestContext(req);
     const tagname = typeof req.query.tagname === "string" ? req.query.tagname.trim() : "";
     if (!tagname) {
       res.status(400).json({
@@ -1185,29 +1307,34 @@ export function buildV1Router(config) {
       });
       return;
     }
-    const data = await getSceneLegacyTrend(config, siteId, {
+    const data = await getSceneLegacyTrend(siteConfig, siteId, {
       tagname,
       title,
       unit,
-      date: rawDate || null
+      date: rawDate || null,
+      projectKey: requestContext.projectKey
     });
     res.json(data);
   });
 
   router.get("/sites/:siteId/scene/online-monitor", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
-    const data = await getSceneOnlineMonitor(config, siteId);
+    const requestContext = readRealtimeRequestContext(req);
+    const data = await getSceneOnlineMonitor(getRequestSiteConfig(req, config), siteId, {
+      projectKey: requestContext.projectKey
+    });
     res.json(data);
   });
 
   router.get("/sites/:siteId/devices/list", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const requestContext = readRealtimeRequestContext(req);
     const page = String(req.query.page || "1");
     const pageSize = String(req.query.pageSize || "12");
     const type = typeof req.query.type === "string" ? req.query.type : "";
     const floor = typeof req.query.floor === "string" ? req.query.floor : "";
-    const data = await getDeviceList(config, siteId, {
+    const data = await getDeviceList(siteConfig, siteId, {
       page,
       pageSize,
       type,
@@ -1219,10 +1346,11 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/devices/tree", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const requestContext = readRealtimeRequestContext(req);
     const build = String(req.query.build || "1");
     const floor = String(req.query.floor || "1");
-    const data = await getDeviceTree(config, siteId, {
+    const data = await getDeviceTree(siteConfig, siteId, {
       build,
       floor,
       projectKey: requestContext.projectKey
@@ -1232,11 +1360,12 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/devices/:deviceId", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const requestContext = readRealtimeRequestContext(req);
     const deviceId = String(req.params.deviceId || "");
     const build = String(req.query.build || "1");
     const floor = String(req.query.floor || "1");
-    const data = await getDeviceDetail(config, siteId, deviceId, {
+    const data = await getDeviceDetail(siteConfig, siteId, deviceId, {
       build,
       floor,
       projectKey: requestContext.projectKey
@@ -1246,15 +1375,17 @@ export function buildV1Router(config) {
 
   router.get("/sites/:siteId/recommendations", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const requestContext = readRealtimeRequestContext(req);
-    const anomalies = await getAnomalySummary(config, siteId);
-    const overview = await getDashboardOverview(config, siteId, anomalies, requestContext);
-    const data = await getRecommendations(config, siteId, overview, anomalies);
+    const anomalies = await getAnomalySummary(siteConfig, siteId);
+    const overview = await getDashboardOverview(siteConfig, siteId, anomalies, requestContext);
+    const data = await getRecommendations(siteConfig, siteId, overview, anomalies);
     res.json(data);
   });
 
   router.post("/sites/:siteId/optimize", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
     const validation = validateOptimizeDraftRequest(req.body || {});
 
     if (!validation.ok) {
@@ -1268,15 +1399,15 @@ export function buildV1Router(config) {
       return;
     }
 
-    const anomalies = await getAnomalySummary(config, siteId);
+    const anomalies = await getAnomalySummary(siteConfig, siteId);
     const overview = await getDashboardOverview(
-      config,
+      siteConfig,
       siteId,
       anomalies,
       readRealtimeRequestContext(req)
     );
-    const recommendations = await getRecommendations(config, siteId, overview, anomalies);
-    const data = buildOptimizeDraftResponse(config, siteId, validation.request, {
+    const recommendations = await getRecommendations(siteConfig, siteId, overview, anomalies);
+    const data = await buildOptimizeDraftResponse(siteConfig, siteId, validation.request, {
       overview,
       anomalies,
       recommendations
@@ -1288,6 +1419,100 @@ export function buildV1Router(config) {
       requestId: `req-${Date.now()}`,
       details: data
     });
+  });
+
+  router.post("/sites/:siteId/assistant/query", async (req, res) => {
+    const siteId = resolveSiteId(req, config.defaultSiteId);
+    const startedAt = Date.now();
+    const requestContext = readRealtimeRequestContext(req);
+    const bodyContext = req.body && typeof req.body === "object" ? req.body.context : {};
+    const rawLocale = typeof bodyContext?.locale === "string" ? bodyContext.locale : "zh-CN";
+    const rawSurface = typeof bodyContext?.surface === "string" ? bodyContext.surface : "legacy-home-chat";
+    const promptOrigin = normalizeAssistantPromptOrigin(bodyContext?.promptOrigin);
+
+    logAssistantEvent("assistant.query.received", {
+      siteId,
+      locale: rawLocale,
+      surface: rawSurface,
+      promptOrigin,
+      userId: requestContext.userId || null,
+      projectKey: requestContext.projectKey || null
+    });
+
+    const validation = validateAssistantQueryRequest(req.body || {}, siteId);
+
+    if (!validation.ok) {
+      logAssistantEvent("assistant.query.bad_request", {
+        siteId,
+        locale: rawLocale,
+        surface: rawSurface,
+        promptOrigin,
+        code: validation.code,
+        error: validation.error,
+        requestMs: Date.now() - startedAt
+      });
+      res.status(400).json({
+        ok: false,
+        code: validation.code,
+        error: validation.error,
+        requestId: `req-${Date.now()}`,
+        details: validation.details
+      });
+      return;
+    }
+
+    const legacyBaseUrlOverride = readLegacyBaseUrlOverride(req);
+    const siteConfig = getRequestSiteConfig(req, config);
+    const effectiveConfig = legacyBaseUrlOverride
+      ? {
+          ...siteConfig,
+          legacyBaseUrl: legacyBaseUrlOverride
+        }
+      : siteConfig;
+
+    try {
+      const data = await buildAssistantQueryResponse(
+        effectiveConfig,
+        siteId,
+        validation.request,
+        requestContext
+      );
+      logAssistantEvent("assistant.query.responded", {
+        siteId,
+        locale: validation.request.locale,
+        surface: validation.request.surface,
+        promptOrigin: validation.request.promptOrigin,
+        kind: data?.answer?.kind || "unknown",
+        knowledgeHit: data?.answer?.kind === "knowledge",
+        freshnessLabel: data?.freshness?.label || "unknown",
+        sourceOverall: data?.sourceStatus?.overall || "failed",
+        stale: data?.freshness?.stale === true,
+        nextStepsCount: Array.isArray(data?.answer?.nextSteps) ? data.answer.nextSteps.length : 0,
+        requestMs: Date.now() - startedAt
+      });
+      res.json(data);
+    } catch (error) {
+      logAssistantEvent("assistant.query.upstream_failed", {
+        siteId,
+        locale: validation.request.locale,
+        surface: validation.request.surface,
+        promptOrigin: validation.request.promptOrigin,
+        kind: "unknown",
+        knowledgeHit: false,
+        freshnessLabel: "unknown",
+        sourceOverall: "failed",
+        stale: false,
+        nextStepsCount: 0,
+        requestMs: Date.now() - startedAt,
+        error: String(error?.message || error || "unknown error")
+      });
+      res.status(502).json({
+        ok: false,
+        code: "UPSTREAM_UNAVAILABLE",
+        error: String(error?.message || error || "Assistant upstream unavailable"),
+        requestId: `req-${Date.now()}`
+      });
+    }
   });
 
   return router;
