@@ -133,6 +133,35 @@ function buildEmptyEditor(mode: "create" | "edit", typeOptions: TypeOption[]): E
   };
 }
 
+function buildStrategyCards() {
+  return [
+    {
+      title: zhCN.knowledgePage.strategyCoolingTitle,
+      source: zhCN.knowledgePage.strategyCoolingSource,
+      appliesTo: zhCN.knowledgePage.strategyCoolingApply,
+      action: zhCN.knowledgePage.strategyCoolingAction
+    },
+    {
+      title: zhCN.knowledgePage.strategyChilledTitle,
+      source: zhCN.knowledgePage.strategyChilledSource,
+      appliesTo: zhCN.knowledgePage.strategyChilledApply,
+      action: zhCN.knowledgePage.strategyChilledAction
+    },
+    {
+      title: zhCN.knowledgePage.strategyGateTitle,
+      source: zhCN.knowledgePage.strategyGateSource,
+      appliesTo: zhCN.knowledgePage.strategyGateApply,
+      action: zhCN.knowledgePage.strategyGateAction
+    },
+    {
+      title: zhCN.knowledgePage.strategyVerifyTitle,
+      source: zhCN.knowledgePage.strategyVerifySource,
+      appliesTo: zhCN.knowledgePage.strategyVerifyApply,
+      action: zhCN.knowledgePage.strategyVerifyAction
+    }
+  ];
+}
+
 export default function KnowledgeBasePage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -152,6 +181,7 @@ export default function KnowledgeBasePage() {
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
   const rows = documents?.items || [];
   const summaryCards = buildSummaryCards(documents, typeOptions, loading);
+  const strategyCards = buildStrategyCards();
 
   useEffect(() => {
     let active = true;
@@ -448,6 +478,21 @@ export default function KnowledgeBasePage() {
           />
         ))}
       </div>
+
+      <SectionCard title={zhCN.knowledgePage.sectionStrategy}>
+        <div className="knowledge-strategy-grid">
+          {strategyCards.map((item) => (
+            <article key={item.title} className="knowledge-strategy-card">
+              <strong>{item.title}</strong>
+              <div className="knowledge-strategy-meta">
+                <span>{zhCN.knowledgePage.strategySourceTitle}：{item.source}</span>
+                <span>{zhCN.knowledgePage.strategyApplyTitle}：{item.appliesTo}</span>
+              </div>
+              <p>{zhCN.knowledgePage.strategyActionTitle}：{item.action}</p>
+            </article>
+          ))}
+        </div>
+      </SectionCard>
 
       <SectionCard title={zhCN.knowledgePage.sectionList}>
         <div className="knowledge-toolbar">

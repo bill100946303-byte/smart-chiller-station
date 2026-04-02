@@ -23,6 +23,13 @@ type AlarmSummaryCard = {
   tone: "neutral" | "good" | "warn";
 };
 
+type OptimizeGate = {
+  label: string;
+  reason: string;
+  action: string;
+  tone: "good" | "warn" | "danger";
+};
+
 function formatOccurredAt(value: string | null | undefined): string {
   if (!value) {
     return zhCN.common.timeUnknown;
@@ -113,6 +120,45 @@ function severityText(value: "critical" | "major" | "minor" | "normal" | undefin
   return getSeverityCopy(value || null);
 }
 
+function buildOptimizeGate(summary: AnomalySummaryDto | null, loadError: string | null): OptimizeGate {
+  const counts = summary?.counts;
+  const stale = Boolean(summary?.freshness?.stale);
+
+  if (typeof counts?.critical === "number" && counts.critical > 0) {
+    return {
+      label: zhCN.alarmPage.gateBlocked,
+      reason: zhCN.alarmPage.gateReasonCritical,
+      action: zhCN.alarmPage.gateActionBlocked,
+      tone: "danger"
+    };
+  }
+
+  if (typeof counts?.major === "number" && counts.major > 0) {
+    return {
+      label: zhCN.alarmPage.gateCaution,
+      reason: zhCN.alarmPage.gateReasonMajor,
+      action: zhCN.alarmPage.gateActionCaution,
+      tone: "warn"
+    };
+  }
+
+  if (loadError || stale || summary?.sourceStatus?.overall === "failed") {
+    return {
+      label: zhCN.alarmPage.gateCaution,
+      reason: zhCN.alarmPage.gateReasonStale,
+      action: zhCN.alarmPage.gateActionCaution,
+      tone: "warn"
+    };
+  }
+
+  return {
+    label: zhCN.alarmPage.gateReady,
+    reason: zhCN.alarmPage.gateReasonReady,
+    action: zhCN.alarmPage.gateActionReady,
+    tone: "good"
+  };
+}
+
 export default function AlarmPage() {
   const [summary, setSummary] = useState<AnomalySummaryDto | null>(null);
   const [alarmList, setAlarmList] = useState<AnomalyListDto | null>(null);
@@ -189,6 +235,7 @@ export default function AlarmPage() {
   const items = alarmList?.items || [];
   const total = typeof alarmList?.total === "number" ? alarmList.total : items.length;
   const pageCount = total > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+  const optimizeGate = buildOptimizeGate(summary, loadError);
 
   function onChangeSeverityFilter(value: "" | "critical" | "major" | "minor" | "normal") {
     setSeverityFilter(value);
@@ -245,6 +292,24 @@ export default function AlarmPage() {
           />
         ))}
       </div>
+
+      <SectionCard title={zhCN.alarmPage.sectionGate}>
+        <p className="empty-hint">{zhCN.alarmPage.gateHint}</p>
+        <div className="alarm-gate-grid">
+          <article className={`alarm-gate-card tone-${optimizeGate.tone}`}>
+            <span>{zhCN.alarmPage.gateLevelTitle}</span>
+            <strong>{optimizeGate.label}</strong>
+          </article>
+          <article className={`alarm-gate-card tone-${optimizeGate.tone}`}>
+            <span>{zhCN.alarmPage.gateReasonTitle}</span>
+            <strong>{optimizeGate.reason}</strong>
+          </article>
+          <article className={`alarm-gate-card tone-${optimizeGate.tone}`}>
+            <span>{zhCN.alarmPage.gateActionTitle}</span>
+            <strong>{optimizeGate.action}</strong>
+          </article>
+        </div>
+      </SectionCard>
 
       <div className="alarm-page-grid">
         <SectionCard title={zhCN.alarmPage.sectionRecent}>

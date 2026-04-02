@@ -1669,7 +1669,7 @@ export default function DashboardPage() {
     totalRoomsCount: comfortRooms.length
   });
 
-  const opsRiskCards: OpsMetric[] = [
+  const opsRiskRibbonItems: Array<{ key: string; label: string; value: string; tone: Tone; hint: string }> = [
     {
       key: "manual",
       label: DASHBOARD_TEXT.processAttention,
@@ -1697,30 +1697,13 @@ export default function DashboardPage() {
       value: coreSourceWarnActive ? DASHBOARD_TEXT.opsSourceStatusWarn : DASHBOARD_TEXT.opsSourceStatusOk,
       tone: coreSourceWarnActive ? "warn" : "good",
       hint: `${DASHBOARD_TEXT.opsUpdatedAtHint}${heroGeneratedAt}`
-    }
-  ];
-
-  const alarmOverviewCards: OpsMetric[] = [
-    {
-      key: "critical",
-      label: DASHBOARD_TEXT.safetyHigh,
-      value: `${criticalCount}${zhCN.common.unitItem}`,
-      tone: criticalCount > 0 ? "warn" : "good",
-      hint: criticalCount > 0 ? "需要优先确认是否影响供冷连续性" : "当前没有高等级异常"
     },
     {
-      key: "loopAlarm",
-      label: DASHBOARD_TEXT.safetyLoopAlarm,
-      value: `${mainLoopAlarmCount}${zhCN.realtimeStatus.unitTai}`,
-      tone: mainLoopAlarmCount > 0 ? "warn" : "good",
-      hint: mainLoopAlarmCount > 0 ? "主机、泵、塔主链路存在告警设备" : "当前主链路没有告警设备"
-    },
-    {
-      key: "queueTotal",
+      key: "queue",
       label: "待处理事件",
       value: `${anomalyQueue.length}${zhCN.common.unitItem}`,
       tone: anomalyQueue.length > 0 ? "neutral" : "good",
-      hint: anomalyQueue.length > 0 ? "按影响供冷、舒适、运维顺序处理" : "当前没有需要立即跟进的事件"
+      hint: anomalyQueue.length > 0 ? "按供冷、舒适、运维顺序处理" : "当前没有需要立即跟进的事件"
     }
   ];
 
@@ -1795,6 +1778,13 @@ export default function DashboardPage() {
       hint: `冷冻出水 ${toFixedOrDash(chilledSupplyTemp, 1)}°C · 冷却回水 ${toFixedOrDash(coolingReturnTemp, 1)}°C`
     }
   ];
+
+  const opsEfficiencyPrimaryCards = opsEfficiencyCards.filter((item) =>
+    ["cop", "chillerCop", "coolingCapacity", "power"].includes(item.key)
+  );
+  const opsEfficiencySecondaryCards = opsEfficiencyCards.filter(
+    (item) => !["cop", "chillerCop", "coolingCapacity", "power"].includes(item.key)
+  );
 
   const handoverItems: HandoverItem[] = [
     {
@@ -1945,8 +1935,8 @@ export default function DashboardPage() {
                 <small>{efficiencyStatusNote.hint}</small>
               </div>
             ) : null}
-            <div className="dashboard-ops-card-grid dashboard-ops-card-grid-efficiency">
-              {opsEfficiencyCards.map((item) => (
+            <div className="dashboard-ops-card-grid dashboard-ops-card-grid-efficiency dashboard-ops-card-grid-efficiency-primary">
+              {opsEfficiencyPrimaryCards.map((item) => (
                 <article
                   key={item.key}
                   className={`dashboard-ops-card tone-${item.tone} ${item.key === "cop" ? "is-featured" : ""}`}
@@ -1956,7 +1946,19 @@ export default function DashboardPage() {
                   {item.assessment ? (
                     <em className={`dashboard-ops-assessment tone-${item.tone}`}>{item.assessment}</em>
                   ) : null}
-                  <small>{item.hint}</small>
+                  <small className="dashboard-ops-hint">{item.hint}</small>
+                </article>
+              ))}
+            </div>
+            <div className="dashboard-ops-card-grid dashboard-ops-card-grid-efficiency dashboard-ops-card-grid-efficiency-secondary">
+              {opsEfficiencySecondaryCards.map((item) => (
+                <article key={item.key} className={`dashboard-ops-card tone-${item.tone}`}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                  {item.assessment ? (
+                    <em className={`dashboard-ops-assessment tone-${item.tone}`}>{item.assessment}</em>
+                  ) : null}
+                  <small className="dashboard-ops-hint">{item.hint}</small>
                 </article>
               ))}
             </div>
@@ -2018,8 +2020,10 @@ export default function DashboardPage() {
                       <strong>{stage.stopped}</strong>
                     </small>
                   </div>
-                  <p>{stage.note}</p>
-                  <time>{formatShortDateTime(stage.latestUpdateAt)}</time>
+                  <div className="dashboard-loop-meta">
+                    <span>{stage.note}</span>
+                    <time>{formatShortDateTime(stage.latestUpdateAt)}</time>
+                  </div>
                 </article>
               ))}
             </div>
@@ -2032,12 +2036,11 @@ export default function DashboardPage() {
                 <small>{DASHBOARD_TEXT.opsRiskHint}</small>
               </div>
             </div>
-            <div className="dashboard-ops-card-grid dashboard-ops-card-grid-risk">
-              {opsRiskCards.map((item) => (
-                <article key={item.key} className={`dashboard-ops-card tone-${item.tone}`}>
+            <div className="dashboard-risk-ribbon">
+              {opsRiskRibbonItems.map((item) => (
+                <article key={item.key} className={`dashboard-risk-pill tone-${item.tone}`} title={item.hint}>
                   <span>{item.label}</span>
                   <strong>{item.value}</strong>
-                  <small>{item.hint}</small>
                 </article>
               ))}
             </div>
@@ -2049,15 +2052,6 @@ export default function DashboardPage() {
         <div className="dashboard-duty-main">
           <SectionCard title={DASHBOARD_TEXT.alarmQueue} action={<span className="dashboard-section-hint">{DASHBOARD_TEXT.alarmQueueHint}</span>}>
             <div className="dashboard-anomaly-board">
-              <div className="dashboard-anomaly-summary">
-                {alarmOverviewCards.map((item) => (
-                  <article key={item.key} className={`dashboard-anomaly-summary-card tone-${item.tone}`}>
-                    <span>{item.label}</span>
-                    <strong>{item.value}</strong>
-                    <small>{item.hint}</small>
-                  </article>
-                ))}
-              </div>
               {anomalyQueue.length === 0 ? (
                 <article className="dashboard-anomaly-empty">
                   <strong>{DASHBOARD_TEXT.anomalyEmpty}</strong>

@@ -31,6 +31,13 @@ type SummaryCard = {
   tone: "neutral" | "good" | "warn";
 };
 
+type StrategyAuditCard = {
+  title: string;
+  value: string;
+  detail: string;
+  tone: "neutral" | "good" | "warn";
+};
+
 type ChartSeriesView = {
   key: string;
   label: string;
@@ -162,6 +169,68 @@ function buildSummaryCards(data: PerformanceReportDto | null, query: FilterState
       unit: "",
       delta: zhCN.performanceReportPage.summaryStateHint,
       tone: sourceReady ? "good" : "warn"
+    }
+  ];
+}
+
+function buildStrategyAuditCards(
+  data: PerformanceReportDto | null,
+  query: FilterState,
+  loadError: string | null
+): StrategyAuditCard[] {
+  const normalizedMetric = String(query.metric || "");
+  const points = (data?.series || []).flatMap((item) => item.points || []);
+  const validPoints = points.filter(
+    (point) => typeof point?.value === "number" && Number.isFinite(point.value)
+  ).length;
+  const hasUsableSeries = (data?.series?.length || 0) > 0 && validPoints > 0 && !loadError;
+
+  let focus = zhCN.performanceReportPage.strategyFocusCoordinated;
+  let verify = zhCN.performanceReportPage.strategyVerifyCoordinated;
+  if (normalizedMetric === "systemEfficiency") {
+    focus = zhCN.performanceReportPage.strategyFocusPlant;
+    verify = zhCN.performanceReportPage.strategyVerifyPlant;
+  } else if (normalizedMetric === "chillerEfficiency") {
+    focus = zhCN.performanceReportPage.strategyFocusChiller;
+    verify = zhCN.performanceReportPage.strategyVerifyChiller;
+  } else if (
+    normalizedMetric === "coolingTowerEfficiency" ||
+    normalizedMetric === "coolingPumpEfficiency" ||
+    normalizedMetric === "coolingWaterTemperature" ||
+    normalizedMetric === "coolingWaterTemperatureDiff"
+  ) {
+    focus = zhCN.performanceReportPage.strategyFocusCooling;
+    verify = zhCN.performanceReportPage.strategyVerifyCooling;
+  } else if (
+    normalizedMetric === "chilledPumpEfficiency" ||
+    normalizedMetric === "chilledWaterTemperature" ||
+    normalizedMetric === "chilledWaterTemperatureDiff" ||
+    normalizedMetric === "chilledWaterFlow"
+  ) {
+    focus = zhCN.performanceReportPage.strategyFocusChilled;
+    verify = zhCN.performanceReportPage.strategyVerifyChilled;
+  }
+
+  return [
+    {
+      title: zhCN.performanceReportPage.strategyFocusTitle,
+      value: hasUsableSeries ? focus : zhCN.performanceReportPage.strategyPending,
+      detail: `${zhCN.performanceReportPage.rangeMetric} ${getMetricLabel(query.metric)}`,
+      tone: hasUsableSeries ? "good" : "warn"
+    },
+    {
+      title: zhCN.performanceReportPage.strategyVerifyTitle,
+      value: hasUsableSeries ? verify : zhCN.performanceReportPage.strategyVerifyPending,
+      detail: `${zhCN.performanceReportPage.rangeSeries} ${data?.series?.length || 0}`,
+      tone: hasUsableSeries ? "neutral" : "warn"
+    },
+    {
+      title: zhCN.performanceReportPage.strategyReadTitle,
+      value: hasUsableSeries ? zhCN.performanceReportPage.strategyReadReady : zhCN.performanceReportPage.strategyReadPending,
+      detail: hasUsableSeries
+        ? `${zhCN.performanceReportPage.strategyPointCount} ${validPoints}`
+        : zhCN.performanceReportPage.strategyReadPendingHint,
+      tone: hasUsableSeries ? "good" : "warn"
     }
   ];
 }
@@ -379,6 +448,7 @@ export default function PerformanceReportPage() {
     || loadError
     || (loading ? zhCN.performanceReportPage.loading : sourceSummary.text);
   const summaryCards = buildSummaryCards(data, query);
+  const strategyAuditCards = buildStrategyAuditCards(data, query, loadError);
 
   function updateFilter<K extends keyof FilterState>(key: K, value: FilterState[K]) {
     setFilters((current) => ({
@@ -524,6 +594,18 @@ export default function PerformanceReportPage() {
           {(data?.summaries || []).length === 0 ? (
             <div className="performance-report-empty-inline">{zhCN.performanceReportPage.empty}</div>
           ) : null}
+        </div>
+      </SectionCard>
+
+      <SectionCard title={zhCN.performanceReportPage.sectionStrategy}>
+        <div className="strategy-audit-grid">
+          {strategyAuditCards.map((item) => (
+            <article key={item.title} className={`strategy-audit-card tone-${item.tone}`}>
+              <span>{item.title}</span>
+              <strong>{item.value}</strong>
+              <p>{item.detail}</p>
+            </article>
+          ))}
         </div>
       </SectionCard>
 

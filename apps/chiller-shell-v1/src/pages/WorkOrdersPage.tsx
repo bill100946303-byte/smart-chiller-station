@@ -52,6 +52,13 @@ type SummaryCard = {
   tone: "neutral" | "good" | "warn";
 };
 
+type ChecklistCard = {
+  title: string;
+  value: string;
+  detail: string;
+  tone: "neutral" | "good" | "warn";
+};
+
 type SelectOption = {
   id: string;
   label: string;
@@ -214,6 +221,42 @@ function buildSummaryCards(
   ];
 }
 
+function buildChecklistCards(rows: WorkOrderItemDto[], total: number, query: FilterState): ChecklistCard[] {
+  const completedCount = rows.filter((item) => String(item.state || "") === "3").length;
+  const activeCount = rows.filter((item) => String(item.state || "") === "1" || String(item.state || "") === "2").length;
+  const state = total === 0
+    ? zhCN.workOrderPage.checklistStateEmpty
+    : completedCount > 0
+      ? zhCN.workOrderPage.checklistStateReady
+      : zhCN.workOrderPage.checklistStatePending;
+  const next = completedCount > 0
+    ? zhCN.workOrderPage.checklistNextReady
+    : activeCount > 0
+      ? zhCN.workOrderPage.checklistNextPending
+      : zhCN.workOrderPage.checklistNextEmpty;
+
+  return [
+    {
+      title: zhCN.workOrderPage.checklistStateTitle,
+      value: state,
+      detail: `${zhCN.workOrderPage.summaryTotal} ${total}${zhCN.common.unitItem}`,
+      tone: completedCount > 0 ? "good" : total > 0 ? "warn" : "neutral"
+    },
+    {
+      title: zhCN.workOrderPage.checklistFieldsTitle,
+      value: zhCN.workOrderPage.checklistFields,
+      detail: `${zhCN.workOrderPage.filterStartDate} ${query.startDate || "--"} ~ ${query.endDate || "--"}`,
+      tone: "neutral"
+    },
+    {
+      title: zhCN.workOrderPage.checklistNextTitle,
+      value: next,
+      detail: completedCount > 0 ? zhCN.workOrderPage.checklistNextDetailReady : zhCN.workOrderPage.checklistNextDetailPending,
+      tone: completedCount > 0 ? "good" : total > 0 ? "warn" : "neutral"
+    }
+  ];
+}
+
 export default function WorkOrdersPage() {
   const session = getAuthSession();
   const currentUsername = session?.username || zhCN.common.unknown;
@@ -352,6 +395,7 @@ export default function WorkOrdersPage() {
   const rows = orders?.items || [];
   const total = typeof orders?.total === "number" ? orders.total : 0;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const checklistCards = buildChecklistCards(rows, total, query);
   const bannerText =
     actionState?.message ||
     loadError ||
@@ -684,6 +728,18 @@ export default function WorkOrdersPage() {
           <StatCard key={item.title} title={item.title} value={item.value} unit={item.unit} delta={item.delta} tone={item.tone} />
         ))}
       </div>
+
+      <SectionCard title={zhCN.workOrderPage.sectionChecklist}>
+        <div className="strategy-audit-grid">
+          {checklistCards.map((item) => (
+            <article key={item.title} className={`strategy-audit-card tone-${item.tone}`}>
+              <span>{item.title}</span>
+              <strong>{item.value}</strong>
+              <p>{item.detail}</p>
+            </article>
+          ))}
+        </div>
+      </SectionCard>
 
       <SectionCard title={zhCN.workOrderPage.sectionTable}>
         <div className="work-order-meta">

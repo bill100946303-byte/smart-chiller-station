@@ -62,6 +62,13 @@ type SummaryCard = {
   tone: "neutral" | "good" | "warn";
 };
 
+type StrategyGuideCard = {
+  title: string;
+  value: string;
+  detail: string;
+  tone: "neutral" | "good" | "warn";
+};
+
 const TAB_SET = new Set<TabKey>(["calendar", "search", "compare", "proportion", "imbalance"]);
 const SERIES_COLORS = ["#63e6ff", "#8ff7d7", "#6fa7ff", "#ffd28b", "#ff8cc6", "#9aa8ff", "#4fd9b8", "#ffb574"];
 const CALENDAR_PIE_COLORS = ["#63e6ff", "#8ff7d7", "#6fa7ff", "#ffd28b", "#ff8cc6", "#9aa8ff", "#4fd9b8", "#ffb574"];
@@ -512,6 +519,68 @@ function buildCalendarSummaryCards(
       unit: "",
       delta: zhCN.energyEfficiencyPage.summaryStateHint,
       tone: sourceReady ? "good" : "warn"
+    }
+  ];
+}
+
+function buildStrategyGuideCards(
+  activeTab: TabKey,
+  blocked: boolean
+): StrategyGuideCard[] {
+  const blockedValue = zhCN.energyEfficiencyPage.strategyDataPending;
+  const blockedDetail = zhCN.dashboard.partialDataset;
+
+  const viewValue =
+    activeTab === "calendar"
+      ? zhCN.energyEfficiencyPage.strategyViewCalendar
+      : activeTab === "search"
+        ? zhCN.energyEfficiencyPage.strategyViewSearch
+        : activeTab === "compare"
+          ? zhCN.energyEfficiencyPage.strategyViewCompare
+          : activeTab === "proportion"
+            ? zhCN.energyEfficiencyPage.strategyViewProportion
+            : zhCN.energyEfficiencyPage.strategyViewImbalance;
+
+  const actionDetail =
+    activeTab === "calendar"
+      ? zhCN.energyEfficiencyPage.strategyActionCalendar
+      : activeTab === "search"
+        ? zhCN.energyEfficiencyPage.strategyActionSearch
+        : activeTab === "compare"
+          ? zhCN.energyEfficiencyPage.strategyActionCompare
+          : activeTab === "proportion"
+            ? zhCN.energyEfficiencyPage.strategyActionProportion
+            : zhCN.energyEfficiencyPage.strategyActionImbalance;
+
+  const evidenceDetail =
+    activeTab === "calendar"
+      ? zhCN.energyEfficiencyPage.strategyEvidenceCalendar
+      : activeTab === "search"
+        ? zhCN.energyEfficiencyPage.strategyEvidenceSearch
+        : activeTab === "compare"
+          ? zhCN.energyEfficiencyPage.strategyEvidenceCompare
+          : activeTab === "proportion"
+            ? zhCN.energyEfficiencyPage.strategyEvidenceProportion
+            : zhCN.energyEfficiencyPage.strategyEvidenceImbalance;
+
+  return [
+    {
+      title: zhCN.energyEfficiencyPage.strategyViewTitle,
+      value: blocked ? blockedValue : viewValue,
+      detail: blocked ? blockedDetail : actionDetail,
+      tone: blocked ? "warn" : "good"
+    },
+    {
+      title: zhCN.energyEfficiencyPage.strategyActionTitle,
+      value: blocked ? blockedValue : zhCN.systemOverview.focusActionTitle,
+      detail: blocked ? blockedDetail : actionDetail,
+      tone: blocked ? "warn" : "neutral"
+    },
+    {
+      title: zhCN.energyEfficiencyPage.strategyEvidenceTitle,
+      value: blocked ? blockedValue : zhCN.optimizeDemo.sectionEvidence,
+      detail: blocked ? blockedDetail : evidenceDetail,
+      tone: blocked ? "warn" : "neutral"
     }
   ];
 }
@@ -1318,6 +1387,7 @@ export default function EnergyEfficiencyPage() {
   const sourceStatusLines = buildSourceStatusLines(activeStatuses);
   const sourceStatusLinesCompact = buildSourceStatusLines(activeStatuses, { labelMode: "short" });
   const bannerText = activeError || (activeLoading ? zhCN.energyEfficiencyPage.loading : sourceSummary.text);
+  const strategyGuideCards = buildStrategyGuideCards(activeTab, Boolean(activeError) || sourceSummary.warn);
 
   function exportSearchCsv() {
     if (!searchData || (searchData.series?.length || 0) === 0) {
@@ -2304,6 +2374,18 @@ export default function EnergyEfficiencyPage() {
           {zhCN.energyEfficiencyPage.tabImbalance}
         </button>
       </div>
+
+      <SectionCard title={zhCN.energyEfficiencyPage.sectionStrategy}>
+        <div className="energy-efficiency-strategy-grid">
+          {strategyGuideCards.map((item) => (
+            <article key={item.title} className={`energy-efficiency-strategy-card tone-${item.tone}`}>
+              <span>{item.title}</span>
+              <strong>{item.value}</strong>
+              <p>{item.detail}</p>
+            </article>
+          ))}
+        </div>
+      </SectionCard>
 
       {activeTab === "calendar" ? renderCalendarTab() : null}
       {activeTab === "search" ? renderSearchTab() : null}

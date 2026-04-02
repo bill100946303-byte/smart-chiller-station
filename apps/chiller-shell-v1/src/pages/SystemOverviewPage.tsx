@@ -37,6 +37,16 @@ type OverviewRecommendation = {
   risk: string;
 };
 
+type SystemFocus = {
+  domain: string;
+  reason: string;
+  action: string;
+  tone: "good" | "warn" | "neutral";
+};
+
+const CHILLED_DELTA_T_LOW = 3;
+const COOLING_DELTA_T_LOW = 2.5;
+
 function formatNumber(value: number | null | undefined, digits = 1): string {
   if (typeof value !== "number" || Number.isNaN(value)) {
     return "--";
@@ -223,6 +233,73 @@ function buildNodeDetail(
   ];
 }
 
+function deriveSystemFocus(
+  overview: DashboardOverviewDto | null,
+  recommendation: RecommendationDto | null
+): SystemFocus {
+  const cards = overview?.energyCards;
+  const currentCop = cards?.currentCop;
+  const chillerPower = cards?.chillerPowerKw;
+  const chilledPumpPower = cards?.chilledPumpPowerKw;
+  const coolingPower = (cards?.coolingPumpPowerKw || 0) + (cards?.coolingTowerPowerKw || 0);
+  const chilledDeltaT = cards?.chilledDeltaT;
+  const coolingDeltaT = cards?.coolingDeltaT;
+  const fallbackAction = recommendation?.cards?.[0]?.actions?.[0] || null;
+
+  if (
+    typeof chillerPower !== "number"
+    && typeof chilledDeltaT !== "number"
+    && typeof coolingDeltaT !== "number"
+  ) {
+    return {
+      domain: zhCN.systemOverview.focusPending,
+      reason: zhCN.systemOverview.focusPendingReason,
+      action: zhCN.systemOverview.focusPendingAction,
+      tone: "warn"
+    };
+  }
+
+  if (typeof chilledDeltaT === "number" && chilledDeltaT < CHILLED_DELTA_T_LOW) {
+    return {
+      domain: zhCN.systemOverview.focusChilled,
+      reason: zhCN.systemOverview.focusChilledReason,
+      action: fallbackAction || zhCN.systemOverview.focusChilledAction,
+      tone: "warn"
+    };
+  }
+
+  if (typeof coolingDeltaT === "number" && coolingDeltaT < COOLING_DELTA_T_LOW) {
+    return {
+      domain: zhCN.systemOverview.focusCooling,
+      reason: zhCN.systemOverview.focusCoolingReason,
+      action: fallbackAction || zhCN.systemOverview.focusCoolingAction,
+      tone: "warn"
+    };
+  }
+
+  if (
+    typeof chillerPower === "number"
+    && chillerPower > Math.max(chilledPumpPower || 0, coolingPower || 0)
+    && typeof currentCop === "number"
+    && currentCop > 0
+    && currentCop < 4.5
+  ) {
+    return {
+      domain: zhCN.systemOverview.focusChiller,
+      reason: zhCN.systemOverview.focusChillerReason,
+      action: fallbackAction || zhCN.systemOverview.focusChillerAction,
+      tone: "warn"
+    };
+  }
+
+  return {
+    domain: zhCN.systemOverview.focusCoordinated,
+    reason: zhCN.systemOverview.focusCoordinatedReason,
+    action: fallbackAction || zhCN.systemOverview.focusCoordinatedAction,
+    tone: "good"
+  };
+}
+
 export default function SystemOverviewPage() {
   const [overview, setOverview] = useState<DashboardOverviewDto | null>(null);
   const [topology, setTopology] = useState<SystemTopologyDto | null>(null);
@@ -295,6 +372,7 @@ export default function SystemOverviewPage() {
     recommendationLoadError || zhCN.systemOverview.recommendationFallbackReason
   );
   const detailItems = buildNodeDetail(selectedNode, overview, recommendation);
+  const focus = deriveSystemFocus(overview, recommendation);
   const heroCards = summaryCards.slice(0, 3);
 
   useEffect(() => {
@@ -352,6 +430,24 @@ export default function SystemOverviewPage() {
           />
         ))}
       </div>
+
+      <SectionCard title={zhCN.systemOverview.sectionFocus}>
+        <p className="empty-hint">{zhCN.systemOverview.focusHint}</p>
+        <div className="system-focus-grid">
+          <article className={`system-focus-card tone-${focus.tone}`}>
+            <span>{zhCN.systemOverview.focusDomainTitle}</span>
+            <strong>{focus.domain}</strong>
+          </article>
+          <article className={`system-focus-card tone-${focus.tone}`}>
+            <span>{zhCN.systemOverview.focusReasonTitle}</span>
+            <strong>{focus.reason}</strong>
+          </article>
+          <article className={`system-focus-card tone-${focus.tone}`}>
+            <span>{zhCN.systemOverview.focusActionTitle}</span>
+            <strong>{focus.action}</strong>
+          </article>
+        </div>
+      </SectionCard>
 
       <div className="system-layout">
         <SectionCard title={zhCN.systemOverview.sectionTopology}>

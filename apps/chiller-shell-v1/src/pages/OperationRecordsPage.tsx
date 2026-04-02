@@ -38,6 +38,13 @@ type SummaryCard = {
   tone: "neutral" | "good" | "warn";
 };
 
+type ClosureCard = {
+  title: string;
+  value: string;
+  detail: string;
+  tone: "neutral" | "good" | "warn";
+};
+
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 function formatDateInput(date: Date): string {
@@ -124,6 +131,52 @@ function buildSummaryCards(
       unit: "",
       delta: zhCN.operationRecordPage.summaryRangeHint,
       tone: "neutral"
+    }
+  ];
+}
+
+function buildClosureCards(
+  records: OperationRecordListDto | null,
+  typeOptions: TypeSelectOption[],
+  deviceOptions: OperationRecordDeviceOptionDto[],
+  query: FilterState
+): ClosureCard[] {
+  const total = typeof records?.total === "number" ? records.total : 0;
+  const hasScopedQuery = query.drTypeId !== "0" || query.drId !== "0";
+  const state = total > 0
+    ? zhCN.operationRecordPage.closureReady
+    : hasScopedQuery
+      ? zhCN.operationRecordPage.closureEmpty
+      : zhCN.operationRecordPage.closurePending;
+  const scope = query.drId !== "0"
+    ? findDeviceLabel(deviceOptions, query.drId)
+    : query.drTypeId !== "0"
+      ? findTypeLabel(typeOptions, query.drTypeId)
+      : zhCN.operationRecordPage.closureScopeAll;
+  const next = total > 0
+    ? zhCN.operationRecordPage.closureNextReady
+    : hasScopedQuery
+      ? zhCN.operationRecordPage.closureNextEmpty
+      : zhCN.operationRecordPage.closureNextPending;
+
+  return [
+    {
+      title: zhCN.operationRecordPage.closureStateTitle,
+      value: state,
+      detail: `${zhCN.operationRecordPage.summaryTotal} ${total}${zhCN.common.unitItem}`,
+      tone: total > 0 ? "good" : hasScopedQuery ? "warn" : "neutral"
+    },
+    {
+      title: zhCN.operationRecordPage.closureScopeTitle,
+      value: scope,
+      detail: `${query.startDate} ~ ${query.endDate}`,
+      tone: hasScopedQuery ? "good" : "neutral"
+    },
+    {
+      title: zhCN.operationRecordPage.closureNextTitle,
+      value: next,
+      detail: total > 0 ? zhCN.operationRecordPage.closureNextDetailReady : zhCN.operationRecordPage.closureNextDetailPending,
+      tone: total > 0 ? "good" : hasScopedQuery ? "warn" : "neutral"
     }
   ];
 }
@@ -323,6 +376,7 @@ export default function OperationRecordsPage() {
   const total = typeof records?.total === "number" ? records.total : items.length;
   const pageCount = total > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
   const bannerText = recordsError || typeError || deviceError || sourceSummary.text;
+  const closureCards = buildClosureCards(records, typeOptions, deviceOptions, query);
 
   function updateFilter<K extends keyof FilterState>(key: K, value: FilterState[K]) {
     setFilters((current) => ({
@@ -450,6 +504,18 @@ export default function OperationRecordsPage() {
           />
         ))}
       </div>
+
+      <SectionCard title={zhCN.operationRecordPage.sectionClosure}>
+        <div className="strategy-audit-grid">
+          {closureCards.map((item) => (
+            <article key={item.title} className={`strategy-audit-card tone-${item.tone}`}>
+              <span>{item.title}</span>
+              <strong>{item.value}</strong>
+              <p>{item.detail}</p>
+            </article>
+          ))}
+        </div>
+      </SectionCard>
 
       <SectionCard
         title={zhCN.operationRecordPage.sectionList}

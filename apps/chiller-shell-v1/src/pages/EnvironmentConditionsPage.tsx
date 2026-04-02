@@ -264,6 +264,31 @@ export default function EnvironmentConditionsPage() {
         ))}
       </div>
 
+      <SectionCard title={zhCN.environmentPage.sectionBoundary}>
+        <p className="environment-compat-diagnostics-hint">{zhCN.environmentPage.boundaryHint}</p>
+        <div className="environment-compat-boundary-grid">
+          <article className="environment-compat-boundary-card">
+            <span>{zhCN.environmentPage.boundaryWetBulbTitle}</span>
+            <strong>{zhCN.environmentPage.boundaryWetBulbValue}</strong>
+            <p>{zhCN.environmentPage.boundaryWetBulbDetail}</p>
+          </article>
+          <article className="environment-compat-boundary-card">
+            <span>{zhCN.environmentPage.boundaryDryBulbTitle}</span>
+            <strong>{zhCN.environmentPage.boundaryDryBulbValue}</strong>
+            <p>{zhCN.environmentPage.boundaryDryBulbDetail}</p>
+          </article>
+          <article className="environment-compat-boundary-card">
+            <span>{zhCN.environmentPage.boundaryFlowTitle}</span>
+            <strong>{zhCN.environmentPage.boundaryFlowValue}</strong>
+            <p>{zhCN.environmentPage.boundaryFlowDetail}</p>
+          </article>
+        </div>
+        <div className="environment-compat-boundary-links">
+          <a href="/optimize-demo">{zhCN.environmentPage.boundaryLinkOptimize}</a>
+          <a href="/trend-analysis?metric=coolingDeltaT&range=24h">{zhCN.environmentPage.boundaryLinkTrend}</a>
+        </div>
+      </SectionCard>
+
       <div className="environment-compat-layout">
         <SectionCard title={zhCN.environmentPage.sectionFilters}>
           <div className="environment-compat-filter-grid">

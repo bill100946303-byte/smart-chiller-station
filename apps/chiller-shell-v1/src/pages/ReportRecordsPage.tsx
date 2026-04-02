@@ -48,6 +48,13 @@ type SummaryCard = {
   tone: "neutral" | "good" | "warn";
 };
 
+type TraceCard = {
+  title: string;
+  value: string;
+  detail: string;
+  tone: "neutral" | "good" | "warn";
+};
+
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 function formatDateInput(date: Date): string {
@@ -144,6 +151,55 @@ function buildSummaryCards(
       unit: "",
       delta: query ? `${query.startTime} ~ ${query.endTime}` : zhCN.reportRecordPage.summaryRangeHint,
       tone: query ? "neutral" : "warn"
+    }
+  ];
+}
+
+function buildTraceCards(
+  report: ReportRecordDto | null,
+  deviceOptions: OperationRecordDeviceOptionDto[],
+  query: QueryState,
+  regOptions: ReportRecordRegOptionDto[]
+): TraceCard[] {
+  const total = typeof report?.total === "number" ? report.total : 0;
+  const selectedRegCount = query?.regIds.length || 0;
+  const deviceLabel = query ? findDeviceLabel(deviceOptions, query.drId) : zhCN.reportRecordPage.filterSelectDevice;
+  const hasQuery = Boolean(query && query.drId && query.drId !== "0");
+  const traceState = !hasQuery
+    ? zhCN.reportRecordPage.tracePending
+    : total > 0
+      ? zhCN.reportRecordPage.traceReady
+      : zhCN.reportRecordPage.traceEmpty;
+  const traceNext = !hasQuery
+    ? zhCN.reportRecordPage.traceNextPending
+    : total > 0
+      ? zhCN.reportRecordPage.traceNextReady
+      : zhCN.reportRecordPage.traceNextEmpty;
+
+  return [
+    {
+      title: zhCN.reportRecordPage.traceCoverageTitle,
+      value: traceState,
+      detail: hasQuery ? `${zhCN.reportRecordPage.summaryDevice} ${deviceLabel}` : zhCN.reportRecordPage.summaryRangeHint,
+      tone: total > 0 ? "good" : hasQuery ? "warn" : "neutral"
+    },
+    {
+      title: zhCN.reportRecordPage.tracePointsTitle,
+      value:
+        selectedRegCount > 0
+          ? `${selectedRegCount}/${Math.max(regOptions.length, selectedRegCount)}`
+          : zhCN.reportRecordPage.tracePointsAll,
+      detail:
+        selectedRegCount > 0
+          ? zhCN.reportRecordPage.summaryPointsSelected
+          : `${zhCN.reportRecordPage.summaryColumnsHint} ${report?.columns?.length || 0}`,
+      tone: selectedRegCount > 0 ? "good" : "neutral"
+    },
+    {
+      title: zhCN.reportRecordPage.traceNextTitle,
+      value: traceNext,
+      detail: total > 0 ? zhCN.reportRecordPage.traceNextDetailReady : zhCN.reportRecordPage.traceNextDetailPending,
+      tone: total > 0 ? "good" : hasQuery ? "warn" : "neutral"
     }
   ];
 }
@@ -431,6 +487,7 @@ export default function ReportRecordsPage() {
   const columns = report?.columns || [];
   const total = typeof report?.total === "number" ? report.total : items.length;
   const pageCount = total > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+  const traceCards = buildTraceCards(report, deviceOptions, displayQuery, regOptions);
 
   function updateFilter<K extends keyof FilterState>(key: K, value: FilterState[K]) {
     setFilters((current) => ({
@@ -596,6 +653,18 @@ export default function ReportRecordsPage() {
           />
         ))}
       </div>
+
+      <SectionCard title={zhCN.reportRecordPage.sectionTrace}>
+        <div className="strategy-audit-grid">
+          {traceCards.map((item) => (
+            <article key={item.title} className={`strategy-audit-card tone-${item.tone}`}>
+              <span>{item.title}</span>
+              <strong>{item.value}</strong>
+              <p>{item.detail}</p>
+            </article>
+          ))}
+        </div>
+      </SectionCard>
 
       <SectionCard
         title={zhCN.reportRecordPage.sectionRegs}
