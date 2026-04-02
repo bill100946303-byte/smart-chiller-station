@@ -12366,3 +12366,186 @@ button:not(.knowledge-modal-close):hover:not(:disabled) {
     justify-content: space-between;
   }
 }
+
+/* Subpage table density refinement */
+.content.is-subpage-compact :is(
+  .knowledge-table,
+  .work-order-table,
+  .report-record-table
+) {
+  table-layout: fixed;
+}
+
+.content.is-subpage-compact .knowledge-table th:nth-child(1),
+.content.is-subpage-compact .knowledge-table td:nth-child(1) {
+  width: 16%;
+}
+
+.content.is-subpage-compact .knowledge-table th:nth-child(2),
+.content.is-subpage-compact .knowledge-table td:nth-child(2) {
+  width: 11%;
+}
+
+.content.is-subpage-compact .knowledge-table th:nth-child(4),
+.content.is-subpage-compact .knowledge-table td:nth-child(4) {
+  width: 20%;
+}
+
+.content.is-subpage-compact .knowledge-table th:nth-child(5),
+.content.is-subpage-compact .knowledge-table td:nth-child(5) {
+  width: 18%;
+}
+
+.content.is-subpage-compact .work-order-table th:nth-child(1),
+.content.is-subpage-compact .work-order-table td:nth-child(1) {
+  width: 7%;
+}
+
+.content.is-subpage-compact .work-order-table th:nth-child(2),
+.content.is-subpage-compact .work-order-table td:nth-child(2) {
+  width: 9%;
+}
+
+.content.is-subpage-compact .work-order-table th:nth-child(3),
+.content.is-subpage-compact .work-order-table td:nth-child(3) {
+  width: 10%;
+}
+
+.content.is-subpage-compact .work-order-table th:nth-child(4),
+.content.is-subpage-compact .work-order-table td:nth-child(4),
+.content.is-subpage-compact .work-order-table th:nth-child(8),
+.content.is-subpage-compact .work-order-table td:nth-child(8),
+.content.is-subpage-compact .work-order-table th:nth-child(9),
+.content.is-subpage-compact .work-order-table td:nth-child(9) {
+  width: 10%;
+}
+
+.content.is-subpage-compact .work-order-table th:nth-child(5),
+.content.is-subpage-compact .work-order-table td:nth-child(5),
+.content.is-subpage-compact .work-order-table th:nth-child(6),
+.content.is-subpage-compact .work-order-table td:nth-child(6),
+.content.is-subpage-compact .work-order-table th:nth-child(7),
+.content.is-subpage-compact .work-order-table td:nth-child(7),
+.content.is-subpage-compact .work-order-table th:nth-child(10),
+.content.is-subpage-compact .work-order-table td:nth-child(10) {
+  width: 8%;
+}
+
+.content.is-subpage-compact .work-order-table th:nth-child(12),
+.content.is-subpage-compact .work-order-table td:nth-child(12) {
+  width: 13%;
+}
+
+.content.is-subpage-compact .report-record-table th:first-child,
+.content.is-subpage-compact .report-record-table td:first-child {
+  width: 13%;
+}
+
+.content.is-subpage-compact .report-record-table th:last-child,
+.content.is-subpage-compact .report-record-table td:last-child {
+  width: 12%;
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-table td,
+  .work-order-table td,
+  .cold-log-table tbody td,
+  .meter-reading-table tbody td,
+  .report-record-table tbody td
+) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.content.is-subpage-compact :is(
+  .cold-log-table tbody td,
+  .meter-reading-table tbody td
+) {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.content.is-subpage-compact .work-order-table td:nth-child(11),
+.content.is-subpage-compact .knowledge-table td:nth-child(3),
+.content.is-subpage-compact .report-record-table td {
+  white-space: normal;
+}
+
+.content.is-subpage-compact .work-order-table td:nth-child(11),
+.content.is-subpage-compact .knowledge-table td:nth-child(3) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.content.is-subpage-compact .knowledge-table td:nth-child(4),
+.content.is-subpage-compact .knowledge-table td:nth-child(5),
+.content.is-subpage-compact .work-order-table td:nth-child(12) {
+  white-space: normal;
+}
+
+.content.is-subpage-compact .knowledge-actions,
+.content.is-subpage-compact .work-order-row-actions {
+  justify-content: flex-start;
+}
+
+.content.is-subpage-compact .work-order-row-actions button {
+  min-width: 74px;
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-empty,
+  .work-order-empty,
+  .cold-log-empty,
+  .meter-reading-empty,
+  .report-record-empty,
+  .operation-record-empty,
+  .environment-compat-empty,
+  .scene-compat-empty,
+  .video-legacy-empty
+) {
+  display: grid;
+  place-items: center;
+  min-height: 128px;
+  padding: 18px 20px;
+  text-align: center;
+}
+
+.content.is-subpage-compact .empty-hint {
+  max-width: 72ch;
+  margin-inline: 0;
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-empty,
+  .work-order-empty,
+  .cold-log-empty,
+  .meter-reading-empty,
+  .report-record-empty,
+  .operation-record-empty,
+  .environment-compat-empty,
+  .scene-compat-empty,
+  .video-legacy-empty
+) .empty-hint {
+  margin-inline: auto;
+}
+
+@media (max-width: 1180px) {
+  .content.is-subpage-compact :is(
+    .knowledge-table,
+    .work-order-table,
+    .report-record-table
+  ) {
+    table-layout: auto;
+  }
+
+  .content.is-subpage-compact .knowledge-table th,
+  .content.is-subpage-compact .knowledge-table td,
+  .content.is-subpage-compact .work-order-table th,
+  .content.is-subpage-compact .work-order-table td,
+  .content.is-subpage-compact .report-record-table th,
+  .content.is-subpage-compact .report-record-table td {
+    width: auto !important;
+  }
+}
