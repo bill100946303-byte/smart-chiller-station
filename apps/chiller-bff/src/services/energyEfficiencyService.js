@@ -15,8 +15,26 @@ function mapSite(config, siteId) {
   };
 }
 
+function resolveProjectKey(config, options = {}) {
+  if (typeof options?.projectKey === "string" && options.projectKey.trim()) {
+    return options.projectKey.trim();
+  }
+  const modelKey = config?.siteSourceConfig?.modelKey;
+  if (typeof modelKey === "string" && modelKey.trim()) {
+    return modelKey.trim();
+  }
+  const databaseKey = config?.siteSourceConfig?.databaseKey;
+  if (typeof databaseKey === "string" && databaseKey.trim()) {
+    return databaseKey.trim();
+  }
+  return "";
+}
+
 export async function getEnergyEfficiencySearch(config, siteId, options = {}) {
-  const report = await loadEnergyEfficiencySearch(config.legacyBaseUrl, siteId, options);
+  const report = await loadEnergyEfficiencySearch(config.legacyBaseUrl, siteId, {
+    ...options,
+    projectKey: resolveProjectKey(config, options)
+  });
   return {
     site: mapSite(config, siteId),
     generatedAt: buildGeneratedAt(config),
@@ -30,7 +48,10 @@ export async function getEnergyEfficiencySearch(config, siteId, options = {}) {
 }
 
 export async function getEnergyEfficiencyCompare(config, siteId, options = {}) {
-  const report = await loadEnergyEfficiencyCompare(config.legacyBaseUrl, siteId, options);
+  const report = await loadEnergyEfficiencyCompare(config.legacyBaseUrl, siteId, {
+    ...options,
+    projectKey: resolveProjectKey(config, options)
+  });
   return {
     site: mapSite(config, siteId),
     generatedAt: buildGeneratedAt(config),
@@ -44,7 +65,10 @@ export async function getEnergyEfficiencyCompare(config, siteId, options = {}) {
 }
 
 export async function getEnergyEfficiencyProportion(config, siteId, options = {}) {
-  const report = await loadEnergyEfficiencyProportion(config.legacyBaseUrl, siteId, options);
+  const report = await loadEnergyEfficiencyProportion(config.legacyBaseUrl, siteId, {
+    ...options,
+    projectKey: resolveProjectKey(config, options)
+  });
   return {
     site: mapSite(config, siteId),
     generatedAt: buildGeneratedAt(config),
@@ -56,7 +80,10 @@ export async function getEnergyEfficiencyProportion(config, siteId, options = {}
 }
 
 export async function getEnergyEfficiencyImbalance(config, siteId, options = {}) {
-  const report = await loadEnergyEfficiencyImbalance(config.legacyBaseUrl, siteId, options);
+  const report = await loadEnergyEfficiencyImbalance(config.legacyBaseUrl, siteId, {
+    ...options,
+    projectKey: resolveProjectKey(config, options)
+  });
   return {
     site: mapSite(config, siteId),
     generatedAt: buildGeneratedAt(config),

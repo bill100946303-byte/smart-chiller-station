@@ -10,6 +10,7 @@ export async function getAnomalySummary(config, siteId) {
     alarms.latestEventTimestamp,
     config.staleThresholdHours
   );
+  const hasAlarmEvents = (alarms.latestEvents?.length ?? 0) > 0;
   const counts = {
     total: alarms.counts?.total ?? 0,
     critical: applyFieldNullStrategy(config, "alarm_critical_count", alarms.counts?.critical ?? 0),
@@ -30,7 +31,7 @@ export async function getAnomalySummary(config, siteId) {
       staleAlarmFeed: applyFieldNullStrategy(
         config,
         "alarm_data_stale",
-        latestEventFreshness.stale,
+        hasAlarmEvents ? latestEventFreshness.stale : false,
         false
       ),
       missingHighSeverity: (alarms.counts?.critical ?? 0) === 0

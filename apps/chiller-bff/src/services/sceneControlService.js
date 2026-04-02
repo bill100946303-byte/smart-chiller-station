@@ -27,8 +27,8 @@ export async function getSceneLegacyTrend(config, siteId, options = {}) {
   };
 }
 
-export async function getSceneOnlineMonitor(config, siteId) {
-  const report = await loadSceneOnlineMonitor(config.legacyBaseUrl, siteId);
+export async function getSceneOnlineMonitor(config, siteId, options = {}) {
+  const report = await loadSceneOnlineMonitor(config.legacyBaseUrl, siteId, options);
   return {
     site: mapSite(config, siteId),
     generatedAt: buildGeneratedAt(config),

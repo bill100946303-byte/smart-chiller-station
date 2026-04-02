@@ -3,8 +3,11 @@ import { computeFreshnessState } from "./freshness.js";
 import { applyFieldNullStrategy, buildGeneratedAt } from "./fieldPolicyService.js";
 import { buildSourceStatus } from "./sourceStatusService.js";
 
-export async function getColdStationLog(config, siteId, date) {
-  const log = await loadColdStationLog(config.legacyBaseUrl, siteId, { date });
+export async function getColdStationLog(config, siteId, date, requestContext = {}) {
+  const log = await loadColdStationLog(config.legacyBaseUrl, siteId, {
+    date,
+    projectKey: requestContext?.projectKey
+  });
 
   return {
     site: {

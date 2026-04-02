@@ -38,10 +38,18 @@ function normalizeDate(input) {
   return formatDate(new Date());
 }
 
-function buildEndpoint(siteId, date) {
+function normalizeLegacyPath(siteId, options = {}) {
+  const projectKey =
+    typeof options.projectKey === "string" && options.projectKey.trim()
+      ? options.projectKey.trim()
+      : "";
+  return projectKey || siteId;
+}
+
+function buildEndpoint(siteId, date, options = {}) {
   const search = new URLSearchParams();
   search.set("date", date);
-  return `/zsqy/lengzhanrecords/${siteId}/getLengZhanRecords?${search.toString()}`;
+  return `/zsqy/lengzhanrecords/${normalizeLegacyPath(siteId, options)}/getLengZhanRecords?${search.toString()}`;
 }
 
 function pickPayloadData(payload) {
@@ -110,7 +118,7 @@ function normalizeRow(row, index, date) {
 
 export async function loadColdStationLog(baseUrl, siteId, options = {}) {
   const date = normalizeDate(options.date);
-  const endpoint = buildEndpoint(siteId, date);
+  const endpoint = buildEndpoint(siteId, date, options);
   const fetchedAt = new Date().toISOString();
   const response = await fetchLegacyJson(baseUrl, endpoint);
   const payloadData = response.ok ? pickPayloadData(response.payload) : null;

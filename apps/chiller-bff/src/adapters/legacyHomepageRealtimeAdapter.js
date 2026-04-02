@@ -126,10 +126,67 @@ function deriveLatestTimestamp(rows, curveRows) {
 function mapRealtimeOverview(message) {
   const rows = normalizeMetricRows(message);
   const curveRows = normalizeCurveRows(message);
+  const totalCoolingCapacity = findMetricValue(
+    rows,
+    ({ key, paramType }) =>
+      key === compact("实时总冷量") ||
+      key === compact("总冷量") ||
+      key === compact("totalCoolingCapacity") ||
+      paramType === "9"
+  );
   const chillerPower = findMetricValue(rows, ({ key }) => key === compact("冷机总功率"));
   const coolingTowerPower = findMetricValue(rows, ({ key }) => key === compact("冷却塔总功率"));
   const chilledPumpPower = findMetricValue(rows, ({ key }) => key === compact("冷冻泵总功率"));
   const coolingPumpPower = findMetricValue(rows, ({ key }) => key === compact("冷却泵总功率"));
+  const chillerCop = findMetricValue(
+    rows,
+    ({ key, paramType }) =>
+      key === compact("冷水机组COP") ||
+      key === compact("主机COP") ||
+      key === compact("chillerCop") ||
+      paramType === "12"
+  );
+  const chilledPumpConveyingCoefficient = findMetricValue(
+    rows,
+    ({ key, paramType }) =>
+      key === compact("冷冻水泵COP") ||
+      key === compact("冷冻泵输送系数") ||
+      key === compact("chilledWaterPumpCop") ||
+      paramType === "13"
+  );
+  const coolingTowerConveyingCoefficient = findMetricValue(
+    rows,
+    ({ key, paramType }) =>
+      key === compact("冷却塔COP") ||
+      key === compact("冷却塔输送系数") ||
+      key === compact("coolingTowerCop") ||
+      paramType === "14"
+  );
+  const coolingPumpConveyingCoefficient = findMetricValue(
+    rows,
+    ({ key, paramType }) =>
+      key === compact("冷却水泵COP") ||
+      key === compact("冷却泵输送系数") ||
+      key === compact("coolingWaterPumpCop") ||
+      paramType === "15"
+  );
+  const thermalUnbalanceRate = findMetricValue(
+    rows,
+    ({ key, paramType }) =>
+      key === compact("热不平衡率") ||
+      key === compact("thermalUnbalanceRate") ||
+      paramType === "11"
+  );
+  const chilledSupplyTemp = findMetricValue(
+    rows,
+    ({ key }) =>
+      key === compact("冷冻出水温度") || key === compact("coolingRturnWaterTemperature")
+  );
+  const coolingReturnTemp = findMetricValue(
+    rows,
+    ({ key }) =>
+      key === compact("冷却回水温度") || key === compact("coolingWaterTemperature")
+  );
   const realTimeTotalPower = findMetricValue(
     rows,
     ({ key, paramType }) => key === compact("实时总功率") || paramType === "16"
@@ -166,8 +223,20 @@ function mapRealtimeOverview(message) {
       totalPowerKw,
       currentCop,
       totalElectricityKwh: null,
+      totalCoolingCapacity,
       chilledDeltaT,
-      coolingDeltaT
+      coolingDeltaT,
+      chillerPowerKw: chillerPower,
+      chilledPumpPowerKw: chilledPumpPower,
+      coolingPumpPowerKw: coolingPumpPower,
+      coolingTowerPowerKw: coolingTowerPower,
+      chillerCop,
+      chilledPumpConveyingCoefficient,
+      coolingTowerConveyingCoefficient,
+      coolingPumpConveyingCoefficient,
+      thermalUnbalanceRate,
+      chilledSupplyTemp,
+      coolingReturnTemp
     },
     latestTimestamp: deriveLatestTimestamp(rows, curveRows),
     rows
