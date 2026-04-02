@@ -456,9 +456,11 @@ export default function TrendAnalysisPage() {
   }, [metricFilter, metricOptions]);
 
   useEffect(() => {
-    const currentRange = parseTrendRangeParam(searchParams.get("range"), runtimeConfig.trendRange);
-    const currentMetric = parseTrendMetricParam(searchParams.get("metric"));
-    if (currentRange === range && currentMetric === metricFilter) {
+    const rawRange = searchParams.get("range");
+    const rawMetric = searchParams.get("metric");
+    const rangeSynced = rawRange === range;
+    const metricSynced = metricFilter === "all" ? rawMetric === null : rawMetric === metricFilter;
+    if (rangeSynced && metricSynced) {
       return;
     }
 

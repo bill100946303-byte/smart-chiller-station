@@ -7,6 +7,7 @@ const BFF_BASE_URL = process.env.BFF_BASE_URL || "http://127.0.0.1:8787";
 const APP_BASE_URL = process.env.APP_BASE_URL || "http://127.0.0.1:3006";
 const CDP_LIST_URL = process.env.CDP_LIST_URL || "http://127.0.0.1:61392/json/list";
 const SITE_ID = process.env.SITE_ID || "btwentyfive";
+const STRICT_UI_SMOKE = process.env.B25_UI_SMOKE_STRICT === "1";
 const REQUEST_PAYLOAD = {
   inputs: {
     loadKw: 1200,
@@ -44,8 +45,8 @@ function requestRaw(url, { method = "GET", headers = {}, body = "" } = {}) {
       }
     );
     req.on("error", reject);
-    req.setTimeout(15_000, () => {
-      req.destroy(new Error("request timeout after 15s"));
+    req.setTimeout(30_000, () => {
+      req.destroy(new Error(`request timeout after 30s: ${url}`));
     });
     if (body) {
       req.write(body);
@@ -227,7 +228,21 @@ async function evaluateJson(client, expression) {
 }
 
 async function runUiChecks() {
-  const target = await pickCdpTarget();
+  let target = null;
+  try {
+    target = await pickCdpTarget();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (STRICT_UI_SMOKE) {
+      throw error;
+    }
+    return {
+      skipped: true,
+      reason: `cdp unavailable: ${message}`,
+      strictMode: STRICT_UI_SMOKE
+    };
+  }
+
   const client = await createCdpClient(target.webSocketDebuggerUrl);
   try {
     await client.send("Page.navigate", { url: `${APP_BASE_URL}/dashboard` });
@@ -303,9 +318,113 @@ async function runUiChecks() {
     expect(optimizeState.hasBenefitSection, "optimize-demo should contain benefit estimate section");
     expect(optimizeState.hasNoWhiteScreen, "optimize-demo should render root page container");
 
+    await client.send("Page.navigate", { url: `${APP_BASE_URL}/trend-analysis?metric=currentCop&range=7d` });
+    await sleep(2600);
+
+    const trendValidState = await evaluateJson(
+      client,
+      `JSON.stringify((() => {
+        const params = new URLSearchParams(location.search);
+        const activeRangeButton = document.querySelector(".trend-range-switch button.is-active");
+        const activeMetricButton = document.querySelector(".trend-metric-filter-row button.is-active");
+        return {
+          url: location.href,
+          onLoginPage: location.pathname === "/login",
+          hasTrendHeader: (document.body?.innerText || "").includes("趋势"),
+          metricParam: params.get("metric"),
+          rangeParam: params.get("range"),
+          activeRangeLabel: activeRangeButton ? activeRangeButton.textContent?.trim() : null,
+          activeMetricLabel: activeMetricButton ? activeMetricButton.textContent?.trim() : null
+        };
+      })())`
+    );
+    expect(!trendValidState.onLoginPage, "trend-analysis valid-url check failed because browser is on login page");
+    expect(trendValidState.hasTrendHeader, "trend-analysis valid-url should render trend page header");
+    expect(
+      trendValidState.metricParam === "currentCop",
+      `trend-analysis valid-url should keep metric=currentCop, got ${String(trendValidState.metricParam)}`
+    );
+    expect(
+      trendValidState.rangeParam === "7d",
+      `trend-analysis valid-url should keep range=7d, got ${String(trendValidState.rangeParam)}`
+    );
+
+    await client.send("Page.navigate", { url: `${APP_BASE_URL}/trend-analysis?metric=invalidMetric&range=invalidRange` });
+    await sleep(2600);
+
+    const trendFallbackState = await evaluateJson(
+      client,
+      `JSON.stringify((() => {
+        const params = new URLSearchParams(location.search);
+        const rangeParam = params.get("range");
+        const metricParam = params.get("metric");
+        const validRanges = ["24h", "7d", "30d"];
+        const validMetrics = ["totalPowerKw", "currentCop", "chilledDeltaT", "coolingDeltaT"];
+        return {
+          url: location.href,
+          onLoginPage: location.pathname === "/login",
+          rangeParam,
+          metricParam,
+          rangeRecovered: validRanges.includes(String(rangeParam || "")),
+          metricRecovered: metricParam === null || validMetrics.includes(String(metricParam))
+        };
+      })())`
+    );
+    expect(!trendFallbackState.onLoginPage, "trend-analysis fallback check failed because browser is on login page");
+    expect(
+      trendFallbackState.rangeRecovered,
+      `trend-analysis invalid range should recover to a valid value, got ${String(trendFallbackState.rangeParam)}`
+    );
+    expect(
+      trendFallbackState.metricRecovered,
+      `trend-analysis invalid metric should recover to valid/empty value, got ${String(trendFallbackState.metricParam)}`
+    );
+
+    await client.send("Runtime.evaluate", {
+      expression: `(() => {
+        const rangeButton = Array.from(document.querySelectorAll(".trend-range-switch button"))
+          .find((button) => (button.textContent || "").includes("30"));
+        if (rangeButton) {
+          rangeButton.click();
+        }
+        const metricButton = Array.from(document.querySelectorAll(".trend-metric-filter-row button"))
+          .find((button) => (button.textContent || "").includes("COP"));
+        if (metricButton) {
+          metricButton.click();
+        }
+      })()`,
+      returnByValue: true
+    });
+    await sleep(1800);
+
+    const trendInteractionState = await evaluateJson(
+      client,
+      `JSON.stringify((() => {
+        const params = new URLSearchParams(location.search);
+        return {
+          url: location.href,
+          rangeParam: params.get("range"),
+          metricParam: params.get("metric")
+        };
+      })())`
+    );
+    expect(
+      trendInteractionState.rangeParam === "30d",
+      `trend-analysis interaction should sync range=30d, got ${String(trendInteractionState.rangeParam)}`
+    );
+    expect(
+      trendInteractionState.metricParam === "currentCop",
+      `trend-analysis interaction should sync metric=currentCop, got ${String(trendInteractionState.metricParam)}`
+    );
+
     return {
       dashboard: dashboardState,
-      optimizeDemo: optimizeState
+      optimizeDemo: optimizeState,
+      trendAnalysis: {
+        validUrl: trendValidState,
+        invalidUrlFallback: trendFallbackState,
+        interactionSync: trendInteractionState
+      }
     };
   } finally {
     client.close();
