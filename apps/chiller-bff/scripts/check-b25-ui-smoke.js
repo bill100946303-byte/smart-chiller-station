@@ -257,11 +257,13 @@ async function runUiChecks() {
           .filter(Boolean);
         const dashOnlyCount = cardValues.filter((value) => value.includes("--")).length;
         const sourceBanner = document.body?.innerText?.includes("快照回退") || document.body?.innerText?.includes("最近可用快照");
+        const hasOpsBoardBySelector = Boolean(document.querySelector(".dashboard-ops-board"));
+        const hasEfficiencyRailBySelector = Boolean(document.querySelector(".dashboard-ops-rail-efficiency"));
         return {
           url: location.href,
           onLoginPage: location.pathname === "/login",
-          hasOpsBoard: text.includes("值班判断板"),
-          hasEfficiencyBlock: text.includes("1. 效率表现"),
+          hasOpsBoard: hasOpsBoardBySelector || text.includes("值班判断板"),
+          hasEfficiencyBlock: hasEfficiencyRailBySelector || text.includes("1. 效率表现"),
           hasSourceObservableField: text.includes("首页数据来源"),
           cardCount: cardValues.length,
           allDash: cardValues.length > 0 ? dashOnlyCount === cardValues.length : false,
