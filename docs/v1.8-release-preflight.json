@@ -1,8 +1,8 @@
 {
   "version": "v1.8",
-  "generatedAt": "2026-03-12T21:40:46.811Z",
+  "generatedAt": "2026-04-01T20:59:09.274Z",
   "gates": {
-    "stackOk": true,
+    "stackOk": false,
     "contractOk": true,
     "statusJsonOk": true,
     "shellOk": true,

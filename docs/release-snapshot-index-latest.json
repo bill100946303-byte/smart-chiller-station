@@ -1,16 +1,31 @@
 {
   "version": "v1.0",
-  "generatedAt": "2026-03-12T21:40:47.125Z",
+  "generatedAt": "2026-04-01T20:59:09.590Z",
   "limit": 20,
   "archiveDir": "/Users/billchow/Documents/智慧冷冻站/docs/release-snapshots",
   "summary": {
-    "total": 24,
+    "total": 25,
     "shown": 20,
     "go": 13,
     "noGo": 7,
     "unknown": 0
   },
   "entries": [
+    {
+      "file": "/Users/billchow/Documents/智慧冷冻站/docs/release-snapshots/release-snapshot-20260402-045858.json",
+      "fileName": "release-snapshot-20260402-045858.json",
+      "mtime": "2026-04-01T20:59:09.335Z",
+      "generatedAt": "2026-04-01T20:59:09.326Z",
+      "decision": "GO",
+      "exitCode": 0,
+      "reasons": [],
+      "advisories": [
+        "runtime_optional_mode",
+        "runtime_unavailable_snapshot_present"
+      ],
+      "strictFreshness": false,
+      "runtimeRequired": false
+    },
     {
       "file": "/Users/billchow/Documents/智慧冷冻站/docs/release-snapshots/release-snapshot-20260313-054040.json",
       "fileName": "release-snapshot-20260313-054040.json",
@@ -293,21 +308,6 @@
       "fileName": "release-snapshot-20260312-165240.json",
       "mtime": "2026-03-12T08:52:47.651Z",
       "generatedAt": "2026-03-12T08:52:47.644Z",
-      "decision": "GO",
-      "exitCode": 0,
-      "reasons": [],
-      "advisories": [
-        "runtime_optional_mode",
-        "runtime_unavailable_snapshot_present"
-      ],
-      "strictFreshness": false,
-      "runtimeRequired": false
-    },
-    {
-      "file": "/Users/billchow/Documents/智慧冷冻站/docs/release-snapshots/release-snapshot-20260312-164825.json",
-      "fileName": "release-snapshot-20260312-164825.json",
-      "mtime": "2026-03-12T08:48:32.333Z",
-      "generatedAt": "2026-03-12T08:48:32.325Z",
       "decision": "GO",
       "exitCode": 0,
       "reasons": [],

@@ -9,18 +9,22 @@ autoBoot=1
 
 [OK] auto-boot enabled, starting local stack first
 [WARN] auto-boot frontend endpoint not detected, recent auto-boot hints:
-[OK] legacy health: reachable HTTP 404 (http://127.0.0.1:8098/healthz)
-[OK] bff health: HTTP 200 (http://127.0.0.1:8787/healthz)
-[OK] frontend entry: HTTP 200 (http://127.0.0.1:3001/)
-[WARN] frontend server header missing (http://127.0.0.1:3001/)
+[WARN] frontend not ready on port 3001, trying next candidate
+[FAIL] frontend start failed for FRONTEND_BASE_URL=http://127.0.0.1:3001
+[FAIL] legacy health: unreachable (http://127.0.0.1:8098/healthz)
+[FAIL] bff health: unreachable (http://127.0.0.1:8787/healthz)
+[FAIL] frontend entry: unreachable (http://127.0.0.1:3001/)
+[WARN] frontend server header check skipped: no response headers
 
 [OK] bff contract check passed
 [OK] bff probe executed
-[INFO] sourceStatus overall => overview:ok trends:partial anomalies:ok recommendations:ok
+[INFO] sourceStatus overall => overview:failed trends:failed anomalies:failed recommendations:partial
 [INFO] recommendation cards => 0
 [WARN] badge state skipped: READINESS_CHECK=0
 
-=== Summary: FAIL=0, WARN=3 ===
+--- bff log tail ---
+--- frontend log tail ---
+=== Summary: FAIL=3, WARN=3 ===
 $ /usr/bin/env bash -lc cd /Users/billchow/Documents/智慧冷冻站/apps/chiller-bff && npm run check:contract
 
 > chiller-bff@0.1.0 check:contract
@@ -39,21 +43,12 @@ HomeEnergy fallback probe (non-blocking): N/A
 - energy source message missing fallback trigger "homeEnergyEfficiency"
 Real-link-ready probe (non-blocking): NOT_READY
 example-ready=false
-runtime-ready=false
-Real-link-ready runtime probe (non-blocking): NOT_READY
-- dashboardTrends.sourceStatus.overall=partial (expected ok)
-- dashboardTrends.sourceStatus has 1 source(s) with ok=false
-Real-link-ready failure groups (by category):
-- group=upstream_unreachable count=0
-- group=upstream_5xx count=1
-  - /dashboard/trends.sourceStatus.sources[1]: key=runParams status=500
-- group=field_missing_or_invalid count=0
-Real-link-ready failure groups (by endpoint/category):
-- endpoint=/dashboard/trends
-  - group=upstream_unreachable count=0
-  - group=upstream_5xx count=1
-    - /dashboard/trends.sourceStatus.sources[1]: key=runParams status=500
-  - group=field_missing_or_invalid count=0
+runtime-ready=unknown
+Real-link-ready runtime probe (non-blocking): UNAVAILABLE
+- dashboardOverview runtime probe failed: TypeError: fetch failed (http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview)
+- dashboardTrends runtime probe failed: TypeError: fetch failed (http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/trends)
+- anomaliesSummary runtime probe failed: TypeError: fetch failed (http://127.0.0.1:8787/bff/v1/sites/126lnoffice/anomalies/summary)
+- recommendations runtime probe failed: TypeError: fetch failed (http://127.0.0.1:8787/bff/v1/sites/126lnoffice/recommendations)
 - dashboardOverview.sourceStatus.overall=partial (expected ok)
 - dashboardOverview.sourceStatus has 2 source(s) with ok=false
 - dashboardTrends.sourceStatus.overall=partial (expected ok)
@@ -122,7 +117,7 @@ Real-link-ready failure groups (by endpoint/category):
     - /recommendations.ruleEvaluation.skippedRuleDetails[0].missingMetrics[1]: metric=station_total_power_kw category=field_missing_or_invalid
 Real-link-ready baseline sample: /Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/openapi/examples/real-link-ready-sample.json
 Real-link-ready probe report: /Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/openapi/examples/real-link-ready-probe-report.json
-Contract validation passed for 5 examples using bff-v1.yaml
+Contract validation passed for 11 examples using bff-v1.yaml
 I18N safety notices (1):
 - I18N_ASSERTION: Primary rendering must use key/ok/status/category; message/error are diagnostic details only.
 Source key scan report:
@@ -161,18 +156,23 @@ $ /usr/bin/env bash -lc cd /Users/billchow/Documents/智慧冷冻站/apps/chille
 
 vite v7.3.1 building client environment for production...
 transforming...
-✓ 1702 modules transformed.
+✓ 1737 modules transformed.
 rendering chunks...
 computing gzip size...
-dist/index.html                   0.40 kB │ gzip:  0.28 kB
-dist/assets/index-3Psxls4d.css   16.85 kB │ gzip:  4.35 kB
-dist/assets/index-CJppG0g-.js   289.96 kB │ gzip: 92.57 kB
-✓ built in 911ms
+dist/index.html                     0.40 kB │ gzip:   0.28 kB
+dist/assets/index-DcZW_0JJ.css    179.21 kB │ gzip:  27.68 kB
+dist/assets/index-DET75sPg.js   1,586.88 kB │ gzip: 419.89 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.06s
 $ /usr/bin/env bash -lc /Users/billchow/Documents/智慧冷冻站/scripts/chiller_ctl.sh release-gate-latest
 releaseGateLatestJson=/Users/billchow/Documents/智慧冷冻站/docs/release-gate-latest.json
 releaseGateLatestMd=/Users/billchow/Documents/智慧冷冻站/docs/release-gate-latest.md
--rw-r--r--@ 1 billchow  staff  2774 Mar 12 17:45 /Users/billchow/Documents/智慧冷冻站/docs/ui-badge-state-v1.8.json
--rw-------@ 1 billchow  staff  2774 Mar 12 17:45 /Users/billchow/Documents/智慧冷冻站/apps/chiller-shell-v1/public/ui-badge-state-v1.8.json
+-rw-r--r--@ 1 billchow  staff  2715 Mar 25 01:24 /Users/billchow/Documents/智慧冷冻站/docs/ui-badge-state-v1.8.json
+-rw-------@ 1 billchow  staff  2715 Mar 25 01:24 /Users/billchow/Documents/智慧冷冻站/apps/chiller-shell-v1/public/ui-badge-state-v1.8.json
 -rw-r--r--@ 1 billchow  staff  2427 Mar 12 13:05 /Users/billchow/Documents/智慧冷冻站/docs/v1.8-signoff-decision.md
 -rw-r--r--@ 1 billchow  staff  3990 Mar 12 12:04 /Users/billchow/Documents/智慧冷冻站/docs/ui-consistency-review-v1.8.md
 -rw-r--r--@ 1 billchow  staff  3626 Mar 12 12:06 /Users/billchow/Documents/智慧冷冻站/docs/readiness-baseline-freeze-v1.8.md

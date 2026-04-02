@@ -1,11 +1,12 @@
 # Release Snapshot Index Latest
 
-- total: `24`
+- total: `25`
 - shown: `20`
 - go: `13`
 - noGo: `7`
 - unknown: `0`
 
+- release-snapshot-20260402-045858.json: `GO` reasons=`none` advisories=`runtime_optional_mode,runtime_unavailable_snapshot_present`
 - release-snapshot-20260313-054040.json: `GO` reasons=`none` advisories=`runtime_optional_mode,runtime_unavailable_snapshot_present`
 - release-snapshot-20260313-053033.json: `GO` reasons=`none` advisories=`runtime_optional_mode,runtime_unavailable_snapshot_present`
 - release-snapshot-20260313-052923.json: `GO` reasons=`none` advisories=`runtime_optional_mode,runtime_unavailable_snapshot_present`
@@ -25,4 +26,3 @@
 - release-snapshot-20260312-171838.json: `NO-GO` reasons=`preflight_not_pass` advisories=`runtime_unavailable_snapshot_present`
 - release-snapshot-20260312-170239.json: `GO` reasons=`none` advisories=`runtime_optional_mode,runtime_unavailable_snapshot_present`
 - release-snapshot-20260312-165240.json: `GO` reasons=`none` advisories=`runtime_optional_mode,runtime_unavailable_snapshot_present`
-- release-snapshot-20260312-164825.json: `GO` reasons=`none` advisories=`runtime_optional_mode,runtime_unavailable_snapshot_present`
