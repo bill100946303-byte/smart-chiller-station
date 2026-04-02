@@ -122,6 +122,7 @@ type OpsMetric = {
   tone: Tone;
   hint: string;
   assessment?: string;
+  thresholdHint?: string;
 };
 
 type FocusItem = {
@@ -313,6 +314,23 @@ function toFixedOrDash(value: number | null | undefined, digits: number): string
     return "--";
   }
   return value.toFixed(digits);
+}
+
+function splitMetricDisplay(value: string): { main: string; unit: string | null } {
+  const trimmed = value.trim();
+  const unitPatterns = [/^(.+?)\s*(kWh)$/i, /^(.+?)\s*(kW)$/i, /^(.+?)\s*(MW)$/i, /^(.+?)\s*(RT)$/i, /^(.+?)\s*(°C)$/i, /^(.+?)\s*(%)$/];
+
+  for (const pattern of unitPatterns) {
+    const match = trimmed.match(pattern);
+    if (match) {
+      return {
+        main: match[1].trim(),
+        unit: match[2].trim()
+      };
+    }
+  }
+
+  return { main: trimmed, unit: null };
 }
 
 function toPercentOrDash(value: number | null | undefined, digits = 0): string {
@@ -1707,61 +1725,62 @@ export default function DashboardPage() {
     }
   ];
 
-  const opsEfficiencyCards: OpsMetric[] = [
-    {
-      key: "cop",
-      label: DASHBOARD_TEXT.efficiencyStationCop,
-      value: toFixedOrDash(currentCop, 2),
-      tone: stationCopAssessment?.tone ?? "neutral",
-      hint: "沿用旧冷站效率口径，先看系统整体能效。",
-      assessment: stationCopAssessment?.label
-    },
+  const efficiencyFeaturedCard: OpsMetric = {
+    key: "cop",
+    label: DASHBOARD_TEXT.efficiencyStationCop,
+    value: toFixedOrDash(currentCop, 2),
+    tone: stationCopAssessment?.tone ?? "neutral",
+    hint: "整体能效主指标",
+    assessment: stationCopAssessment?.label,
+    thresholdHint: "优秀 ≥ 5.0，良好 ≥ 4.15"
+  };
+
+  const efficiencyChainCards: OpsMetric[] = [
     {
       key: "chillerCop",
       label: DASHBOARD_TEXT.efficiencyChillerCop,
       value: toFixedOrDash(chillerCop, 2),
       tone: chillerCopAssessment?.tone ?? "neutral",
-      hint: `总制冷量 ${toFixedOrDash(totalCoolingCapacity, 1)} ÷ 主机总功率 ${toFixedOrDash(chillerPowerKw, 1)}`,
-      assessment: chillerCopAssessment?.label
+      hint: "主机效率核心值",
+      assessment: chillerCopAssessment?.label,
+      thresholdHint: "优秀 ≥ 5.7，良好 ≥ 5.2"
     },
     {
       key: "chilledPumpCoefficient",
       label: DASHBOARD_TEXT.efficiencyChilledPumpCoefficient,
       value: toFixedOrDash(chilledPumpConveyingCoefficient, 2),
       tone: chilledPumpAssessment?.tone ?? "neutral",
-      hint: `总制冷量 ${toFixedOrDash(totalCoolingCapacity, 1)} ÷ 冷冻泵功率 ${toFixedOrDash(chilledPumpPowerKw, 1)}`,
-      assessment: chilledPumpAssessment?.label
+      hint: "输送侧效率",
+      assessment: chilledPumpAssessment?.label,
+      thresholdHint: "优秀 ≥ 45.9，良好 ≥ 41.7"
     },
     {
       key: "coolingPumpCoefficient",
       label: DASHBOARD_TEXT.efficiencyCoolingPumpCoefficient,
       value: toFixedOrDash(coolingPumpConveyingCoefficient, 2),
       tone: coolingPumpAssessment?.tone ?? "neutral",
-      hint: `总制冷量 ${toFixedOrDash(totalCoolingCapacity, 1)} ÷ 冷却泵功率 ${toFixedOrDash(coolingPumpPowerKw, 1)}`,
-      assessment: coolingPumpAssessment?.label
+      hint: "输送侧效率",
+      assessment: coolingPumpAssessment?.label,
+      thresholdHint: "优秀 ≥ 53.5，良好 ≥ 48.6"
     },
     {
       key: "coolingTowerCoefficient",
       label: DASHBOARD_TEXT.efficiencyCoolingTowerCoefficient,
       value: toFixedOrDash(coolingTowerConveyingCoefficient, 2),
       tone: coolingTowerAssessment?.tone ?? "neutral",
-      hint: `总制冷量 ${toFixedOrDash(totalCoolingCapacity, 1)} ÷ 冷却塔功率 ${toFixedOrDash(coolingTowerPowerKw, 1)}`,
-      assessment: coolingTowerAssessment?.label
-    },
-    {
-      key: "heatBalance",
-      label: DASHBOARD_TEXT.efficiencyHeatBalance,
-      value: `${toFixedOrDash(thermalUnbalanceRate, 1)} %`,
-      tone: heatBalanceAssessment?.tone ?? "neutral",
-      hint: "当前先沿用旧系统热不平衡率口径，绝对值越接近 0 越稳。",
-      assessment: heatBalanceAssessment?.label
-    },
+      hint: "散热端效率",
+      assessment: coolingTowerAssessment?.label,
+      thresholdHint: "优秀 ≥ 108.5，良好 ≥ 98.6"
+    }
+  ];
+
+  const efficiencySupportCards: OpsMetric[] = [
     {
       key: "coolingCapacity",
       label: DASHBOARD_TEXT.efficiencyCoolingCapacity,
       value: `${toFixedOrDash(totalCoolingCapacity, 1)} kW`,
       tone: totalCoolingCapacity != null ? "neutral" : "warn",
-      hint: "当前新壳按旧系统默认 KW 口径展示，优先使用实时总冷量，缺测时再兼容推导"
+      hint: "当前系统冷量规模"
     },
     {
       key: "power",
@@ -1771,6 +1790,15 @@ export default function DashboardPage() {
       hint: `主机 ${toFixedOrDash(chillerPowerKw, 1)} kW · 辅机 ${toFixedOrDash(auxiliaryPowerKw, 1)} kW`
     },
     {
+      key: "heatBalance",
+      label: DASHBOARD_TEXT.efficiencyHeatBalance,
+      value: `${toFixedOrDash(thermalUnbalanceRate, 1)} %`,
+      tone: heatBalanceAssessment?.tone ?? "neutral",
+      hint: "越接近 0 越稳定",
+      assessment: heatBalanceAssessment?.label,
+      thresholdHint: "优秀 |偏差| ≤ 5%，良好 |偏差| ≤ 10%"
+    },
+    {
       key: "delta",
       label: DASHBOARD_TEXT.efficiencyDelta,
       value: `${toFixedOrDash(chilledDeltaT, 1)} / ${toFixedOrDash(coolingDeltaT, 1)} °C`,
@@ -1778,13 +1806,6 @@ export default function DashboardPage() {
       hint: `冷冻出水 ${toFixedOrDash(chilledSupplyTemp, 1)}°C · 冷却回水 ${toFixedOrDash(coolingReturnTemp, 1)}°C`
     }
   ];
-
-  const opsEfficiencyPrimaryCards = opsEfficiencyCards.filter((item) =>
-    ["cop", "chillerCop", "coolingCapacity", "power"].includes(item.key)
-  );
-  const opsEfficiencySecondaryCards = opsEfficiencyCards.filter(
-    (item) => !["cop", "chillerCop", "coolingCapacity", "power"].includes(item.key)
-  );
 
   const handoverItems: HandoverItem[] = [
     {
@@ -1935,32 +1956,92 @@ export default function DashboardPage() {
                 <small>{efficiencyStatusNote.hint}</small>
               </div>
             ) : null}
-            <div className="dashboard-ops-card-grid dashboard-ops-card-grid-efficiency dashboard-ops-card-grid-efficiency-primary">
-              {opsEfficiencyPrimaryCards.map((item) => (
-                <article
-                  key={item.key}
-                  className={`dashboard-ops-card tone-${item.tone} ${item.key === "cop" ? "is-featured" : ""}`}
-                >
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                  {item.assessment ? (
-                    <em className={`dashboard-ops-assessment tone-${item.tone}`}>{item.assessment}</em>
+            <div className="dashboard-efficiency-layout">
+              <article className={`dashboard-ops-card dashboard-efficiency-feature tone-${efficiencyFeaturedCard.tone} is-featured`}>
+                <div className="dashboard-efficiency-label-row">
+                  <span>{efficiencyFeaturedCard.label}</span>
+                  {efficiencyFeaturedCard.thresholdHint ? (
+                    <span className="dashboard-metric-info" tabIndex={0} role="note" aria-label={efficiencyFeaturedCard.thresholdHint}>
+                      阈值
+                      <i>{efficiencyFeaturedCard.thresholdHint}</i>
+                    </span>
                   ) : null}
-                  <small className="dashboard-ops-hint">{item.hint}</small>
-                </article>
-              ))}
-            </div>
-            <div className="dashboard-ops-card-grid dashboard-ops-card-grid-efficiency dashboard-ops-card-grid-efficiency-secondary">
-              {opsEfficiencySecondaryCards.map((item) => (
-                <article key={item.key} className={`dashboard-ops-card tone-${item.tone}`}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                  {item.assessment ? (
-                    <em className={`dashboard-ops-assessment tone-${item.tone}`}>{item.assessment}</em>
-                  ) : null}
-                  <small className="dashboard-ops-hint">{item.hint}</small>
-                </article>
-              ))}
+                </div>
+                {(() => {
+                  const parts = splitMetricDisplay(efficiencyFeaturedCard.value);
+                  return (
+                    <strong className="dashboard-metric-value">
+                      <bdi className="dashboard-metric-main">{parts.main}</bdi>
+                      {parts.unit ? <em className="dashboard-metric-unit">{parts.unit}</em> : null}
+                    </strong>
+                  );
+                })()}
+                {efficiencyFeaturedCard.assessment ? (
+                  <em className={`dashboard-ops-assessment tone-${efficiencyFeaturedCard.tone}`}>
+                    {efficiencyFeaturedCard.assessment}
+                  </em>
+                ) : null}
+                <small className="dashboard-efficiency-caption">{efficiencyFeaturedCard.hint}</small>
+              </article>
+
+              <div className="dashboard-efficiency-chain">
+                {efficiencyChainCards.map((item, index) => (
+                  <article key={item.key} className={`dashboard-ops-card dashboard-efficiency-chain-card tone-${item.tone}`}>
+                    <div className="dashboard-efficiency-chain-head">
+                      <div className="dashboard-efficiency-card-meta">
+                        <span>{item.label}</span>
+                        {item.thresholdHint ? (
+                          <span className="dashboard-metric-info" tabIndex={0} role="note" aria-label={item.thresholdHint}>
+                            阈值
+                            <i>{item.thresholdHint}</i>
+                          </span>
+                        ) : null}
+                      </div>
+                      {item.assessment ? <em className={`dashboard-ops-assessment tone-${item.tone}`}>{item.assessment}</em> : null}
+                    </div>
+                    {(() => {
+                      const parts = splitMetricDisplay(item.value);
+                      return (
+                        <strong className="dashboard-metric-value">
+                          <bdi className="dashboard-metric-main">{parts.main}</bdi>
+                          {parts.unit ? <em className="dashboard-metric-unit">{parts.unit}</em> : null}
+                        </strong>
+                      );
+                    })()}
+                    <small className="dashboard-efficiency-caption">{item.hint}</small>
+                    {index < efficiencyChainCards.length - 1 ? <i className="dashboard-efficiency-link" aria-hidden="true" /> : null}
+                  </article>
+                ))}
+              </div>
+
+              <div className="dashboard-efficiency-support-grid">
+                {efficiencySupportCards.map((item) => (
+                  <article key={item.key} className={`dashboard-ops-card dashboard-efficiency-support-card tone-${item.tone}`}>
+                    <div className="dashboard-efficiency-support-head">
+                      <div className="dashboard-efficiency-card-meta">
+                        <span>{item.label}</span>
+                        {item.thresholdHint ? (
+                          <span className="dashboard-metric-info" tabIndex={0} role="note" aria-label={item.thresholdHint}>
+                            阈值
+                            <i>{item.thresholdHint}</i>
+                          </span>
+                        ) : null}
+                      </div>
+                      {item.assessment ? <em className={`dashboard-ops-assessment tone-${item.tone}`}>{item.assessment}</em> : null}
+                    </div>
+                    {(() => {
+                      const parts = splitMetricDisplay(item.value);
+                      return (
+                        <strong className="dashboard-metric-value">
+                          <bdi className="dashboard-metric-main">{parts.main}</bdi>
+                          {parts.unit ? <em className="dashboard-metric-unit">{parts.unit}</em> : null}
+                        </strong>
+                      );
+                    })()}
+                    <small className="dashboard-efficiency-caption">{item.hint}</small>
+                  </article>
+                ))}
+              </div>
             </div>
           </section>
 
