@@ -17,6 +17,16 @@ function normalizeBooleanEnv(value, fallback = false) {
   return fallback;
 }
 
+function normalizeListEnv(value) {
+  if (typeof value !== "string") {
+    return [];
+  }
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function resolveAppModeLabel(appMode) {
   if (process.env.APP_MODE_LABEL) {
     return process.env.APP_MODE_LABEL;
@@ -37,6 +47,10 @@ export const config = {
   legacyBaseUrl: (process.env.LEGACY_BASE_URL || "http://127.0.0.1:8098").replace(/\/+$/, ""),
   defaultSiteId: process.env.DEFAULT_SITE_ID || "126lnoffice",
   staleThresholdHours: Number(process.env.STALE_THRESHOLD_HOURS || 24),
+  adminDbFile:
+    process.env.ADMIN_DB_FILE || path.resolve(__dirname, "../.local/admin.sqlite"),
+  adminBootstrapUserIds: normalizeListEnv(process.env.ADMIN_BOOTSTRAP_USER_IDS),
+  adminBootstrapUsernames: normalizeListEnv(process.env.ADMIN_BOOTSTRAP_USERNAMES),
   fieldDictionaryFile:
     process.env.FIELD_DICTIONARY_FILE ||
     path.resolve(__dirname, "../../../docs/field-dictionary.json"),
