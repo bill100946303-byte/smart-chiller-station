@@ -65,13 +65,90 @@ export function validateOptimizeDraftRequest(body) {
   };
 }
 
-function createSourceEntry(key, endpoint, sourceStatus, fallbackMessage) {
+function normalizeSourceIssueDetail(sourceStatus) {
+  const sources = Array.isArray(sourceStatus?.sources) ? sourceStatus.sources : [];
+  const detail = sources
+    .map((source) => `${String(source?.message || "")} ${String(source?.error || "")}`.trim().toLowerCase())
+    .filter(Boolean)
+    .join(" ");
+  return detail;
+}
+
+function resolveSourceHttpStatus(sourceStatus) {
+  const sources = Array.isArray(sourceStatus?.sources) ? sourceStatus.sources : [];
+  const statuses = sources
+    .map((source) => (typeof source?.status === "number" && Number.isFinite(source.status) ? source.status : null))
+    .filter((item) => item !== null);
+  if (!statuses.length) {
+    return null;
+  }
+  return Math.max(...statuses);
+}
+
+function resolveSourceReasonCode(sourceStatus, options = {}) {
+  const requiredSnapshot = Array.isArray(options?.requiredSnapshot) ? options.requiredSnapshot : [];
+  const hasMissingSnapshot = requiredSnapshot.some((item) => {
+    if (!item || typeof item !== "object") {
+      return false;
+    }
+    const value = item.value;
+    return value == null || (typeof value === "number" && !Number.isFinite(value));
+  });
+  if (hasMissingSnapshot) {
+    return options?.missingSnapshotCode || "snapshot_missing";
+  }
+
+  if (!sourceStatus || typeof sourceStatus !== "object") {
+    return "source_missing";
+  }
+
+  const overall = sourceStatus.overall || "failed";
+  const issueDetail = normalizeSourceIssueDetail(sourceStatus);
+  const statusCode = resolveSourceHttpStatus(sourceStatus);
+
+  if (overall === "ok") {
+    return "ready";
+  }
+
+  if (
+    issueDetail.includes("field_missing_or_invalid") ||
+    issueDetail.includes("field missing") ||
+    issueDetail.includes("invalid")
+  ) {
+    return "field_missing_or_invalid";
+  }
+
+  if (
+    issueDetail.includes("upstream_unreachable") ||
+    issueDetail.includes("unreachable") ||
+    issueDetail.includes("fetch failed")
+  ) {
+    return "upstream_unreachable";
+  }
+
+  if (typeof statusCode === "number" && statusCode >= 500) {
+    return "upstream_5xx";
+  }
+
+  if (typeof statusCode === "number" && statusCode >= 400) {
+    return "upstream_4xx";
+  }
+
+  if (overall === "partial") {
+    return "partial_fallback";
+  }
+
+  return "upstream_unavailable";
+}
+
+function createSourceEntry(key, endpoint, sourceStatus, fallbackMessage, options = {}) {
   const overall = sourceStatus?.overall || "failed";
   const ok = overall === "ok" || overall === "partial";
   return {
     key,
     endpoint,
     ok,
+    reasonCode: resolveSourceReasonCode(sourceStatus, options),
     status: null,
     message: overall,
     error: ok ? null : fallbackMessage,
@@ -528,11 +605,13 @@ function buildHistoryBenchmarkUnavailableResult({
   ratedCoolingCapacityKw,
   defaultMonths,
   note,
+  availabilityReasonCode = "history_samples_unavailable",
   source = null
 }) {
   return {
     mode: "load-band",
     status: "unavailable",
+    availabilityReasonCode,
     matchingTier: "unavailable",
     fallbackLevel: 3,
     ratedCoolingCapacityKw,
@@ -615,11 +694,15 @@ function getRatedCoolingCapacityKw(config) {
 
 function buildHistoryBenchmarkSourceEntry(siteId, benchmark, endpointPath = "energy-efficiency/proportion") {
   const status = benchmark?.status || "unavailable";
+  const reasonCode =
+    benchmark?.availabilityReasonCode ||
+    (status === "ready" ? "history_match_ready" : status === "partial" ? "history_match_partial" : "history_samples_unavailable");
   return {
     key: "historyBenchmark",
     endpoint: `/bff/v1/sites/${siteId}/${endpointPath}`,
     ok: status !== "unavailable",
     fallback: status === "partial",
+    reasonCode,
     status: null,
     message: status,
     error: status === "unavailable" ? "historical benchmark unavailable" : null,
@@ -1154,9 +1237,11 @@ async function loadHistoryBenchmarkReports(config, siteId, request, baseline, co
       requestedWetBulbC: normalizeWetBulbC(request.outdoorTempC),
       ratedCoolingCapacityKw: null,
       defaultMonths,
+      availabilityReasonCode: "rated_cooling_capacity_missing",
       note: "首版采用草案筛选口径按负荷率区间与湿球边界做匹配，不执行真实控制；当前缺少额定制冷能力，无法完成历史对标。",
       source: buildHistoryBenchmarkSourceEntry(siteId, {
         status: "unavailable",
+        availabilityReasonCode: "rated_cooling_capacity_missing",
         sampleCount: 0
       })
     });
@@ -1204,9 +1289,21 @@ async function loadHistoryBenchmarkReports(config, siteId, request, baseline, co
   });
 
   if (summary.status !== "unavailable") {
+    const availabilityReasonCode =
+      summary.matchingTier === "load-wetbulb-strict"
+        ? "history_match_strict"
+        : summary.matchingTier === "load-wetbulb-relaxed"
+          ? "history_match_relaxed"
+          : summary.matchingTier === "load-only-fallback"
+            ? "history_match_load_only"
+            : summary.status === "partial"
+              ? "history_match_partial"
+              : "history_match_ready";
+
     return {
       mode: "load-band",
       ...summary,
+      availabilityReasonCode,
       currentGap: buildHistoryCurrentGap(request, baseline, summary.referenceCop),
       ratedCoolingCapacityKw,
       requestedLoadRatePct,
@@ -1237,6 +1334,7 @@ async function loadHistoryBenchmarkReports(config, siteId, request, baseline, co
       },
       source: buildHistoryBenchmarkSourceEntry(siteId, {
         status: summary.status,
+        availabilityReasonCode,
         sampleCount: summary.sampleCount
       })
     };
@@ -1282,9 +1380,11 @@ async function loadHistoryBenchmarkReports(config, siteId, request, baseline, co
       requestedWetBulbC,
       ratedCoolingCapacityKw,
       defaultMonths,
+      availabilityReasonCode: "history_samples_unavailable",
       note: "历史对标采用草案筛选口径按负荷区间与湿球边界回退，不执行真实控制；当前占比与日历样本均不可用。",
       source: buildHistoryBenchmarkSourceEntry(siteId, {
         status: "unavailable",
+        availabilityReasonCode: "history_samples_unavailable",
         sampleCount: 0
       })
     });
@@ -1293,6 +1393,7 @@ async function loadHistoryBenchmarkReports(config, siteId, request, baseline, co
   return {
     mode: "load-band",
     ...calendarSummary,
+    availabilityReasonCode: "history_calendar_fallback",
     matchingTier: "load-only-fallback",
     fallbackLevel: 2,
     requestedWetBulbC,
@@ -1326,6 +1427,7 @@ async function loadHistoryBenchmarkReports(config, siteId, request, baseline, co
       siteId,
       {
         status: calendarSummary.status,
+        availabilityReasonCode: "history_calendar_fallback",
         sampleCount: calendarSummary.sampleCount
       },
       "energy-efficiency/calendar"
@@ -1945,25 +2047,57 @@ export async function buildOptimizeDraftResponse(config, siteId, request, contex
         "dashboardOverview",
         `/bff/v1/sites/${siteId}/dashboard/overview`,
         overview?.sourceStatus,
-        "dashboard overview unavailable"
+        "dashboard overview unavailable",
+        {
+          missingSnapshotCode: "baseline_snapshot_missing",
+          requiredSnapshot: [
+            {
+              key: "baseline.systemCop",
+              value: baseline?.systemCop
+            },
+            {
+              key: "baseline.totalPowerKw",
+              value: baseline?.totalPowerKw
+            }
+          ]
+        }
       ),
       createSourceEntry(
         "anomalySummary",
         `/bff/v1/sites/${siteId}/anomalies/summary`,
         anomalies?.sourceStatus,
-        "anomaly summary unavailable"
+        "anomaly summary unavailable",
+        {
+          missingSnapshotCode: "alarm_snapshot_missing",
+          requiredSnapshot: [
+            {
+              key: "anomalies.counts.total",
+              value: anomalies?.counts?.total
+            }
+          ]
+        }
       ),
       createSourceEntry(
         "recommendations",
         `/bff/v1/sites/${siteId}/recommendations`,
         recommendations?.sourceStatus,
-        "recommendations unavailable"
+        "recommendations unavailable",
+        {
+          missingSnapshotCode: "recommendation_cards_missing",
+          requiredSnapshot: [
+            {
+              key: "recommendations.cards",
+              value: Array.isArray(recommendations?.cards) ? recommendations.cards.length : null
+            }
+          ]
+        }
       ),
       historyBenchmarkSource || null,
       {
         key: "optimizeDraft",
         endpoint: `/bff/v1/sites/${siteId}/optimize`,
         ok: false,
+        reasonCode: "draft_not_implemented",
         status: null,
         message: "context-backed draft only",
         error: "not implemented",

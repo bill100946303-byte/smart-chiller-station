@@ -11,6 +11,8 @@ import {
   type DashboardOverviewDto,
   type OptimizeDraftDetailsDto,
   type OptimizeDraftErrorDto,
+  type SourceEndpointStatusDto,
+  type SourceStatusDto,
   type SceneLegacyTrendDto,
   fetchDashboardOverview,
   fetchSceneLegacyTrend,
@@ -190,12 +192,18 @@ type ExtendedOptimizeDraftDetails = OptimizeDraftDetailsDto & {
 };
 
 type AutoPrefillKind = "loading" | "ready" | "partial" | "error";
+type AutoPrefillReasonCode =
+  | "prefill_overview_request_failed"
+  | "prefill_load_snapshot_missing"
+  | "prefill_wet_bulb_request_failed"
+  | "prefill_wet_bulb_points_missing";
 
 type AutoPrefillState = {
   kind: AutoPrefillKind;
   loadSource: string | null;
   wetBulbSource: string | null;
   refreshedAt: string | null;
+  reasonCodes: AutoPrefillReasonCode[];
 };
 
 const WET_BULB_TAG_NAME = "506-40689";
@@ -860,6 +868,118 @@ function formatBenefitBasisSummary(basis: DraftBenefitBasis | undefined): string
   return parts.length ? parts.join(" / ") : zhCN.optimizeDemo.benefitEstimateBasisEmpty;
 }
 
+function localizeOptimizeSourceLabel(key: string | undefined): string {
+  if (key === "dashboardOverview") {
+    return zhCN.optimizeDemo.sourceLabelOverview;
+  }
+  if (key === "anomalySummary") {
+    return zhCN.optimizeDemo.sourceLabelAnomaly;
+  }
+  if (key === "recommendations") {
+    return zhCN.optimizeDemo.sourceLabelRecommendation;
+  }
+  if (key === "historyBenchmark") {
+    return zhCN.optimizeDemo.sourceLabelHistory;
+  }
+  if (key === "optimizeDraft") {
+    return zhCN.optimizeDemo.sourceLabelDraft;
+  }
+  return key || zhCN.optimizeDemo.pendingValue;
+}
+
+function localizeOptimizeSourceReason(reasonCode: string | null | undefined): string | null {
+  if (!reasonCode) {
+    return null;
+  }
+  if (reasonCode === "baseline_snapshot_missing") {
+    return zhCN.optimizeDemo.sourceReasonBaselineSnapshotMissing;
+  }
+  if (reasonCode === "alarm_snapshot_missing") {
+    return zhCN.optimizeDemo.sourceReasonAlarmSnapshotMissing;
+  }
+  if (reasonCode === "recommendation_cards_missing") {
+    return zhCN.optimizeDemo.sourceReasonRecommendationCardsMissing;
+  }
+  if (reasonCode === "field_missing_or_invalid") {
+    return zhCN.optimizeDemo.sourceReasonFieldMissingOrInvalid;
+  }
+  if (reasonCode === "upstream_unreachable") {
+    return zhCN.optimizeDemo.sourceReasonUpstreamUnreachable;
+  }
+  if (reasonCode === "upstream_5xx") {
+    return zhCN.optimizeDemo.sourceReasonUpstream5xx;
+  }
+  if (reasonCode === "upstream_4xx") {
+    return zhCN.optimizeDemo.sourceReasonUpstream4xx;
+  }
+  if (reasonCode === "source_missing") {
+    return zhCN.optimizeDemo.sourceReasonSourceMissing;
+  }
+  if (reasonCode === "upstream_unavailable") {
+    return zhCN.optimizeDemo.sourceReasonUpstreamUnavailable;
+  }
+  if (reasonCode === "partial_fallback") {
+    return zhCN.optimizeDemo.sourceReasonPartialFallback;
+  }
+  if (reasonCode === "rated_cooling_capacity_missing") {
+    return zhCN.optimizeDemo.sourceReasonRatedCoolingCapacityMissing;
+  }
+  if (reasonCode === "history_samples_unavailable") {
+    return zhCN.optimizeDemo.sourceReasonHistorySamplesUnavailable;
+  }
+  if (reasonCode === "history_calendar_fallback") {
+    return zhCN.optimizeDemo.sourceReasonHistoryCalendarFallback;
+  }
+  if (reasonCode === "history_match_partial") {
+    return zhCN.optimizeDemo.sourceReasonHistoryPartialMatch;
+  }
+  if (reasonCode === "history_match_relaxed") {
+    return zhCN.optimizeDemo.sourceReasonHistoryRelaxedMatch;
+  }
+  if (reasonCode === "history_match_load_only") {
+    return zhCN.optimizeDemo.sourceReasonHistoryLoadOnlyMatch;
+  }
+  if (reasonCode === "draft_not_implemented") {
+    return zhCN.optimizeDemo.sourceReasonDraftNotImplemented;
+  }
+  return null;
+}
+
+function localizePrefillReason(reasonCode: AutoPrefillReasonCode): string {
+  if (reasonCode === "prefill_overview_request_failed") {
+    return zhCN.optimizeDemo.prefillReasonOverviewRequestFailed;
+  }
+  if (reasonCode === "prefill_load_snapshot_missing") {
+    return zhCN.optimizeDemo.prefillReasonLoadSnapshotMissing;
+  }
+  if (reasonCode === "prefill_wet_bulb_request_failed") {
+    return zhCN.optimizeDemo.prefillReasonWetBulbRequestFailed;
+  }
+  return zhCN.optimizeDemo.prefillReasonWetBulbPointsMissing;
+}
+
+function collectOptimizeAvailabilityReasonLines(
+  sourceStatus: SourceStatusDto | null | undefined,
+  prefillReasonCodes: AutoPrefillReasonCode[]
+): string[] {
+  const lines: string[] = prefillReasonCodes.map(localizePrefillReason);
+  const sources = Array.isArray(sourceStatus?.sources) ? sourceStatus.sources : [];
+
+  sources.forEach((source: SourceEndpointStatusDto) => {
+    const reasonCode = source?.reasonCode || null;
+    if (!reasonCode || reasonCode === "ready" || reasonCode === "history_match_strict" || reasonCode === "history_match_ready") {
+      return;
+    }
+    const reason = localizeOptimizeSourceReason(reasonCode);
+    if (!reason) {
+      return;
+    }
+    lines.push(`${localizeOptimizeSourceLabel(source?.key)}：${reason}`);
+  });
+
+  return [...new Set(lines)].slice(0, 8);
+}
+
 function formatPrefillTimestamp(value: string | null | undefined): string {
   if (!value) {
     return zhCN.optimizeDemo.pendingValue;
@@ -891,6 +1011,7 @@ function readAutoLoadCandidate(overview: DashboardOverviewDto | null | undefined
   value: number | null;
   source: string | null;
   timestamp: string | null;
+  reasonCode: AutoPrefillReasonCode | null;
 } {
   const cards = overview?.energyCards;
   const timestamp = overview?.generatedAt ?? null;
@@ -898,7 +1019,8 @@ function readAutoLoadCandidate(overview: DashboardOverviewDto | null | undefined
     return {
       value: cards.totalCoolingCapacity,
       source: zhCN.optimizeDemo.prefillLoadSourceDirect,
-      timestamp
+      timestamp,
+      reasonCode: null
     };
   }
   if (
@@ -912,13 +1034,15 @@ function readAutoLoadCandidate(overview: DashboardOverviewDto | null | undefined
     return {
       value: cards.currentCop * cards.totalPowerKw,
       source: zhCN.optimizeDemo.prefillLoadSourceDerived,
-      timestamp
+      timestamp,
+      reasonCode: null
     };
   }
   return {
     value: null,
     source: null,
-    timestamp
+    timestamp,
+    reasonCode: "prefill_load_snapshot_missing"
   };
 }
 
@@ -926,6 +1050,7 @@ function readLatestWetBulbCandidate(trend: SceneLegacyTrendDto | null | undefine
   value: number | null;
   source: string | null;
   timestamp: string | null;
+  reasonCode: AutoPrefillReasonCode | null;
 } {
   const points = Array.isArray(trend?.points) ? [...trend.points].reverse() : [];
   const latestPoint = points.find(
@@ -935,13 +1060,15 @@ function readLatestWetBulbCandidate(trend: SceneLegacyTrendDto | null | undefine
     return {
       value: null,
       source: null,
-      timestamp: trend?.generatedAt ?? null
+      timestamp: trend?.generatedAt ?? null,
+      reasonCode: "prefill_wet_bulb_points_missing"
     };
   }
   return {
     value: latestPoint.value,
     source: zhCN.optimizeDemo.prefillWetBulbSourceLatestPoint,
-    timestamp: latestPoint.timestamp ?? trend?.generatedAt ?? null
+    timestamp: latestPoint.timestamp ?? trend?.generatedAt ?? null,
+    reasonCode: null
   };
 }
 
@@ -957,7 +1084,8 @@ export default function OptimizeDemoPage() {
     kind: "loading",
     loadSource: null,
     wetBulbSource: null,
-    refreshedAt: null
+    refreshedAt: null,
+    reasonCodes: []
   });
   const loadDirtyRef = useRef(false);
   const wetBulbDirtyRef = useRef(false);
@@ -973,6 +1101,10 @@ export default function OptimizeDemoPage() {
     limit: 4,
     labelMode: "short"
   });
+  const availabilityReasonLines = useMemo(
+    () => collectOptimizeAvailabilityReasonLines(details?.sourceStatus, autoPrefill.reasonCodes),
+    [details?.sourceStatus, autoPrefill.reasonCodes]
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1036,6 +1168,9 @@ export default function OptimizeDemoPage() {
     Array.isArray(historyBenchmark?.matchedWetBulbBands) && historyBenchmark.matchedWetBulbBands.length
       ? historyBenchmark.matchedWetBulbBands.join("、")
       : zhCN.optimizeDemo.pendingValue;
+  const historyBenchmarkSource = details?.sourceStatus?.sources?.find((source) => source?.key === "historyBenchmark");
+  const historyBenchmarkSourceReason =
+    localizeOptimizeSourceReason(historyBenchmarkSource?.reasonCode) || zhCN.optimizeDemo.historyBenchmarkPending;
   const historyBenchmarkMatchingQualityParts: string[] = [];
   if (historyBenchmark?.matchingTier) {
     historyBenchmarkMatchingQualityParts.push(historyBenchmarkMatchingTierLabel);
@@ -1141,7 +1276,8 @@ export default function OptimizeDemoPage() {
     autoPrefillRequestIdRef.current = requestId;
     setAutoPrefill((current) => ({
       ...current,
-      kind: "loading"
+      kind: "loading",
+      reasonCodes: []
     }));
 
     const [overviewResult, wetBulbResult] = await Promise.allSettled([
@@ -1157,14 +1293,16 @@ export default function OptimizeDemoPage() {
       return;
     }
 
+    const prefillReasonCodes: AutoPrefillReasonCode[] = [];
+
     const loadCandidate =
       overviewResult.status === "fulfilled"
         ? readAutoLoadCandidate(overviewResult.value)
-        : { value: null, source: null, timestamp: null };
+        : { value: null, source: null, timestamp: null, reasonCode: "prefill_overview_request_failed" as const };
     const wetBulbCandidate =
       wetBulbResult.status === "fulfilled"
         ? readLatestWetBulbCandidate(wetBulbResult.value)
-        : { value: null, source: null, timestamp: null };
+        : { value: null, source: null, timestamp: null, reasonCode: "prefill_wet_bulb_request_failed" as const };
 
     let appliedCount = 0;
 
@@ -1176,6 +1314,9 @@ export default function OptimizeDemoPage() {
     } else if (!force && !loadDirtyRef.current) {
       setLoadKw("");
     }
+    if (loadCandidate.reasonCode) {
+      prefillReasonCodes.push(loadCandidate.reasonCode);
+    }
 
     if (typeof wetBulbCandidate.value === "number" && Number.isFinite(wetBulbCandidate.value)) {
       if (force || !wetBulbDirtyRef.current) {
@@ -1185,12 +1326,16 @@ export default function OptimizeDemoPage() {
     } else if (!force && !wetBulbDirtyRef.current) {
       setOutdoorWetBulbC("");
     }
+    if (wetBulbCandidate.reasonCode) {
+      prefillReasonCodes.push(wetBulbCandidate.reasonCode);
+    }
 
     setAutoPrefill({
       kind: appliedCount === 2 ? "ready" : appliedCount === 1 ? "partial" : "error",
       loadSource: loadCandidate.source,
       wetBulbSource: wetBulbCandidate.source,
-      refreshedAt: pickLatestTimestamp(loadCandidate.timestamp, wetBulbCandidate.timestamp)
+      refreshedAt: pickLatestTimestamp(loadCandidate.timestamp, wetBulbCandidate.timestamp),
+      reasonCodes: [...new Set(prefillReasonCodes)]
     });
   }
 
@@ -1318,6 +1463,28 @@ export default function OptimizeDemoPage() {
                   {formatPrefillTimestamp(autoPrefill.refreshedAt)}
                 </span>
               </div>
+              {availabilityReasonLines.length ? (
+                <div className="optimize-form-availability">
+                  <strong>{zhCN.optimizeDemo.availabilityTitle}</strong>
+                  <ul>
+                    {availabilityReasonLines.map((line, index) => (
+                      <li key={`${line}-${index + 1}`}>{line}</li>
+                    ))}
+                  </ul>
+                  <div className="optimize-benchmark-links">
+                    <a className="scene-open-link" href="/trend-analysis" aria-label={zhCN.optimizeDemo.availabilityLinkTrend}>
+                      {zhCN.optimizeDemo.availabilityLinkTrend}
+                    </a>
+                    <a
+                      className="scene-open-link"
+                      href="/energy-efficiency?tab=proportion"
+                      aria-label={zhCN.optimizeDemo.availabilityLinkEfficiency}
+                    >
+                      {zhCN.optimizeDemo.availabilityLinkEfficiency}
+                    </a>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </form>
         </SectionCard>
@@ -1576,7 +1743,7 @@ export default function OptimizeDemoPage() {
 
             <div className="optimize-response-block">
               <h4>{historyBenchmarkModeLabel}</h4>
-              <p>{historyBenchmark?.note || zhCN.optimizeDemo.historyBenchmarkPending}</p>
+              <p>{historyBenchmark?.note || historyBenchmarkSourceReason}</p>
               <small>{zhCN.optimizeDemo.historyBenchmarkWetBulbNote}</small>
               <div className="optimize-benchmark-links">
                 {historyBenchmarkCompareEnabled ? (

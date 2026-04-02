@@ -4,6 +4,7 @@ function normalizeOne(input) {
     endpoint: String(input?.endpoint || ""),
     ok: Boolean(input?.ok),
     fallback: input?.fallback === true,
+    reasonCode: input?.reasonCode == null ? null : String(input.reasonCode),
     status:
       typeof input?.status === "number" && Number.isFinite(input.status) ? input.status : null,
     message: input?.message == null ? null : String(input.message),

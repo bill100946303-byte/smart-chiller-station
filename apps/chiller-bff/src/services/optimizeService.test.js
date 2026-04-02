@@ -274,7 +274,9 @@ test("buildOptimizeDraftResponse preserves legacy fields and anchors schemes to 
   assert.equal(response.ruleEvidence.matchedCount, 1);
   assert.equal(response.ruleEvidence.skippedCount, 0);
   assert.match(response.schemes[0].links.devices.href, /\/devices\?deviceId=tower-01/);
-  assert.ok(response.sourceStatus.sources.some((source) => source.key === "historyBenchmark"));
+  const historySource = response.sourceStatus.sources.find((source) => source.key === "historyBenchmark");
+  assert.ok(historySource);
+  assert.equal(historySource.reasonCode, "history_match_strict");
 });
 
 test("buildOptimizeDraftResponse falls back to existing scheme logic when benchmark is unavailable", async () => {
@@ -316,6 +318,7 @@ test("buildOptimizeDraftResponse falls back to existing scheme logic when benchm
   assert.ok(historySource);
   assert.equal(historySource.ok, false);
   assert.equal(historySource.error, "historical benchmark unavailable");
+  assert.equal(historySource.reasonCode, "rated_cooling_capacity_missing");
 });
 
 test("buildOptimizeDraftResponse falls back to relaxed wet bulb matching when strict samples are insufficient", async () => {
@@ -622,4 +625,7 @@ test("buildOptimizeDraftResponse nulls scheme numbers when current snapshot is i
   assert.equal(response.reviewReadiness.status, "unavailable");
   assert.ok(response.reviewReadiness.score <= 35);
   assert.ok(response.schemes.every((scheme) => scheme.readiness.level === "blocked"));
+  const overviewSource = response.sourceStatus.sources.find((source) => source.key === "dashboardOverview");
+  assert.ok(overviewSource);
+  assert.equal(overviewSource.reasonCode, "baseline_snapshot_missing");
 });

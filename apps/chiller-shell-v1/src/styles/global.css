@@ -4670,6 +4670,119 @@ a {
   padding: 2px 0 2px;
 }
 
+.dashboard-efficiency-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.94fr) minmax(420px, 1.06fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.dashboard-efficiency-feature {
+  min-height: 222px;
+  padding: 22px 24px;
+  align-content: start;
+}
+
+.dashboard-efficiency-feature strong {
+  margin-top: 4px;
+}
+
+.dashboard-efficiency-caption {
+  color: rgba(190, 210, 226, 0.78);
+  line-height: 1.45;
+}
+
+.dashboard-efficiency-chain {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(103, 220, 255, 0.14);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(14, 30, 47, 0.82), rgba(11, 22, 34, 0.88)),
+    radial-gradient(circle at top left, rgba(103, 220, 255, 0.07), transparent 40%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.dashboard-efficiency-chain-card {
+  position: relative;
+  min-height: 184px;
+  padding: 18px 18px 16px;
+  background:
+    linear-gradient(180deg, rgba(12, 24, 38, 0.88), rgba(10, 20, 31, 0.9)),
+    radial-gradient(circle at top left, rgba(103, 220, 255, 0.05), transparent 42%);
+}
+
+.dashboard-efficiency-chain-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 26%);
+  pointer-events: none;
+}
+
+.dashboard-efficiency-chain-head,
+.dashboard-efficiency-support-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dashboard-efficiency-chain-head .dashboard-ops-assessment,
+.dashboard-efficiency-support-head .dashboard-ops-assessment {
+  flex-shrink: 0;
+}
+
+.dashboard-efficiency-chain-card strong {
+  margin-top: 14px;
+  font-size: clamp(24px, 2vw, 31px);
+  letter-spacing: -0.03em;
+}
+
+.dashboard-efficiency-link {
+  position: absolute;
+  top: 50%;
+  right: -6px;
+  width: 12px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(103, 220, 255, 0.18), rgba(103, 220, 255, 0.5));
+  transform: translateY(-50%);
+  box-shadow: 0 0 10px rgba(103, 220, 255, 0.16);
+}
+
+.dashboard-efficiency-link::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 5px;
+  height: 5px;
+  border-top: 1px solid rgba(103, 220, 255, 0.5);
+  border-right: 1px solid rgba(103, 220, 255, 0.5);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.dashboard-efficiency-support-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dashboard-efficiency-support-card {
+  min-height: 148px;
+  padding: 18px 18px 16px;
+}
+
+.dashboard-efficiency-support-card strong {
+  margin-top: 12px;
+  font-size: clamp(22px, 1.85vw, 28px);
+  letter-spacing: -0.03em;
+}
+
 .dashboard-ops-rail-risk {
   padding-top: 4px;
 }
@@ -6532,6 +6645,33 @@ a {
 .optimize-form-prefill-meta span {
   color: var(--text-3);
   font-size: 11px;
+}
+
+.optimize-form-availability {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px dashed rgba(255, 195, 97, 0.32);
+  border-radius: 10px;
+  background: rgba(39, 27, 8, 0.24);
+}
+
+.optimize-form-availability strong {
+  color: #ffe1a8;
+  font-size: 12px;
+}
+
+.optimize-form-availability ul {
+  margin: 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 6px;
+}
+
+.optimize-form-availability li {
+  color: rgba(255, 228, 176, 0.92);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .optimize-response {
@@ -11203,6 +11343,19 @@ button:not(.knowledge-modal-close):hover:not(:disabled) {
   .dashboard-ops-card.is-featured {
     grid-column: span 1;
   }
+
+  .dashboard-efficiency-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-efficiency-chain,
+  .dashboard-efficiency-support-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-efficiency-link {
+    display: none;
+  }
 }
 
 @media (max-width: 960px) {
@@ -11238,6 +11391,8 @@ button:not(.knowledge-modal-close):hover:not(:disabled) {
   .dashboard-command-header,
   .dashboard-ops-head,
   .dashboard-loop-head,
+  .dashboard-efficiency-chain-head,
+  .dashboard-efficiency-support-head,
   .dashboard-control-head {
     flex-direction: column;
     align-items: flex-start;
@@ -11251,6 +11406,11 @@ button:not(.knowledge-modal-close):hover:not(:disabled) {
   .alarm-page-grid,
   .scene-layout,
   .project-switch-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-efficiency-chain,
+  .dashboard-efficiency-support-grid {
     grid-template-columns: 1fr;
   }
 }

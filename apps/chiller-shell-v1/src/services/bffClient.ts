@@ -8,6 +8,7 @@ export type SourceEndpointStatusDto = {
   endpoint?: string;
   ok?: boolean;
   fallback?: boolean;
+  reasonCode?: string | null;
   status?: number | null;
   message?: string | null;
   error?: string | null;
