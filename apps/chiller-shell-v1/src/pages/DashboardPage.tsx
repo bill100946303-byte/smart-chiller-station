@@ -123,6 +123,8 @@ type OpsMetric = {
   hint: string;
   assessment?: string;
   thresholdHint?: string;
+  group?: "scale" | "diagnostic";
+  isMissing?: boolean;
 };
 
 type FocusItem = {
@@ -722,6 +724,32 @@ function buildSparkModel(points: TrendMetricView["points"]): {
       .map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(1)},${point.y.toFixed(1)}`)
       .join(" "),
     plottedPoints
+  };
+}
+
+function describeTrendDelta(
+  points: TrendMetricView["points"] | undefined,
+  digits: number,
+  positiveTone: Tone = "good"
+): { label: string; value: string; tone: Tone } | null {
+  if (!points || points.length === 0) {
+    return null;
+  }
+  const numericPoints = points.filter(
+    (point): point is { time: string | null; label: string; value: number } => typeof point.value === "number"
+  );
+  if (numericPoints.length < 2) {
+    return null;
+  }
+  const first = numericPoints[0].value;
+  const last = numericPoints[numericPoints.length - 1].value;
+  const delta = last - first;
+  const sign = delta > 0 ? "+" : "";
+  const tone = delta === 0 ? "neutral" : delta > 0 ? positiveTone : positiveTone === "good" ? "warn" : "good";
+  return {
+    label: "区间变化",
+    value: `${sign}${delta.toFixed(digits)}`,
+    tone
   };
 }
 
@@ -1780,30 +1808,61 @@ export default function DashboardPage() {
       label: DASHBOARD_TEXT.efficiencyCoolingCapacity,
       value: `${toFixedOrDash(totalCoolingCapacity, 1)} kW`,
       tone: totalCoolingCapacity != null ? "neutral" : "warn",
-      hint: "当前系统冷量规模"
+      hint: "当前系统冷量规模",
+      group: "scale"
     },
     {
       key: "power",
       label: DASHBOARD_TEXT.efficiencyPower,
       value: `${toFixedOrDash(totalPower, 1)} kW`,
       tone: totalPower != null ? "neutral" : "warn",
-      hint: `主机 ${toFixedOrDash(chillerPowerKw, 1)} kW · 辅机 ${toFixedOrDash(auxiliaryPowerKw, 1)} kW`
+      hint: `主机 ${toFixedOrDash(chillerPowerKw, 1)} kW · 辅机 ${toFixedOrDash(auxiliaryPowerKw, 1)} kW`,
+      group: "scale"
     },
     {
       key: "heatBalance",
       label: DASHBOARD_TEXT.efficiencyHeatBalance,
-      value: `${toFixedOrDash(thermalUnbalanceRate, 1)} %`,
+      value: thermalUnbalanceRate != null ? `${toFixedOrDash(thermalUnbalanceRate, 1)} %` : "待接入",
       tone: heatBalanceAssessment?.tone ?? "neutral",
-      hint: "越接近 0 越稳定",
-      assessment: heatBalanceAssessment?.label,
-      thresholdHint: "优秀 |偏差| ≤ 5%，良好 |偏差| ≤ 10%"
+      hint: thermalUnbalanceRate != null ? "越接近 0 越稳定" : "等待热平衡链路回传",
+      assessment: thermalUnbalanceRate != null ? heatBalanceAssessment?.label : undefined,
+      thresholdHint: thermalUnbalanceRate != null ? "优秀 |偏差| ≤ 5%，良好 |偏差| ≤ 10%" : undefined,
+      group: "diagnostic",
+      isMissing: thermalUnbalanceRate == null
     },
     {
       key: "delta",
       label: DASHBOARD_TEXT.efficiencyDelta,
       value: `${toFixedOrDash(chilledDeltaT, 1)} / ${toFixedOrDash(coolingDeltaT, 1)} °C`,
       tone: chilledDeltaT != null || coolingDeltaT != null ? "neutral" : "warn",
-      hint: `冷冻出水 ${toFixedOrDash(chilledSupplyTemp, 1)}°C · 冷却回水 ${toFixedOrDash(coolingReturnTemp, 1)}°C`
+      hint: `冷冻出水 ${toFixedOrDash(chilledSupplyTemp, 1)}°C · 冷却回水 ${toFixedOrDash(coolingReturnTemp, 1)}°C`,
+      group: "diagnostic"
+    }
+  ];
+
+  const copTrendCard = buildTrendMetricView(trends, "currentCop", DASHBOARD_TEXT.efficiencyCop, runtimeConfig.trendRange);
+  const totalPowerTrendCard = buildTrendMetricView(trends, "totalPowerKw", DASHBOARD_TEXT.efficiencyPower, runtimeConfig.trendRange);
+  const featuredCopSpark = copTrendCard ? buildSparkModel(copTrendCard.points) : { path: "", plottedPoints: [] };
+  const featuredCopDelta = describeTrendDelta(copTrendCard?.points, 2);
+  const efficiencyThresholdSummary = [
+    `冷站COP ${efficiencyFeaturedCard.thresholdHint}`,
+    ...efficiencyChainCards
+      .filter((item) => Boolean(item.thresholdHint))
+      .map((item) => `${item.label} ${item.thresholdHint}`),
+    thermalUnbalanceRate != null ? `热平衡偏差 优秀 |偏差| ≤ 5%，良好 |偏差| ≤ 10%` : null
+  ]
+    .filter(Boolean)
+    .join("；");
+  const efficiencySupportGroups = [
+    {
+      key: "scale",
+      label: "系统规模",
+      items: efficiencySupportCards.filter((item) => item.group === "scale")
+    },
+    {
+      key: "diagnostic",
+      label: "诊断判断",
+      items: efficiencySupportCards.filter((item) => item.group === "diagnostic")
     }
   ];
 
@@ -1846,10 +1905,7 @@ export default function DashboardPage() {
     })
     .slice(0, 4);
 
-  const efficiencyTrendCards = [
-    buildTrendMetricView(trends, "totalPowerKw", DASHBOARD_TEXT.efficiencyPower, runtimeConfig.trendRange),
-    buildTrendMetricView(trends, "currentCop", DASHBOARD_TEXT.efficiencyCop, runtimeConfig.trendRange)
-  ].filter((item): item is TrendMetricView => Boolean(item));
+  const efficiencyTrendCards = [totalPowerTrendCard, copTrendCard].filter((item): item is TrendMetricView => Boolean(item));
 
   const deltaTrendCards = [
     buildTrendMetricView(trends, "chilledDeltaT", "冷冻侧温差", runtimeConfig.trendRange),
@@ -1941,7 +1997,15 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <SectionCard title={DASHBOARD_TEXT.opsBoard} action={<span className="dashboard-section-hint">{DASHBOARD_TEXT.opsBoardHint}</span>}>
+      <SectionCard
+        title={DASHBOARD_TEXT.opsBoard}
+        action={
+          <span className="dashboard-threshold-trigger" tabIndex={0} role="note" aria-label={efficiencyThresholdSummary}>
+            阈值说明
+            <i>{efficiencyThresholdSummary}</i>
+          </span>
+        }
+      >
         <div className="dashboard-ops-board">
           <section className="dashboard-ops-rail dashboard-ops-rail-efficiency">
             <div className="dashboard-ops-head">
@@ -1960,27 +2024,40 @@ export default function DashboardPage() {
               <article className={`dashboard-ops-card dashboard-efficiency-feature tone-${efficiencyFeaturedCard.tone} is-featured`}>
                 <div className="dashboard-efficiency-label-row">
                   <span>{efficiencyFeaturedCard.label}</span>
-                  {efficiencyFeaturedCard.thresholdHint ? (
-                    <span className="dashboard-metric-info" tabIndex={0} role="note" aria-label={efficiencyFeaturedCard.thresholdHint}>
-                      阈值
-                      <i>{efficiencyFeaturedCard.thresholdHint}</i>
-                    </span>
+                </div>
+                <div className="dashboard-efficiency-feature-body">
+                  <div className="dashboard-efficiency-feature-main">
+                    {(() => {
+                      const parts = splitMetricDisplay(efficiencyFeaturedCard.value);
+                      return (
+                        <strong className="dashboard-metric-value">
+                          <bdi className="dashboard-metric-main">{parts.main}</bdi>
+                          {parts.unit ? <em className="dashboard-metric-unit">{parts.unit}</em> : null}
+                        </strong>
+                      );
+                    })()}
+                    <div className="dashboard-efficiency-feature-status">
+                      {efficiencyFeaturedCard.assessment ? (
+                        <em className={`dashboard-ops-assessment tone-${efficiencyFeaturedCard.tone}`}>
+                          {efficiencyFeaturedCard.assessment}
+                        </em>
+                      ) : null}
+                      {featuredCopDelta ? (
+                        <small className={`dashboard-feature-delta tone-${featuredCopDelta.tone}`}>
+                          {featuredCopDelta.label} {featuredCopDelta.value}
+                        </small>
+                      ) : null}
+                    </div>
+                  </div>
+                  {featuredCopSpark.path ? (
+                    <div className="dashboard-efficiency-feature-trend" aria-hidden="true">
+                      <svg viewBox={`0 0 ${TREND_SPARK_WIDTH} ${TREND_SPARK_HEIGHT}`}>
+                        <path d={featuredCopSpark.path} />
+                      </svg>
+                      <small>{formatRangeLabel(runtimeConfig.trendRange)}微趋势</small>
+                    </div>
                   ) : null}
                 </div>
-                {(() => {
-                  const parts = splitMetricDisplay(efficiencyFeaturedCard.value);
-                  return (
-                    <strong className="dashboard-metric-value">
-                      <bdi className="dashboard-metric-main">{parts.main}</bdi>
-                      {parts.unit ? <em className="dashboard-metric-unit">{parts.unit}</em> : null}
-                    </strong>
-                  );
-                })()}
-                {efficiencyFeaturedCard.assessment ? (
-                  <em className={`dashboard-ops-assessment tone-${efficiencyFeaturedCard.tone}`}>
-                    {efficiencyFeaturedCard.assessment}
-                  </em>
-                ) : null}
                 <small className="dashboard-efficiency-caption">{efficiencyFeaturedCard.hint}</small>
               </article>
 
@@ -1990,12 +2067,6 @@ export default function DashboardPage() {
                     <div className="dashboard-efficiency-chain-head">
                       <div className="dashboard-efficiency-card-meta">
                         <span>{item.label}</span>
-                        {item.thresholdHint ? (
-                          <span className="dashboard-metric-info" tabIndex={0} role="note" aria-label={item.thresholdHint}>
-                            阈值
-                            <i>{item.thresholdHint}</i>
-                          </span>
-                        ) : null}
                       </div>
                       {item.assessment ? <em className={`dashboard-ops-assessment tone-${item.tone}`}>{item.assessment}</em> : null}
                     </div>
@@ -2014,32 +2085,38 @@ export default function DashboardPage() {
                 ))}
               </div>
 
-              <div className="dashboard-efficiency-support-grid">
-                {efficiencySupportCards.map((item) => (
-                  <article key={item.key} className={`dashboard-ops-card dashboard-efficiency-support-card tone-${item.tone}`}>
-                    <div className="dashboard-efficiency-support-head">
-                      <div className="dashboard-efficiency-card-meta">
-                        <span>{item.label}</span>
-                        {item.thresholdHint ? (
-                          <span className="dashboard-metric-info" tabIndex={0} role="note" aria-label={item.thresholdHint}>
-                            阈值
-                            <i>{item.thresholdHint}</i>
-                          </span>
-                        ) : null}
-                      </div>
-                      {item.assessment ? <em className={`dashboard-ops-assessment tone-${item.tone}`}>{item.assessment}</em> : null}
+              <div className="dashboard-efficiency-support-groups">
+                {efficiencySupportGroups.map((group) => (
+                  <section key={group.key} className="dashboard-efficiency-support-group">
+                    <div className="dashboard-efficiency-support-group-head">
+                      <span>{group.label}</span>
                     </div>
-                    {(() => {
-                      const parts = splitMetricDisplay(item.value);
-                      return (
-                        <strong className="dashboard-metric-value">
-                          <bdi className="dashboard-metric-main">{parts.main}</bdi>
-                          {parts.unit ? <em className="dashboard-metric-unit">{parts.unit}</em> : null}
-                        </strong>
-                      );
-                    })()}
-                    <small className="dashboard-efficiency-caption">{item.hint}</small>
-                  </article>
+                    <div className="dashboard-efficiency-support-grid">
+                      {group.items.map((item) => (
+                        <article
+                          key={item.key}
+                          className={`dashboard-ops-card dashboard-efficiency-support-card tone-${item.tone}${item.isMissing ? " is-missing" : ""}`}
+                        >
+                          <div className="dashboard-efficiency-support-head">
+                            <div className="dashboard-efficiency-card-meta">
+                              <span>{item.label}</span>
+                            </div>
+                            {item.assessment ? <em className={`dashboard-ops-assessment tone-${item.tone}`}>{item.assessment}</em> : null}
+                          </div>
+                          {(() => {
+                            const parts = splitMetricDisplay(item.value);
+                            return (
+                              <strong className="dashboard-metric-value">
+                                <bdi className="dashboard-metric-main">{parts.main}</bdi>
+                                {parts.unit ? <em className="dashboard-metric-unit">{parts.unit}</em> : null}
+                              </strong>
+                            );
+                          })()}
+                          <small className="dashboard-efficiency-caption">{item.hint}</small>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
                 ))}
               </div>
             </div>
