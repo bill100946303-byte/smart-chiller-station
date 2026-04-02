@@ -11284,3 +11284,796 @@ button:not(.knowledge-modal-close):hover:not(:disabled) {
     justify-content: flex-start;
   }
 }
+
+/* Subpage shell aligned with dashboard language */
+.content.is-subpage-compact {
+  --subpage-shell-border: rgba(103, 220, 255, 0.16);
+  --subpage-shell-border-strong: rgba(103, 220, 255, 0.24);
+  --subpage-shell-surface:
+    linear-gradient(180deg, rgba(19, 32, 48, 0.96), rgba(11, 20, 31, 0.9)),
+    radial-gradient(circle at top left, rgba(103, 220, 255, 0.09), transparent 42%);
+  --subpage-shell-surface-soft:
+    linear-gradient(180deg, rgba(16, 28, 42, 0.92), rgba(11, 18, 28, 0.88)),
+    radial-gradient(circle at top left, rgba(103, 220, 255, 0.06), transparent 44%);
+  --subpage-shell-shadow: 0 16px 34px rgba(6, 18, 32, 0.18);
+}
+
+.content.is-subpage-compact :is(
+  .alarm-page,
+  .trend-analysis-page,
+  .cold-station-log-page,
+  .meter-reading-page,
+  .performance-report-page,
+  .report-record-page,
+  .work-order-page,
+  .knowledge-page,
+  .environment-compat-page,
+  .operation-record-page,
+  .energy-analysis-page,
+  .energy-efficiency-page,
+  .energy-parameter-page,
+  .device-page,
+  .scene-page,
+  .system-page,
+  .video-legacy-page,
+  .project-switch-page,
+  .optimize-page
+) {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.content.is-subpage-compact :is(
+  .alarm-page-header,
+  .device-page-header,
+  .scene-page-header,
+  .system-header,
+  .cold-log-header,
+  .meter-reading-header,
+  .performance-report-header,
+  .report-record-header,
+  .knowledge-header,
+  .work-order-header,
+  .environment-compat-header,
+  .operation-record-header,
+  .energy-parameter-header,
+  .video-legacy-header,
+  .trend-page-header,
+  .energy-analysis-header,
+  .energy-efficiency-header,
+  .optimize-page-header
+) {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 14px;
+  align-items: start;
+  padding: 12px 14px 14px;
+  border: 1px solid var(--subpage-shell-border);
+  border-radius: calc(var(--radius-card) + 2px);
+  background: var(--subpage-shell-surface);
+  box-shadow: var(--subpage-shell-shadow);
+  overflow: hidden;
+}
+
+.content.is-subpage-compact :is(
+  .alarm-page-header,
+  .device-page-header,
+  .scene-page-header,
+  .system-header,
+  .cold-log-header,
+  .meter-reading-header,
+  .performance-report-header,
+  .report-record-header,
+  .knowledge-header,
+  .work-order-header,
+  .environment-compat-header,
+  .operation-record-header,
+  .energy-parameter-header,
+  .video-legacy-header,
+  .trend-page-header,
+  .energy-analysis-header,
+  .energy-efficiency-header,
+  .optimize-page-header
+)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(103, 220, 255, 0.05), transparent 24%, transparent 76%, rgba(103, 220, 255, 0.03)),
+    repeating-linear-gradient(
+      180deg,
+      rgba(219, 246, 255, 0.018) 0,
+      rgba(219, 246, 255, 0.018) 1px,
+      transparent 1px,
+      transparent 12px
+    );
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.94), transparent 98%);
+  pointer-events: none;
+}
+
+.content.is-subpage-compact :is(
+  .alarm-page-header,
+  .device-page-header,
+  .scene-page-header,
+  .system-header,
+  .cold-log-header,
+  .meter-reading-header,
+  .performance-report-header,
+  .report-record-header,
+  .knowledge-header,
+  .work-order-header,
+  .environment-compat-header,
+  .operation-record-header,
+  .energy-parameter-header,
+  .video-legacy-header,
+  .trend-page-header,
+  .energy-analysis-header,
+  .energy-efficiency-header,
+  .optimize-page-header
+)::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 76px;
+  height: 42px;
+  border-top: 1px solid rgba(103, 220, 255, 0.18);
+  border-right: 1px solid rgba(103, 220, 255, 0.18);
+  border-radius: 0 24px 0 0;
+  box-shadow: 0 0 20px rgba(103, 220, 255, 0.08);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.content.is-subpage-compact :is(
+  .alarm-page-header h2,
+  .device-page-header h2,
+  .scene-page-header h2,
+  .system-header h2,
+  .cold-log-header h2,
+  .meter-reading-header h2,
+  .performance-report-header h2,
+  .report-record-header h2,
+  .knowledge-header h2,
+  .work-order-header h2,
+  .environment-compat-header h2,
+  .operation-record-header h2,
+  .energy-parameter-header h2,
+  .video-legacy-header h2,
+  .trend-page-header h2,
+  .energy-analysis-header h2,
+  .energy-efficiency-header h2,
+  .optimize-page-header h2
+) {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font-size: clamp(17px, 1.55vw, 20px);
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+}
+
+.content.is-subpage-compact :is(
+  .alarm-page-header p,
+  .device-page-header p,
+  .scene-page-header p,
+  .system-header p,
+  .cold-log-header p,
+  .meter-reading-header p,
+  .performance-report-header p,
+  .report-record-header p,
+  .knowledge-header p,
+  .work-order-header p,
+  .environment-compat-header p,
+  .operation-record-header p,
+  .energy-parameter-header p,
+  .video-legacy-header p,
+  .trend-page-header p,
+  .energy-analysis-header p,
+  .energy-efficiency-header p,
+  .optimize-page-header p
+) {
+  position: relative;
+  z-index: 1;
+  max-width: 860px;
+  margin: 0;
+  color: rgba(185, 208, 226, 0.86);
+  font-size: clamp(10px, 0.88vw, 11.5px);
+  line-height: 1.55;
+}
+
+.content.is-subpage-compact :is(
+  .device-page-header-actions,
+  .scene-header-actions
+) {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  align-items: center;
+}
+
+.content.is-subpage-compact :is(
+  .alarm-summary-grid,
+  .cold-log-summary-grid,
+  .work-order-summary-grid,
+  .operation-record-summary-grid,
+  .meter-reading-summary-grid,
+  .performance-report-summary-grid,
+  .report-record-summary-grid,
+  .device-summary-grid,
+  .scene-summary-grid,
+  .trend-summary-grid,
+  .energy-analysis-summary-grid,
+  .energy-efficiency-summary-grid,
+  .energy-parameter-summary-grid,
+  .environment-compat-summary-grid,
+  .knowledge-summary-grid
+) {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.content.is-subpage-compact .stat-card {
+  min-height: 96px;
+  padding: 10px 12px 11px;
+  border-color: var(--subpage-shell-border);
+  background:
+    linear-gradient(180deg, rgba(17, 31, 47, 0.96), rgba(12, 21, 33, 0.9)),
+    radial-gradient(circle at top left, rgba(103, 220, 255, 0.08), transparent 44%);
+  box-shadow: 0 14px 28px rgba(8, 29, 53, 0.16);
+}
+
+.content.is-subpage-compact .stat-card::after,
+.content.is-subpage-compact .section-card::after {
+  left: 16px;
+  right: 16px;
+}
+
+.content.is-subpage-compact .stat-title {
+  margin-bottom: 5px;
+  color: rgba(172, 197, 217, 0.78);
+  letter-spacing: 0.02em;
+}
+
+.content.is-subpage-compact .stat-main {
+  margin-bottom: 8px;
+}
+
+.content.is-subpage-compact .stat-main strong {
+  font-size: clamp(18px, 1.72vw, 22px);
+  color: #eaf6ff;
+}
+
+.content.is-subpage-compact .stat-main span {
+  color: rgba(171, 195, 215, 0.74);
+  font-size: clamp(10px, 0.86vw, 11px);
+}
+
+.content.is-subpage-compact .section-card {
+  border-color: var(--subpage-shell-border);
+  background: var(--subpage-shell-surface-soft);
+  box-shadow: 0 14px 30px rgba(6, 18, 32, 0.14);
+}
+
+.content.is-subpage-compact .section-card-header {
+  position: relative;
+  gap: 8px;
+  padding: 10px 12px 9px;
+  border-bottom-color: rgba(103, 220, 255, 0.08);
+  background: linear-gradient(180deg, rgba(103, 220, 255, 0.045), rgba(103, 220, 255, 0));
+}
+
+.content.is-subpage-compact .section-card-body {
+  padding: 12px;
+}
+
+.content.is-subpage-compact .section-card-header h3 {
+  color: #eaf5ff;
+  font-size: clamp(12px, 1.04vw, 13.5px);
+  letter-spacing: 0.01em;
+}
+
+.content.is-subpage-compact .section-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-toolbar,
+  .cold-log-toolbar,
+  .alarm-list-toolbar,
+  .device-list-toolbar,
+  .report-record-list-toolbar,
+  .operation-record-list-toolbar
+) {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 8px 10px;
+  border: 1px solid rgba(103, 220, 255, 0.12);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(16, 28, 42, 0.86), rgba(11, 18, 28, 0.82)),
+    radial-gradient(circle at top left, rgba(103, 220, 255, 0.05), transparent 48%);
+}
+
+.content.is-subpage-compact :is(
+  .cold-log-meta,
+  .work-order-meta,
+  .knowledge-meta,
+  .meter-reading-meta,
+  .performance-report-meta,
+  .energy-parameter-meta,
+  .device-pagination-meta,
+  .alarm-pagination-meta,
+  .energy-analysis-chart-meta,
+  .energy-analysis-table-meta,
+  .energy-efficiency-meta,
+  .trend-meta,
+  .scene-compat-meta,
+  .video-legacy-meta
+) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(103, 220, 255, 0.1);
+  border-radius: 15px;
+  background: rgba(14, 25, 38, 0.72);
+}
+
+.content.is-subpage-compact :is(
+  .alarm-filter-group,
+  .alarm-pagination-meta,
+  .knowledge-toolbar-actions,
+  .alarm-filter-actions,
+  .device-filter-group,
+  .report-record-actions,
+  .report-record-reg-actions,
+  .work-order-pagination,
+  .work-order-row-actions
+) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.content.is-subpage-compact :is(
+  .alarm-filter-group > span,
+  .alarm-pagination-meta > span,
+  .device-filter-group span,
+  .device-pagination-meta span,
+  .cold-log-toolbar label span,
+  .knowledge-toolbar-field span,
+  .report-record-field span,
+  .work-order-field span,
+  .energy-parameter-field span,
+  .meter-reading-field span,
+  .performance-report-field span,
+  .operation-record-field span
+) {
+  color: rgba(170, 194, 214, 0.72);
+  font-size: clamp(9.5px, 0.82vw, 10.5px);
+  line-height: 1.25;
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-table-shell,
+  .work-order-table-shell,
+  .cold-log-table-shell,
+  .meter-reading-table-shell,
+  .report-record-table-shell,
+  .scene-compat-table-shell
+) {
+  padding: 10px 12px 12px;
+  border: 1px solid rgba(103, 220, 255, 0.12);
+  box-shadow: 0 14px 28px rgba(8, 29, 53, 0.12);
+}
+
+.content.is-subpage-compact :is(
+  .work-order-table,
+  .cold-log-table,
+  .meter-reading-table,
+  .report-record-table,
+  .knowledge-table
+) {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-table th,
+  .work-order-table th,
+  .cold-log-table thead th,
+  .meter-reading-table thead th,
+  .report-record-table thead th,
+  .scene-compat-table-shell th,
+  .operation-record-table-head,
+  .alarm-table-head,
+  .device-table-head
+) {
+  color: rgba(171, 194, 214, 0.68) !important;
+  letter-spacing: 0.05em !important;
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-table td,
+  .work-order-table td,
+  .cold-log-table tbody td,
+  .meter-reading-table tbody td,
+  .report-record-table tbody td,
+  .scene-compat-table-shell td
+) {
+  padding: 10px 10px;
+  border-top: 1px solid rgba(103, 220, 255, 0.08);
+  border-bottom: 1px solid rgba(103, 220, 255, 0.08);
+  background: linear-gradient(180deg, rgba(15, 23, 34, 0.92), rgba(11, 18, 28, 0.88));
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-table td:first-child,
+  .work-order-table td:first-child,
+  .cold-log-table tbody td:first-child,
+  .meter-reading-table tbody td:first-child,
+  .report-record-table tbody td:first-child,
+  .scene-compat-table-shell td:first-child
+) {
+  border-left: 1px solid rgba(103, 220, 255, 0.08);
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-table td:last-child,
+  .work-order-table td:last-child,
+  .cold-log-table tbody td:last-child,
+  .meter-reading-table tbody td:last-child,
+  .report-record-table tbody td:last-child,
+  .scene-compat-table-shell td:last-child
+) {
+  border-right: 1px solid rgba(103, 220, 255, 0.08);
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+}
+
+.content.is-subpage-compact :is(
+  .empty-hint,
+  .work-order-empty,
+  .report-record-empty,
+  .knowledge-empty,
+  .scene-compat-empty,
+  .video-legacy-empty
+) {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px dashed rgba(103, 220, 255, 0.16);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(15, 25, 37, 0.86), rgba(11, 18, 28, 0.8));
+  color: rgba(181, 202, 221, 0.72);
+  line-height: 1.55;
+}
+
+.content.is-subpage-compact :is(
+  .strategy-audit-card,
+  .system-summary-grid article,
+  .environment-compat-diagnostic-card,
+  .knowledge-strategy-card
+) {
+  box-shadow: 0 12px 24px rgba(8, 29, 53, 0.12);
+}
+
+@media (max-width: 1180px) {
+  .content.is-subpage-compact :is(
+    .alarm-page-header,
+    .device-page-header,
+    .scene-page-header,
+    .system-header,
+    .cold-log-header,
+    .meter-reading-header,
+    .performance-report-header,
+    .report-record-header,
+    .knowledge-header,
+    .work-order-header,
+    .environment-compat-header,
+    .operation-record-header,
+    .energy-parameter-header,
+    .video-legacy-header,
+    .trend-page-header,
+    .energy-analysis-header,
+    .energy-efficiency-header,
+    .optimize-page-header
+  ) {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .content.is-subpage-compact :is(
+    .alarm-summary-grid,
+    .cold-log-summary-grid,
+    .work-order-summary-grid,
+    .operation-record-summary-grid,
+    .meter-reading-summary-grid,
+    .performance-report-summary-grid,
+    .report-record-summary-grid,
+    .device-summary-grid,
+    .scene-summary-grid,
+    .trend-summary-grid,
+    .energy-analysis-summary-grid,
+    .energy-efficiency-summary-grid,
+    .energy-parameter-summary-grid,
+    .environment-compat-summary-grid,
+    .knowledge-summary-grid
+  ) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .content.is-subpage-compact :is(
+    .alarm-summary-grid,
+    .cold-log-summary-grid,
+    .work-order-summary-grid,
+    .operation-record-summary-grid,
+    .meter-reading-summary-grid,
+    .performance-report-summary-grid,
+    .report-record-summary-grid,
+    .device-summary-grid,
+    .scene-summary-grid,
+    .trend-summary-grid,
+    .energy-analysis-summary-grid,
+    .energy-efficiency-summary-grid,
+    .energy-parameter-summary-grid,
+    .environment-compat-summary-grid,
+    .knowledge-summary-grid
+  ) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.content.is-subpage-compact :is(
+  .report-record-filter-grid,
+  .work-order-filter-grid,
+  .meter-reading-filter-grid,
+  .energy-analysis-filter-grid,
+  .energy-efficiency-filter-grid,
+  .performance-report-filter-grid,
+  .operation-record-filter-grid,
+  .environment-compat-filter-grid,
+  .scene-compat-filter-grid,
+  .energy-parameter-core-grid,
+  .energy-parameter-period-grid
+) {
+  gap: 10px;
+}
+
+.content.is-subpage-compact :is(
+  .report-record-field,
+  .work-order-field,
+  .knowledge-form-field,
+  .knowledge-toolbar-field,
+  .meter-reading-field,
+  .performance-report-field,
+  .operation-record-field,
+  .energy-parameter-field,
+  .scene-compat-meta label,
+  .video-legacy-meta label
+) {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid rgba(103, 220, 255, 0.12);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(16, 28, 42, 0.88), rgba(11, 18, 28, 0.82)),
+    radial-gradient(circle at top left, rgba(103, 220, 255, 0.05), transparent 44%);
+}
+
+.content.is-subpage-compact :is(
+  .report-record-field input,
+  .report-record-field select,
+  .work-order-field input,
+  .work-order-field select,
+  .work-order-field textarea,
+  .knowledge-form-field input,
+  .knowledge-form-field select,
+  .knowledge-form-field textarea,
+  .knowledge-toolbar-field select,
+  .meter-reading-field input,
+  .meter-reading-field select,
+  .performance-report-field input,
+  .performance-report-field select,
+  .operation-record-field input,
+  .operation-record-field select,
+  .energy-parameter-field input,
+  .energy-parameter-field select,
+  .scene-compat-meta label select,
+  .video-legacy-meta label select
+) {
+  min-height: 32px;
+  border: 1px solid rgba(103, 220, 255, 0.14);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(14, 24, 37, 0.96), rgba(10, 18, 28, 0.94));
+  color: var(--text-1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.content.is-subpage-compact :is(
+  .report-record-field textarea,
+  .work-order-field textarea,
+  .knowledge-form-field textarea
+) {
+  min-height: 88px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-button,
+  .work-order-button,
+  .energy-analysis-button,
+  .energy-efficiency-button,
+  .meter-reading-button,
+  .performance-report-button,
+  .report-record-button,
+  .operation-record-button,
+  .energy-parameter-button,
+  .alarm-filter-button,
+  .device-model-switch-button,
+  .report-record-reg-chip,
+  .work-order-row-actions button,
+  .alarm-pagination button,
+  .operation-record-pagination button
+) {
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid rgba(103, 220, 255, 0.14);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(22, 37, 55, 0.96), rgba(13, 23, 35, 0.92)),
+    radial-gradient(circle at top left, rgba(103, 220, 255, 0.06), transparent 44%);
+  color: #e8f4ff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-button:hover,
+  .work-order-button:hover,
+  .energy-analysis-button:hover,
+  .energy-efficiency-button:hover,
+  .meter-reading-button:hover,
+  .performance-report-button:hover,
+  .report-record-button:hover,
+  .operation-record-button:hover,
+  .energy-parameter-button:hover,
+  .alarm-filter-button:hover,
+  .device-model-switch-button:hover,
+  .report-record-reg-chip:hover,
+  .work-order-row-actions button:hover,
+  .alarm-pagination button:hover,
+  .operation-record-pagination button:hover
+):not(:disabled) {
+  border-color: rgba(103, 220, 255, 0.26);
+  background:
+    linear-gradient(180deg, rgba(26, 44, 66, 0.98), rgba(15, 27, 41, 0.94)),
+    radial-gradient(circle at top left, rgba(103, 220, 255, 0.1), transparent 44%);
+  box-shadow: 0 12px 22px rgba(8, 29, 53, 0.16);
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-button.is-primary,
+  .work-order-button.is-primary,
+  .energy-analysis-button.is-primary,
+  .energy-efficiency-button.is-primary,
+  .meter-reading-button.is-primary,
+  .performance-report-button.is-primary,
+  .report-record-button.is-primary,
+  .operation-record-button.is-primary,
+  .energy-parameter-button.is-primary,
+  .alarm-filter-button.active,
+  .device-model-switch-button.active,
+  .report-record-reg-chip.is-active
+) {
+  border-color: rgba(103, 220, 255, 0.26);
+  background:
+    linear-gradient(180deg, rgba(24, 80, 122, 0.92), rgba(17, 50, 77, 0.94)),
+    radial-gradient(circle at top left, rgba(103, 220, 255, 0.18), transparent 46%);
+  color: #f0fbff;
+  box-shadow: 0 14px 28px rgba(22, 94, 148, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-button,
+  .work-order-button,
+  .energy-analysis-button,
+  .energy-efficiency-button,
+  .meter-reading-button,
+  .performance-report-button,
+  .report-record-button,
+  .operation-record-button,
+  .energy-parameter-button,
+  .alarm-filter-button,
+  .device-model-switch-button,
+  .work-order-row-actions button,
+  .alarm-pagination button,
+  .operation-record-pagination button
+):disabled {
+  opacity: 0.44;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.content.is-subpage-compact :is(
+  .work-order-pagination,
+  .operation-record-pagination,
+  .report-record-actions,
+  .report-record-reg-actions
+) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.knowledge-modal-backdrop,
+.work-order-modal-backdrop {
+  background: rgba(5, 16, 27, 0.56);
+  backdrop-filter: blur(12px);
+}
+
+.knowledge-modal,
+.work-order-modal {
+  border-radius: 24px;
+  border: 1px solid rgba(103, 220, 255, 0.16);
+  background:
+    linear-gradient(180deg, rgba(17, 31, 47, 0.98), rgba(10, 18, 28, 0.96)),
+    radial-gradient(circle at top left, rgba(103, 220, 255, 0.08), transparent 42%);
+  color: var(--text-1);
+  box-shadow: 0 28px 80px rgba(2, 10, 20, 0.34);
+}
+
+.knowledge-modal-header,
+.work-order-modal-header {
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(103, 220, 255, 0.08);
+}
+
+.knowledge-modal-header h3,
+.work-order-modal-header h3 {
+  color: #edf7ff;
+}
+
+.knowledge-modal-close,
+.work-order-modal-close {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(103, 220, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-2);
+}
+
+.knowledge-modal-actions,
+.work-order-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
