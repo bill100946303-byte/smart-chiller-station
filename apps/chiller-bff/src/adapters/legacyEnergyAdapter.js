@@ -176,6 +176,13 @@ const COP_FALLBACK_QUERIES = [
   { title: "COP", tagname: "cop" }
 ];
 
+const TOTAL_POWER_FALLBACK_QUERIES = [
+  { title: "总功率", tagname: "totalPower" },
+  { title: "实时总功率", tagname: "totalPower" },
+  { title: "总功率", tagname: "TotalPower" },
+  { title: "实时总功率", tagname: "TotalPower" }
+];
+
 function buildRunParamByTagEndpoint(siteId, query) {
   const params = new URLSearchParams();
   if (query?.title) {
@@ -189,6 +196,16 @@ function buildRunParamByTagEndpoint(siteId, query) {
   }
   const suffix = params.toString();
   return `/zsqy/homepage/${siteId}/getRunParamsCurveByTagName${suffix ? `?${suffix}` : ""}`;
+}
+
+function buildIdentifierCandidates(siteId, projectKey) {
+  return Array.from(
+    new Set(
+      [projectKey, siteId]
+        .map((value) => text(value))
+        .filter(Boolean)
+    )
+  );
 }
 
 function parseFlatPointRows(rows) {
@@ -259,8 +276,16 @@ function extractHomeEnergySnapshot(payload) {
   const metrics = {
     totalPowerKw: null,
     currentCop: null,
+    totalCoolingCapacity: null,
     chilledDeltaT: null,
-    coolingDeltaT: null
+    coolingDeltaT: null,
+    chillerCop: null,
+    chilledPumpConveyingCoefficient: null,
+    coolingTowerConveyingCoefficient: null,
+    coolingPumpConveyingCoefficient: null,
+    thermalUnbalanceRate: null,
+    chilledSupplyTemp: null,
+    coolingReturnTemp: null
   };
 
   for (const row of rightRows) {
@@ -281,6 +306,46 @@ function extractHomeEnergySnapshot(payload) {
       metrics.totalPowerKw = value;
     } else if (metrics.currentCop === null && includesAny(key, ["coldstationcop", "stationcop", "冷站效率", "冷站cop", "cop"])) {
       metrics.currentCop = value;
+    } else if (
+      metrics.totalCoolingCapacity === null &&
+      includesAny(key, ["实时总冷量", "总冷量", "totalcoolingcapacity", "systemcoolingcapacity"])
+    ) {
+      metrics.totalCoolingCapacity = value;
+    } else if (
+      metrics.chillerCop === null &&
+      includesAny(key, ["冷水机组cop", "主机cop", "chillercop"])
+    ) {
+      metrics.chillerCop = value;
+    } else if (
+      metrics.chilledPumpConveyingCoefficient === null &&
+      includesAny(key, ["冷冻水泵cop", "冷冻泵输送系数", "chilledwaterpumpcop", "refrigerationpumpconveyingcoefficient"])
+    ) {
+      metrics.chilledPumpConveyingCoefficient = value;
+    } else if (
+      metrics.coolingTowerConveyingCoefficient === null &&
+      includesAny(key, ["冷却塔cop", "冷却塔输送系数", "coolingtowercop", "coolingtowerconveyingcoefficient"])
+    ) {
+      metrics.coolingTowerConveyingCoefficient = value;
+    } else if (
+      metrics.coolingPumpConveyingCoefficient === null &&
+      includesAny(key, ["冷却水泵cop", "冷却泵输送系数", "coolingwaterpumpcop", "coolingpumpconveyingcoefficient"])
+    ) {
+      metrics.coolingPumpConveyingCoefficient = value;
+    } else if (
+      metrics.thermalUnbalanceRate === null &&
+      includesAny(key, ["热不平衡率", "thermalunbalancerate"])
+    ) {
+      metrics.thermalUnbalanceRate = value;
+    } else if (
+      metrics.chilledSupplyTemp === null &&
+      includesAny(key, ["冷冻出水温度", "chilledwatersupplytemperature", "coolingrturnwatertemperature"])
+    ) {
+      metrics.chilledSupplyTemp = value;
+    } else if (
+      metrics.coolingReturnTemp === null &&
+      includesAny(key, ["冷却回水温度", "coolingwaterreturntemperature", "coolingwatertemperature"])
+    ) {
+      metrics.coolingReturnTemp = value;
     } else if (
       metrics.chilledDeltaT === null &&
       includesAny(key, ["chilledwatertemperaturedifference", "冷冻水温差", "chilleddeltat"])
@@ -339,6 +404,25 @@ async function loadHomeEnergySnapshot(baseUrl, siteId) {
   };
 }
 
+async function loadHomeEnergySnapshotFallback(baseUrl, identifiers) {
+  const attempts = [];
+  for (const identifier of identifiers) {
+    const result = await loadHomeEnergySnapshot(baseUrl, identifier);
+    attempts.push(result);
+    if (result.sourceStatus?.ok) {
+      return {
+        selected: result,
+        attempts
+      };
+    }
+  }
+
+  return {
+    selected: attempts.find((item) => item.sourceStatus?.ok) || attempts.at(-1) || null,
+    attempts
+  };
+}
+
 async function loadRunParamByTag(baseUrl, siteId, spec) {
   const endpoint = buildRunParamByTagEndpoint(siteId, spec);
   const response = await fetchLegacyJson(baseUrl, endpoint);
@@ -388,6 +472,31 @@ async function loadRunParamByTag(baseUrl, siteId, spec) {
   };
 }
 
+async function loadRunParamByTagFallback(baseUrl, identifiers, specs) {
+  const attempts = [];
+  for (const spec of specs) {
+    for (const identifier of identifiers) {
+      const result = await loadRunParamByTag(baseUrl, identifier, spec);
+      attempts.push(result);
+      if (Array.isArray(result.series?.points) && result.series.points.length > 0) {
+        return {
+          selected: result,
+          attempts
+        };
+      }
+    }
+  }
+
+  return {
+    selected:
+      attempts.find((item) => Array.isArray(item.series?.points) && item.series.points.length > 0) ||
+      attempts.find((item) => item.sourceStatus?.ok) ||
+      attempts.at(-1) ||
+      null,
+    attempts
+  };
+}
+
 function extractEquipmentMetrics(rows) {
   const metrics = {
     totalPowerKw: null,
@@ -396,6 +505,13 @@ function extractEquipmentMetrics(rows) {
     totalCoolingCapacity: null,
     chilledDeltaT: null,
     coolingDeltaT: null,
+    chillerCop: null,
+    chilledPumpConveyingCoefficient: null,
+    coolingTowerConveyingCoefficient: null,
+    coolingPumpConveyingCoefficient: null,
+    thermalUnbalanceRate: null,
+    chilledSupplyTemp: null,
+    coolingReturnTemp: null,
     coolingTowerPowerKw: null,
     chilledPumpPowerKw: null,
     coolingPumpPowerKw: null,
@@ -460,12 +576,38 @@ function extractEquipmentMetrics(rows) {
       includesAny(label, ["coolingtowertotalpower", "towertotalpower", "冷却塔总功率"])
     ) {
       metrics.coolingTowerPowerKw = value;
+    } else if (includesAny(label, ["实时总冷量", "总冷量", "totalcoolingcapacity", "systemcoolingcapacity"])) {
+      metrics.totalCoolingCapacity = value;
+    } else if (includesAny(label, ["冷水机组cop", "主机cop", "chillercop"])) {
+      metrics.chillerCop = value;
+    } else if (
+      includesAny(label, ["冷冻水泵cop", "冷冻泵输送系数", "chilledwaterpumpcop", "refrigerationpumpconveyingcoefficient"])
+    ) {
+      metrics.chilledPumpConveyingCoefficient = value;
+    } else if (
+      includesAny(label, ["冷却塔cop", "冷却塔输送系数", "coolingtowercop", "coolingtowerconveyingcoefficient"])
+    ) {
+      metrics.coolingTowerConveyingCoefficient = value;
+    } else if (
+      includesAny(label, ["冷却水泵cop", "冷却泵输送系数", "coolingwaterpumpcop", "coolingpumpconveyingcoefficient"])
+    ) {
+      metrics.coolingPumpConveyingCoefficient = value;
+    } else if (includesAny(label, ["热不平衡率", "thermalunbalancerate"])) {
+      metrics.thermalUnbalanceRate = value;
     } else if (includesAny(label, ["totalelectricity", "总电量", "总电能"])) {
       metrics.totalElectricityKwh = value;
     } else if (includesAny(label, ["totalpower", "总功率"])) {
       metrics.totalPowerKw = value;
     } else if (includesAny(label, ["cop"])) {
       metrics.currentCop = value;
+    } else if (
+      includesAny(label, ["冷冻出水温度", "chilledwatersupplytemperature", "coolingrturnwatertemperature"])
+    ) {
+      metrics.chilledSupplyTemp = value;
+    } else if (
+      includesAny(label, ["冷却回水温度", "coolingwaterreturntemperature", "coolingwatertemperature"])
+    ) {
+      metrics.coolingReturnTemp = value;
     } else if (includesAny(label, ["冷冻水温差", "chilledwatertemperaturedifference", "chilleddeltat"])) {
       metrics.chilledDeltaT = value;
     } else if (includesAny(label, ["冷却水温差", "chilledoutwatertemperaturedifference", "coolingdeltat"])) {
@@ -578,23 +720,38 @@ function pickChilledPumpFreqSeries(seriesList) {
   return candidates.sort((a, b) => b.points.length - a.points.length)[0];
 }
 
-export async function loadEnergyOverview(baseUrl, siteId) {
-  const endpoint = `/zsqy/homepage/${siteId}/getEquipmentEnergyStatisticsCurve`;
-  const result = await fetchLegacyJson(baseUrl, endpoint);
-  if (!result.ok) {
+export async function loadEnergyOverview(baseUrl, siteId, requestContext = {}) {
+  const identifierCandidates = buildIdentifierCandidates(siteId, requestContext?.projectKey);
+  const overviewAttempts = [];
+  let overview = null;
+
+  for (const identifier of identifierCandidates) {
+    const endpoint = `/zsqy/homepage/${identifier}/getEquipmentEnergyStatisticsCurve`;
+    const result = await fetchLegacyJson(baseUrl, endpoint);
+    const attempt = { identifier, endpoint, result };
+    overviewAttempts.push(attempt);
+    if (result.ok) {
+      overview = attempt;
+      break;
+    }
+  }
+
+  const failedAttempt = overviewAttempts.at(-1);
+  if (!overview) {
     return {
       sourceStatus: {
-        endpoint,
+        endpoint: failedAttempt?.endpoint || `/zsqy/homepage/${siteId}/getEquipmentEnergyStatisticsCurve`,
         ok: false,
-        status: result.status ?? null,
+        status: failedAttempt?.result?.status ?? null,
         message: null,
-        error: result.error
+        error: failedAttempt?.result?.error || "Legacy request failed"
       },
       metrics: null,
       latestTimestamp: null
     };
   }
 
+  const { endpoint, result } = overview;
   const rows = deepArrayProbe(result.payload);
   const latest = pickLatestByTime(rows) || rows.at(-1) || {};
   const extracted = extractEquipmentMetrics(rows);
@@ -605,7 +762,18 @@ export async function loadEnergyOverview(baseUrl, siteId) {
     totalElectricityKwh: extracted.totalElectricityKwh,
     totalCoolingCapacity: extracted.totalCoolingCapacity,
     chilledDeltaT: extracted.chilledDeltaT,
-    coolingDeltaT: extracted.coolingDeltaT
+    coolingDeltaT: extracted.coolingDeltaT,
+    chillerPowerKw: extracted.chillerPowerKw,
+    chilledPumpPowerKw: extracted.chilledPumpPowerKw,
+    coolingPumpPowerKw: extracted.coolingPumpPowerKw,
+    coolingTowerPowerKw: extracted.coolingTowerPowerKw,
+    chillerCop: extracted.chillerCop,
+    chilledPumpConveyingCoefficient: extracted.chilledPumpConveyingCoefficient,
+    coolingTowerConveyingCoefficient: extracted.coolingTowerConveyingCoefficient,
+    coolingPumpConveyingCoefficient: extracted.coolingPumpConveyingCoefficient,
+    thermalUnbalanceRate: extracted.thermalUnbalanceRate,
+    chilledSupplyTemp: extracted.chilledSupplyTemp,
+    coolingReturnTemp: extracted.coolingReturnTemp
   };
 
   const fallbackStatuses = [];
@@ -613,24 +781,27 @@ export async function loadEnergyOverview(baseUrl, siteId) {
 
   const ensureHomeSnapshot = async () => {
     if (homeSnapshot === null) {
-      homeSnapshot = await loadHomeEnergySnapshot(baseUrl, siteId);
-      fallbackStatuses.push(homeSnapshot.sourceStatus);
+      const fallback = await loadHomeEnergySnapshotFallback(baseUrl, identifierCandidates);
+      homeSnapshot = fallback.selected;
+      fallbackStatuses.push(...fallback.attempts.map((item) => item.sourceStatus));
     }
     return homeSnapshot;
   };
   if (metrics.chilledDeltaT === null) {
-    const fallback = await loadRunParamByTag(baseUrl, siteId, RUN_PARAM_BY_TAG_SPECS.chilledDeltaT);
-    fallbackStatuses.push(fallback.sourceStatus);
-    metrics.chilledDeltaT = latestNumericValue(fallback.series.points);
+    const fallbackLookup = await loadRunParamByTagFallback(baseUrl, identifierCandidates, [RUN_PARAM_BY_TAG_SPECS.chilledDeltaT]);
+    const fallback = fallbackLookup.selected;
+    fallbackStatuses.push(...fallbackLookup.attempts.map((item) => item.sourceStatus));
+    metrics.chilledDeltaT = latestNumericValue(fallback?.series?.points);
     if (metrics.chilledDeltaT === null) {
       const snapshot = await ensureHomeSnapshot();
       metrics.chilledDeltaT = asNumber(snapshot?.metrics?.chilledDeltaT);
     }
   }
   if (metrics.coolingDeltaT === null) {
-    const fallback = await loadRunParamByTag(baseUrl, siteId, RUN_PARAM_BY_TAG_SPECS.coolingDeltaT);
-    fallbackStatuses.push(fallback.sourceStatus);
-    metrics.coolingDeltaT = latestNumericValue(fallback.series.points);
+    const fallbackLookup = await loadRunParamByTagFallback(baseUrl, identifierCandidates, [RUN_PARAM_BY_TAG_SPECS.coolingDeltaT]);
+    const fallback = fallbackLookup.selected;
+    fallbackStatuses.push(...fallbackLookup.attempts.map((item) => item.sourceStatus));
+    metrics.coolingDeltaT = latestNumericValue(fallback?.series?.points);
     if (metrics.coolingDeltaT === null) {
       const snapshot = await ensureHomeSnapshot();
       metrics.coolingDeltaT = asNumber(snapshot?.metrics?.coolingDeltaT);
@@ -638,13 +809,14 @@ export async function loadEnergyOverview(baseUrl, siteId) {
   }
   if (metrics.currentCop === null) {
     for (const query of COP_FALLBACK_QUERIES) {
-      const fallback = await loadRunParamByTag(baseUrl, siteId, {
+      const fallbackLookup = await loadRunParamByTagFallback(baseUrl, identifierCandidates, [{
         sourceKey: "runParamsByTag.currentCop",
         label: "冷站COP",
         ...query
-      });
-      fallbackStatuses.push(fallback.sourceStatus);
-      const value = latestNumericValue(fallback.series.points);
+      }]);
+      const fallback = fallbackLookup.selected;
+      fallbackStatuses.push(...fallbackLookup.attempts.map((item) => item.sourceStatus));
+      const value = latestNumericValue(fallback?.series?.points);
       if (value !== null) {
         metrics.currentCop = value;
         break;
@@ -658,6 +830,18 @@ export async function loadEnergyOverview(baseUrl, siteId) {
   if (metrics.totalPowerKw === null) {
     const snapshot = await ensureHomeSnapshot();
     metrics.totalPowerKw = asNumber(snapshot?.metrics?.totalPowerKw);
+  }
+  if (metrics.chilledSupplyTemp === null) {
+    const snapshot = await ensureHomeSnapshot();
+    metrics.chilledSupplyTemp = asNumber(snapshot?.metrics?.chilledSupplyTemp);
+  }
+  if (metrics.coolingReturnTemp === null) {
+    const snapshot = await ensureHomeSnapshot();
+    metrics.coolingReturnTemp = asNumber(snapshot?.metrics?.coolingReturnTemp);
+  }
+  if (metrics.totalCoolingCapacity === null) {
+    const snapshot = await ensureHomeSnapshot();
+    metrics.totalCoolingCapacity = asNumber(snapshot?.metrics?.totalCoolingCapacity);
   }
 
   const missingCoreMetrics = [];
@@ -692,7 +876,8 @@ export async function loadEnergyOverview(baseUrl, siteId) {
   };
 }
 
-export async function loadTrendSeries(baseUrl, siteId) {
+export async function loadTrendSeries(baseUrl, siteId, requestContext = {}) {
+  const identifierCandidates = buildIdentifierCandidates(siteId, requestContext?.projectKey);
   const endpoints = {
     energyCurve: `/zsqy/homepage/${siteId}/getEnergyStatisticsCurve`,
     runParams: `/zsqy/homepage/${siteId}/getRunParamsCurve`
@@ -753,27 +938,55 @@ export async function loadTrendSeries(baseUrl, siteId) {
     fallbackSpecs.push(RUN_PARAM_BY_TAG_SPECS.coolingDeltaT);
   }
 
-  const fallbackResults = await Promise.all(
-    fallbackSpecs.map((spec) => loadRunParamByTag(baseUrl, siteId, spec))
+  const fallbackLookups = await Promise.all(
+    fallbackSpecs.map((spec) => loadRunParamByTagFallback(baseUrl, identifierCandidates, [spec]))
   );
+  const fallbackResults = fallbackLookups.map((item) => item.selected).filter(Boolean);
+  const fallbackAttemptResults = fallbackLookups.flatMap((item) => item.attempts);
   let copFallbackResults = [];
+  let copFallbackSourceStatus = null;
   let copFallbackSeries = null;
   if (!parsedSeries.some((series) => includesAny(series.key, ["cop"]))) {
-    for (const query of COP_FALLBACK_QUERIES) {
-      const fallback = await loadRunParamByTag(baseUrl, siteId, {
+    const fallback = await loadRunParamByTagFallback(
+      baseUrl,
+      identifierCandidates,
+      COP_FALLBACK_QUERIES.map((query) => ({
         sourceKey: "runParamsByTag.currentCop",
         label: "冷站COP",
         ...query
-      });
-      copFallbackResults.push(fallback);
-      if (Array.isArray(fallback.series?.points) && fallback.series.points.length > 0) {
-        copFallbackSeries = {
-          ...fallback.series,
-          key: "currentcop",
-          label: "冷站COP"
-        };
-        break;
-      }
+      }))
+    );
+    copFallbackResults = fallback.attempts;
+    if (Array.isArray(fallback.selected?.series?.points) && fallback.selected.series.points.length > 0) {
+      copFallbackSourceStatus = fallback.selected?.sourceStatus ?? null;
+      copFallbackSeries = {
+        ...fallback.selected.series,
+        key: "currentcop",
+        label: "冷站COP"
+      };
+    }
+  }
+  let totalPowerFallbackResults = [];
+  let totalPowerFallbackSourceStatus = null;
+  let totalPowerFallbackSeries = null;
+  if (!parsedSeries.some((series) => includesAny(series.key, ["totalpower", "总功率"]))) {
+    const fallback = await loadRunParamByTagFallback(
+      baseUrl,
+      identifierCandidates,
+      TOTAL_POWER_FALLBACK_QUERIES.map((query) => ({
+        sourceKey: "runParamsByTag.totalPower",
+        label: "总功率",
+        ...query
+      }))
+    );
+    totalPowerFallbackResults = fallback.attempts;
+    if (Array.isArray(fallback.selected?.series?.points) && fallback.selected.series.points.length > 0) {
+      totalPowerFallbackSourceStatus = fallback.selected?.sourceStatus ?? null;
+      totalPowerFallbackSeries = {
+        ...fallback.selected.series,
+        key: "totalpower",
+        label: "总功率"
+      };
     }
   }
   const fallbackSeries = fallbackResults
@@ -782,8 +995,20 @@ export async function loadTrendSeries(baseUrl, siteId) {
   if (copFallbackSeries) {
     fallbackSeries.push(copFallbackSeries);
   }
+  if (totalPowerFallbackSeries) {
+    fallbackSeries.push(totalPowerFallbackSeries);
+  }
   const sourceStatus = [...baseSourceStatus];
-  const allFallbackResults = [...fallbackResults, ...copFallbackResults];
+  const selectedFallbackSourceStatuses = [
+    ...fallbackResults.map((item) => item?.sourceStatus).filter(Boolean),
+    ...(copFallbackSourceStatus ? [copFallbackSourceStatus] : []),
+    ...(totalPowerFallbackSourceStatus ? [totalPowerFallbackSourceStatus] : [])
+  ];
+  const allFallbackResults = [
+    ...fallbackAttemptResults,
+    ...copFallbackResults,
+    ...totalPowerFallbackResults
+  ];
   const fallbackAttempted = allFallbackResults.length;
   const fallbackOk = allFallbackResults.filter((item) => item.sourceStatus.ok).length;
   const fallbackRows = allFallbackResults.reduce(
@@ -912,6 +1137,7 @@ export async function loadTrendSeries(baseUrl, siteId) {
         .filter((series) => Array.isArray(series.points) && series.points.length > 0)
         .map((series) => {
           const key = series.key || "";
+          if (includesAny(key, ["totalpower", "总功率"])) return "power";
           if (includesAny(key, ["cop"])) return "cop";
           if (includesAny(key, ["冷冻水温差", "chilleddeltat", "chilledwatertemperaturedifference"])) return "chilled";
           if (includesAny(key, ["冷却水温差", "coolingdeltat", "chilledoutwatertemperaturedifference"])) return "cooling";
@@ -919,7 +1145,7 @@ export async function loadTrendSeries(baseUrl, siteId) {
         })
         .filter(Boolean)
     );
-    return metricSet.has("cop") && metricSet.has("chilled") && metricSet.has("cooling");
+    return metricSet.has("power") && metricSet.has("cop") && metricSet.has("chilled") && metricSet.has("cooling");
   })();
 
   const runParamsIndex = sourceStatus.findIndex((item) => item.key === "runParams");
@@ -935,7 +1161,13 @@ export async function loadTrendSeries(baseUrl, siteId) {
   }
 
   return {
-    sourceStatus,
+    sourceStatus: [
+      ...sourceStatus,
+      ...selectedFallbackSourceStatuses
+    ].filter((item, index, list) => {
+      const key = `${item?.key || ""}:${item?.endpoint || ""}`;
+      return list.findIndex((candidate) => `${candidate?.key || ""}:${candidate?.endpoint || ""}` === key) === index;
+    }),
     series,
     latestTimestamp
   };

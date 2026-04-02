@@ -31,6 +31,12 @@ function extractMessage(payload, fallback = null) {
   return raw == null ? fallback : String(raw);
 }
 
+function buildIdentifierCandidates(siteId, projectKey) {
+  return Array.from(
+    new Set([projectKey, siteId].map((value) => asTrimmedString(value)).filter(Boolean))
+  );
+}
+
 function normalizeCurvePoints(rows) {
   return rows
     .map((row, index) => {
@@ -99,10 +105,28 @@ function extractOnlineRoot(payload) {
 }
 
 export async function loadSceneLegacyTrend(baseUrl, siteId, options = {}) {
-  const endpoint = buildSceneLegacyTrendEndpoint(siteId, options);
-  const response = await fetchLegacyJson(baseUrl, endpoint);
-  const rows = response.ok ? deepArrayProbe(response.payload) : [];
-  const points = response.ok ? normalizeCurvePoints(rows) : [];
+  const identifiers = buildIdentifierCandidates(siteId, options.projectKey);
+  let selectedEndpoint = buildSceneLegacyTrendEndpoint(siteId, options);
+  let selectedResponse = {
+    ok: false,
+    status: null,
+    error: null,
+    payload: null
+  };
+  let rows = [];
+
+  for (const identifier of identifiers) {
+    const endpoint = buildSceneLegacyTrendEndpoint(identifier, options);
+    const response = await fetchLegacyJson(baseUrl, endpoint);
+    selectedEndpoint = endpoint;
+    selectedResponse = response;
+    rows = response.ok ? deepArrayProbe(response.payload) : [];
+    if (response.ok) {
+      break;
+    }
+  }
+
+  const points = selectedResponse.ok ? normalizeCurvePoints(rows) : [];
   const firstRow = rows.find((row) => row && typeof row === "object") || null;
 
   return {
@@ -116,24 +140,41 @@ export async function loadSceneLegacyTrend(baseUrl, siteId, options = {}) {
     points,
     latestTimestamp: findLatestTimestamp(points),
     sourceStatus: {
-      endpoint,
-      ok: response.ok,
-      status: response.status ?? null,
-      message: response.ok ? extractMessage(response.payload, "OK") : null,
-      error: response.ok ? null : response.error,
+      endpoint: selectedEndpoint,
+      ok: selectedResponse.ok,
+      status: selectedResponse.status ?? null,
+      message: selectedResponse.ok ? extractMessage(selectedResponse.payload, "OK") : null,
+      error: selectedResponse.ok ? null : selectedResponse.error,
       rows: rows.length
     }
   };
 }
 
-export async function loadSceneOnlineMonitor(baseUrl, siteId) {
-  const endpoint = buildSceneOnlineMonitorEndpoint(siteId);
-  const response = await fetchLegacyJson(baseUrl, endpoint);
-  const root = response.ok ? extractOnlineRoot(response.payload) : {};
-  const rows = response.ok
+export async function loadSceneOnlineMonitor(baseUrl, siteId, options = {}) {
+  const identifiers = buildIdentifierCandidates(siteId, options.projectKey);
+  let selectedEndpoint = buildSceneOnlineMonitorEndpoint(siteId);
+  let selectedResponse = {
+    ok: false,
+    status: null,
+    error: null,
+    payload: null
+  };
+
+  for (const identifier of identifiers) {
+    const endpoint = buildSceneOnlineMonitorEndpoint(identifier);
+    const response = await fetchLegacyJson(baseUrl, endpoint);
+    selectedEndpoint = endpoint;
+    selectedResponse = response;
+    if (response.ok) {
+      break;
+    }
+  }
+
+  const root = selectedResponse.ok ? extractOnlineRoot(selectedResponse.payload) : {};
+  const rows = selectedResponse.ok
     ? deepArrayProbe(root?.curveValueList ? { data: root.curveValueList } : root)
     : [];
-  const points = response.ok ? normalizeCurvePoints(rows) : [];
+  const points = selectedResponse.ok ? normalizeCurvePoints(rows) : [];
 
   return {
     title: asTrimmedString(root?.title, ""),
@@ -141,11 +182,11 @@ export async function loadSceneOnlineMonitor(baseUrl, siteId) {
     points,
     latestTimestamp: findLatestTimestamp(points),
     sourceStatus: {
-      endpoint,
-      ok: response.ok,
-      status: response.status ?? null,
-      message: response.ok ? extractMessage(response.payload, "OK") : null,
-      error: response.ok ? null : response.error,
+      endpoint: selectedEndpoint,
+      ok: selectedResponse.ok,
+      status: selectedResponse.status ?? null,
+      message: selectedResponse.ok ? extractMessage(selectedResponse.payload, "OK") : null,
+      error: selectedResponse.ok ? null : selectedResponse.error,
       rows: rows.length
     }
   };

@@ -5,6 +5,113 @@ import { computeFreshnessState } from "./freshness.js";
 import { applyFieldNullStrategy, buildGeneratedAt } from "./fieldPolicyService.js";
 import { buildSourceStatus } from "./sourceStatusService.js";
 
+function asFiniteNumber(value) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function deriveCoolingCapacity(metrics) {
+  const directValue = asFiniteNumber(metrics?.totalCoolingCapacity);
+  if (directValue !== null) {
+    return directValue;
+  }
+
+  const candidates = [
+    [metrics?.currentCop, metrics?.totalPowerKw],
+    [metrics?.chillerCop, metrics?.chillerPowerKw],
+    [metrics?.chilledPumpConveyingCoefficient, metrics?.chilledPumpPowerKw],
+    [metrics?.coolingPumpConveyingCoefficient, metrics?.coolingPumpPowerKw],
+    [metrics?.coolingTowerConveyingCoefficient, metrics?.coolingTowerPowerKw]
+  ];
+
+  for (const [left, right] of candidates) {
+    const factor = asFiniteNumber(left);
+    const base = asFiniteNumber(right);
+    if (factor !== null && base !== null && factor > 0 && base > 0) {
+      return Number((factor * base).toFixed(1));
+    }
+  }
+
+  return null;
+}
+
+function resolveRatedCoolingCapacityKw(config) {
+  const directValue = asFiniteNumber(config?.ratedCoolingCapacityKw);
+  if (directValue !== null && directValue > 0) {
+    return directValue;
+  }
+
+  const sourceValue = asFiniteNumber(config?.siteSourceConfig?.ratedCoolingCapacityKw);
+  if (sourceValue !== null && sourceValue > 0) {
+    return sourceValue;
+  }
+
+  return null;
+}
+
+export function deriveLoadRatePct(totalCoolingCapacity, ratedCoolingCapacityKw) {
+  if (
+    typeof totalCoolingCapacity !== "number" ||
+    !Number.isFinite(totalCoolingCapacity) ||
+    totalCoolingCapacity < 0 ||
+    typeof ratedCoolingCapacityKw !== "number" ||
+    !Number.isFinite(ratedCoolingCapacityKw) ||
+    ratedCoolingCapacityKw <= 0
+  ) {
+    return null;
+  }
+
+  return Number(((totalCoolingCapacity / ratedCoolingCapacityKw) * 100).toFixed(1));
+}
+
+function hasCompleteOverviewCoreMetrics(metrics) {
+  return [
+    metrics?.currentCop,
+    metrics?.totalPowerKw,
+    metrics?.chilledDeltaT,
+    metrics?.coolingDeltaT
+  ].every((value) => typeof value === "number" && Number.isFinite(value));
+}
+
+function hasCompleteTrendCoreMetrics(series) {
+  if (!Array.isArray(series) || series.length === 0) {
+    return false;
+  }
+
+  const requiredMetrics = new Set(["chilled_delta_t", "cooling_delta_t"]);
+  for (const item of series) {
+    const metric = String(item?.metric || "");
+    if (!requiredMetrics.has(metric)) {
+      continue;
+    }
+    const hasPoints = Array.isArray(item?.points) && item.points.some((point) => typeof point?.v === "number");
+    if (hasPoints) {
+      requiredMetrics.delete(metric);
+    }
+  }
+
+  return requiredMetrics.size === 0;
+}
+
+function hasCompleteTrendDashboardMetrics(series) {
+  if (!Array.isArray(series) || series.length === 0) {
+    return false;
+  }
+
+  const requiredMetrics = new Set(["totalPowerKw", "currentCop", "chilledDeltaT", "coolingDeltaT"]);
+  for (const item of series) {
+    const metric = String(item?.metric || "");
+    if (!requiredMetrics.has(metric)) {
+      continue;
+    }
+    const hasPoints = Array.isArray(item?.points) && item.points.some((point) => typeof point?.v === "number");
+    if (hasPoints) {
+      requiredMetrics.delete(metric);
+    }
+  }
+
+  return requiredMetrics.size === 0;
+}
+
 function fallbackEnergyCards() {
   return {
     currentCop: null,
@@ -12,9 +119,21 @@ function fallbackEnergyCards() {
     currentLoadRate: null,
     totalElectricityKwh: null,
     savingPotentialPct: null,
+    totalCoolingCapacity: null,
     activeAnomalyCount: null,
     chilledDeltaT: null,
-    coolingDeltaT: null
+    coolingDeltaT: null,
+    chillerPowerKw: null,
+    chilledPumpPowerKw: null,
+    coolingPumpPowerKw: null,
+    coolingTowerPowerKw: null,
+    chillerCop: null,
+    chilledPumpConveyingCoefficient: null,
+    coolingTowerConveyingCoefficient: null,
+    coolingPumpConveyingCoefficient: null,
+    thermalUnbalanceRate: null,
+    chilledSupplyTemp: null,
+    coolingReturnTemp: null
   };
 }
 
@@ -93,7 +212,7 @@ function buildRealtimeSource(sourceStatus) {
 
 export async function getDashboardOverview(config, siteId, anomalySummary = null, requestContext = {}) {
   const [energy, device] = await Promise.all([
-    loadEnergyOverview(config.legacyBaseUrl, siteId),
+    loadEnergyOverview(config.legacyBaseUrl, siteId, requestContext),
     loadDeviceSummary(config.legacyBaseUrl, siteId, {
       projectKey: requestContext?.projectKey
     })
@@ -107,14 +226,48 @@ export async function getDashboardOverview(config, siteId, anomalySummary = null
     currentCop: energy.metrics?.currentCop ?? realtimeSnapshot?.overview?.metrics?.currentCop ?? null,
     totalElectricityKwh: energy.metrics?.totalElectricityKwh ?? null,
     chilledDeltaT: energy.metrics?.chilledDeltaT ?? realtimeSnapshot?.overview?.metrics?.chilledDeltaT ?? null,
-    coolingDeltaT: energy.metrics?.coolingDeltaT ?? realtimeSnapshot?.overview?.metrics?.coolingDeltaT ?? null
+    coolingDeltaT: energy.metrics?.coolingDeltaT ?? realtimeSnapshot?.overview?.metrics?.coolingDeltaT ?? null,
+    totalCoolingCapacity: energy.metrics?.totalCoolingCapacity ?? null,
+    chillerPowerKw: energy.metrics?.chillerPowerKw ?? realtimeSnapshot?.overview?.metrics?.chillerPowerKw ?? null,
+    chilledPumpPowerKw:
+      energy.metrics?.chilledPumpPowerKw ?? realtimeSnapshot?.overview?.metrics?.chilledPumpPowerKw ?? null,
+    coolingPumpPowerKw:
+      energy.metrics?.coolingPumpPowerKw ?? realtimeSnapshot?.overview?.metrics?.coolingPumpPowerKw ?? null,
+    coolingTowerPowerKw:
+      energy.metrics?.coolingTowerPowerKw ?? realtimeSnapshot?.overview?.metrics?.coolingTowerPowerKw ?? null,
+    chillerCop: energy.metrics?.chillerCop ?? realtimeSnapshot?.overview?.metrics?.chillerCop ?? null,
+    chilledPumpConveyingCoefficient:
+      energy.metrics?.chilledPumpConveyingCoefficient ??
+      realtimeSnapshot?.overview?.metrics?.chilledPumpConveyingCoefficient ??
+      null,
+    coolingTowerConveyingCoefficient:
+      energy.metrics?.coolingTowerConveyingCoefficient ??
+      realtimeSnapshot?.overview?.metrics?.coolingTowerConveyingCoefficient ??
+      null,
+    coolingPumpConveyingCoefficient:
+      energy.metrics?.coolingPumpConveyingCoefficient ??
+      realtimeSnapshot?.overview?.metrics?.coolingPumpConveyingCoefficient ??
+      null,
+    thermalUnbalanceRate:
+      energy.metrics?.thermalUnbalanceRate ?? realtimeSnapshot?.overview?.metrics?.thermalUnbalanceRate ?? null,
+    chilledSupplyTemp:
+      energy.metrics?.chilledSupplyTemp ?? realtimeSnapshot?.overview?.metrics?.chilledSupplyTemp ?? null,
+    coolingReturnTemp:
+      energy.metrics?.coolingReturnTemp ?? realtimeSnapshot?.overview?.metrics?.coolingReturnTemp ?? null
   };
+  mergedMetrics.totalCoolingCapacity = deriveCoolingCapacity(mergedMetrics);
+  const ratedCoolingCapacityKw = resolveRatedCoolingCapacityKw(config);
   const latestTimestamp = pickLaterTimestamp(
     energy.latestTimestamp,
     realtimeSnapshot?.overview?.latestTimestamp
   );
 
   const freshness = computeFreshnessState(latestTimestamp, config.staleThresholdHours);
+  const realtimeSource = buildRealtimeSource(realtimeSnapshot?.sourceStatus);
+  const realtimeCoversOverview =
+    realtimeSource?.ok === true &&
+    freshness.stale !== true &&
+    hasCompleteOverviewCoreMetrics(mergedMetrics);
   const energyCards =
     !needsRealtimeEnergyFallback(mergedMetrics) || mergedMetrics.totalElectricityKwh !== null
     ? {
@@ -124,7 +277,10 @@ export async function getDashboardOverview(config, siteId, anomalySummary = null
           "station_total_power_kw",
           mergedMetrics.totalPowerKw
         ),
-        currentLoadRate: null,
+        currentLoadRate: deriveLoadRatePct(
+          mergedMetrics.totalCoolingCapacity,
+          ratedCoolingCapacityKw
+        ),
         totalElectricityKwh: applyFieldNullStrategy(
           config,
           "station_total_energy_kwh",
@@ -132,6 +288,7 @@ export async function getDashboardOverview(config, siteId, anomalySummary = null
         ),
         savingPotentialPct: null,
         activeAnomalyCount: anomalySummary?.counts?.total ?? null,
+        totalCoolingCapacity: mergedMetrics.totalCoolingCapacity,
         chilledDeltaT: applyFieldNullStrategy(
           config,
           "chilled_delta_t_c",
@@ -141,7 +298,18 @@ export async function getDashboardOverview(config, siteId, anomalySummary = null
           config,
           "cooling_delta_t_c",
           mergedMetrics.coolingDeltaT
-        )
+        ),
+        chillerPowerKw: mergedMetrics.chillerPowerKw,
+        chilledPumpPowerKw: mergedMetrics.chilledPumpPowerKw,
+        coolingPumpPowerKw: mergedMetrics.coolingPumpPowerKw,
+        coolingTowerPowerKw: mergedMetrics.coolingTowerPowerKw,
+        chillerCop: mergedMetrics.chillerCop,
+        chilledPumpConveyingCoefficient: mergedMetrics.chilledPumpConveyingCoefficient,
+        coolingTowerConveyingCoefficient: mergedMetrics.coolingTowerConveyingCoefficient,
+        coolingPumpConveyingCoefficient: mergedMetrics.coolingPumpConveyingCoefficient,
+        thermalUnbalanceRate: mergedMetrics.thermalUnbalanceRate,
+        chilledSupplyTemp: mergedMetrics.chilledSupplyTemp,
+        coolingReturnTemp: mergedMetrics.coolingReturnTemp
       }
     : fallbackEnergyCards();
 
@@ -169,8 +337,8 @@ export async function getDashboardOverview(config, siteId, anomalySummary = null
     freshness,
     sourceStatus: buildSourceStatus(
       [
-        { key: "energy", ...energy.sourceStatus },
-        buildRealtimeSource(realtimeSnapshot?.sourceStatus),
+        !realtimeCoversOverview || energy.sourceStatus?.ok === true ? { key: "energy", ...energy.sourceStatus } : null,
+        realtimeSource,
         { key: "devices", ...device.sourceStatus },
         pickAlarmSourceForOverview(anomalySummary, siteId)
       ].filter(Boolean)
@@ -179,7 +347,7 @@ export async function getDashboardOverview(config, siteId, anomalySummary = null
 }
 
 export async function getDashboardTrends(config, siteId, range = "24h", requestContext = {}) {
-  const trend = await loadTrendSeries(config.legacyBaseUrl, siteId);
+  const trend = await loadTrendSeries(config.legacyBaseUrl, siteId, requestContext);
   const shouldUseRealtimeFallback = needsRealtimeTrendFallback(trend.series);
   const realtimeSnapshot =
     requestContext?.userId && shouldUseRealtimeFallback
@@ -189,6 +357,15 @@ export async function getDashboardTrends(config, siteId, range = "24h", requestC
     ? realtimeSnapshot.trends.series
     : [];
   const series = shouldUseRealtimeFallback && realtimeSeries.length > 0 ? realtimeSeries : trend.series || [];
+  const realtimeSource = buildRealtimeSource(realtimeSnapshot?.sourceStatus);
+  const realtimeCoversTrends =
+    shouldUseRealtimeFallback &&
+    realtimeSource?.ok === true &&
+    hasCompleteTrendCoreMetrics(series);
+  const trendCoversDashboardMetrics = hasCompleteTrendDashboardMetrics(series);
+  const usableTrendSources = Array.isArray(trend.sourceStatus)
+    ? trend.sourceStatus.filter((item) => item?.ok)
+    : [];
   const freshness = computeFreshnessState(
     pickLaterTimestamp(trend.latestTimestamp, realtimeSnapshot?.trends?.latestTimestamp),
     config.staleThresholdHours
@@ -218,8 +395,15 @@ export async function getDashboardTrends(config, siteId, range = "24h", requestC
     stats,
     freshness,
     sourceStatus: buildSourceStatus(
-      Array.isArray(trend.sourceStatus) && trend.sourceStatus.length > 0
-        ? [...trend.sourceStatus, buildRealtimeSource(realtimeSnapshot?.sourceStatus)].filter(Boolean)
+      realtimeCoversTrends
+        ? [realtimeSource].filter(Boolean)
+        : trendCoversDashboardMetrics && usableTrendSources.length > 0
+          ? usableTrendSources
+          : Array.isArray(trend.sourceStatus) && trend.sourceStatus.length > 0
+        ? [
+            ...trend.sourceStatus,
+            realtimeSource
+          ].filter(Boolean)
         : [
             {
               key: "energyCurve",
@@ -239,7 +423,7 @@ export async function getDashboardTrends(config, siteId, range = "24h", requestC
               error: "trend source status unavailable",
               rows: null
             },
-            buildRealtimeSource(realtimeSnapshot?.sourceStatus)
+            realtimeSource
           ]
               .filter(Boolean)
     )

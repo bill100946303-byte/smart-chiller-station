@@ -69,6 +69,41 @@ function normalizeProportionDateType(value, fallback = "2") {
   return ["2", "3"].includes(normalized) ? normalized : fallback;
 }
 
+function buildIdentifierCandidates(siteId, projectKey) {
+  return Array.from(
+    new Set([projectKey, siteId].map((value) => asTrimmedString(value)).filter(Boolean))
+  );
+}
+
+async function fetchAcrossIdentifiers(baseUrl, siteId, projectKey, endpointBuilder) {
+  const identifiers = buildIdentifierCandidates(siteId, projectKey);
+  let selectedIdentifier = asTrimmedString(siteId);
+  let selectedEndpoint = endpointBuilder(selectedIdentifier);
+  let selectedResponse = {
+    ok: false,
+    status: null,
+    error: null,
+    payload: null
+  };
+
+  for (const identifier of identifiers) {
+    const endpoint = endpointBuilder(identifier);
+    const response = await fetchLegacyJson(baseUrl, endpoint);
+    selectedIdentifier = identifier;
+    selectedEndpoint = endpoint;
+    selectedResponse = response;
+    if (response.ok) {
+      break;
+    }
+  }
+
+  return {
+    identifier: selectedIdentifier,
+    endpoint: selectedEndpoint,
+    response: selectedResponse
+  };
+}
+
 function buildSearchEndpoint(siteId, options) {
   const search = new URLSearchParams();
   search.set("drNameList", options.deviceKeys.join(","));
@@ -124,6 +159,37 @@ function toNullableNumber(value) {
   }
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function pickFirstNumericField(item, keys) {
+  for (const key of keys) {
+    if (item && Object.prototype.hasOwnProperty.call(item, key)) {
+      const parsed = toNullableNumber(item[key]);
+      if (parsed !== null) {
+        return parsed;
+      }
+    }
+  }
+  return null;
+}
+
+function normalizeWetBulbValue(item) {
+  const wetBulbKeys = [
+    "湿球温度",
+    "湿球",
+    "室外湿球温度",
+    "室外湿球",
+    "湿球温度(℃)",
+    "湿球温度（℃）",
+    "wetBulbC",
+    "wetBulb",
+    "wetBulbTempC",
+    "wet_bulb",
+    "wet_bulb_c",
+    "outdoorWetBulbC",
+    "outdoorWetBulb"
+  ];
+  return pickFirstNumericField(item, wetBulbKeys);
 }
 
 function normalizeTableRow(item, index) {
@@ -183,7 +249,8 @@ function normalizeProportionRow(item, index) {
     id: `proportion-${index + 1}`,
     rangeLabel: asTrimmedString(item?.["负荷区间"] || item?.rangeLabel, `range-${index + 1}`),
     loadRatioPct: toNullableNumber(item?.["负荷比重比例"] || item?.loadRatioPct),
-    stationEfficiency: toNullableNumber(item?.["冷站效能"] || item?.stationEfficiency)
+    stationEfficiency: toNullableNumber(item?.["冷站效能"] || item?.stationEfficiency),
+    wetBulbC: normalizeWetBulbValue(item)
   };
 }
 
@@ -229,9 +296,13 @@ export async function loadEnergyEfficiencySearch(baseUrl, siteId, options = {}) 
   const endDate = normalizeDateInput(options.endDate, startDate);
   const timeSpace = normalizeTimeSpace(options.timeSpace, "1");
   const deviceKeys = normalizeStringList(options.deviceKeys);
-  const endpoint = buildSearchEndpoint(siteId, { startDate, endDate, timeSpace, deviceKeys });
   const fetchedAt = new Date().toISOString();
-  const response = await fetchLegacyJson(baseUrl, endpoint);
+  const { endpoint, response } = await fetchAcrossIdentifiers(
+    baseUrl,
+    siteId,
+    options.projectKey,
+    (identifier) => buildSearchEndpoint(identifier, { startDate, endDate, timeSpace, deviceKeys })
+  );
   const payload = response.ok && response.payload && typeof response.payload === "object" ? response.payload : null;
   const normalized = normalizeReportPayload(payload);
 
@@ -260,9 +331,13 @@ export async function loadEnergyEfficiencySearch(baseUrl, siteId, options = {}) 
 export async function loadEnergyEfficiencyCompare(baseUrl, siteId, options = {}) {
   const deviceKey = asTrimmedString(options.deviceKey, "CoolingStation");
   const dates = normalizeStringList(options.dates).map((item) => normalizeDateInput(item, item));
-  const endpoint = buildCompareEndpoint(siteId, { deviceKey, dates });
   const fetchedAt = new Date().toISOString();
-  const response = await fetchLegacyJson(baseUrl, endpoint);
+  const { endpoint, response } = await fetchAcrossIdentifiers(
+    baseUrl,
+    siteId,
+    options.projectKey,
+    (identifier) => buildCompareEndpoint(identifier, { deviceKey, dates })
+  );
   const payload = response.ok && response.payload && typeof response.payload === "object" ? response.payload : null;
   const normalized = normalizeReportPayload(payload);
 
@@ -291,9 +366,13 @@ export async function loadEnergyEfficiencyProportion(baseUrl, siteId, options = 
   const date = dateType === "3"
     ? normalizeYearInput(options.date)
     : normalizeMonthInput(options.date);
-  const endpoint = buildProportionEndpoint(siteId, { date, dateType });
   const fetchedAt = new Date().toISOString();
-  const response = await fetchLegacyJson(baseUrl, endpoint);
+  const { endpoint, response } = await fetchAcrossIdentifiers(
+    baseUrl,
+    siteId,
+    options.projectKey,
+    (identifier) => buildProportionEndpoint(identifier, { date, dateType })
+  );
   const payload = response.ok && response.payload && typeof response.payload === "object" ? response.payload : null;
   const rowsRaw = Array.isArray(payload?.data)
     ? payload.data
@@ -323,14 +402,34 @@ export async function loadEnergyEfficiencyProportion(baseUrl, siteId, options = 
 export async function loadEnergyEfficiencyImbalance(baseUrl, siteId, options = {}) {
   const startDate = normalizeDateInput(options.startDate);
   const endDate = normalizeDateInput(options.endDate, startDate);
-  const curveEndpoint = buildImbalanceCurveEndpoint(siteId, { startDate, endDate });
-  const tableEndpoint = buildImbalanceTableEndpoint(siteId, { startDate, endDate });
   const fetchedAt = new Date().toISOString();
+  const identifiers = buildIdentifierCandidates(siteId, options.projectKey);
+  let curveEndpoint = buildImbalanceCurveEndpoint(siteId, { startDate, endDate });
+  let tableEndpoint = buildImbalanceTableEndpoint(siteId, { startDate, endDate });
+  let curveResponse = {
+    ok: false,
+    status: null,
+    error: null,
+    payload: null
+  };
+  let tableResponse = {
+    ok: false,
+    status: null,
+    error: null,
+    payload: null
+  };
 
-  const [curveResponse, tableResponse] = await Promise.all([
-    fetchLegacyJson(baseUrl, curveEndpoint),
-    fetchLegacyJson(baseUrl, tableEndpoint)
-  ]);
+  for (const identifier of identifiers) {
+    curveEndpoint = buildImbalanceCurveEndpoint(identifier, { startDate, endDate });
+    tableEndpoint = buildImbalanceTableEndpoint(identifier, { startDate, endDate });
+    [curveResponse, tableResponse] = await Promise.all([
+      fetchLegacyJson(baseUrl, curveEndpoint),
+      fetchLegacyJson(baseUrl, tableEndpoint)
+    ]);
+    if (curveResponse.ok || tableResponse.ok) {
+      break;
+    }
+  }
 
   const curvePayload = curveResponse.ok && curveResponse.payload && typeof curveResponse.payload === "object"
     ? curveResponse.payload
