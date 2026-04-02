@@ -35,6 +35,7 @@ export default function AppShell() {
   const currentProject = getCurrentProject(session);
   const availableProjects = session?.projects || [];
   const showRuntimeBadge = runtimeConfig.appMode !== "local";
+  const isDashboardRoute = location.pathname === "/dashboard";
   const navSections = [
     {
       title: "值班",
@@ -215,7 +216,7 @@ export default function AppShell() {
             </label>
           </div>
         </header>
-        <div className="content">
+        <div className={`content ${isDashboardRoute ? "is-dashboard-content" : "is-subpage-compact"}`}>
           <Outlet />
         </div>
       </main>

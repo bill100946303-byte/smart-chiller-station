@@ -7,6 +7,7 @@ type SourceStatusBannerProps = {
   detailLines?: string[];
   detailLinesCompact?: string[];
   collapsedLimit?: number;
+  hideDetailsUntilExpanded?: boolean;
 };
 
 export default function SourceStatusBanner({
@@ -14,15 +15,22 @@ export default function SourceStatusBanner({
   warn,
   detailLines = [],
   detailLinesCompact = [],
-  collapsedLimit = 4
+  collapsedLimit = 4,
+  hideDetailsUntilExpanded = false
 }: SourceStatusBannerProps) {
   const [expanded, setExpanded] = useState(false);
   const hasOverflow = detailLines.length > collapsedLimit;
   const hiddenCount = Math.max(detailLines.length - collapsedLimit, 0);
   const collapsedSource = detailLinesCompact.length > 0 ? detailLinesCompact : detailLines;
+  const canToggle = hideDetailsUntilExpanded ? detailLines.length > 0 : hasOverflow;
   const visibleLines = useMemo(
-    () => (expanded || !hasOverflow ? detailLines : collapsedSource.slice(0, collapsedLimit)),
-    [collapsedLimit, collapsedSource, detailLines, expanded, hasOverflow]
+    () =>
+      hideDetailsUntilExpanded && !expanded
+        ? []
+        : expanded || !hasOverflow
+          ? detailLines
+          : collapsedSource.slice(0, collapsedLimit),
+    [collapsedLimit, collapsedSource, detailLines, expanded, hasOverflow, hideDetailsUntilExpanded]
   );
   const locale = getCurrentLocale();
   const hiddenCountSuffix =
@@ -32,7 +40,7 @@ export default function SourceStatusBanner({
     <div className={`source-banner ${warn ? "warn" : "good"}`}>
       <div>{summary}</div>
       {visibleLines.length > 0 ? <div className="source-banner-detail">{visibleLines.join("；")}</div> : null}
-      {hasOverflow ? (
+      {canToggle ? (
         <button
           type="button"
           className="source-banner-toggle"
@@ -41,7 +49,7 @@ export default function SourceStatusBanner({
         >
           {expanded
             ? zhCN.sourceBanner.collapse
-            : `${zhCN.sourceBanner.expand}${hiddenCountSuffix}`}
+            : `${zhCN.sourceBanner.expand}${hasOverflow ? hiddenCountSuffix : ""}`}
         </button>
       ) : null}
     </div>

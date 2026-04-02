@@ -357,9 +357,21 @@ function hydrateSession(session: Partial<AuthSession>): AuthSession | null {
     return null;
   }
 
+  const storedDefaultProjectKey = toOptionalString(session.defaultProjectKey);
   const projects = sanitizeStoredProjects(session.projects);
   const currentProjectId = resolveCurrentProjectId(projects, toOptionalString(session.currentProjectId));
-  const currentProject = getProjectFromList(projects, currentProjectId);
+  const repairedProjects =
+    storedDefaultProjectKey && currentProjectId
+      ? projects.map((project) =>
+          project.siteId === currentProjectId && !project.modelKey
+            ? {
+                ...project,
+                modelKey: storedDefaultProjectKey
+              }
+            : project
+        )
+      : projects;
+  const currentProject = getProjectFromList(repairedProjects, currentProjectId);
 
   if (currentProject) {
     setStoredProjectSelection(currentProject.siteId, currentProject.siteName);
@@ -372,10 +384,10 @@ function hydrateSession(session: Partial<AuthSession>): AuthSession | null {
     token: session.token,
     userId: toOptionalString(session.userId),
     role: normalizeLegacyRole(session.role),
-    projectCount: sanitizeProjectCount(projects.length),
-    defaultProjectKey: currentProject?.modelKey || toOptionalString(session.defaultProjectKey),
+    projectCount: sanitizeProjectCount(repairedProjects.length),
+    defaultProjectKey: currentProject?.modelKey || storedDefaultProjectKey,
     defaultProjectTemplate: currentProject?.template || toOptionalString(session.defaultProjectTemplate),
-    projects,
+    projects: repairedProjects,
     currentProjectId,
     loginAt: session.loginAt
   };

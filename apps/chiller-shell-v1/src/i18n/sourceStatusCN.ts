@@ -15,6 +15,11 @@ const SOURCE_KEY_LABEL_MAP: Record<string, Record<LocaleCode, LocaleLabel>> = {
     "en-US": { short: "Energy", full: "Energy Overview Source" },
     "vi-VN": { short: "Năng lượng", full: "Nguồn tổng quan năng lượng" }
   },
+  homepageRealtime: {
+    "zh-CN": { short: "实时首页", full: "首页实时链路来源" },
+    "en-US": { short: "Realtime", full: "Homepage Realtime Source" },
+    "vi-VN": { short: "Realtime", full: "Nguồn thời gian thực trang chủ" }
+  },
   devices: {
     "zh-CN": { short: "设备清单", full: "设备清单来源" },
     "en-US": { short: "Devices", full: "Device List Source" },
