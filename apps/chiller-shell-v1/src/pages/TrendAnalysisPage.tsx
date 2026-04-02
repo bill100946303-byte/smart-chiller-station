@@ -1,4 +1,5 @@
 import { startTransition, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import SectionCard from "../components/common/SectionCard";
 import SourceStatusBanner from "../components/common/SourceStatusBanner";
 import StatCard from "../components/common/StatCard";
@@ -37,6 +38,10 @@ type TrendQualityCard = {
 };
 
 const METRIC_ORDER = ["totalPowerKw", "currentCop", "chilledDeltaT", "coolingDeltaT"];
+const CHILLED_LOW_DELTA_T = 3;
+const CHILLED_READY_DELTA_T = 4;
+const COOLING_LOW_DELTA_T = 2.5;
+const COOLING_READY_DELTA_T = 3.5;
 const METRIC_LABELS: Record<string, string> = {
   totalPowerKw: zhCN.trendAnalysis.metricTotalPower,
   currentCop: zhCN.trendAnalysis.metricCop,
@@ -61,6 +66,20 @@ function formatRangeButtonLabel(range: TrendRange): string {
   return zhCN.range.button24h;
 }
 
+function parseTrendRangeParam(value: string | null, fallback: TrendRange): TrendRange {
+  if (value === "24h" || value === "7d" || value === "30d") {
+    return value;
+  }
+  return fallback;
+}
+
+function parseTrendMetricParam(value: string | null): string {
+  if (!value || value === "all") {
+    return "all";
+  }
+  return METRIC_ORDER.includes(value) ? value : "all";
+}
+
 function findStat(stats: DashboardTrendStatDto[] | undefined, metric: string): DashboardTrendStatDto | undefined {
   return stats?.find((item) => item.metric === metric);
 }
@@ -82,10 +101,29 @@ function toMetricLabel(metric: string): string {
   return METRIC_LABELS[metric] || metric;
 }
 
+function readLatestMetric(overview: DashboardOverviewDto | null, trends: DashboardTrendsDto | null, metric: string): number | null {
+  const energyCards = overview?.energyCards;
+  const stat = findStat(trends?.stats, metric);
+
+  if (metric === "totalPowerKw") {
+    return energyCards?.totalPowerKw ?? stat?.latest ?? null;
+  }
+  if (metric === "currentCop") {
+    return energyCards?.currentCop ?? stat?.latest ?? null;
+  }
+  if (metric === "chilledDeltaT") {
+    return energyCards?.chilledDeltaT ?? stat?.latest ?? null;
+  }
+  if (metric === "coolingDeltaT") {
+    return energyCards?.coolingDeltaT ?? stat?.latest ?? null;
+  }
+  return stat?.latest ?? null;
+}
+
 function buildMetricOptions(trends: DashboardTrendsDto | null): TrendMetricOption[] {
   const series = Array.isArray(trends?.series) ? trends.series : [];
   const stats = Array.isArray(trends?.stats) ? trends.stats : [];
-  const metricKeys = new Set<string>();
+  const metricKeys = new Set<string>(METRIC_ORDER);
 
   [...series, ...stats].forEach((item) => {
     if (typeof item?.metric === "string" && item.metric.trim().length > 0) {
@@ -171,6 +209,123 @@ function buildQualityCards(
   ];
 }
 
+function buildDeltaStrategyCard(
+  title: string,
+  value: number | null,
+  lowThreshold: number,
+  readyThreshold: number,
+  lowHint: string,
+  watchHint: string,
+  readyHint: string
+): TrendQualityCard {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return {
+      title,
+      value: zhCN.trendAnalysis.strategyStatePending,
+      detail: watchHint,
+      tone: "warn"
+    };
+  }
+
+  if (value < lowThreshold) {
+    return {
+      title,
+      value: zhCN.trendAnalysis.strategyStateLow,
+      detail: `${zhCN.trendAnalysis.latestPrefix} ${formatValue(value, 1)} °C · ${lowHint}`,
+      tone: "warn"
+    };
+  }
+
+  if (value < readyThreshold) {
+    return {
+      title,
+      value: zhCN.trendAnalysis.strategyStateWatch,
+      detail: `${zhCN.trendAnalysis.latestPrefix} ${formatValue(value, 1)} °C · ${watchHint}`,
+      tone: "neutral"
+    };
+  }
+
+  return {
+    title,
+    value: zhCN.trendAnalysis.strategyStateReady,
+    detail: `${zhCN.trendAnalysis.latestPrefix} ${formatValue(value, 1)} °C · ${readyHint}`,
+    tone: "good"
+  };
+}
+
+function buildStrategyCards(
+  overview: DashboardOverviewDto | null,
+  trends: DashboardTrendsDto | null,
+  loadError: string | null
+): TrendQualityCard[] {
+  const chilledDeltaT = readLatestMetric(overview, trends, "chilledDeltaT");
+  const coolingDeltaT = readLatestMetric(overview, trends, "coolingDeltaT");
+  const sourceBlocked =
+    Boolean(loadError)
+    || overview?.sourceStatus?.overall === "failed"
+    || trends?.sourceStatus?.overall === "failed";
+  const chilledLow = typeof chilledDeltaT === "number" && chilledDeltaT < CHILLED_LOW_DELTA_T;
+  const coolingLow = typeof coolingDeltaT === "number" && coolingDeltaT < COOLING_LOW_DELTA_T;
+
+  const chilledCard = buildDeltaStrategyCard(
+    zhCN.trendAnalysis.strategyChilledTitle,
+    chilledDeltaT,
+    CHILLED_LOW_DELTA_T,
+    CHILLED_READY_DELTA_T,
+    zhCN.trendAnalysis.strategyChilledLowHint,
+    zhCN.trendAnalysis.strategyChilledWatchHint,
+    zhCN.trendAnalysis.strategyChilledReadyHint
+  );
+
+  const coolingCard = buildDeltaStrategyCard(
+    zhCN.trendAnalysis.strategyCoolingTitle,
+    coolingDeltaT,
+    COOLING_LOW_DELTA_T,
+    COOLING_READY_DELTA_T,
+    zhCN.trendAnalysis.strategyCoolingLowHint,
+    zhCN.trendAnalysis.strategyCoolingWatchHint,
+    zhCN.trendAnalysis.strategyCoolingReadyHint
+  );
+
+  let windowValue = zhCN.trendAnalysis.strategyStatePending;
+  let windowDetail = zhCN.trendAnalysis.strategyWindowBlockedHint;
+  let windowTone: TrendQualityCard["tone"] = "warn";
+
+  if (!sourceBlocked && typeof chilledDeltaT === "number" && typeof coolingDeltaT === "number") {
+    if (chilledLow && coolingLow) {
+      windowValue = zhCN.optimizeDemo.strategyCoordinated;
+      windowDetail = zhCN.trendAnalysis.strategyWindowCoordinatedHint;
+      windowTone = "warn";
+    } else if (chilledLow) {
+      windowValue = zhCN.optimizeDemo.strategyChilledSide;
+      windowDetail = zhCN.trendAnalysis.strategyWindowChilledHint;
+      windowTone = "warn";
+    } else if (coolingLow) {
+      windowValue = zhCN.optimizeDemo.strategyCoolingSide;
+      windowDetail = zhCN.trendAnalysis.strategyWindowCoolingHint;
+      windowTone = "warn";
+    } else {
+      windowValue = zhCN.optimizeDemo.strategyCoordinated;
+      windowDetail = zhCN.trendAnalysis.strategyWindowReadyHint;
+      windowTone = "good";
+    }
+  } else if (sourceBlocked) {
+    windowValue = zhCN.trendAnalysis.strategyStateBlocked;
+    windowDetail = zhCN.trendAnalysis.strategyWindowBlockedHint;
+  }
+
+  return [
+    chilledCard,
+    coolingCard,
+    {
+      title: zhCN.trendAnalysis.strategyWindowTitle,
+      value: windowValue,
+      detail: windowDetail,
+      tone: windowTone
+    }
+  ];
+}
+
 function buildTrendKpis(
   overview: DashboardOverviewDto | null,
   trends: DashboardTrendsDto | null,
@@ -223,11 +378,23 @@ function buildTrendKpis(
 }
 
 export default function TrendAnalysisPage() {
-  const [range, setRange] = useState<TrendRange>(runtimeConfig.trendRange);
-  const [metricFilter, setMetricFilter] = useState<string>("all");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [range, setRange] = useState<TrendRange>(() => parseTrendRangeParam(searchParams.get("range"), runtimeConfig.trendRange));
+  const [metricFilter, setMetricFilter] = useState<string>(() => parseTrendMetricParam(searchParams.get("metric")));
   const [overview, setOverview] = useState<DashboardOverviewDto | null>(null);
   const [trends, setTrends] = useState<DashboardTrendsDto | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const requestedRange = parseTrendRangeParam(searchParams.get("range"), runtimeConfig.trendRange);
+    const requestedMetric = parseTrendMetricParam(searchParams.get("metric"));
+    if (requestedRange !== range) {
+      setRange(requestedRange);
+    }
+    if (requestedMetric !== metricFilter) {
+      setMetricFilter(requestedMetric);
+    }
+  }, [metricFilter, range, searchParams]);
 
   useEffect(() => {
     let active = true;
@@ -277,6 +444,7 @@ export default function TrendAnalysisPage() {
     () => buildQualityCards(overview, trends, metricOptions, loadError),
     [overview, trends, metricOptions, loadError]
   );
+  const strategyCards = useMemo(() => buildStrategyCards(overview, trends, loadError), [overview, trends, loadError]);
 
   useEffect(() => {
     if (metricFilter === "all") {
@@ -286,6 +454,23 @@ export default function TrendAnalysisPage() {
       setMetricFilter("all");
     }
   }, [metricFilter, metricOptions]);
+
+  useEffect(() => {
+    const currentRange = parseTrendRangeParam(searchParams.get("range"), runtimeConfig.trendRange);
+    const currentMetric = parseTrendMetricParam(searchParams.get("metric"));
+    if (currentRange === range && currentMetric === metricFilter) {
+      return;
+    }
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("range", range);
+    if (metricFilter === "all") {
+      nextParams.delete("metric");
+    } else {
+      nextParams.set("metric", metricFilter);
+    }
+    setSearchParams(nextParams, { replace: true });
+  }, [metricFilter, range, searchParams, setSearchParams]);
 
   const filteredSeries = useMemo(() => {
     const allSeries = trends?.series || [];
@@ -360,6 +545,18 @@ export default function TrendAnalysisPage() {
           </article>
         ))}
       </div>
+
+      <SectionCard title={zhCN.trendAnalysis.sectionStrategy}>
+        <div className="trend-quality-grid">
+          {strategyCards.map((item) => (
+            <article key={item.title} className={`trend-quality-card tone-${item.tone}`}>
+              <p>{item.title}</p>
+              <strong>{item.value}</strong>
+              <span>{item.detail}</span>
+            </article>
+          ))}
+        </div>
+      </SectionCard>
 
       <div className="trend-page-grid">
         <SectionCard
