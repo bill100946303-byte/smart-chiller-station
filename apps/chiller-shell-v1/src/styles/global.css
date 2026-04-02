@@ -12077,3 +12077,292 @@ button:not(.knowledge-modal-close):hover:not(:disabled) {
   gap: 10px;
   margin-top: 18px;
 }
+
+/* Subpage data-terminal polish */
+.content.is-subpage-compact :is(
+  .alarm-list-toolbar,
+  .device-list-toolbar,
+  .knowledge-toolbar,
+  .cold-log-toolbar,
+  .report-record-list-toolbar,
+  .operation-record-list-toolbar
+) {
+  position: relative;
+  overflow: hidden;
+  padding: 10px 12px;
+  border-radius: 18px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 14px 28px rgba(8, 29, 53, 0.12);
+}
+
+.content.is-subpage-compact :is(
+  .alarm-list-toolbar,
+  .device-list-toolbar,
+  .knowledge-toolbar,
+  .cold-log-toolbar,
+  .report-record-list-toolbar,
+  .operation-record-list-toolbar
+)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(103, 220, 255, 0.09), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 60%);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.content.is-subpage-compact :is(
+  .alarm-filter-group,
+  .alarm-pagination-meta,
+  .device-filter-group,
+  .device-pagination-meta,
+  .knowledge-toolbar-actions,
+  .report-record-actions,
+  .report-record-reg-actions,
+  .work-order-pagination,
+  .operation-record-pagination
+) {
+  position: relative;
+  z-index: 1;
+}
+
+.content.is-subpage-compact :is(
+  .alarm-filter-group,
+  .alarm-pagination-meta,
+  .device-filter-group,
+  .device-pagination-meta
+) {
+  padding: 6px 8px;
+  border: 1px solid rgba(103, 220, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(9, 18, 29, 0.34);
+}
+
+.content.is-subpage-compact :is(
+  .alarm-filter-actions,
+  .alarm-page-size,
+  .device-page-size,
+  .knowledge-actions,
+  .work-order-row-actions
+) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.content.is-subpage-compact :is(
+  .alarm-page-size,
+  .device-page-size,
+  .work-order-page-size,
+  .knowledge-pagination,
+  .work-order-pagination,
+  .operation-record-pagination,
+  .alarm-pagination
+) {
+  font-size: clamp(9px, 0.78vw, 10px);
+  color: rgba(187, 208, 226, 0.78);
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-pagination,
+  .work-order-pagination,
+  .operation-record-pagination,
+  .alarm-pagination
+) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(103, 220, 255, 0.12);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(15, 24, 36, 0.9), rgba(10, 18, 28, 0.84)),
+    radial-gradient(circle at top left, rgba(103, 220, 255, 0.05), transparent 48%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-pagination span,
+  .work-order-pagination span,
+  .operation-record-pagination span,
+  .alarm-pagination > span
+) {
+  color: rgba(190, 211, 228, 0.78);
+  font-size: clamp(9px, 0.78vw, 10px);
+  letter-spacing: 0.02em;
+}
+
+.content.is-subpage-compact .work-order-page-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px 5px 10px;
+  border: 1px solid rgba(103, 220, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(14, 24, 37, 0.78);
+}
+
+.content.is-subpage-compact .work-order-page-size select {
+  min-width: 68px;
+  min-height: 28px;
+  padding-inline: 10px;
+  border-radius: 999px;
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-table-shell,
+  .work-order-table-shell,
+  .cold-log-table-shell,
+  .meter-reading-table-shell,
+  .report-record-table-shell,
+  .scene-compat-table-shell
+) {
+  overflow: hidden;
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-table,
+  .work-order-table,
+  .cold-log-table,
+  .meter-reading-table,
+  .report-record-table
+) thead tr {
+  transform: translateY(2px);
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-table th,
+  .work-order-table th,
+  .cold-log-table thead th,
+  .meter-reading-table thead th,
+  .report-record-table thead th
+) {
+  padding: 0 10px 8px;
+  font-size: clamp(8.9px, 0.76vw, 9.8px) !important;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-table td,
+  .work-order-table td,
+  .cold-log-table tbody td,
+  .meter-reading-table tbody td,
+  .report-record-table tbody td
+) {
+  padding: 11px 10px;
+  vertical-align: middle;
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-table td:first-child,
+  .work-order-table td:first-child,
+  .cold-log-table tbody td:first-child,
+  .meter-reading-table tbody td:first-child,
+  .report-record-table tbody td:first-child
+) {
+  color: #eef7ff;
+  font-weight: 600;
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-table tbody tr,
+  .work-order-table tbody tr,
+  .cold-log-table tbody tr,
+  .meter-reading-table tbody tr,
+  .report-record-table tbody tr
+) {
+  transition: transform 180ms ease, filter 180ms ease;
+}
+
+.content.is-subpage-compact :is(
+  .knowledge-table tbody tr:hover,
+  .work-order-table tbody tr:hover,
+  .cold-log-table tbody tr:hover,
+  .meter-reading-table tbody tr:hover,
+  .report-record-table tbody tr:hover
+) {
+  transform: translateY(-1px);
+  filter: saturate(1.06);
+}
+
+.content.is-subpage-compact .knowledge-file-cell {
+  display: grid;
+  gap: 6px;
+  align-items: start;
+}
+
+.content.is-subpage-compact .knowledge-file-cell > span {
+  color: #edf7ff;
+  font-weight: 600;
+}
+
+.content.is-subpage-compact .knowledge-actions {
+  gap: 6px;
+}
+
+.content.is-subpage-compact .knowledge-actions button,
+.content.is-subpage-compact .work-order-row-actions button {
+  min-width: 68px;
+}
+
+.content.is-subpage-compact :is(
+  .operation-record-table-row,
+  .alarm-table-row,
+  .device-table-row
+) {
+  gap: 10px;
+  padding: 15px 16px !important;
+}
+
+.content.is-subpage-compact :is(
+  .operation-record-cell::before,
+  .alarm-cell::before,
+  .device-cell::before
+) {
+  color: rgba(170, 194, 214, 0.6);
+  font-size: clamp(8.7px, 0.74vw, 9.6px);
+  letter-spacing: 0.06em;
+}
+
+.content.is-subpage-compact .device-table-row strong,
+.content.is-subpage-compact .alarm-cell-title,
+.content.is-subpage-compact .operation-record-cell-detail {
+  color: #eef7ff;
+  font-weight: 600;
+}
+
+.content.is-subpage-compact .empty-hint {
+  font-size: clamp(9.5px, 0.8vw, 10.4px);
+}
+
+@media (max-width: 860px) {
+  .content.is-subpage-compact :is(
+    .knowledge-pagination,
+    .work-order-pagination,
+    .operation-record-pagination,
+    .alarm-pagination
+  ) {
+    align-items: stretch;
+  }
+
+  .content.is-subpage-compact :is(
+    .knowledge-pagination,
+    .work-order-pagination,
+    .operation-record-pagination,
+    .alarm-pagination
+  ) > * {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .content.is-subpage-compact .work-order-page-size {
+    justify-content: space-between;
+  }
+}
