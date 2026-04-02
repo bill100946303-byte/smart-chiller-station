@@ -1,1 +1,14 @@
 .env.legacy.local
+
+# macOS finder metadata
+.DS_Store
+
+# local runtime artifacts
+.playwright-cli/
+logs/coldSite-service-*.log
+scripts/nginx.scene.local*.log
+scripts/nginx.scene.local.pid
+
+# oversized local model bundles (keep source assets under versioned paths)
+apps/chiller-shell-v1/public/models/pump/904190.zip
+apps/chiller-shell-v1/dist/models/pump/904190.zip

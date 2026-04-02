@@ -1,1 +1,0 @@
-2026/03/24 22:38:45 [alert] 73603#0: *168 setsockopt(TCP_NODELAY) failed (22: Invalid argument) while keepalive, client: 127.0.0.1, server: 0.0.0.0:4000
