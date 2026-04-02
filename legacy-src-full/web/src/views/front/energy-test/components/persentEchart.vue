@@ -1,6 +1,6 @@
 <template>
   <div class="chart-wrap">
-    <div id="energyid"/>
+    <div ref="chart" class="chart-wrap__main"/>
     <!--   <div class="desc">注:上行为比例区间,中 下行为冷量区间，冷量单位分别为为KWH RTH</div>-->
     <div class="desc">{{ $t('proportion.Remarks') }}</div>
   </div>
@@ -12,7 +12,7 @@ import echarts from "echarts";
 export default {
   data() {
     return {
-      charts: "",
+      charts: null,
     };
   },
   props: ["info", "status"],
@@ -21,8 +21,7 @@ export default {
       handler(val) {
         // if (val && val.length) {
         this.$nextTick(() => {
-          console.log(val, this.status)
-          this.initChart("energyid");
+          this.initChart();
           if (this.status === 20000) {
             this.charts.hideLoading() //关闭loading状态
           } else {
@@ -59,7 +58,27 @@ export default {
       deep: true,
     },
   },
+  mounted() {
+    window.addEventListener("resize", this.resizeChart);
+  },
+  beforeDestroy() {
+    window.removeEventListener("resize", this.resizeChart);
+    if (this.charts) {
+      this.charts.dispose();
+      this.charts = null;
+    }
+  },
   methods: {
+    ensureChart() {
+      if (!this.charts && this.$refs.chart) {
+        this.charts = echarts.init(this.$refs.chart, "blue");
+      }
+    },
+    resizeChart() {
+      if (this.charts) {
+        this.charts.resize();
+      }
+    },
     getxAxisData() {
       return this.info.map((item) => {
         return item["负荷区间"];
@@ -75,30 +94,35 @@ export default {
         return item["冷站效能"];
       });
     },
-    initChart(id) {
+    initChart() {
       let xtitle = this.getxAxisData();
       let percentData = this.getpercentData();
       let energyData = this.getenergy();
       let that = this
-      this.charts = echarts.init(document.getElementById(id), "blue");
+      this.ensureChart();
+      if (!this.charts) {
+        return;
+      }
+      this.charts.clear();
       var option = {
         // backgroundColor: "#011123",
         backgroundColor: "transparent",
         grid: {
-          top: 96,
-          left: "24",
+          top: 80,
+          left: "18",
           right: "2%",
-          bottom: "8%",
+          bottom: "10%",
           containLabel: true,
         },
         legend: {
-          top: 14,
+          top: 8,
           show: true,
           textStyle: {
             color: "rgba(171, 205, 225, 0.76)",
+            fontSize: 12
           },
-          itemGap: 50,
-          itemWidth: 25,
+          itemGap: 24,
+          itemWidth: 18,
           itemHeight: 5,
           data: [
             {
@@ -229,9 +253,9 @@ export default {
             // name: "负荷比例（%）",
             name: this.$t('proportion.loadRatio') + "（%）",
             nameTextStyle: {
-              padding: [0, -120, 40, 0],
+              padding: [0, -96, 32, 0],
               color: "rgba(245, 251, 255, 0.92)",
-              fontSize: 14,
+              fontSize: 12,
             },
             axisLine: {
               show: true,
@@ -244,7 +268,7 @@ export default {
             },
             axisLabel: {
               color: "rgba(193, 215, 229, 0.76)",
-              fontSize: 14,
+              fontSize: 12,
             },
             splitLine: {
               show: false,
@@ -260,20 +284,20 @@ export default {
             // name: this.$t('proportion.coldstation') + "（" + this.$store.getters.unitSelete + '/' + this.$store.getters.unitSelete + "）",
             name: this.$t('proportion.coldstation') + "（KW" + '/' + this.$store.getters.unitSelete + "）",
             nameTextStyle: {
-              padding: [0, 120, 40, 0],
-              color: "#000",
-              fontSize: 14,
+              padding: [0, 96, 32, 0],
+              color: "rgba(245, 251, 255, 0.92)",
+              fontSize: 12,
             },
             axisLine: {
               show: true,
               lineStyle: {
-                color: "#5E5E5E",
+                color: "rgba(125, 202, 255, 0.18)",
               },
             },
             axisLabel: {
               show: true,
-              color: "#000",
-              fontSize: 14,
+              color: "rgba(193, 215, 229, 0.76)",
+              fontSize: 12,
             },
             axisTick: {
               show: false,
@@ -291,7 +315,7 @@ export default {
             // name: "负荷比例",
             name: this.$t('proportion.loadRatio'),
             type: "bar",
-            barWidth: 80,// 调整柱状图的宽度
+            barWidth: 56,
             zlevel: 2,
             itemStyle: {
               color: "#2FB2F7",
@@ -299,7 +323,7 @@ export default {
             label: {
               normal: {
                 show: false,
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: "bold",
                 color: "rgba(245, 251, 255, 0.96)",
                 position: "top",
@@ -336,6 +360,11 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
+.chart-wrap__main {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+}
 .chart-wrap {
   position: relative;
   width: 100%;
@@ -349,9 +378,9 @@ export default {
 
 .desc {
   position: absolute;
-  font-size: 14px;
+  font-size: 12px;
   color: rgba(171, 205, 225, 0.72);
-  bottom: 8px;
+  bottom: 4px;
   left: 20px;
 }
 </style>

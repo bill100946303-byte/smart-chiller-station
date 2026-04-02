@@ -8,7 +8,9 @@
         <Side/>
       </div>
       <div class="front-main">
-        <router-view></router-view>
+        <div class="front-route-shell">
+          <router-view></router-view>
+        </div>
       </div>
     </div>
   </div>
@@ -40,25 +42,27 @@ export default {
   top: 0;
   left: 0;
   width: 100%;
-  height: 66px;
+  height: 56px;
   background: linear-gradient(180deg, rgba(7, 18, 33, 0.92) 0%, rgba(7, 18, 33, 0.74) 100%);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(132, 187, 255, 0.12);
 }
 
 .front-content {
-  padding-top: 66px;
+  padding-top: 56px;
   flex: 1;
   display: flex;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: hidden;
   background:
     radial-gradient(circle at right top, rgba(92, 200, 255, 0.08) 0%, transparent 34%),
     linear-gradient(180deg, #07111f 0%, #050d17 100%);
 
   .side {
-    width: 208px;
+    width: 182px;
     height: 100%;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     flex-shrink: 0;
     border-right: 1px solid rgba(132, 187, 255, 0.08);
   }
@@ -66,16 +70,25 @@ export default {
   .front-main {
     position: relative;
     z-index: 2;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     box-sizing: border-box;
     flex: 1;
-    padding: 18px 18px 0 18px;
+    padding: 10px 10px 0 10px;
     background: transparent;
+
+    .front-route-shell {
+      width: 100%;
+      min-width: 0;
+      min-height: 100%;
+      overflow-x: hidden;
+    }
 
     .front-box-show {
       min-height: 100%;
-      padding-bottom: 36px;
+      padding-bottom: 14px;
       background: transparent;
+      overflow-x: hidden;
     }
   }
 }
@@ -129,11 +142,20 @@ export default {
   }
 
   .front-column {
-    height: 67px;
+    height: 56px;
 
     .cell {
-      padding: 0 40px !important;
+      padding: 0 20px !important;
     }
   }
+}
+
+.front-route-shell > .legacy-front-page,
+.front-route-shell > .front-box-show,
+.front-route-shell > .energy-test-page,
+.front-route-shell > .energy-test-page .energy-analysis-view {
+  width: 100%;
+  zoom: 1;
+  overflow-x: hidden;
 }
 </style>

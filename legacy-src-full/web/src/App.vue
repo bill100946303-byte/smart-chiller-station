@@ -45,9 +45,11 @@ export default {
 </script>
 <style lang="scss" >
 body{
+  --legacy-page-zoom: 0.9;
   margin: 0;
   width: 100%;
-  min-width: 100vw;
+  min-width: 100%;
+  max-width: 100%;
   overflow-x: hidden !important;
   -ms-overflow-style: none !important;
   /*火狐下隐藏滚动条*/
@@ -58,7 +60,8 @@ body{
 }
 html{
   width: 100%;
-  min-width: 100vw;
+  min-width: 100%;
+  max-width: 100%;
   overflow-x: hidden;
 }
 .slide-right-enter-active,
@@ -87,10 +90,12 @@ html{
 }
 #app{
   background: #000;
-  width: 100%;
-  min-width: 100vw;
-  min-height: 100vh;
+  width: calc(100% / var(--legacy-page-zoom));
+  min-width: 100%;
+  max-width: 100%;
+  min-height: calc(100vh / var(--legacy-page-zoom));
   overflow-x: hidden;
+  zoom: var(--legacy-page-zoom);
   ul{
     padding: 0;
     margin: 0;

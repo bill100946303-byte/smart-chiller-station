@@ -1,5 +1,5 @@
 <template>
-  <div id="multiline" />
+  <div ref="multiline" class="line-echart" />
 </template>
 <script>
 import echarts from "echarts";
@@ -27,9 +27,21 @@ export default {
     },
   },
   mounted() {
-    // this.getCurrentTime();
+    window.addEventListener("resize", this.handleResize);
+  },
+  beforeDestroy() {
+    window.removeEventListener("resize", this.handleResize);
+    if (this.charts) {
+      this.charts.dispose();
+      this.charts = null;
+    }
   },
   methods: {
+    handleResize() {
+      if (this.charts) {
+        this.charts.resize();
+      }
+    },
     // getCurrentTime() {
     //   //获取当前时间并打印
     //   var _this = this;
@@ -59,9 +71,11 @@ export default {
         "#9E87FF",
         "rgba(15, 241, 185, 1)",
       ];
-      this.charts = echarts.init(document.getElementById("multiline"));
+      if (this.charts) {
+        this.charts.dispose();
+      }
+      this.charts = echarts.init(this.$refs.multiline);
       let legend = this.xLabel;
-      console.log("legend", legend);
       let objee = {
         name: "",
         type: "line",
@@ -97,12 +111,8 @@ export default {
         });
         return obj;
       });
-      console.log("series", series);
-
       let xdata =
         this.xData[0].map((item, index) => {
-          // console.log(item.name);
-
           return item.name;
         }) || [];
       let option = {
@@ -110,9 +120,43 @@ export default {
         tooltip: {
           confine: true,
           trigger: "axis",
-          backgroundColor: "transparent",
+          backgroundColor: "rgba(10, 22, 36, 0.94)",
+          borderColor: "rgba(120, 196, 255, 0.26)",
+          borderWidth: 1,
+          padding: [10, 14],
+          extraCssText:
+            "color: rgba(239, 247, 255, 0.96); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);",
           textStyle: {
-            color: '#000' // 设置文本颜色
+            color: "rgba(239, 247, 255, 0.96)",
+            fontSize: 14,
+          },
+          formatter: params => {
+            const getNumericValue = item => {
+              const rawValue = item && item.value;
+              const candidate = Array.isArray(rawValue)
+                ? rawValue[rawValue.length - 1]
+                : rawValue;
+              const numeric = Number(candidate);
+              return Number.isFinite(numeric) ? numeric : null;
+            };
+            const rows = (params || []).filter(item => {
+              const numeric = getNumericValue(item);
+              return numeric !== null && Math.abs(numeric) > 1e-6;
+            });
+            const title = params && params.length ? params[0].axisValueLabel || params[0].name || "" : "";
+            if (!rows.length) {
+              return `<div style="color: rgba(239, 247, 255, 0.96); font-weight: 600;">${title}</div>`;
+            }
+            const items = rows
+              .map(item => {
+                const numeric = getNumericValue(item);
+                return `<div style="color: rgba(239, 247, 255, 0.96); line-height: 1.7;">${item.marker || ""}<span style="color: rgba(239, 247, 255, 0.96);">${item.seriesName}: ${numeric}</span></div>`;
+              })
+              .join("<br/>");
+            return `<div style="color: rgba(239, 247, 255, 0.96);">
+              <div style="color: rgba(239, 247, 255, 0.96); font-weight: 600; margin-bottom: 6px;">${title}</div>
+              ${items}
+            </div>`;
           },
           axisPointer: {
             lineStyle: {
@@ -138,7 +182,15 @@ export default {
                 ],
                 global: false, // 缺省为 false
               },
+              width: 1.5,
             },
+            label: {
+              show: true,
+              backgroundColor: "rgba(13, 31, 48, 0.96)",
+              borderColor: "rgba(126,199,255,0.26)",
+              borderWidth: 1,
+              color: "rgba(239, 247, 255, 0.96)",
+            }
           },
         },
         legend: {
@@ -173,15 +225,14 @@ export default {
               //坐标轴轴线相关设置。数学上的x轴
               show: true,
               lineStyle: {
-                color: "#333",
+                color: "rgba(150, 192, 225, 0.2)",
               },
             },
             axisLabel: {
               //坐标轴刻度标签的相关设置
               textStyle: {
-                // color: "#fff",
-                color: "#000",
-                fontSize: 14,
+                color: "rgba(204, 224, 243, 0.76)",
+                fontSize: 13,
               },
               align: "left",
               formatter: function (data) {
@@ -191,7 +242,7 @@ export default {
             splitLine: {
               show: true,
               lineStyle: {
-                color: "#333",
+                color: "rgba(150, 192, 225, 0.12)",
                 width: 0.5,
                 type: "dotted",
               },
@@ -206,8 +257,7 @@ export default {
           {
             name: this.unit,
             nameTextStyle: {
-              // color: "#fff",
-              color: "#000",
+              color: "rgba(214, 232, 247, 0.92)",
               fontSize: 14,
               padding: 10,
             },
@@ -217,8 +267,7 @@ export default {
               lineStyle: {
                 type: "dotted",
                 width: 0.5,
-                // color: "#333",
-                color: "#000",
+                color: "rgba(150, 192, 225, 0.12)",
               },
             },
             // axisLine: {
@@ -230,8 +279,7 @@ export default {
             axisLabel: {
               show: true,
               textStyle: {
-                // color: "#fff",
-                color: "#000",
+                color: "rgba(204, 224, 243, 0.76)",
               },
               formatter: function (value) {
                 if (value === 0) {
@@ -253,7 +301,7 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
-#lineid {
+.line-echart {
   width: 100%;
   height: 100%;
 }

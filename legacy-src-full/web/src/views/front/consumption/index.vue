@@ -1,58 +1,101 @@
 <template>
-  <div class="consumption_page">
-    <div class="search_box">
-      <el-form :inline="true" class="demo-form-inline legacy-front-toolbar__form">
-        <div class="flex">
-          <el-form-item>
-            <el-date-picker
-              v-model="date"
-              type="date"
-              placeholder="选择日期时间"
-              @change="handleClick"
-              value-format= "yyyy-MM-dd"
-              ref="mydate"
-            >
-            </el-date-picker>
-          </el-form-item>
+  <div class="consumption_page legacy-front-page">
+    <div class="legacy-front-page__hero consumption-page__hero">
+      <div>
+        <div class="legacy-front-page__eyebrow">能耗工作台</div>
+        <h1 class="legacy-front-page__title">能耗分析</h1>
+        <div class="legacy-front-page__meta">按日期、粒度和能耗类型查看总量构成、趋势变化与设备级明细。</div>
+      </div>
+      <div class="consumption-page__hero-meta">
+        <div class="legacy-front-chip">当前维度：{{ currentEnergyConfig.label }}</div>
+      </div>
+    </div>
 
-          <el-radio-group v-model="type" @change="groupchange">
-            <el-radio-button label="年" ></el-radio-button>
-            <el-radio-button label="月"></el-radio-button>
-            <el-radio-button label="日"></el-radio-button>
-          </el-radio-group>
+    <section class="legacy-front-toolbar consumption-toolbar">
+      <div class="legacy-front-toolbar__title">
+        <strong>分析条件</strong>
+        <span>切换能耗类型、日期和粒度后更新下方构成、趋势和设备结果</span>
+      </div>
+      <div class="consumption-toolbar__content">
+        <el-form :inline="true" class="demo-form-inline legacy-front-toolbar__form">
+          <div class="flex">
+            <el-form-item label="能耗类型">
+              <el-radio-group v-model="energyType" class="consumption-energy-switch" @change="handleClick">
+                <el-radio-button label="1">电量</el-radio-button>
+                <el-radio-button label="2">热量</el-radio-button>
+                <el-radio-button label="3">冷量</el-radio-button>
+              </el-radio-group>
+            </el-form-item>
+
+            <el-form-item label="日期">
+              <el-date-picker
+                v-model="date"
+                type="date"
+                placeholder="选择日期时间"
+                @change="handleClick"
+                value-format="yyyy-MM-dd"
+                ref="mydate"
+              >
+              </el-date-picker>
+            </el-form-item>
+
+            <el-form-item label="粒度">
+              <el-radio-group v-model="type" @change="groupchange">
+                <el-radio-button label="年"></el-radio-button>
+                <el-radio-button label="月"></el-radio-button>
+                <el-radio-button label="日"></el-radio-button>
+              </el-radio-group>
+            </el-form-item>
+          </div>
+        </el-form>
+
+        <div class="consumption-toolbar__actions">
+          <el-button class="energy-btn energy-btn--secondary" @click="handleClick">查询</el-button>
+          <el-button type="primary" class="energy-btn" @click="exporttable">
+            <i class="al_element-icons al_icondaochu energy-btn__icon energy-btn__icon--export"></i>
+            导出
+          </el-button>
         </div>
-      </el-form>
-    </div>
+      </div>
+    </section>
 
-    <div class="analyse_box">
-      <el-tabs v-model="energyType" @tab-click="handleClick">
-        <el-tab-pane label="电量" name="1">
-          <electricTab :echartdata="piedata" v-if="energyType === '1'" :xLabel="xLabel" :table="table" :xData="xData"/>
-        </el-tab-pane>
-        <el-tab-pane label="热量" name="2">
-          <heatTab v-if="energyType === '2'" :table="table" :xData="xData" :xLabel="xLabel" :lindata="piedata"/>
-        </el-tab-pane>
-        <el-tab-pane label="冷量" name="3">
-          <coldTab v-if="energyType === '3'" :table="table" :xData="xData" :xLabel="xLabel" :lindata="piedata"/>
-        </el-tab-pane>
-        <!-- <el-tab-pane label="热不平衡率" name="4">
-          <heatbalanceTab v-if="energyType === '4'" :xData="xData" :xLabel="xLabel" :dataStatisticsList="dataStatisticsList" :table="table"/>
-        </el-tab-pane> -->
-      </el-tabs>
-      <el-button type="primary" class="main-btn energy-btn" @click="exporttable" >
-        <i class="al_element-icons al_icondaochu energy-btn__icon energy-btn__icon--export"></i>
-        导出
-      </el-button>
-    </div>
+    <section class="consumption-summary-grid">
+      <article
+        v-for="card in summaryCards"
+        :key="card.key"
+        class="consumption-summary-card"
+        :class="{ 'consumption-summary-card--wide': card.wide }"
+      >
+        <div class="consumption-summary-card__label">{{ card.label }}</div>
+        <div class="consumption-summary-card__value" :class="{ 'consumption-summary-card__value--text': card.textValue }">
+          {{ card.value }}
+          <span v-if="card.suffix">{{ card.suffix }}</span>
+        </div>
+        <div class="consumption-summary-card__meta">{{ card.meta }}</div>
+      </article>
+    </section>
+
+    <section class="legacy-front-tab-shell consumption-workbench">
+      <div class="legacy-front-section-title">
+        <strong>{{ currentEnergyConfig.panelTitle }}</strong>
+        <span>{{ currentEnergyConfig.panelMeta }}</span>
+      </div>
+
+      <analysis-workbench-tab
+        :breakdown-data="piedata"
+        :x-label="xLabel"
+        :x-data="xData"
+        :table="table"
+        :amount-label="currentEnergyConfig.label"
+        :unit-label="currentEnergyConfig.unit"
+        :extra-metric-label="currentEnergyConfig.extraMetricLabel"
+        :extra-metric-field="currentEnergyConfig.extraMetricField"
+      />
+    </section>
   </div>
 </template>
 
 <script>
-import electricTab from "./tabs/electricTab.vue";
-import heatTab from "./tabs/heatTab.vue";
-import coldTab from "./tabs/coldTab.vue";
-import heatbalanceTab from "./tabs/heatbalanceTab.vue";
-import Device from "../components/device.vue";
 import {
   getEnergyAnalysisCurve,
   getEnergyAnalysisPie,
@@ -60,16 +103,80 @@ import {
 } from "@/api/front/consumption";
 import { mapGetters } from "vuex";
 import dayjs from 'dayjs';
+import AnalysisWorkbenchTab from "./tabs/AnalysisWorkbenchTab.vue";
+
 export default {
   components: {
-    electricTab,
-    heatTab,
-    coldTab,
-    heatbalanceTab,
-    Device,
+    AnalysisWorkbenchTab
   },
   computed: {
     ...mapGetters(["id","path"]),
+    currentEnergyConfig() {
+      return {
+        1: {
+          label: "电量",
+          unit: "kWh",
+          panelTitle: "电量分析工作台",
+          panelMeta: "查看电量构成、核心对象趋势与设备级费用结果",
+          extraMetricLabel: "电费",
+          extraMetricField: "money"
+        },
+        2: {
+          label: "热量",
+          unit: "kWh",
+          panelTitle: "热量分析工作台",
+          panelMeta: "查看热量构成、趋势变化与设备级统计结果",
+          extraMetricLabel: "",
+          extraMetricField: ""
+        },
+        3: {
+          label: "冷量",
+          unit: "kWh",
+          panelTitle: "冷量分析工作台",
+          panelMeta: "查看冷量构成、趋势变化与设备级统计结果",
+          extraMetricLabel: "",
+          extraMetricField: ""
+        }
+      }[this.energyType];
+    },
+    summaryCards() {
+      const topContributor = this.getTopContributor();
+      return [
+        {
+          key: "total",
+          label: `${this.currentEnergyConfig.label}总量`,
+          value: this.formatNumber(this.getTotalValue()),
+          suffix: this.currentEnergyConfig.unit,
+          meta: "按当前筛选对象汇总",
+          wide: false
+        },
+        {
+          key: "peak",
+          label: "趋势峰值",
+          value: this.formatNumber(this.getPeakValue()),
+          suffix: this.currentEnergyConfig.unit,
+          meta: "所有曲线中的最大值",
+          wide: false
+        },
+        {
+          key: "devices",
+          label: "设备数",
+          value: String(this.table.length),
+          suffix: "台",
+          meta: "纳入当前统计结果",
+          wide: false
+        },
+        {
+          key: "leader",
+          label: "占比最高对象",
+          value: topContributor.name || "暂无",
+          suffix: "",
+          meta: topContributor.name ? `占比 ${topContributor.percent}` : "当前暂无构成数据",
+          wide: true,
+          textValue: true
+        }
+      ];
+    }
   },
   props: {},
   data() {
@@ -79,7 +186,6 @@ export default {
       type:'日',
       energyType: "1",
       piedata: {},
-      curdata:[],
       xLabel:[],
       timelist:{
         "年":3,
@@ -89,12 +195,10 @@ export default {
       energyTable:{
         1:'电量',
         2:'热量',
-        3:'冷量',
-        4:'热不平衡率'
+        3:'冷量'
       },
       table:[],
-      xData:[],
-      dataStatisticsList:[]
+      xData:[]
     };
   },
   watch: {},
@@ -114,14 +218,9 @@ export default {
 
     },
     handleClick() {
-      if(this.energyType !== "4"){
-        this.getPie()
-        this.getCur()
-        this.gettable()
-      }else{
-        this.getCur()
-        this.gettable()
-      }
+      this.getPie()
+      this.getCur()
+      this.gettable()
     },
     getPie() {
       let info = {
@@ -131,7 +230,7 @@ export default {
         energyType: this.energyType,
       };
       getEnergyAnalysisPie(info).then((res) => {
-        this.piedata = res.data;
+        this.piedata = res.data || {};
       });
     },
     getCur() {
@@ -147,6 +246,9 @@ export default {
             return item.name
           })
           this.xData = res.data
+        } else {
+          this.xLabel = [];
+          this.xData = [];
         }
       });
     },
@@ -158,16 +260,64 @@ export default {
         energyType: this.energyType,
       }
       getEnergyAnalysisDeviceList(this.path,inof).then(res=>{
-        if(this.energyType !== "4"){
-          this.table = res.data ||[]
-        }else{
-          this.table = res.data[0].tableList
-          this.dataStatisticsList = res.data[0].dataStatisticsList
-        }
-        
+        this.table = res.data ||[]
       })
     },
+    toNumber(value) {
+      const number = Number(value);
+      return isNaN(number) ? 0 : number;
+    },
+    getTotalValue() {
+      return Object.keys(this.piedata || {}).reduce((sum, key) => {
+        return sum + this.toNumber(this.piedata[key]);
+      }, 0);
+    },
+    getPeakValue() {
+      let max = 0;
+      (this.xData || []).forEach(item => {
+        (item.curveValueList || []).forEach(point => {
+          const value = this.toNumber(point.value);
+          if (value > max) {
+            max = value;
+          }
+        });
+      });
+      return max;
+    },
+    getTopContributor() {
+      const items = Object.keys(this.piedata || {}).map(key => {
+        return {
+          name: key,
+          value: this.toNumber(this.piedata[key])
+        };
+      }).sort((a, b) => b.value - a.value);
+      const total = this.getTotalValue();
+      if (!items.length || !items[0].value) {
+        return {
+          name: "",
+          percent: "0%"
+        };
+      }
+      return {
+        name: items[0].name,
+        percent: total ? ((items[0].value / total) * 100).toFixed(1) + "%" : "0%"
+      };
+    },
+    formatNumber(value) {
+      const number = this.toNumber(value);
+      if (!number) {
+        return "0";
+      }
+      return number.toLocaleString("zh-CN", {
+        maximumFractionDigits: number >= 100 ? 0 : 1,
+        minimumFractionDigits: number >= 100 ? 0 : 1
+      });
+    },
     async exporttable(){
+      if (!this.xData.length) {
+        this.$message.warning("当前筛选下暂无可导出的趋势数据");
+        return;
+      }
       const xlsxModule = await import("xlsx");
       const XLSX = xlsxModule.default || xlsxModule;
       const wb = XLSX.utils.book_new();
@@ -228,46 +378,92 @@ export default {
 </script>
 <style lang="scss" scoped>
 .consumption_page {
-  .search_box {
-    width: 100%;
-    padding: 18px 20px 12px;
-    border: 1px solid rgba(124, 202, 255, 0.12);
-    border-radius: 22px;
-    background: linear-gradient(180deg, rgba(12, 29, 45, 0.95) 0%, rgba(7, 18, 29, 0.98) 100%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 16px 28px rgba(0, 0, 0, 0.16);
-
-    .flex {
-      display: flex;
-      box-sizing: border-box;
-      width: 100%;
-      gap: 14px 18px;
-      justify-content: flex-start;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+  .consumption-page__hero {
+    margin-bottom: 18px;
   }
 
-  .demo-form-inline,
-  ::v-deep .legacy-front-toolbar__form {
+  .consumption-page__hero-meta {
     display: flex;
-    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
   }
 
-  .analyse_box {
-    position: relative;
+  .consumption-toolbar__content {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .consumption-toolbar__actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .flex {
+    display: flex;
+    box-sizing: border-box;
     width: 100%;
-    margin-top: 18px;
-    padding: 24px 28px 18px;
-    border: 1px solid rgba(124, 202, 255, 0.12);
+    gap: 14px 18px;
+    justify-content: flex-start;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .consumption-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(240px, 1.15fr);
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .consumption-summary-card {
+    padding: 18px 20px;
     border-radius: 22px;
+    border: 1px solid rgba(124, 202, 255, 0.12);
     background: linear-gradient(180deg, rgba(12, 29, 45, 0.95) 0%, rgba(7, 18, 29, 0.98) 100%);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 16px 28px rgba(0, 0, 0, 0.16);
+  }
 
-    .main-btn{
-      position: absolute;
-      top:24px;
-      right:28px;
-    }
+  .consumption-summary-card__label {
+    font-size: 12px;
+    color: rgba(190, 214, 232, 0.7);
+  }
+
+  .consumption-summary-card__value {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    margin-top: 10px;
+    font-size: 30px;
+    line-height: 1;
+    font-weight: 700;
+    color: #eff7ff;
+  }
+
+  .consumption-summary-card__value span {
+    font-size: 13px;
+    color: rgba(181, 206, 224, 0.68);
+  }
+
+  .consumption-summary-card__value--text {
+    font-size: 24px;
+    line-height: 1.15;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .consumption-summary-card__meta {
+    margin-top: 10px;
+    font-size: 12px;
+    color: rgba(181, 206, 224, 0.68);
+  }
+
+  .consumption-workbench {
+    padding: 20px 22px 24px;
   }
 
   ::v-deep .el-input__inner,
@@ -295,11 +491,6 @@ export default {
     box-shadow: none;
     color: #f8fcff;
   }
-
-  ::v-deep.darkblue .el-tabs__nav-wrap::after {
-    background-color: rgba(56, 64, 72, 1) !important;
-  }
-
 }
 
 .energy-btn {
@@ -322,23 +513,25 @@ export default {
 .energy-btn__icon--export {
   font-size: 15px;
 }
-</style>
-<style lang="scss">
-.el-tabs__nav-wrap{
-  &::after{
-    display: none !important;
-  }
-}
-.el-tabs__nav{
-  .el-tabs__item{
-    position: relative;
-    font-size: 18px;
-    color:rgba(153, 153, 153, 1);
 
-    &.is-active{
-      color:rgba(47, 178, 247, 1);
-    }
+@media (max-width: 1480px) {
+  .consumption-toolbar__content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .consumption-toolbar__actions {
+    justify-content: flex-end;
+  }
+
+  .consumption-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
+@media (max-width: 1180px) {
+  .consumption-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

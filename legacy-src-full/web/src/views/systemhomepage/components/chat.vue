@@ -3,14 +3,14 @@
     <div style="position:relative;">
       <div class="button-box" v-drag draggable="false">
         <div class="btn-bg-img" @dblclick="openBox" @click="clickBox"></div>
-        <div class="font-box">{{ text }}</div>
+        <div class="font-box">{{ assistantCopy.floatLabel }}</div>
       </div>
     </div>
     <div id="box" :style=" flag ? 'display:none':'display:block'">
       <!-- 主体 -->
       <div class="container">
         <div id="header">
-          <div class="chat-header-title">智能助手</div>
+          <div class="chat-header-title">{{ assistantCopy.headerTitle }}</div>
           <p>
             <span
                 @click="yc"
@@ -25,8 +25,30 @@
               <div class="chat-message">
                 <img class="avatar" src="@/assets/home/gptBg.png" alt="机器人">
                 <div class="message">
-                  <p>我是你的智能助手</p>
-                  <p>我能向你提供一定的帮助，快来向我提问吧！</p>
+                  <p>{{ assistantCopy.introTitle }}</p>
+                  <p>{{ assistantCopy.introBody }}</p>
+                </div>
+              </div>
+              <div class="quick-prompts">
+                <div class="quick-prompts-title">{{ assistantCopy.quickPromptTitle }}</div>
+                <div
+                    v-for="group in assistantQuickPromptGroups"
+                    :key="group.title"
+                    class="quick-prompt-group"
+                >
+                  <div class="quick-prompt-group-title">{{ group.title }}</div>
+                  <div class="quick-prompts-list">
+                    <button
+                        v-for="prompt in group.prompts"
+                        :key="prompt"
+                        type="button"
+                        class="quick-prompt-chip"
+                        :disabled="isLoading"
+                        @click="sendSuggestedPrompt(prompt)"
+                    >
+                      {{ prompt }}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -39,7 +61,7 @@
                 <!--                <img :src="item.avatarUrl" alt class="rImg"/>-->
                 <img src="@/assets/home/gptBg.png" alt class="rImg"/>
                 <div class="answerContent">
-                  <p class="q" v-html="item.q" style="white-space:pre-line;"></p>
+                  <div class="q" v-html="item.q" style="white-space:pre-line;"></div>
                   <!--                  <p class="q">{{ item.q }}</p>-->
                   <!--                  <p class="a">{{ item.a }}</p>-->
                 </div>
@@ -51,7 +73,7 @@
             <div class="tBox">
                     <textarea
                         class="ipt"
-                        placeholder="开始聊天"
+                        :placeholder="assistantCopy.inputPlaceholder"
                         @keydown.enter.prevent="sendMsgs"
                         v-model.trim="inputContent"
                     ></textarea>
@@ -68,27 +90,42 @@
 </template>
 
 <script>
-import {deepseek} from '@/api/usersetting/chat'
+import {deepseek, queryAssistant} from '@/api/usersetting/chat'
 import {mapGetters} from "vuex";
-import {marked} from 'marked';
+import {
+  buildQuickPromptGroups,
+  buildUiCopy,
+  mapAssistantLocale,
+  renderErrorAnswer,
+  renderFallbackAnswer,
+  renderStructuredAnswer
+} from './chatAssistantUtils'
 
 export default {
   computed: {
-    ...mapGetters(["path", "userid", "id"]),
+    ...mapGetters(["path", "userid", "id", "template"]),
+    assistantLocale() {
+      return mapAssistantLocale(this.$i18n && this.$i18n.locale)
+    },
+    assistantCopy() {
+      return buildUiCopy(this.$i18n && this.$i18n.locale)
+    },
+    assistantQuickPromptGroups() {
+      return buildQuickPromptGroups(this.$i18n && this.$i18n.locale, this.lastAssistantPayload)
+    }
   },
   data() {
     return {
-      text: '',
       isOpen: false,
       isMove: false,
       msgs: [], //用来存放对话
       inputContent: '',
-      oContent: {},
       flag: true,
       flag2: true,
       isDragging: false, // 添加 isDragging 状态
       isLoading: false,
-      tempAnswer: null // 用于临时保存回答内容
+      tempAnswer: null, // 用于临时保存回答内容
+      lastAssistantPayload: null
     }
   },
   methods: {
@@ -116,143 +153,125 @@ export default {
     },
     // 发送消息
     sendMsgs() {
-      this.oContent.scrollTop = this.oContent.scrollHeight;
-      if (this.inputContent === '') {
-        return;
+      this.submitQuestion(this.inputContent, 'manual')
+    },
+    submitQuestion(question, promptOrigin = 'manual') {
+      const normalizedQuestion = String(question || '').trim()
+      if (!normalizedQuestion || this.isLoading) {
+        return
       }
       this.msgs.push({
-        content: this.inputContent,
+        content: normalizedQuestion,
         self: true,
       });
-      this.getResult();
+      this.getResult(normalizedQuestion, promptOrigin);
       setTimeout(() => {
-        this.$refs.chattingContent.scrollTop = this.$refs.chattingContent.scrollHeight;
+        if (this.$refs.chattingContent) {
+          this.$refs.chattingContent.scrollTop = this.$refs.chattingContent.scrollHeight;
+        }
       }, 0);
       this.inputContent = '';
     },
-    getResult() {
-      this.isLoading = true; // 开始加载
-      let paramData = {
+    sendSuggestedPrompt(prompt) {
+      this.submitQuestion(prompt, 'suggested')
+    },
+    replaceTempAnswer(html) {
+      const nextAnswer = {
+        q: html,
+        self: false
+      }
+      const index = this.msgs.indexOf(this.tempAnswer)
+      if (index > -1) {
+        this.msgs.splice(index, 1, nextAnswer)
+      } else {
+        this.msgs.push(nextAnswer)
+      }
+      this.tempAnswer = null
+    },
+    buildAssistantRequest(question, promptOrigin = 'manual') {
+      return {
+        context: {
+          siteId: this.path,
+          surface: 'legacy-home-chat',
+          locale: this.assistantLocale,
+          promptOrigin,
+          userId: this.userid,
+          projectKey: this.path,
+          template: this.template,
+          legacyBaseUrl: process.env.VUE_APP_BASE_URL
+        },
+        query: {
+          text: question
+        }
+      }
+    },
+    async requestFallbackAnswer(question) {
+      const paramData = {
         userId: this.userid,
         model: 'deepseek-chat',
-        content: this.inputContent,
-      };
+        content: question,
+      }
+      const res = await deepseek(this.path, paramData)
+      const data = Array.isArray(res && res.data) ? res.data : []
+      if (data.length === 0) {
+        throw new Error(this.assistantCopy.fallbackUnavailable)
+      }
+      return renderFallbackAnswer(data.join('\n\n'), this.assistantLocale)
+    },
+    resolveAssistantError(error) {
+      if (error && error.payload && error.payload.error) {
+        return error.payload.error
+      }
+      if (error && error.message) {
+        return error.message
+      }
+      return this.assistantCopy.requestFailed
+    },
+    async getResult(question, promptOrigin = 'manual') {
+      this.isLoading = true; // 开始加载
 
-      // 添加临时回答占位
       this.tempAnswer = {
-        // q: '<div class="loading-img"><img src="@/assets/loading.gif"></div>',
         q: `<div class="loading-img"><img style="width: 50px;" src="${require('@/assets/loading.gif')}"></div>`,
         self: false
       };
       this.msgs.push(this.tempAnswer);
-      deepseek(this.path, paramData)
-          .then(res => {
-            // 移除临时回答
-            const index = this.msgs.indexOf(this.tempAnswer);
-            if (index > -1) {
-              this.msgs.splice(index, 1);
-            }
-
-            // 添加真实回答
-            const data = res.data;
-            data.forEach(arr => {
-              const parsedContent = marked.parse(arr).replace(/\n\n---\n\n/g, '\n');
-              this.msgs.push({
-                q: parsedContent,
-                self: false
-              });
-            });
-          })
-          .catch(err => {
-            console.error(err);
-            // 错误时显示错误信息
-            this.msgs[this.msgs.length - 1].q = "请求失败，请重试";
-          })
-          .finally(() => {
-            this.isLoading = false;
-            this.$nextTick(() => {
-              this.$refs.chattingContent.scrollTop = this.$refs.chattingContent.scrollHeight;
-            });
-          });
-    },
-    // 智能机器人回复
-    getResult1() {
-      let that = this;
-      let paramData = {
-        //一些需要的参数
-        userId: this.userid,
-        model: 'deepseek-chat',
-        content: this.inputContent,
-      };
-      console.log('发送', paramData)
-
-      // let arr = "**中央空调冷却塔**是中央空调系统中的重要设备，" +
-      //     "主要用于**冷却空调系统中的循环水**。" +
-      //     "它的核心功能是将空调系统中吸收的热量通过冷却水散发到大气中，" +
-      //     "从而保证空调系统的正常运行。\n\n---\n\n ### **冷却塔的作用**\n1. **散热**：将中央空调主机产生的热量通过冷却水传递到大气中。" +
-      //     "\n2. **节能**：通过高效的散热，降低空调系统的能耗。\n3. **保护设备**：防止空调系统因过热而损坏，延长设备使用寿命。" +
-      //     "\n\n---\n\n### **冷却塔的工作原理**\n1. **热交换**：中央空调系统中的冷却水在吸收热量后，温度升高，被输送到冷却塔中。\n2. **散热**：冷却塔通过风机将空气引入塔内，与高温冷却水进行热交换。冷却水通过喷淋装置均匀分布，形成水膜或水滴，增加与空气的接触面积。\n3. **蒸发冷却**：部分冷却水蒸发，带走大量热量，从而降低冷却水的温度。\n4. **循环利用**：冷却后的水被重新输送到空调系统中，继续吸收热量，形成循环。\n\n---\n\n### **冷却塔的主要类型**\n1. **开式冷却塔**：\n   - 冷却水直接与空气接触，散热效率高。\n   - 容易受到外界污染，需定期清理。\n2. **闭式冷却塔**：\n   - 冷却水在封闭的管道中流动，不与空气直接接触。\n   - 避免了污染，但散热效率相对较低。\n3. **横流式冷却塔**：\n   - 空气水平流动，与垂直下落的冷却水进行热交换。\n4. **逆流式冷却塔**：\n   - 空气垂直向上流动，与下落的冷却水逆向接触，热交换效率更高。\n\n---\n\n### **冷却塔的主要组成部分**\n1. **风机**：用于强制通风，增加空气流动，提高散热效率。\n2. **填料**：增加冷却水与空气的接触面积，提高热交换效率。\n3. **喷淋系统**：将冷却水均匀分布到填料上。\n4. **水箱**：用于收集冷却后的水。\n5. **水泵**：将冷却水输送到空调系统中。\n\n---\n\n### **冷却塔的应用场景**\n- **大型商业建筑**：如商场、办公楼、酒店等。\n- **工业设施**：如工厂、数据中心等。\n- **公共设施**：如医院、学校、体育馆等。\n\n---\n\n### **冷却塔的维护**\n1. **定期清洗**：清除填料和水箱中的污垢，防止堵塞。\n2. **检查风机**：确保风机正常运行，避免散热效率下降。\n3. **水质管理**：定期检测冷却水水质，防止腐蚀和结垢。\n4. **检查水泵**：确保水泵运行正常，保证冷却水循环。\n\n---\n\n### **冷却塔与中央空调主机的关系**\n- 冷却塔通常与**水冷式中央空调主机**配套使用。\n- 主机产生的热量通过冷却水传递到冷却塔，冷却塔将热量散发到大气中，从而完成整个制冷循环。\n\n---\n\n### **总结**\n中央空调冷却塔是中央空调系统中不可或缺的一部分，通过高效的散热功能，确保空调系统的稳定运行。它的主要作用是将空调系统中的热量散发到大气中，从而保证空调系统的高效性和可靠性。";
-
-      // marked.setOptions({
-      //   breaks: true
-      // });
-      // let parsedContent = marked.parse(arr.trim()); // 解析 Markdown 格式的文本
-      // let parsedContent = marked.parse(arr).replace(/\s+/g, ' ');
-      // let parsedContent = marked
-      //     .parse(arr)
-      //     .replace(/\n\n---\n\n/g, '\n')  // 替换 `\n\n---\n\n` 为 `\n`
-      //     .replace(/<hr\s*\/?>/g, '')     // 去掉 `<hr>` 标签
-      //     .replace(/\s+/g, ' ');          // 替换多余的空格
-      // parsedContent = marked.parse(arr).replace(/\n\n---\n\n/g, '\n')
-
-      // let parsedContent = marked
-      //     .parse(arr)
-      //     .replace(/\n\n---\n\n/g, '\n')  // 替换 `\n\n---\n\n` 为 `\n`
-      //     .replace(/<hr\s*\/?>/g, '')     // 去掉 `<hr>` 标签
-      //     .replace(/\s+/g, ' ');          // 替换多余的空格
-      // this.msgs.push({
-      //   q: parsedContent,
-      //   self: false,
-      // });
-      // return
-      deepseek(this.path, paramData).then(res => {
-        console.log('机器人的消息', res)
-
-        let data = res.data;
-        // 原
-        // for (let i = 0; i < data.length; i++) {
-        //   let arr = data[i];
-        //   let q = arr.q;
-        //   let a = arr.a;
-        //   this.msgs.push({
-        //     q: q,
-        //     a: a,
-        //     self: false,
-        //   });
-        //   console.log('aa',this.msgs)
-        // }
-        // this.$refs.chattingContent.scrollTop = this.$refs.chattingContent.scrollHeight;
-
-        for (let i = 0; i < data.length; i++) {
-          let arr = data[i];
-          // let parsedContent = marked.parse(arr); // 解析 Markdown 格式的文本
-          // let parsedContent = this.parseMarkdown(arr); // 解析 Markdown 格式的文本
-          let parsedContent = marked
-              .parse(arr)
-              .replace(/\n\n---\n\n/g, '\n')  // 替换 `\n\n---\n\n` 为 `\n`
-              .replace(/<hr\s*\/?>/g, '')     // 去掉 `<hr>` 标签
-              .replace(/\s+/g, ' ');          // 替换多余的空格
-          this.msgs.push({
-            q: parsedContent,
-            self: false,
-          });
+      try {
+        if (!this.path) {
+          this.replaceTempAnswer(renderErrorAnswer(this.assistantCopy.missingSite, this.assistantLocale))
+          return
         }
+
+        const payload = await queryAssistant(this.path, this.buildAssistantRequest(question, promptOrigin))
+        this.lastAssistantPayload = payload
+        this.replaceTempAnswer(renderStructuredAnswer(payload, this.assistantLocale))
+      } catch (error) {
+        this.lastAssistantPayload = null
+        if (error && error.shouldFallback) {
+          try {
+            const fallbackHtml = await this.requestFallbackAnswer(question)
+            this.replaceTempAnswer(fallbackHtml)
+          } catch (fallbackError) {
+            console.error(fallbackError)
+            this.replaceTempAnswer(
+                renderErrorAnswer(
+                    fallbackError && fallbackError.message ? fallbackError.message : this.assistantCopy.fallbackUnavailable,
+                    this.assistantLocale
+                )
+            )
+          }
+        } else {
+          this.replaceTempAnswer(
+              renderErrorAnswer(this.resolveAssistantError(error), this.assistantLocale)
+          )
+        }
+      } finally {
+        this.isLoading = false;
         this.$nextTick(() => {
-          this.$refs.chattingContent.scrollTop = this.$refs.chattingContent.scrollHeight;
+          if (this.$refs.chattingContent) {
+            this.$refs.chattingContent.scrollTop = this.$refs.chattingContent.scrollHeight;
+          }
         });
-      }).catch(err => {
-        console.log(err);
-      });
+      }
     },
     clickBox() {
       if (this.isDragging) {
@@ -472,6 +491,58 @@ export default {
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.04);
     color: rgba(229, 240, 248, 0.88);
+  }
+}
+
+.quick-prompts {
+  margin: 16px 0 4px 68px;
+}
+
+.quick-prompts-title {
+  margin-bottom: 14px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: rgba(150, 206, 233, 0.74);
+}
+
+.quick-prompt-group {
+  margin-bottom: 14px;
+}
+
+.quick-prompt-group-title {
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(209, 237, 248, 0.88);
+}
+
+.quick-prompts-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.quick-prompt-chip {
+  padding: 8px 14px;
+  border: 1px solid rgba(122, 210, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(231, 243, 250, 0.9);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: rgba(122, 210, 255, 0.34);
+    background: rgba(80, 170, 255, 0.12);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
   }
 }
 

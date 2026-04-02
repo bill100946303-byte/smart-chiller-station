@@ -549,7 +549,7 @@ export default {
 <style lang="scss" scoped>
 .contentTable {
   height: 100vh;
-  padding: 24px;
+  padding: 16px 18px;
   box-sizing: border-box;
   overflow: hidden;
   background:
@@ -562,11 +562,11 @@ export default {
     display: grid;
     grid-template-columns: auto minmax(240px, 1fr) auto;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-    padding: 12px 16px;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 10px 14px;
     border: 1px solid rgba(125, 191, 255, 0.12);
-    border-radius: 24px;
+    border-radius: 20px;
     background: linear-gradient(135deg, rgba(16, 37, 57, 0.94) 0%, rgba(11, 24, 39, 0.82) 100%);
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
   }
@@ -575,13 +575,13 @@ export default {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 46px;
-    height: 46px;
+    width: 40px;
+    height: 40px;
     border: 0;
     border-radius: 14px;
     background: linear-gradient(135deg, rgba(28, 78, 114, 0.9) 0%, rgba(22, 49, 76, 0.92) 100%);
     color: #eef7ff;
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
   }
 
@@ -590,14 +590,14 @@ export default {
   }
 
   .tableNav__eyebrow {
-    font-size: 11px;
+    font-size: 10px;
     letter-spacing: 0.18em;
     color: rgba(184, 215, 236, 0.6);
   }
 
   .tableNav__title {
     margin-top: 4px;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 600;
     letter-spacing: 0.03em;
   }
@@ -605,20 +605,20 @@ export default {
   .tableNav__desc {
     margin-top: 4px;
     color: rgba(184, 215, 236, 0.68);
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .tableNav__summary {
     display: flex;
-    gap: 10px;
+    gap: 8px;
   }
 
   .summary-chip {
     display: grid;
-    gap: 6px;
-    min-width: 88px;
-    padding: 8px 10px;
-    border-radius: 14px;
+    gap: 4px;
+    min-width: 78px;
+    padding: 6px 8px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(125, 191, 255, 0.1);
   }
@@ -631,16 +631,16 @@ export default {
   }
 
   .summary-chip__value {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
     line-height: 1;
   }
 
   .tabelContent {
     display: grid;
-    grid-template-columns: 256px minmax(0, 1fr);
-    gap: 12px;
-    height: calc(100vh - 112px);
+    grid-template-columns: 236px minmax(0, 1fr);
+    gap: 10px;
+    height: calc(100vh - 92px);
     min-height: 0;
   }
 
@@ -649,7 +649,7 @@ export default {
     height: 100%;
     min-width: 0;
     border: 1px solid rgba(125, 191, 255, 0.12);
-    border-radius: 22px;
+    border-radius: 20px;
     background: linear-gradient(180deg, rgba(15, 36, 56, 0.92) 0%, rgba(9, 20, 34, 0.9) 100%);
     box-shadow: 0 24px 48px rgba(0, 0, 0, 0.18);
   }
@@ -657,62 +657,62 @@ export default {
   .filter-card {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
     height: 100%;
     min-height: 0;
-    padding: 16px;
+    padding: 12px;
   }
 
   .filter-card__head {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
   }
 
   .filter-card__count {
     flex-shrink: 0;
-    padding: 7px 10px;
+    padding: 6px 8px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(125, 191, 255, 0.1);
-    font-size: 11px;
+    font-size: 10px;
     color: rgba(184, 215, 236, 0.82);
   }
 
   .filter-card__title {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
   }
 
   .filter-card__desc {
     margin-top: 8px;
     line-height: 1.5;
-    font-size: 11px;
+    font-size: 10px;
     color: rgba(184, 215, 236, 0.72);
   }
 
   .filter-segment {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-    margin-bottom: 10px;
-    padding: 5px;
-    border-radius: 14px;
+    gap: 4px;
+    margin-bottom: 8px;
+    padding: 4px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(125, 191, 255, 0.1);
   }
 
   .filter-segment__item {
     flex: 1;
-    height: 34px;
+    height: 30px;
     border: 0;
     border-radius: 10px;
     background: transparent;
     padding: 0 4px;
     white-space: nowrap;
     line-height: 1;
-    font-size: 12px;
+    font-size: 11px;
     color: rgba(200, 226, 242, 0.76);
     cursor: pointer;
     transition: background 0.2s ease, color 0.2s ease;
@@ -726,9 +726,9 @@ export default {
   .filter-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    gap: 6px;
     margin-top: auto;
-    padding-top: 8px;
+    padding-top: 6px;
   }
 
   .filter-actions .el-button + .el-button {
@@ -739,9 +739,9 @@ export default {
   .search-btn {
     width: 100%;
     min-width: 0;
-    height: 38px;
+    height: 34px;
     border-radius: 12px;
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .reset-btn {
@@ -766,23 +766,23 @@ export default {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 14px;
-    padding: 14px 18px 10px;
+    gap: 10px;
+    padding: 10px 14px 8px;
     border-bottom: 1px solid rgba(125, 191, 255, 0.1);
   }
 
   .table-shell__highlights {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-    padding: 10px 18px 0;
+    gap: 8px;
+    padding: 8px 14px 0;
   }
 
   .highlight-tile {
     display: grid;
-    gap: 6px;
-    padding: 12px 14px;
-    border-radius: 16px;
+    gap: 4px;
+    padding: 9px 11px;
+    border-radius: 14px;
     border: 1px solid rgba(125, 191, 255, 0.1);
     background: rgba(255, 255, 255, 0.03);
   }
@@ -794,53 +794,53 @@ export default {
   }
 
   .highlight-tile__value {
-    font-size: 21px;
+    font-size: 18px;
     font-weight: 600;
     color: #f5fbff;
   }
 
   .highlight-tile__value--date {
-    font-size: 22px;
+    font-size: 19px;
   }
 
   .highlight-tile__meta {
-    font-size: 11px;
+    font-size: 10px;
     color: rgba(184, 215, 236, 0.68);
   }
 
   .table-shell__eyebrow {
-    font-size: 11px;
+    font-size: 10px;
     letter-spacing: 0.18em;
     color: rgba(184, 215, 236, 0.56);
   }
 
   .table-shell__title {
     margin-top: 6px;
-    font-size: 22px;
+    font-size: 19px;
     font-weight: 600;
   }
 
   .table-shell__meta {
-    font-size: 13px;
+    font-size: 11px;
     color: rgba(184, 215, 236, 0.72);
   }
 
   .mytable-home {
     flex: 1;
     min-height: 0;
-    padding: 10px;
+    padding: 8px;
     overflow: hidden;
   }
 
   .station-cell {
     display: grid;
-    gap: 6px;
+    gap: 4px;
   }
 
   .station-cell__topline {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     margin-bottom: 0;
   }
 
@@ -848,29 +848,29 @@ export default {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     border-radius: 999px;
     background: rgba(64, 126, 255, 0.22);
     color: #bfe0ff;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
   }
 
   .station-cell__tag {
     display: inline-flex;
     align-items: center;
-    height: 22px;
-    padding: 0 9px;
+    height: 20px;
+    padding: 0 8px;
     border-radius: 999px;
     background: rgba(67, 212, 175, 0.12);
     border: 1px solid rgba(67, 212, 175, 0.2);
     color: #98f0da;
-    font-size: 11px;
+    font-size: 10px;
   }
 
   .station-cell__name {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     line-height: 1.2;
     color: #f4fbff;
@@ -880,8 +880,8 @@ export default {
     margin-top: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: 2px 8px;
-    font-size: 11px;
+    gap: 2px 6px;
+    font-size: 10px;
     line-height: 1.2;
     color: rgba(184, 215, 236, 0.6);
   }
@@ -890,11 +890,11 @@ export default {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 74px;
-    height: 24px;
+    min-width: 68px;
+    height: 22px;
     padding: 0 10px;
     border-radius: 999px;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.06em;
   }
@@ -919,12 +919,12 @@ export default {
 
   .ops-cell {
     display: grid;
-    gap: 4px;
+    gap: 3px;
     align-items: start;
   }
 
   .ops-cell__hint {
-    font-size: 11px;
+    font-size: 10px;
     line-height: 1.2;
     color: rgba(184, 215, 236, 0.68);
   }
@@ -946,14 +946,14 @@ export default {
   }
 
   .efficiency-cell__value {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
     color: #f4fbff;
   }
 
   .efficiency-cell__unit,
   .date-cell {
-    font-size: 12px;
+    font-size: 11px;
     color: rgba(184, 215, 236, 0.72);
   }
 
@@ -961,14 +961,14 @@ export default {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 96px;
-    height: 34px;
-    padding: 0 12px;
+    min-width: 88px;
+    height: 30px;
+    padding: 0 10px;
     border: 1px solid rgba(95, 181, 255, 0.18);
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.04);
     color: #eaf6ff;
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
     transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
   }

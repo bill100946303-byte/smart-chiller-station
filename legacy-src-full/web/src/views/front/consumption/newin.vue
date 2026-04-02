@@ -173,8 +173,18 @@ export default {
 <style lang="scss" scoped>
 .compare-page {
   padding: 0px 60px 0 45px;
+  overflow: visible;
 }
+
+.search-form {
+  position: relative;
+  z-index: 30;
+  overflow: visible;
+}
+
 .electric_page {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 600px;
 }
@@ -186,6 +196,8 @@ export default {
 }
 
 .table_list {
+  position: relative;
+  z-index: 1;
   margin-top: 50px;
 }
 

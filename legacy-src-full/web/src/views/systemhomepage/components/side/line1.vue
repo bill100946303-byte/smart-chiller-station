@@ -3,14 +3,15 @@
     class="metric-widget metric-widget--system"
     :title="$t('defaultpage.systemEnergyEfficiency')"
     eyebrow="SYSTEM COP"
+    variant="hero"
     :value="resolvedColdStationCop"
     :min="metricConfig.min"
     :max="metricConfig.max"
     :bands="metricConfig.bands"
     :ticks="metricConfig.ticks"
     :digits="2"
-    :compact="true"
     :show-legend="false"
+    :show-ticks="false"
     :show-marker-label="false"
     :empty-when-non-positive="true"
   />
@@ -70,6 +71,6 @@ export default {
 }
 
 .metric-widget--system {
-  padding-top: 2px;
+  padding-top: 0;
 }
 </style>

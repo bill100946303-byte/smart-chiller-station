@@ -1,103 +1,146 @@
 <template>
-  <div class="day-front">
-    <el-row :gutter="18" style="margin: 0">
-      <el-col :md="24" :lg="15" :xl="15">
-        <div class="grid-left grid-content panel-card panel-card--calendar">
-          <div class="panel-card__header">
-            <div>
-              <div class="panel-card__eyebrow">CALENDAR</div>
-              <div class="panel-card__title">能效日历</div>
-            </div>
-            <div class="nav-top__meta">
-              <el-date-picker
-                  v-model="time"
-                  :clearable="true"
-                  placeholder="选择日期"
-                  prefix-icon="al_element-icons al_icona-huaban1"
-                  type="month"
-                  value-format="yyyy-MM"
-                  @change="pickerchange"
-              >
-              </el-date-picker>
-            </div>
+  <div class="day-front energy-analysis-view">
+    <section class="legacy-front-toolbar energy-analysis-toolbar energy-analysis-toolbar--calendar">
+      <div class="energy-analysis-toolbar__meta energy-analysis-toolbar__meta--calendar">
+        <div class="energy-analysis-toolbar__copy">
+          <strong>能效日历</strong>
+          <span>按月查看日能效与分项构成</span>
+        </div>
+        <el-form :inline="true" class="demo-form-inline legacy-front-toolbar__form energy-analysis-toolbar__form--calendar">
+          <el-form-item label="月份">
+            <el-date-picker
+              v-model="time"
+              :clearable="true"
+              placeholder="选择日期"
+              prefix-icon="al_element-icons al_icona-huaban1"
+              popper-class="legacy-front-picker-popper"
+              type="month"
+              value-format="yyyy-MM"
+              @change="pickerchange"
+            />
+          </el-form-item>
+        </el-form>
+        <div class="energy-analysis-chip-list energy-analysis-chip-list--calendar">
+          <div v-for="chip in legendChips" :key="chip.label" class="energy-analysis-chip">
+            <strong>{{ chip.label }}</strong>
+            <span>{{ chip.text }}</span>
           </div>
-          <div class="panel-card__legend">
-            <span>E（{{ $t('energytest_day.operationalEnergyEfficiency') }}）</span>
-            <span>C（{{ $t('energytest_day.dailyCoolingCapacity') }}）</span>
-            <span>P（{{ $t('energytest_day.dailyPowerConsumption') }}）KW*h</span>
-            <span v-show="getMShow">M（{{ $t('energytest_day.coldUnitPrice') }}）</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="energy-analysis-summary-grid energy-analysis-summary-grid--calendar">
+      <article
+        v-for="card in summaryCards"
+        :key="card.key"
+        class="energy-analysis-summary-card"
+      >
+        <div class="energy-analysis-summary-card__label">{{ card.label }}</div>
+        <div
+          class="energy-analysis-summary-card__value"
+          :class="{ 'energy-analysis-summary-card__value--text': card.textValue }"
+        >
+          {{ card.value }}
+          <span v-if="card.suffix">{{ card.suffix }}</span>
+        </div>
+        <div class="energy-analysis-summary-card__meta">{{ card.meta }}</div>
+      </article>
+    </section>
+
+    <section class="energy-analysis-grid energy-analysis-grid--calendar">
+      <article class="energy-analysis-card">
+        <div class="energy-analysis-card__header">
+          <div>
+            <div class="energy-analysis-card__eyebrow">日历分析</div>
+            <div class="energy-analysis-card__title">月度能效日历</div>
           </div>
+          <div class="energy-analysis-card__meta">点击日历中的某一天可查看对应的日视图指标和分项构成。</div>
+        </div>
+        <div class="energy-analysis-card__body energy-analysis-card__body--tight">
           <el-calendar ref="calendar" :first-day-of-week="7">
-            <!-- 这里使用的是 2.5 slot 语法，对于新项目请使用 2.6 slot 语法-->
             <template slot="dateCell" slot-scope="{ date, data }">
-              <div
-                  @click="chooseday(date, data)"
-                  style="height: 100%; display: flex; flex-direction: column"
-              >
-                <p class="day-time">
-                  {{ getDay(data.day) }}
-                  <!-- .split("-")
-                    .slice(2)
-                    .join("") -->
-                </p>
+              <div :class="getCalendarCellClass(data.day)" @click="chooseday(date, data)">
+                <div class="energy-calendar-cell__top">
+                  <p class="day-time">{{ getDay(data.day) }}</p>
+                  <span v-if="isBestDate(data.day)" class="energy-calendar-cell__badge">最佳</span>
+                  <span v-else-if="isToday(data.day)" class="energy-calendar-cell__badge is-today">今日</span>
+                </div>
                 <div v-if="getmonth(data.day) && isBeforeToday(data.day)" class="flex-end">
-                  <p :class="[getEclass(getE(getDay(data.day))), 'e-box']">
-                    <!--                    {{ getE(getDay(data.day)) }}-->
-                    <!--                    {{ getE(getDay(data.day)) == null ? '' : getE(getDay(data.day)).slice(0, -3) }}-->
-                    <!--                    E:{{ getE(getDay(data.day)) == null ? '' : getE(getDay(data.day)).match(/E:(-?[\d.]+):/)[1] }}-->
-                    {{ $t('energytest_day.E') }}:
-                    &nbsp;{{ getE(getDay(data.day)) == null ? '' : getE(getDay(data.day)).match(/E:(-?[\d.]+):/)[1] }}
-                  </p>
-                  <p class="p-box">{{ getP(getDay(data.day)) }}</p>
-                  <p class="c-box">{{ getC(getDay(data.day)) }}</p>
-                  <!--                  <p class="m-box" v-show="getMShowFun(getDay(data.day))">{{ getM(getDay(data.day)) }}</p>-->
-                  <p class="m-box" v-if="getMShow">{{ getM(getDay(data.day)) }}</p>
+                  <div class="energy-calendar-metrics">
+                    <p :class="[getEclass(getE(getDay(data.day))), 'e-box', 'energy-calendar-metrics__primary']">
+                      {{ formatCalendarMetric('E', getEfficiencyValue(getDay(data.day))) }}
+                    </p>
+                    <div class="energy-calendar-metrics__pair">
+                      <p class="p-box">{{ formatCalendarMetric('P', getMetricValue(getDay(data.day), 'p')) }}</p>
+                      <p class="c-box">{{ formatCalendarMetric('C', getMetricValue(getDay(data.day), 'c')) }}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </template>
           </el-calendar>
         </div>
-      </el-col>
-      <el-col :md="24" :lg="9" :xl="9">
-        <div class="grid-right grid-content">
-          <div class="line panel-card panel-card--line">
+      </article>
+
+      <div class="energy-analysis-side-stack energy-analysis-side-stack--calendar">
+        <article class="energy-analysis-card energy-analysis-card--primary-insight">
+          <div class="energy-analysis-card__header">
+            <div>
+              <div class="energy-analysis-card__eyebrow">趋势分析</div>
+              <div class="energy-analysis-card__title">能效等级走势</div>
+            </div>
+          <div class="energy-analysis-card__meta">{{ currentViewMeta }}</div>
+          </div>
+          <div class="energy-analysis-card__body energy-analysis-card__body--tight">
             <linebox
-                @groupchange="groupchange"
-                :time="time"
-                ref="linebox"
-                :num="energynum"
-                :energynumRT="energynumRT"
-                :info="boxinfo"
-                :getMShow="getMShow"
+              @groupchange="groupchange"
+              :time="time"
+              ref="linebox"
+              :num="energynum"
+              :energynumRT="energynumRT"
+              :info="boxinfo"
+              :getMShow="getMShow"
             />
           </div>
-        </div>
-        <div class="grid-content pic-box panel-card panel-card--pie">
-          <div class="panel-card__header panel-card__header--compact">
+        </article>
+
+        <article class="energy-analysis-card energy-analysis-card--secondary-insight">
+          <div class="energy-analysis-card__header">
             <div>
-              <div class="panel-card__eyebrow">PIE CHART</div>
-              <div class="panel-card__title">{{ $t('energytest_day.itemizedChart') }}</div>
+              <div class="energy-analysis-card__eyebrow">构成分析</div>
+              <div class="energy-analysis-card__title">分项构成</div>
+            </div>
+            <div class="energy-analysis-card__meta">识别主导耗能对象</div>
+          </div>
+          <div class="energy-analysis-card__body">
+            <div class="energy-analysis-chart-box energy-analysis-chart-box--compact energy-analysis-chart-box--breakdown">
+              <electricTabEchart
+                id="heat1"
+                style="width: 100%; height: 100%"
+                :echartdata="piedata"
+              />
             </div>
           </div>
-          <electricTabEchart
-              id="heat1"
-              style="width: 100%; height: 100%"
-              :echartdata="piedata"
-          />
-        </div>
-      </el-col>
-    </el-row>
+        </article>
+      </div>
+    </section>
   </div>
 </template>
+
 <script>
 import Linebox from "./components/linebox.vue";
 import electricTabEchart from "./components/electricTabEchart.vue";
-import {findEnergyCalendar, findMonthEnergy} from "@/api/front/energytest";
+import { findEnergyCalendar, findMonthEnergy } from "@/api/front/energytest";
 import dayjs from "dayjs";
-import {mapGetters} from "vuex";
-import {getEnergyAnalysisPie} from "@/api/front/consumption";
+import { mapGetters } from "vuex";
+import { getEnergyAnalysisPie } from "@/api/front/consumption";
 
 export default {
+  name: "EnergyTestDay",
+  components: {
+    Linebox,
+    electricTabEchart
+  },
   data() {
     return {
       time: dayjs().format("YYYY-MM-DD"),
@@ -107,7 +150,7 @@ export default {
       dateType: 2,
       daylist: {
         月: 3,
-        日: 2,
+        日: 2
       },
       energynum: 0,
       energynumRT: 0,
@@ -116,63 +159,161 @@ export default {
     };
   },
   props: {
-    num: Number,
-  },
-  components: {
-    Linebox,
-    electricTabEchart,
+    num: Number
   },
   computed: {
-    ...mapGetters(["id", "path"]),
+    ...mapGetters(["id", "path", "unitSelete"]),
     month() {
       return dayjs(this.time).month() + 1;
     },
     year() {
       return dayjs(this.time).year();
     },
+    legendChips() {
+      const items = [
+        {
+          label: "E",
+          text: "运行能效"
+        },
+        {
+          label: "C",
+          text: "日冷量"
+        },
+        {
+          label: "P",
+          text: "日耗电"
+        }
+      ];
+      if (this.getMShow) {
+        items.push({
+          label: "M",
+          text: "冷量单价"
+        });
+      }
+      return items;
+    },
+    summaryCards() {
+      const bestDay = this.getBestDay();
+      return [
+        {
+          key: "efficiency",
+          label: "系统能效",
+          value: this.formatValue(this.energynum),
+          suffix: `${this.unitSelete}/${this.unitSelete}`,
+          meta: "当前视图结果"
+        },
+        {
+          key: "electric",
+          label: "日电量",
+          value: this.formatValue(this.boxinfo.p),
+          suffix: "KW*h",
+          meta: "当前日结果"
+        },
+        {
+          key: "cooling",
+          label: "日冷量",
+          value: this.formatValue(this.boxinfo.c),
+          suffix: `${this.unitSelete}*h`,
+          meta: "当前日结果"
+        },
+        {
+          key: "best",
+          label: "最佳日",
+          value: bestDay.label || "暂无",
+          suffix: "",
+          meta: bestDay.label ? `能效 ${this.formatValue(bestDay.value)} ${this.unitSelete}/${this.unitSelete}` : "当月暂无数据",
+          textValue: true
+        }
+      ];
+    },
+    selectedDateText() {
+      return this.dateType === 2 ? dayjs(this.time).format("YYYY-MM-DD") : dayjs(this.time).format("YYYY-MM");
+    },
+    currentViewMeta() {
+      return `${this.dateType === 2 ? "日视图" : "月视图"} · ${this.selectedDateText}`;
+    }
   },
   created() {
-    this.handleSearch().then((res) => {
+    this.handleSearch().then(() => {
       this.getdaydata();
     });
     this.getPie();
   },
   mounted() {
-    let ref = this.$refs.calendar;
-    let target = this.$refs.calendar.$el;
-    let that = this;
-    target.addEventListener("click", (e) => {
+    const ref = this.$refs.calendar;
+    const target = this.$refs.calendar.$el;
+    target.addEventListener("click", e => {
       e.stopPropagation();
       e.preventDefault();
-      ref.pickDay(that.time);
+      ref.pickDay(this.time);
     });
   },
   methods: {
+    toNumber(value) {
+      const number = Number(String(value || "").replace(/,/g, ""));
+      return isNaN(number) ? 0 : number;
+    },
+    formatValue(value) {
+      const number = this.toNumber(value);
+      if (!number) {
+        return "0";
+      }
+      return number.toLocaleString("zh-CN", {
+        maximumFractionDigits: number >= 100 ? 0 : 1,
+        minimumFractionDigits: number >= 100 ? 0 : 1
+      });
+    },
+    getBestDay() {
+      return this.datalist
+        .map(item => {
+          return {
+            label: `${this.month}月${item.date}日`,
+            value: this.toNumber(item.rte)
+          };
+        })
+        .sort((a, b) => b.value - a.value)[0] || { label: "", value: 0 };
+    },
+    isToday(day) {
+      return dayjs(day).format("YYYY-MM-DD") === dayjs().format("YYYY-MM-DD");
+    },
+    isSelectedDate(day) {
+      return this.dateType === 2 && dayjs(day).format("YYYY-MM-DD") === dayjs(this.time).format("YYYY-MM-DD");
+    },
+    isBestDate(day) {
+      const bestDay = this.getBestDay();
+      return !!bestDay.label && bestDay.label === `${this.month}月${this.getDay(day)}日`;
+    },
+    hasDayData(day) {
+      return this.datalist.some(item => item.date === this.getDay(day));
+    },
+    getCalendarCellClass(day) {
+      return {
+        "energy-calendar-cell": true,
+        "is-selected": this.isSelectedDate(day),
+        "is-best": this.isBestDate(day),
+        "is-empty": !this.hasDayData(day),
+        "is-today": this.isToday(day)
+      };
+    },
     isBeforeToday(date) {
-      return dayjs(date).isBefore(dayjs().add(1, 'day'), 'day');
+      return dayjs(date).isBefore(dayjs().add(1, "day"), "day");
     },
     chooseday(day, data) {
-      let str = data.day.split("-")[1];
-      // console.log(day, data, "data");
+      const str = data.day.split("-")[1];
       if (str == this.month) {
         this.time = dayjs(day).format("YYYY-MM-DD");
-        // console.log(this.time, "time");
         this.dateType = this.daylist["日"];
-        // this.$refs.linebox.type = "日";
-        this.$refs.linebox.type = this.$t('public.day');
-        // this.energynum = this.getE(this.getDay(data.day));
+        if (this.$refs.linebox) {
+          this.$refs.linebox.type = this.$t("public.day");
+        }
         this.getdaydata();
         this.getPie();
-      } else {
-        return false;
       }
     },
     findMonthEnergys() {
-      findMonthEnergy(this.path, {date: this.time}).then((res) => {
-        console.log(res, "resinfo");
-        this.boxinfo = res.data;
+      findMonthEnergy(this.path, { date: this.time }).then(res => {
+        this.boxinfo = res.data || {};
         this.energynum = Number(res.data.rte) || 0;
-        // this.energynumRT = Number(el.e);
         this.energynumRT = Number(res.data.e);
       });
     },
@@ -191,22 +332,22 @@ export default {
       this.getPie();
     },
     getdaydata() {
-      let el = this.datalist.find(
-          (item) => item.date === dayjs(this.time).format("DD")
-      );
+      const el = this.datalist.find(item => item.date === dayjs(this.time).format("DD"));
+      if (!el) {
+        this.energynum = 0;
+        this.energynumRT = 0;
+        this.boxinfo = {};
+        return;
+      }
       this.energynum = Number(el.rte) || 0;
-      /*
-        RTE 是后端计算后的值，e是原始数据
-        计算方式是 3.517/数据
-      */
-      // console.log('this.energynum', this.energynum)
       this.energynumRT = Number(el.e);
       this.boxinfo = el;
-      // console.log(this.boxinfo, "<===boxinfo");
     },
     pickerchange() {
       this.dateType = this.daylist["月"];
-      this.$refs.linebox.type = "月";
+      if (this.$refs.linebox) {
+        this.$refs.linebox.type = "月";
+      }
       this.handleSearch();
       this.findMonthEnergys();
       this.getPie();
@@ -218,15 +359,14 @@ export default {
     },
     handleSearch() {
       this.getrange();
-      let obj = {
+      const obj = {
         appId: this.id,
         month: this.month,
-        year: this.year,
+        year: this.year
       };
-      //查询日历
-      return findEnergyCalendar(obj).then((res) => {
-        this.datalist = res.data.map((item) => {
-          let date = item.date.split("号")[0];
+      return findEnergyCalendar(obj).then(res => {
+        this.datalist = (res.data || []).map(item => {
+          const date = item.date.split("号")[0];
           item.date = date.length == 2 ? date : "0" + date;
           item.evalue = Number(item.e);
           return item;
@@ -234,205 +374,182 @@ export default {
       });
     },
     getPie() {
-      let info = {
+      const info = {
         appId: this.id,
-        date:
-            this.dateType === 2
-                ? dayjs(this.time).format("YYYY-MM-DD")
-                : dayjs(this.time).format("YYYY-MM"),
+        date: this.dateType === 2 ? dayjs(this.time).format("YYYY-MM-DD") : dayjs(this.time).format("YYYY-MM"),
         dateType: this.dateType,
-        energyType: 1,
+        energyType: 1
       };
-      getEnergyAnalysisPie(info).then((res) => {
-        this.piedata = res.data;
+      getEnergyAnalysisPie(info).then(res => {
+        this.piedata = res.data || {};
       });
     },
     getEclass(datas) {
       if (datas) {
-        let datasplit = datas.split(':');
+        const datasplit = datas.split(":");
         if (datasplit) {
-          let data = Number(datasplit[3]) || 0;
-          // console.log(datasplit)
-          // if (this.$store.getters.unitSelete === 'RT'){
-          //   console.log('1111', )
-          //   if (dayjs(this.time.substring(0,8)+datasplit[2]).isAfter(dayjs().format("YYYY-MM-DD")))return
-          //   if (data <= 0.703) {
-          //     return "first-cs";
-          //   } else if (data <= 0.857) {
-          //     console.log('2222',datasplit)
-          //     return "two-cs";
-          //   } else if (data <= 1.004) {
-          //     console.log('3333',datasplit)
-          //     return "three-cs";
-          //   } else if (data > 1.004 && this.ifdatasplit(datasplit[2])) {
-          //     console.log('444',datasplit)
-          //     return "four-cs";
-          //   } else if (this.ifdatasplit(datasplit[2])) {
-          //     // console.log('data',datasplit,data)
-          //     return "five-cs";
-          //   }
-          // }else {
+          const data = Number(datasplit[3]) || 0;
           if (data >= 5.0) {
             return "first-cs";
           } else if (data >= 4.1) {
             return "two-cs";
           } else if (data >= 3.5) {
             return "three-cs";
-          } else if (data > 0 || data < 0 && this.ifdatasplit(datasplit[2])) {
+          } else if ((data > 0 || data < 0) && this.ifdatasplit(datasplit[2])) {
             return "four-cs";
           } else if (this.ifdatasplit(datasplit[2])) {
             return "five-cs";
           }
-          // }
         }
       }
     },
     ifdatasplit(e) {
-      if (dayjs(dayjs(this.year + '-' + this.month + '-' + e).format('YYYY-MM-DD')).unix() <=
-          dayjs(dayjs().startOf('day').format('YYYY-MM-DD')).unix()) {
-        // console.log('选择时间',dayjs(this.year+'-'+this.month+'-'+e).format('YYYY-MM-DD'))
-        // console.log('当前时间',dayjs().startOf('day').format('YYYY-MM-DD'))
-        return true
-      }
-      return false
+      return dayjs(dayjs(this.year + "-" + this.month + "-" + e).format("YYYY-MM-DD")).unix() <=
+        dayjs(dayjs().startOf("day").format("YYYY-MM-DD")).unix();
     },
     getE(day) {
-      let arr = this.datalist.filter((item) => item.date === day);
+      const arr = this.datalist.filter(item => item.date === day);
       if (arr.length) {
-        // return 'E:' + arr[0].rte + ':' + arr[0].date + ':' + arr[0].e;
-        let rteValue = parseFloat(arr[0].rte.replace(/,/g, ""));
-        return 'E:' + rteValue + ':' + arr[0].date + ':' + arr[0].e;
-      } else {
-        return null;
+        const rteValue = parseFloat(String(arr[0].rte).replace(/,/g, ""));
+        return "E:" + rteValue + ":" + arr[0].date + ":" + arr[0].e;
       }
+      return null;
     },
-    // getE(day) {
-    //   let arr = this.datalist.filter((item) => item.date === day);
-    //
-    //   if (arr.length) {
-    //     // this.boxinfo = arr[0];
-    //     return 'E:' + arr[0].rte + ':' + arr[0].date + ':' + arr[0].e;
-    //   } else {
-    //     return null;
-    //   }
-    // },
     getP(day) {
-      let arr = this.datalist.filter((item) => item.date === day);
-      if (arr.length) {
-        // return 'P:' + arr[0].p;
-        return this.$t('energytest_day.P') + ': ' + arr[0].p;
-      } else {
+      const arr = this.datalist.filter(item => item.date === day);
+      return arr.length ? this.$t("energytest_day.P") + ": " + arr[0].p : null;
+    },
+    getMetricValue(day, field) {
+      const arr = this.datalist.filter(item => item.date === day);
+      if (!arr.length) {
         return null;
       }
+      return arr[0][field];
+    },
+    getEfficiencyValue(day) {
+      const arr = this.datalist.filter(item => item.date === day);
+      return arr.length ? arr[0].rte : null;
     },
     getC(day) {
-      let arr = this.datalist.filter((item) => item.date === day);
-      if (arr.length) {
-        // return 'C:' + arr[0].c;
-        return this.$t('energytest_day.C') + ': ' + arr[0].c;
-      } else {
-        return null;
-      }
+      const arr = this.datalist.filter(item => item.date === day);
+      return arr.length ? this.$t("energytest_day.C") + ": " + arr[0].c : null;
     },
     getM(day) {
-      let arr = this.datalist.filter((item) => item.date === day);
+      const arr = this.datalist.filter(item => item.date === day);
       if (arr.length) {
-        this.getMShow = arr[0].m !== '-1'
-        // console.log('111', this.getMShow)
-        // return 'M:' + arr[0].m;
-        return this.$t('energytest_day.M') + ': ' + arr[0].m;
-      } else {
-        return null;
+        this.getMShow = arr[0].m !== "-1";
+        return this.$t("energytest_day.M") + ": " + arr[0].m;
       }
+      return null;
     },
     getmonth(day) {
-      let str = day.split("-")[1];
-      return str == this.month ? true : false;
+      return day.split("-")[1] == this.month;
     },
-  },
+    compactMetricValue(value) {
+      if (value === undefined || value === null || value === "" || value === "-1") {
+        return "--";
+      }
+      const number = Number(String(value).replace(/,/g, ""));
+      if (isNaN(number)) {
+        return String(value);
+      }
+      if (Math.abs(number) >= 10000) {
+        return `${(number / 10000).toFixed(1)}万`;
+      }
+      return number.toLocaleString("zh-CN", {
+        maximumFractionDigits: number >= 100 ? 0 : 1,
+        minimumFractionDigits: 0
+      });
+    },
+    formatCalendarMetric(label, value) {
+      return `${label} ${this.compactMetricValue(value)}`;
+    }
+  }
 };
 </script>
+
 <style lang="scss" scoped>
 .day-front {
   width: 100%;
   min-height: 0;
   overflow: hidden;
+}
 
-  .grid-content {
-    min-height: 0;
-  }
+.energy-calendar-cell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 2px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
 
-  .grid-left {
-    min-height: 0;
-  }
+.energy-calendar-cell__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
 
-  .grid-right {
-    height: 40vh;
-    min-height: 0;
-    padding-right: 0;
-  }
+.energy-calendar-cell__badge {
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(45, 134, 255, 0.18);
+  border: 1px solid rgba(102, 197, 245, 0.18);
+  color: rgba(244, 250, 255, 0.9);
+  font-size: 8px;
+  line-height: 1.2;
+}
 
-  .pic-box {
-    height: 40vh;
-    padding-right: 0;
-    margin-right: 0;
-  }
+.energy-calendar-metrics {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.energy-calendar-metrics__primary {
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.energy-calendar-metrics__pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 3px;
+}
+
+.energy-calendar-cell__badge.is-today {
+  background: rgba(92, 200, 255, 0.16);
+  color: rgba(124, 240, 255, 0.92);
 }
 </style>
+
 <style lang="scss">
 .day-front {
-  .panel-card {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    padding: 14px 16px 16px;
-    border-radius: 22px;
-    background: linear-gradient(180deg, rgba(12, 29, 45, 0.95) 0%, rgba(7, 18, 29, 0.98) 100%);
-    border: 1px solid rgba(124, 202, 255, 0.12);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 16px 28px rgba(0, 0, 0, 0.16);
+  .energy-analysis-toolbar--calendar {
+    padding-top: 5px;
+    padding-bottom: 5px;
   }
 
-  .panel-card__header {
-    display: flex;
+  .energy-analysis-toolbar__meta--calendar {
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
+    gap: 8px;
   }
 
-  .panel-card__header--compact {
-    margin-bottom: 8px;
+  .energy-analysis-toolbar__form--calendar {
+    margin-left: auto;
   }
 
-  .panel-card__eyebrow {
-    font-size: 10px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(171, 205, 225, 0.66);
+  .energy-analysis-chip-list--calendar {
+    justify-content: flex-end;
+    max-width: 360px;
   }
 
-  .panel-card__title {
-    margin-top: 4px;
-    font-size: 18px;
-    font-weight: 700;
-    color: rgba(245, 251, 255, 0.96);
-  }
-
-  .panel-card__legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px 18px;
-    margin-bottom: 10px;
-    font-size: 12px;
-    color: rgba(182, 211, 231, 0.76);
-  }
-
-  .panel-card__legend span {
-    white-space: nowrap;
-  }
-
-  .nav-top__meta .el-date-picker {
-    width: 168px;
+  .energy-analysis-summary-grid--calendar {
+    gap: 3px;
   }
 
   .el-calendar__header {
@@ -460,6 +577,23 @@ export default {
       border-bottom: 1px solid rgba(125, 202, 255, 0.08);
       border-right: 1px solid rgba(125, 202, 255, 0.08);
       background: rgba(255, 255, 255, 0.02);
+
+      &.is-selected {
+        background: linear-gradient(180deg, rgba(26, 47, 70, 0.98), rgba(15, 30, 46, 0.98)) !important;
+        background-color: rgba(15, 30, 46, 0.98) !important;
+        box-shadow: inset 0 0 0 1px rgba(124, 240, 255, 0.22) !important;
+
+        .el-calendar-day {
+          background: transparent !important;
+          color: rgba(245, 251, 255, 0.96) !important;
+        }
+
+        .day-time,
+        p,
+        span {
+          color: rgba(245, 251, 255, 0.96) !important;
+        }
+      }
     }
 
     tr {
@@ -480,34 +614,88 @@ export default {
   .el-calendar-day {
     display: flex;
     flex-direction: column;
-    height: 120px;
+    height: 80px;
     color: rgba(236, 245, 251, 0.9);
-    font-size: 12px;
-    padding: 8px 0;
+    font-size: 9px;
+    padding: 2px 0;
     background: transparent;
+
+    &:hover {
+      background: transparent !important;
+    }
 
     .flex-end {
       flex: 1;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      font-size: 15px;
+      justify-content: flex-start;
+      font-size: 10px;
 
       p {
-        padding-left: 5px;
+        padding-left: 1px;
+        margin: 0;
+        line-height: 1.2;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
       }
     }
   }
 
-  .el-calendar-table__row {
-    .day-time {
-      text-align: right;
-    }
+  .energy-calendar-cell.is-selected {
+    background: linear-gradient(180deg, rgba(44, 80, 122, 0.42), rgba(21, 40, 63, 0.32)) !important;
+    border-color: rgba(102, 197, 245, 0.24) !important;
+    box-shadow: inset 0 0 0 1px rgba(124, 240, 255, 0.08) !important;
+  }
 
-      .current {
+  .el-calendar-table td.is-selected .energy-calendar-cell {
+    background: linear-gradient(180deg, rgba(44, 80, 122, 0.42), rgba(21, 40, 63, 0.32)) !important;
+    border-color: rgba(102, 197, 245, 0.24) !important;
+    box-shadow: inset 0 0 0 1px rgba(124, 240, 255, 0.08) !important;
+  }
+
+  .el-calendar-table td.is-selected,
+  .el-calendar-table td.is-selected:hover,
+  .el-calendar-table td.is-selected:focus {
+    background: linear-gradient(180deg, rgba(26, 47, 70, 0.98), rgba(15, 30, 46, 0.98)) !important;
+    background-color: rgba(15, 30, 46, 0.98) !important;
+  }
+
+  .el-calendar-table td.is-selected .el-calendar-day,
+  .el-calendar-table td.is-selected .el-calendar-day:hover,
+  .el-calendar-table td.is-selected .el-calendar-day:focus {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
+  .el-calendar-table td.is-selected .energy-calendar-cell__top,
+  .el-calendar-table td.is-selected .energy-calendar-metrics,
+  .el-calendar-table td.is-selected .energy-calendar-metrics__pair,
+  .el-calendar-table td.is-selected .day-time,
+  .el-calendar-table td.is-selected .e-box,
+  .el-calendar-table td.is-selected .p-box,
+  .el-calendar-table td.is-selected .c-box {
+    color: rgba(245, 251, 255, 0.96) !important;
+  }
+
+  .energy-calendar-cell.is-best:not(.is-selected) {
+    background: rgba(92, 200, 255, 0.06);
+    border-color: rgba(102, 197, 245, 0.16);
+  }
+
+  .energy-calendar-cell.is-empty {
+    opacity: 0.64;
+  }
+
+  .el-calendar-table__row {
       .day-time {
-        margin-bottom: 10px;
-        font-size: 14px;
+        text-align: right;
+        margin-bottom: 2px;
+      }
+
+    .current {
+      .day-time {
+        font-size: 12px;
         color: rgba(245, 251, 255, 0.95);
       }
 

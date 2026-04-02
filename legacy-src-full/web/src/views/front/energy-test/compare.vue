@@ -1,223 +1,278 @@
 <template>
-  <!--热不平衡 -->
-  <div class="compare-page front-box-show">
-    <div class="search-form panel-card">
+  <div class="energy-analysis-view">
+    <section class="legacy-front-toolbar energy-analysis-toolbar">
+      <div class="energy-analysis-toolbar__meta">
+        <div class="energy-analysis-toolbar__copy">
+          <strong>能效对比</strong>
+          <span>围绕不同时间组的整体值、平均值与最优最差表现做对照，先看摘要，再读曲线，最后比结果对象。</span>
+        </div>
+        <div class="legacy-front-chip">当前时段：{{ searchinfo.timeList.length }} 组</div>
+      </div>
       <compare-search
-        @handleSearch="ClickhandleSearch"
+        @handleSearch="handleSearch"
         :searchinfo="searchinfo"
         @exportform="exportform"
       />
-    </div>
-    <div class="electric_page panel-card">
-      <div class="panel-card__header">
-        <div>
-          <div class="panel-card__eyebrow">CURVE</div>
-          <div class="panel-card__title">能效对比</div>
-        </div>
-      </div>
-      <div class="line_echart">
-        <lineEchart2
-          :xData="totalEnergyDataY"
-          :xLabel="xLabel"
-          style="width: 100%; height: 100%"
-        />
-      </div>
-    </div>
+    </section>
 
-    <div class="table_list panel-card">
-      <el-table
-          :data="tableData"
-          :header-cell-style="{
-          background: 'rgba(13, 40, 60, 0.92)',
-          color: 'rgba(245, 251, 255, 0.96)',
-        }"
-          style="width: 100%"
+    <section class="energy-analysis-summary-grid">
+      <article
+        v-for="card in summaryCards"
+        :key="card.key"
+        class="energy-analysis-summary-card"
       >
-        <!--        <el-table-column class-name="front-column" prop="object" label="对象">-->
-        <el-table-column :label="$t('consumption.object')" align="center" class-name="front-column" prop="object">
-        </el-table-column>
-        <!--        <el-table-column class-name="front-column" prop="wholeValue" label="整体值">-->
-        <el-table-column :label="$t('energytest_compare.OverallValue')" align="center" class-name="front-column"
-                         prop="wholeValue">
-        </el-table-column>
+        <div class="energy-analysis-summary-card__label">{{ card.label }}</div>
+        <div
+          class="energy-analysis-summary-card__value"
+          :class="{ 'energy-analysis-summary-card__value--text': card.textValue }"
+        >
+          {{ card.value }}
+          <span v-if="card.suffix">{{ card.suffix }}</span>
+        </div>
+        <div class="energy-analysis-summary-card__meta">{{ card.meta }}</div>
+      </article>
+    </section>
 
-        <!--        <el-table-column class-name="front-column" prop="averageValue" label="平均值">-->
-        <el-table-column :label="$t('consumption.averageValue')" align="center" class-name="front-column"
-                         prop="averageValue">
-        </el-table-column>
-
-        <!--        <el-table-column class-name="front-column" prop="tenPercentGoodAverageValue" label="10%最优平均值">-->
-        <el-table-column :label="'10%'+$t('energytest_search.optimalAverage')" align="center" class-name="front-column"
-                         prop="tenPercentGoodAverageValue">
-        </el-table-column>
-        <!--        <el-table-column class-name="front-column" prop="tenPercentBadAverageValue" label="10%最差平均值">-->
-        <el-table-column :label="'10%'+$t('energytest_search.worstMean')" align="center" class-name="front-column"
-                         prop="tenPercentBadAverageValue">
-        </el-table-column>
-      </el-table>
-    </div>
+    <section class="legacy-front-tab-shell">
+      <div class="legacy-front-section-title">
+        <strong>时间组对比</strong>
+        <span>将已选择时间组映射为对比曲线，突出峰值时间、整体值差异和对象平均表现。</span>
+      </div>
+      <analysis-workbench-tab
+        :breakdown-data="breakdownData"
+        :breakdown-meta="breakdownMeta"
+        breakdown-title="对象构成"
+        trend-title="时间组趋势"
+        trend-meta="默认显示对比结果中整体值最高的时间组曲线"
+        table-title="对比结果"
+        :table-head-meta="`${tableData.length} 个对象完成本次时间组对比`"
+        :empty-text="'当前筛选下暂无能效对比结果'"
+        :x-label="chartXAxis"
+        :x-data="normalizedSeries"
+        :table="normalizedTable"
+        amount-label="对比值"
+        :unit-label="unitLabel"
+        name-field="object"
+        meta-field="__meta"
+        value-field="wholeValue"
+        name-column-label="对象"
+        value-column-label="整体值"
+        fallback-meta="当前对比对象"
+        :extra-columns="extraColumns"
+      />
+    </section>
   </div>
 </template>
 
 <script>
 import CompareSearch from "./components/compareSearch.vue";
-import electricTabEchart from "./components/electricTabEchart.vue";
-import lineEchart2 from "./components/lineEchart2.vue";
 import { findEnergyContrast } from "@/api/front/energytest";
-import { formatDate, formatDay } from "@/utils/index";
 import { mapGetters } from "vuex";
 import dayjs from "dayjs";
+import AnalysisWorkbenchTab from "@/views/front/consumption/tabs/AnalysisWorkbenchTab.vue";
+
 export default {
+  name: "EnergyTestCompare",
   components: {
-    electricTabEchart,
-    lineEchart2,
     CompareSearch,
+    AnalysisWorkbenchTab
   },
-  props: {},
   data() {
     return {
       searchinfo: {
-        // drName: "冷站",
-        // drName: this.$t('energytest_search.coolingStation'),
-        drName: 'CoolingStation',
+        drName: "CoolingStation",
         timeList: [dayjs().format("YYYY-MM-DD")],
-        timeSpace: 1,
+        timeSpace: 1
       },
       totalEnergyDataY: [],
       tableData: [],
-      xLabel: [],
+      xLabel: []
     };
   },
-  watch: {},
   computed: {
-    ...mapGetters(["path"]),
-  },
-  created() {
-    this.createdhandleSearch(this.searchinfo);
-  },
-  mounted() {},
-  methods: {
-    createdhandleSearch(info) {
-      let sers = { ...info };
-      sers.timeList = info.timeList.join(",");
-      findEnergyContrast(this.path, sers).then((res) => {
-        this.tableData = res.data.tableList;
-        this.totalEnergyDataY = res.data.curveList;
-
-        this.xLabel = res.data.curveList[0].data.map((item) => {
-          return item.time;
+    ...mapGetters(["path", "unitSelete"]),
+    unitLabel() {
+      return `${this.unitSelete}/${this.unitSelete}`;
+    },
+    chartXAxis() {
+      if (this.xLabel && this.xLabel.length) {
+        return this.xLabel;
+      }
+      return this.totalEnergyDataY.length
+        ? (this.totalEnergyDataY[0].data || []).map(item => item.time)
+        : [];
+    },
+    normalizedSeries() {
+      return (this.totalEnergyDataY || []).map(item => {
+        return {
+          title: item.title,
+          curveValueList: (item.data || []).map(point => {
+            return {
+              name: point.time,
+              value: this.toNumber(point.cop)
+            };
+          })
+        };
+      });
+    },
+    normalizedTable() {
+      return (this.tableData || []).map(row => {
+        return Object.assign({}, row, {
+          __meta: `平均值 ${this.formatValue(row.averageValue)} · 最优 ${this.formatValue(row.tenPercentGoodAverageValue)}`
         });
       });
     },
-    ClickhandleSearch(info) {
-      let sers = { ...info };
-      sers.timeList = info.timeList.join(",");
-      findEnergyContrast(this.path, sers).then((res) => {
-        this.tableData = res.data.tableList;
-        this.totalEnergyDataY = res.data.curveList;
-
-        res.data.curveList.forEach((item) => {
-          if (item.data.length == 24) {
-            this.xLabel = item.data.map((item) => {
-              return item.time;
-            });
+    breakdownData() {
+      return this.tableData.reduce((acc, row) => {
+        acc[row.object] = this.toNumber(row.wholeValue);
+        return acc;
+      }, {});
+    },
+    breakdownMeta() {
+      const topEntry = this.getTopEntry();
+      return topEntry.name ? `主导对象：${topEntry.name}` : "当前筛选下暂无可分析对象";
+    },
+    extraColumns() {
+      return [
+        {
+          label: "平均值",
+          field: "averageValue"
+        },
+        {
+          label: "10%最优均值",
+          field: "tenPercentGoodAverageValue"
+        },
+        {
+          label: "10%最差均值",
+          field: "tenPercentBadAverageValue"
+        }
+      ];
+    },
+    summaryCards() {
+      return [
+        {
+          key: "times",
+          label: "对比时段",
+          value: String(this.searchinfo.timeList.length),
+          suffix: "组",
+          meta: "当前已选时间组数量"
+        },
+        {
+          key: "objects",
+          label: "对象数",
+          value: String(this.tableData.length),
+          suffix: "个",
+          meta: "纳入本次时间组对比的对象数量"
+        },
+        {
+          key: "peak",
+          label: "峰值时段",
+          value: this.getPeakPoint().time || "暂无",
+          suffix: "",
+          meta: this.getPeakPoint().time ? `峰值 ${this.formatValue(this.getPeakPoint().value)} ${this.unitLabel}` : "当前暂无峰值时间",
+          textValue: true
+        },
+        {
+          key: "leader",
+          label: "最佳对象",
+          value: this.getTopEntry().name || "暂无",
+          suffix: "",
+          meta: this.getTopEntry().name ? `整体值 ${this.formatValue(this.getTopEntry().value)} ${this.unitLabel}` : "当前暂无可分析对象",
+          textValue: true
+        }
+      ];
+    }
+  },
+  created() {
+    this.handleSearch(this.searchinfo);
+  },
+  methods: {
+    toNumber(value) {
+      const number = Number(value);
+      return isNaN(number) ? 0 : number;
+    },
+    formatValue(value) {
+      const number = this.toNumber(value);
+      if (!number) {
+        return "0";
+      }
+      return number.toLocaleString("zh-CN", {
+        maximumFractionDigits: number >= 100 ? 0 : 1,
+        minimumFractionDigits: number >= 100 ? 0 : 1
+      });
+    },
+    getTopEntry() {
+      return this.tableData
+        .map(row => {
+          return {
+            name: row.object,
+            value: this.toNumber(row.wholeValue)
+          };
+        })
+        .sort((a, b) => b.value - a.value)[0] || { name: "", value: 0 };
+    },
+    getPeakPoint() {
+      let peak = {
+        time: "",
+        value: 0
+      };
+      (this.totalEnergyDataY || []).forEach(item => {
+        (item.data || []).forEach(point => {
+          const value = this.toNumber(point.cop);
+          if (value > peak.value) {
+            peak = {
+              time: point.time,
+              value
+            };
           }
         });
+      });
+      return peak;
+    },
+    handleSearch(info) {
+      this.searchinfo = Object.assign({}, this.searchinfo, info, {
+        timeList: (info.timeList || []).slice()
+      });
+      const query = Object.assign({}, info, {
+        timeList: (info.timeList || []).join(",")
+      });
+      return findEnergyContrast(this.path, query).then(res => {
+        this.tableData = res.data.tableList || [];
+        this.totalEnergyDataY = res.data.curveList || [];
+        this.xLabel = this.totalEnergyDataY.find(item => (item.data || []).length === 24)
+          ? this.totalEnergyDataY.find(item => (item.data || []).length === 24).data.map(item => item.time)
+          : [];
       });
     },
     exportform() {
       if (!this.totalEnergyDataY.length) {
-        // this.$message.warning("请选择数据后在导出");
-        this.$message.warning(this.$t('prompt.pleaseSelectDataExporting'));
+        this.$message.warning(this.$t("prompt.pleaseSelectDataExporting"));
         return;
-      } else {
-        console.log(
-          "this.totalEnergyDataY ",
-          this.totalEnergyDataY,
-          this.xLabel
-        );
-        const tHeader = this.totalEnergyDataY.reduce(
-            (pre, next) => {
-              pre.push(next.title);
-              return pre;
-            },
-            // ["时间"]
-            [this.$t('logrizi.time')]
-        );
-        let len = tHeader.length;
-        const arr = new Array(this.xLabel.length).fill(0).map((item) => []);
-        for (let i = 0; i < arr.length; i++) {
-          let item = arr[i];
-          for (let j = 0; j < len; j++) {
-            if (j === 0) {
-              item[j] = this.xLabel[i];
-            } else {
-              // console.log(
-              //   "this.totalEnergyDataY[j-1]",
-              //   this.totalEnergyDataY[j - 1]
-              // );
-              //[时间，value] i=0 [this.totalEnergyDataY[0][0].value,this.totalEnergyDataY[1][0].value]
-              item[j] = this.totalEnergyDataY[j - 1].data[i]["cop"];
-            }
+      }
+      const tHeader = this.totalEnergyDataY.reduce((pre, next) => {
+        pre.push(next.title);
+        return pre;
+      }, [this.$t("logrizi.time")]);
+      const len = tHeader.length;
+      const xAxis = this.chartXAxis;
+      const arr = new Array(xAxis.length).fill(0).map(() => []);
+      for (let i = 0; i < arr.length; i++) {
+        for (let j = 0; j < len; j++) {
+          if (j === 0) {
+            arr[i][j] = xAxis[i];
+          } else {
+            arr[i][j] = this.totalEnergyDataY[j - 1].data[i].cop;
           }
         }
-        import("@/vender/Export2Excel").then((excel) => {
-          excel.export_json_to_excel({
-            header: tHeader,
-            data: arr,
-            // filename: "能效对比",
-            filename: this.$t('route.compare'),
-          });
-        });
       }
-    },
-  },
+      import("@/vender/Export2Excel").then(excel => {
+        excel.export_json_to_excel({
+          header: tHeader,
+          data: arr,
+          filename: this.$t("route.compare")
+        });
+      });
+    }
+  }
 };
 </script>
-<style lang="scss" scoped>
-.compare-page {
-  padding: 0;
-  display: grid;
-  gap: 14px;
-}
-
-.panel-card {
-  padding: 16px 18px 18px;
-  border-radius: 22px;
-  background: linear-gradient(180deg, rgba(12, 29, 45, 0.95) 0%, rgba(7, 18, 29, 0.98) 100%);
-  border: 1px solid rgba(124, 202, 255, 0.12);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 16px 28px rgba(0, 0, 0, 0.16);
-}
-
-.panel-card__header {
-  margin-bottom: 10px;
-}
-
-.panel-card__eyebrow {
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(171, 205, 225, 0.66);
-}
-
-.panel-card__title {
-  margin-top: 4px;
-  font-size: 18px;
-  font-weight: 700;
-  color: rgba(245, 251, 255, 0.96);
-}
-.electric_page {
-  width: 100%;
-  height: 55vh;
-  min-height: 420px;
-}
-
-.line_echart {
-  width: 100%;
-  height: 100%;
-}
-
-.table_list {
-  margin-top: 0;
-}
-</style>

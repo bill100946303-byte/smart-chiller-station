@@ -33,6 +33,7 @@
             placeholder="选择开始时间"
             type="daterange"
             value-format="yyyy-MM-dd"
+            popper-class="legacy-front-picker-popper"
             @blur="showtree = false"
             @focus="showtree = false"
             prefix-icon="al_element-icons al_icona-huaban1"
@@ -44,6 +45,7 @@
             v-model="formInline.dateType"
             :placeholder="$t('public.selectTime')"
             filterable
+            popper-class="legacy-front-select-popper"
             @change="changedatepicker"
         >
           <el-option
@@ -280,6 +282,10 @@ export default {
 </script>
 <style lang="scss" scoped>
 .form {
+  position: relative;
+  z-index: 40;
+  overflow: visible;
+
   .btnclass {
     width: 220px;
     overflow: hidden;
@@ -295,7 +301,7 @@ export default {
 
   .formone {
     position: relative;
-    z-index: 3;
+    z-index: 60;
 
     .treebox {
       position: absolute;
@@ -304,14 +310,21 @@ export default {
       min-width: 220px;
       height: 230px;
       top: 40px;
+      left: 0;
+      z-index: 80;
       //border: 1px solid #6F6F6F;
       border: 1px solid #d3d1d1;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.34);
     }
   }
 
 }
 
 .consumption-search-form {
+  position: relative;
+  z-index: 50;
+  overflow: visible;
+
   ::v-deep .legacy-front-toolbar__form {
     display: flex;
     flex-wrap: wrap;

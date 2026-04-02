@@ -1301,17 +1301,17 @@ $yellow: #f8b514;
   }
 
   .nav {
-    height: 108px;
-    padding: 12px 22px 0;
+    height: 94px;
+    padding: 10px 18px 0;
 
     .titleBox {
       display: grid;
-      gap: 4px;
-      width: 640px;
+      gap: 3px;
+      width: 560px;
 
       .eyebrow {
         margin-bottom: 2px;
-        font-size: 10px;
+        font-size: 9px;
         letter-spacing: 0.24em;
         text-transform: uppercase;
         color: rgba(183, 214, 236, 0.58);
@@ -1319,30 +1319,30 @@ $yellow: #f8b514;
 
       .title {
         margin-top: 0;
-        font-size: 38px;
+        font-size: 32px;
         line-height: 1.04;
-        padding: 5px 20px 7px;
+        padding: 4px 18px 6px;
         background:
             linear-gradient(135deg, rgba(84, 199, 255, 0.08) 0%, rgba(11, 124, 255, 0.03) 100%);
       }
 
       .day {
         margin-top: 0;
-        font-size: 18px;
+        font-size: 15px;
         line-height: 1.08;
         color: rgba(230, 244, 255, 0.72);
       }
     }
 
     .logoBox {
-      left: 18px;
-      width: 308px;
-      height: 54px;
+      left: 14px;
+      width: 286px;
+      height: 48px;
       opacity: 0.82;
 
       .logo {
-        width: 170px;
-        height: 50px;
+        width: 156px;
+        height: 44px;
         flex: 0 0 auto;
       }
 
@@ -1352,14 +1352,14 @@ $yellow: #f8b514;
       }
 
       .brandCopy__title {
-        font-size: 14px;
+        font-size: 13px;
         line-height: 1.1;
         letter-spacing: 0.02em;
         white-space: nowrap;
       }
 
       .brandCopy__meta {
-        font-size: 9px;
+        font-size: 8px;
         line-height: 1.3;
         letter-spacing: 0.12em;
         white-space: normal;
@@ -1367,8 +1367,8 @@ $yellow: #f8b514;
     }
 
     .right {
-      top: 10px;
-      right: 18px;
+      top: 8px;
+      right: 14px;
       width: auto;
       justify-content: flex-end;
     }
@@ -1377,9 +1377,9 @@ $yellow: #f8b514;
   .controlCluster {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 10px 8px 14px;
-    border-radius: 20px;
+    gap: 6px;
+    padding: 6px 8px 6px 10px;
+    border-radius: 18px;
     border: 1px solid rgba(132, 187, 255, 0.12);
     background: linear-gradient(135deg, rgba(13, 33, 51, 0.92) 0%, rgba(8, 20, 34, 0.86) 100%);
     box-shadow: 0 14px 26px rgba(0, 0, 0, 0.16);
@@ -1388,34 +1388,34 @@ $yellow: #f8b514;
   .controlCluster__meta {
     display: grid;
     gap: 2px;
-    min-width: 76px;
+    min-width: 68px;
     text-align: right;
   }
 
   .controlCluster__chips {
     display: flex;
-    gap: 8px;
+    gap: 6px;
   }
 
   .controlCluster__chip {
     display: grid;
     gap: 2px;
-    min-width: 54px;
-    padding: 6px 8px;
-    border-radius: 12px;
+    min-width: 48px;
+    padding: 5px 7px;
+    border-radius: 10px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(132, 187, 255, 0.12);
     text-align: center;
     color: rgba(208, 228, 243, 0.72);
 
     strong {
-      font-size: 15px;
+      font-size: 14px;
       line-height: 1;
       color: #f4fbff;
     }
 
     span {
-      font-size: 9px;
+      font-size: 8px;
       letter-spacing: 0.12em;
       text-transform: uppercase;
     }
@@ -1426,33 +1426,33 @@ $yellow: #f8b514;
   }
 
   .controlCluster__label {
-    font-size: 10px;
+    font-size: 9px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: rgba(183, 214, 236, 0.48);
   }
 
   .controlCluster__value {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: #eef7ff;
   }
 
   .main-box {
-    --overview-side-width: 408px;
-    --overview-shell-gap: 18px;
+    --overview-side-width: 388px;
+    --overview-shell-gap: 14px;
     --overview-middle-inset: calc(var(--overview-side-width) + (var(--overview-shell-gap) * 2));
-    margin-top: -16px;
+    margin-top: -10px;
   }
 
   .left-contatiner,
   .right-contatiner {
-    top: 120px;
-    bottom: 18px;
+    top: 104px;
+    bottom: 14px;
     width: var(--overview-side-width);
-    padding: 14px 16px 18px;
+    padding: 12px 14px 14px;
     border: 1px solid rgba(132, 187, 255, 0.06);
-    border-radius: 28px;
+    border-radius: 24px;
     background: linear-gradient(180deg, rgba(13, 31, 49, 0.92) 0%, rgba(8, 20, 34, 0.88) 100%);
     box-shadow: 0 18px 36px rgba(0, 0, 0, 0.16);
     backdrop-filter: blur(16px);
@@ -1471,11 +1471,11 @@ $yellow: #f8b514;
   }
 
   .middle {
-    top: 120px;
+    top: 104px;
     left: var(--overview-middle-inset);
     right: var(--overview-middle-inset);
-    bottom: 18px;
-    border-radius: 34px;
+    bottom: 14px;
+    border-radius: 30px;
     overflow: hidden;
     border: 1px solid rgba(132, 187, 255, 0.06);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
@@ -1483,25 +1483,25 @@ $yellow: #f8b514;
 
   .mapInsights {
     position: absolute;
-    top: 16px;
-    left: 16px;
+    top: 14px;
+    left: 14px;
     z-index: 4;
     display: grid;
-    gap: 10px;
-    width: 332px;
+    gap: 8px;
+    width: 304px;
     pointer-events: none;
   }
 
   .mapRegionTray {
     position: absolute;
-    left: 22px;
-    bottom: 22px;
+    left: 18px;
+    bottom: 18px;
     z-index: 4;
     display: grid;
-    gap: 12px;
-    width: 430px;
-    padding: 18px 20px;
-    border-radius: 26px;
+    gap: 10px;
+    width: 388px;
+    padding: 14px 16px;
+    border-radius: 22px;
     border: 1px solid rgba(132, 187, 255, 0.08);
     background: linear-gradient(135deg, rgba(9, 22, 36, 0.92) 0%, rgba(7, 18, 31, 0.78) 100%);
     box-shadow: 0 18px 32px rgba(0, 0, 0, 0.18);
@@ -1510,14 +1510,14 @@ $yellow: #f8b514;
   }
 
   .mapRegionTray__eyebrow {
-    font-size: 11px;
+    font-size: 10px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: rgba(183, 214, 236, 0.54);
   }
 
   .mapRegionTray__title {
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 600;
     color: #f5fbff;
   }
@@ -1525,26 +1525,26 @@ $yellow: #f8b514;
   .mapRegionTray__summary {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 8px;
   }
 
   .mapRegionMetric {
     display: grid;
-    gap: 6px;
-    padding: 10px 12px;
-    border-radius: 16px;
+    gap: 4px;
+    padding: 8px 10px;
+    border-radius: 14px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(132, 187, 255, 0.08);
 
     span {
-      font-size: 11px;
+      font-size: 10px;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: rgba(183, 214, 236, 0.54);
     }
 
     strong {
-      font-size: 24px;
+      font-size: 20px;
       line-height: 1;
       color: #f4fbff;
     }
@@ -1553,14 +1553,14 @@ $yellow: #f8b514;
   .mapRegionTray__list {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
   }
 
   .region-pill {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 12px 14px;
+    gap: 6px;
+    padding: 10px 12px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(132, 187, 255, 0.08);
@@ -1571,20 +1571,20 @@ $yellow: #f8b514;
   }
 
   .region-pill__share {
-    font-size: 11px;
+    font-size: 10px;
     color: rgba(183, 214, 236, 0.58);
   }
 
   .region-pill__value {
-    min-width: 24px;
-    height: 24px;
-    padding: 0 8px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 7px;
     border-radius: 999px;
     background: linear-gradient(135deg, rgba(47, 124, 255, 0.26) 0%, rgba(63, 208, 255, 0.24) 100%);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     color: #f4fbff;
   }
@@ -1598,12 +1598,12 @@ $yellow: #f8b514;
   }
 
   .mapInsights__hero {
-    padding: 12px 14px;
-    border-radius: 22px;
+    padding: 10px 12px;
+    border-radius: 20px;
   }
 
   .mapInsights__eyebrow {
-    font-size: 11px;
+    font-size: 10px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: rgba(183, 214, 236, 0.56);
@@ -1611,13 +1611,13 @@ $yellow: #f8b514;
 
   .mapInsights__title {
     margin-top: 4px;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 600;
   }
 
   .mapInsights__desc {
-    margin-top: 6px;
-    font-size: 13px;
+    margin-top: 4px;
+    font-size: 12px;
     line-height: 1.55;
     color: rgba(183, 214, 236, 0.58);
   }
@@ -1625,32 +1625,32 @@ $yellow: #f8b514;
   .mapInsights__cards {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    gap: 6px;
   }
 
   .insightCard {
-    padding: 10px 12px;
-    border-radius: 16px;
+    padding: 8px 10px;
+    border-radius: 14px;
   }
 
   .insightCard__label {
-    font-size: 10px;
+    font-size: 9px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: rgba(183, 214, 236, 0.54);
   }
 
   .insightCard__value {
-    margin-top: 6px;
+    margin-top: 4px;
     display: flex;
     align-items: baseline;
     gap: 4px;
-    font-size: 22px;
+    font-size: 19px;
     font-weight: 600;
     line-height: 1;
 
     small {
-      font-size: 11px;
+      font-size: 10px;
       color: rgba(183, 214, 236, 0.56);
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -1658,24 +1658,24 @@ $yellow: #f8b514;
   }
 
   .insightCard__meta {
-    margin-top: 6px;
-    font-size: 10px;
+    margin-top: 4px;
+    font-size: 9px;
     line-height: 1.45;
     color: rgba(183, 214, 236, 0.56);
   }
 
   .title {
-    height: 48px;
-    border-radius: 18px;
+    height: 42px;
+    border-radius: 16px;
     align-items: center;
-    padding: 0 8px;
+    padding: 0 6px;
     border-bottom-color: rgba(133, 184, 255, 0.08);
   }
 
   .titleMeta {
     margin-left: auto;
-    padding: 0 12px;
-    font-size: 11px;
+    padding: 0 10px;
+    font-size: 10px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: rgba(183, 214, 236, 0.56);
@@ -1684,18 +1684,18 @@ $yellow: #f8b514;
   .left-contatiner .title .sm-title,
   .right-contatiner .title .sm-title {
     align-items: center;
-    padding: 0 8px;
+    padding: 0 6px;
     margin-top: 0;
-    font-size: 17px;
+    font-size: 15px;
   }
 
   .right-contatiner .title {
-    height: 44px;
+    height: 40px;
     padding: 0 6px;
   }
 
   .right-contatiner .title .sm-title {
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .left-contatiner .leng {
@@ -1713,17 +1713,17 @@ $yellow: #f8b514;
     inset: 14px;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 8px;
   }
 
   .overview-metric {
     position: relative;
     z-index: 1;
     display: grid;
-    gap: 8px;
-    padding: 14px;
-    min-height: 100px;
-    border-radius: 16px;
+    gap: 6px;
+    padding: 12px;
+    min-height: 88px;
+    border-radius: 14px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(132, 187, 255, 0.08);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
@@ -1746,7 +1746,7 @@ $yellow: #f8b514;
   }
 
   .overview-metric__label {
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: rgba(190, 218, 237, 0.6);
@@ -1755,34 +1755,34 @@ $yellow: #f8b514;
   .overview-metric__value {
     display: flex;
     align-items: baseline;
-    gap: 6px;
-    min-height: 36px;
+    gap: 5px;
+    min-height: 30px;
   }
 
   .overview-metric__number {
-    font-size: 26px;
+    font-size: 22px;
     font-weight: 700;
     line-height: 1;
     color: #f4fbff;
   }
 
   .overview-metric__unit {
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: rgba(190, 218, 237, 0.56);
   }
 
   .overview-metric__meta {
-    font-size: 12px;
+    font-size: 11px;
     color: rgba(190, 218, 237, 0.72);
   }
 
   .projectAction {
     width: 100%;
-    height: 48px;
-    margin-top: 10px;
-    padding: 0 16px;
+    height: 42px;
+    margin-top: 8px;
+    padding: 0 14px;
     border: 1px solid rgba(132, 187, 255, 0.12);
     border-radius: 14px;
     display: flex;

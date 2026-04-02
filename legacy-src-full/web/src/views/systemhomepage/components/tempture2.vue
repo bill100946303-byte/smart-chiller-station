@@ -155,7 +155,7 @@ export default {
 
 .chart {
   flex: 1 1 auto;
-  min-height: 72px;
+  min-height: 88px;
   height: 100%;
 }
 </style>

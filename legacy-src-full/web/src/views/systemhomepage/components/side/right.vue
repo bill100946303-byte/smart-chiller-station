@@ -32,10 +32,14 @@
     </div>
 
     <div class="line-long">
-      <line1/>
-      <line3/>
-      <line6/>
-      <line2/>
+      <div class="system-cop-hero">
+        <line1/>
+      </div>
+      <div class="system-cop-secondary-list">
+        <line3/>
+        <line6/>
+        <line2/>
+      </div>
     </div>
   </div>
 </template>
@@ -293,12 +297,29 @@ export default {
     position: relative;
     flex: 1 1 auto;
     min-height: 0;
-    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px 6px 52px;
     overflow: hidden;
-    border-radius: 18px;
+    border-radius: 16px;
     background: linear-gradient(180deg, rgba(13, 32, 48, 0.82) 0%, rgba(11, 23, 34, 0.86) 100%);
     border: 1px solid rgba(124, 202, 255, 0.12);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 18px 28px rgba(0, 0, 0, 0.18);
+
+    .system-cop-hero {
+      flex: 0 0 auto;
+      min-height: 0;
+      padding-bottom: 2px;
+    }
+
+    .system-cop-secondary-list {
+      display: flex;
+      flex: 1 1 auto;
+      flex-direction: column;
+      gap: 2px;
+      min-height: 0;
+    }
 
     .wrap-title {
       display: flex;
@@ -319,10 +340,6 @@ export default {
         font-weight: 700;
         color: #8beaff;
       }
-    }
-
-    > * + * {
-      margin-top: 6px;
     }
 
     .line-box {

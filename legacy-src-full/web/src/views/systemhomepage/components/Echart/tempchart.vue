@@ -92,7 +92,8 @@ export default {
         }));
         const xData = prepared.map((item) => formatTimestamp(item.name));
         const yData = prepared.map((item) => item.value);
-        const range = buildValueRange(yData);
+        const chartHeight = this.$refs.chart ? this.$refs.chart.clientHeight : 0;
+        const range = buildValueRange(yData, chartHeight);
         const colors = this.resolveGradientColors();
 
         chart.setOption(
@@ -102,10 +103,10 @@ export default {
             backgroundColor: "transparent",
             color: [this.lineColor],
             grid: {
-              top: 14,
-              left: 34,
-              right: 12,
-              bottom: 24,
+              top: 10,
+              left: range.compact ? 24 : 30,
+              right: 10,
+              bottom: range.compact ? 18 : 22,
               containLabel: true,
             },
             tooltip: {
@@ -144,8 +145,8 @@ export default {
                 },
                 axisLabel: {
                   color: "rgba(200, 222, 241, 0.72)",
-                  fontSize: 8,
-                  margin: 8,
+                  fontSize: range.compact ? 7 : 8,
+                  margin: range.compact ? 6 : 8,
                   hideOverlap: true,
                   interval: getLabelInterval(xData.length),
                   formatter(value) {
@@ -165,7 +166,8 @@ export default {
                 type: "value",
                 min: range.min,
                 max: range.max,
-                splitNumber: 3,
+                interval: range.interval,
+                splitNumber: range.splitNumber,
                 axisTick: {
                   show: false,
                 },
@@ -178,11 +180,13 @@ export default {
                 },
                 axisLabel: {
                   color: "rgba(200, 222, 241, 0.64)",
-                  fontSize: 8,
-                  margin: 10,
-                  showMaxLabel: false,
+                  fontSize: range.compact ? 7 : 8,
+                  margin: range.compact ? 6 : 10,
+                  showMaxLabel: true,
+                  showMinLabel: true,
                   formatter(value) {
-                    return formatMetricValue(value, 1);
+                    const decimals = range.interval >= 1 ? 0 : 1;
+                    return formatMetricValue(value, decimals);
                   },
                 },
                 axisLine: {
@@ -247,11 +251,15 @@ function formatTimestamp(value) {
   return text.length > 5 ? dayjs(text).format("MM/DD HH:mm") : text;
 }
 
-function buildValueRange(values) {
+function buildValueRange(values, chartHeight = 0) {
+  const compact = chartHeight > 0 && chartHeight < 92;
   if (!values.length) {
     return {
       min: 0,
       max: 1,
+      interval: 1,
+      splitNumber: compact ? 1 : 2,
+      compact,
     };
   }
 
@@ -260,16 +268,76 @@ function buildValueRange(values) {
   const max = sorted[sorted.length - 1];
   if (min === max) {
     return {
-      min: min - 1,
-      max: max + 1,
+      min: Math.floor(min) - 1,
+      max: Math.ceil(max) + 1,
+      interval: 1,
+      splitNumber: compact ? 1 : 2,
+      compact,
     };
   }
 
-  const padding = (max - min) * 0.15;
+  const span = max - min;
+  let interval;
+  let rangeMin;
+  let rangeMax;
+
+  // Compact temperature cards need broader, integer-aligned ranges.
+  // Narrow ranges with 0.2/0.5 steps produce overlapping labels after page zoom.
+  if (span < 6) {
+    interval = compact && span > 2 ? 2 : 1;
+    rangeMin = Math.floor(min / interval) * interval;
+    rangeMax = Math.ceil(max / interval) * interval;
+  } else if (span < 20) {
+    interval = 2;
+    rangeMin = Math.floor(min / interval) * interval;
+    rangeMax = Math.ceil(max / interval) * interval;
+  } else {
+    interval = resolveAxisInterval(span, max);
+    rangeMin = Math.floor(min / interval) * interval;
+    rangeMax = Math.ceil(max / interval) * interval;
+  }
+
+  while (rangeMax - rangeMin < interval * 2) {
+    rangeMax += interval;
+  }
+
+  // In compact mini-cards, keep only top/bottom ticks to avoid label overlap.
+  if (compact) {
+    const totalSpan = normalizeAxisNumber(rangeMax - rangeMin);
+    if (totalSpan > 0) {
+      interval = totalSpan;
+    }
+  }
+
   return {
-    min: min - padding,
-    max: max + padding,
+    min: normalizeAxisNumber(rangeMin),
+    max: normalizeAxisNumber(rangeMax),
+    interval,
+    splitNumber: compact ? 1 : 2,
+    compact,
   };
+}
+
+function resolveAxisInterval(span, maxValue) {
+  const absMax = Math.max(Math.abs(maxValue), span);
+
+  if (absMax >= 100) {
+    return 10;
+  }
+
+  if (absMax >= 30) {
+    return 2;
+  }
+
+  if (absMax >= 10) {
+    return 1;
+  }
+
+  return 1;
+}
+
+function normalizeAxisNumber(value) {
+  return Number(value.toFixed(2));
 }
 
 function buildZeroLine(range) {

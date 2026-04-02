@@ -1,57 +1,157 @@
 <template>
-  <div :id="id" class="energy-pie-chart" />
+  <div class="energy-pie-panel">
+    <template v-if="normalizedItems.length">
+      <div class="energy-pie-panel__chart-wrap">
+        <div ref="chart" class="energy-pie-chart" />
+      </div>
+      <div class="energy-pie-panel__list">
+        <div
+          v-for="item in normalizedItems"
+          :key="item.name"
+          class="energy-pie-panel__item"
+        >
+          <span class="energy-pie-panel__swatch" :style="{ background: item.color }" />
+          <div class="energy-pie-panel__copy" :title="item.name">
+            <div class="energy-pie-panel__name">{{ item.name }}</div>
+            <div class="energy-pie-panel__meta">{{ item.percent }}%</div>
+          </div>
+          <div class="energy-pie-panel__value">{{ item.valueText }}</div>
+        </div>
+      </div>
+    </template>
+    <div v-else class="energy-analysis-empty">当前视图下暂无分项构成</div>
+  </div>
 </template>
 <script>
 import echarts from "echarts";
 
 export default {
-  props: ["id", "echartdata"],
+  props: {
+    id: {
+      type: String,
+      default: ""
+    },
+    echartdata: {
+      type: Object,
+      default() {
+        return {};
+      }
+    }
+  },
 
   data() {
     return {
-      charts: "",
+      charts: null,
+      colorPalette: [
+        "rgba(15, 241, 185, 1)",
+        "rgba(15, 227, 241, 1)",
+        "#2292f0",
+        "#99ffff",
+        "#00FFFF",
+        "#4AEAB0",
+      ]
     };
   },
-  mounted() {},
-  watch: {
-    echartdata: {
-      handler(val) {
-        if (val && Object.keys(val).length > 0) {
-          this.$nextTick(() => {
-            this.initChart(this.id);
+  computed: {
+    normalizedItems() {
+      const items = Object.keys(this.echartdata || {})
+        .reduce((list, key) => {
+          const value = this.toNumber(this.echartdata[key]);
+          if (!value) {
+            return list;
+          }
+          list.push({
+            name: key,
+            value
+          });
+          return list;
+        }, [])
+        .sort((a, b) => b.value - a.value);
+
+      if (!items.length) {
+        return [];
+      }
+
+      const topItems = items.slice(0, 4);
+      const rest = items.slice(4);
+      if (rest.length) {
+        const otherValue = rest.reduce((sum, item) => sum + item.value, 0);
+        if (otherValue > 0) {
+          topItems.push({
+            name: "其他",
+            value: otherValue
           });
         }
+      }
+
+      const total = topItems.reduce((sum, item) => sum + item.value, 0) || 1;
+      return topItems.map((item, index) => ({
+        ...item,
+        color: this.colorPalette[index % this.colorPalette.length],
+        percent: ((item.value / total) * 100).toFixed(2).replace(/\.00$/, ""),
+        valueText: `${this.formatValue(item.value)} kWh`
+      }));
+    }
+  },
+  mounted() {
+    window.addEventListener("resize", this.resizeChart);
+  },
+  beforeDestroy() {
+    window.removeEventListener("resize", this.resizeChart);
+    this.disposeChart();
+  },
+  watch: {
+    echartdata: {
+      handler() {
+        this.$nextTick(() => {
+          this.initChart();
+        });
       },
       deep: true,
       immediate: true,
     },
   },
   methods: {
-    initChart(id) {
-      // let bgColor = "#fff";
-      let title = "总量";
-      let color = [
-        "rgba(15, 241, 185, 1)",
-        "rgba(15, 227, 241, 1)",
-        // "rgba(42, 102, 240, 1)",
-        "#2292f0",
-        "#99ffff",
-        "#00FFFF",
-        "#4AEAB0",
-      ];
-      let totalnum = Object.values(this.echartdata).reduce((pre, next) => {
-        return pre + parseInt(next);
-      }, 0);
-      let arr = Object.keys(this.echartdata).reduce((pre, next) => {
-        let obj = {
-          name: next,
-          value: this.echartdata[next].split(",").join(""),
-        };
-        pre.push(obj);
-        return pre;
-      }, []);
-      // console.log('arr000000',arr);
-      this.charts = echarts.init(document.getElementById(id));
+    toNumber(value) {
+      const number = Number(String(value || "").replace(/,/g, ""));
+      return isNaN(number) ? 0 : number;
+    },
+    formatValue(value) {
+      const number = this.toNumber(value);
+      if (!number) {
+        return "0";
+      }
+      return number.toLocaleString("zh-CN", {
+        maximumFractionDigits: number >= 100 ? 0 : 1,
+        minimumFractionDigits: 0,
+      });
+    },
+    ensureChart() {
+      if (!this.charts && this.$refs.chart) {
+        this.charts = echarts.init(this.$refs.chart);
+      }
+    },
+    disposeChart() {
+      if (this.charts) {
+        this.charts.dispose();
+        this.charts = null;
+      }
+    },
+    resizeChart() {
+      if (this.charts) {
+        this.charts.resize();
+      }
+    },
+    initChart() {
+      this.ensureChart();
+      if (!this.charts) {
+        return;
+      }
+      this.charts.clear();
+      const arr = this.normalizedItems.map(item => ({
+        name: item.name,
+        value: item.value
+      }));
       this.charts.setOption({
         tooltip: {
           trigger: "item",
@@ -59,70 +159,40 @@ export default {
           textStyle: {
             color: "rgba(245, 251, 255, 0.96)",
           },
-          formatter: "{b}: {c}kwh ({d}%)",
-          // formatter: (params) => {
-          //   return (
-          //     params.data.name + ":" + params.data.value + "kwh"
-          //   );
-          // },
+          formatter: params => `${params.name}: ${this.formatValue(params.value)} kWh (${params.percent}%)`,
         },
-        // backgroundColor: bgColor,
-        color: color,
-        grid: {
-          top: 20,
-          containLabel: true,
-        },
+        color: this.normalizedItems.map(item => item.color),
+        graphic: arr.length ? [] : [{
+          type: "text",
+          left: "center",
+          top: "middle",
+          style: {
+            text: "当前视图下暂无分项构成",
+            fill: "rgba(177, 201, 219, 0.68)",
+            fontSize: 13
+          }
+        }],
 
         series: [
           {
             type: "pie",
-            radius: ["45%", "60%"],
-            center: ["50%", "50%"],
+            radius: ["52%", "72%"],
+            center: ["50%", "52%"],
             data: arr,
             hoverAnimation: false,
+            avoidLabelOverlap: true,
+            minShowLabelAngle: 12,
             itemStyle: {
               normal: {
-                // borderColor: bgColor,
                 borderWidth: 2,
               },
             },
-            labelLine: {
-              normal: {
-                length: 10,
-                length2: 30,
-                // lineStyle: {
-                //   color: "#f66",
-                // },
-              },
-            },
             label: {
-              normal: {
-                formatter: (params) => {
-                  // return "{name|" + params.name + "}"+"\n"+"  "+params.value+this.$store.getters.unitSelete+'*h';
-                  return "{name|" + params.name + "}" + "\n" + "  " + params.value + 'KW*h' + `({percent|${params.percent}%})`;
-                },
-                padding: [24, 0, 25, 0],
-                rich: {
-                  icon: {
-                    fontSize: 16,
-                  },
-                  name: {
-                    fontSize: 14,
-                    padding: [0, 10, 0, 4],
-                    color: "rgba(245, 251, 255, 0.96)",
-                  },
-                  value: {
-                    fontSize: 14,
-                    fontWeight: "bold",
-                    color: "rgba(245, 251, 255, 0.96)",
-                  },
-                  percent: {
-                    fontSize: 12,
-                    color: "rgba(171, 205, 225, 0.72)",
-                  },
-                },
-              },
+              show: false
             },
+            labelLine: {
+              show: false
+            }
           },
         ],
       });
@@ -131,8 +201,72 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
+.energy-pie-panel {
+  display: grid;
+  grid-template-columns: minmax(132px, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.energy-pie-panel__chart-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  height: 100%;
+}
+
 .energy-pie-chart {
   width: 100%;
   height: 100%;
+}
+
+.energy-pie-panel__list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.energy-pie-panel__item {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.energy-pie-panel__swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  box-shadow: 0 0 10px rgba(103, 226, 255, 0.24);
+}
+
+.energy-pie-panel__copy {
+  min-width: 0;
+}
+
+.energy-pie-panel__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(245, 251, 255, 0.94);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.energy-pie-panel__meta {
+  margin-top: 2px;
+  font-size: 10px;
+  color: rgba(171, 205, 225, 0.68);
+}
+
+.energy-pie-panel__value {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(124, 240, 255, 0.94);
+  white-space: nowrap;
 }
 </style>

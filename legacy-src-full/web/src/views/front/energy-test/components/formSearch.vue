@@ -8,12 +8,13 @@
       ref="formsearch"
     >
 <!--      <el-form-item label="设备选择" prop="drNameList">-->
-      <el-form-item  :label="$t('public.deviceSelection')" prop="drNameList">
+      <el-form-item class="energy-test-form-search__device" :label="$t('public.deviceSelection')" prop="drNameList">
         <el-select
           v-model="formInline.drNameList"
           filterable
           multiple
           collapse-tags
+          popper-class="legacy-front-select-popper"
           :placeholder="$t('public.deviceSelection')"
         >
           <el-option
@@ -25,21 +26,25 @@
         </el-select>
       </el-form-item>
 <!--      <el-form-item label="时间段选择" prop="time">-->
-      <el-form-item :label="$t('public.timeperiodSelection')" prop="time">
+      <el-form-item class="energy-test-form-search__time" :label="$t('public.timeperiodSelection')" prop="time">
         <el-date-picker
             v-model="formInline.time"
             type="daterange"
             value-format="yyyy-MM-dd"
             format="yyyy-MM-dd"
-            placeholder="选择开始时间"
+            popper-class="legacy-front-picker-popper"
+            :start-placeholder="$t('public.selectStartTime')"
+            :end-placeholder="$t('public.selectEndTime')"
+            range-separator="至"
             prefix-icon="al_element-icons al_icona-huaban1"
         />
       </el-form-item>
 <!--      <el-form-item label="时间间隔" prop="timeSpace">-->
-      <el-form-item :label="$t('public.timeInterval')" prop="timeSpace">
+      <el-form-item class="energy-test-form-search__interval" :label="$t('public.timeInterval')" prop="timeSpace">
       <el-select
           v-model="formInline.timeSpace"
           filterable
+          popper-class="legacy-front-select-popper"
           :placeholder="$t('public.selectTime')"
         >
           <el-option
@@ -50,12 +55,12 @@
           ></el-option>
         </el-select>
       </el-form-item>
-      <el-form-item>
+      <el-form-item class="energy-test-form-search__actions">
         <el-button class="energy-btn" type="primary" @click="search">
           <i class="al_element-icons al_iconchaxun energy-btn__icon"></i>
           {{ $t('public.search') }}
         </el-button>
-        <el-button class="energy-btn" type="primary" @click="exportform">
+        <el-button class="energy-btn energy-btn--secondary" type="primary" @click="exportform">
           <i class="al_element-icons al_icondaochu energy-btn__icon energy-btn__icon--export"></i>
           {{ $t('public.exportData') }}
         </el-button>
@@ -65,7 +70,6 @@
 </template>
 <script>
 import { mapGetters } from "vuex";
-import { handlePost } from "@/utils/handlepost";
 export default {
   props: ["searchinfo"],
   computed: {
@@ -78,7 +82,6 @@ export default {
             this.formInline.drNameList = [...val.drNameList];
             this.formInline.time = [val.startTime,val.endTime]
             this.formInline.timeSpace = val.timeSpace
-          console.log('111',this.formInline.timeSpace )
         }
       },
       deep: true,
@@ -141,12 +144,12 @@ export default {
         time: [
           {
             required: true,
-            message: "请选择日期",
+            message: this.$t('prompt.pleaseSelect') + this.$t('dataDetails.selectDate'),
             trigger: "change",
           },
         ],
         timeSpace: [
-          { required: true, message: "请选择时间间隔", trigger: "change" },
+          { required: true, message: this.$t('prompt.pleaseSelect') + this.$t('public.timeInterval'), trigger: "change" },
         ],
       },
     };
@@ -164,7 +167,6 @@ export default {
 
           obj.startTime = this.formInline.time[0]
           obj.endTime = this.formInline.time[1]
-          console.log('this.formInline',obj)
           delete obj.time
           this.$emit('handleSearch',obj)
         } else {
@@ -183,8 +185,26 @@ export default {
 ::v-deep .legacy-front-toolbar__form {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px 18px;
+  gap: 10px 14px;
   align-items: center;
+}
+
+::v-deep .energy-test-form-search__device .el-select,
+::v-deep .energy-test-form-search__interval .el-select {
+  width: 198px;
+}
+
+::v-deep .energy-test-form-search__time .el-date-editor {
+  width: 304px;
+}
+
+::v-deep .energy-test-form-search__actions {
+  margin-left: auto;
+}
+
+::v-deep .energy-test-form-search__actions .el-form-item__content {
+  display: flex;
+  gap: 8px;
 }
 
 ::v-deep .el-form-item__label {

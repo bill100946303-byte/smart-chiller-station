@@ -8,10 +8,11 @@
       ref="formsearch"
     >
 <!--      <el-form-item label="设备选择" prop="drName">-->
-      <el-form-item :label="$t('public.deviceSelection')" prop="drName">
+      <el-form-item class="energy-test-compare-search__device" :label="$t('public.deviceSelection')" prop="drName">
         <el-select
           v-model="formInline.drName"
           filterable
+          popper-class="legacy-front-select-popper"
           :placeholder="$t('public.deviceSelection')"
         >
           <el-option
@@ -23,19 +24,20 @@
         </el-select>
       </el-form-item>
 <!--      <el-form-item label="时间段选择">-->
-      <el-form-item :label="$t('public.timeperiodSelection')" >
+      <el-form-item class="energy-test-compare-search__time" :label="$t('public.timeperiodSelection')" >
         <el-date-picker
             v-model="time"
             type="date"
             value-format="yyyy-MM-dd"
+            popper-class="legacy-front-picker-popper"
             :placeholder="$t('public.selectStartTime')"
             @change="timechange"
             prefix-icon="al_element-icons al_icona-huaban1"
         />
       </el-form-item>
 <!--      <el-form-item label="已选时间段" prop="timeList">-->
-      <el-form-item :label="$t('public.timeperiodSelection')" prop="timeList">
-        <el-select v-model="formInline.timeList" multiple collapse-tags placeholder="请选择">
+      <el-form-item class="energy-test-compare-search__selected" label="已选时段" prop="timeList">
+        <el-select v-model="formInline.timeList" multiple collapse-tags popper-class="legacy-front-select-popper" placeholder="请选择对比日期">
           <el-option
             v-for="(item,index) in options"
             :key="index"
@@ -59,12 +61,12 @@
           ></el-option>
         </el-select>
       </el-form-item> -->
-      <el-form-item>
+      <el-form-item class="energy-test-compare-search__actions">
         <el-button class="energy-btn" type="primary" @click="search">
           <i class="al_element-icons al_iconchaxun energy-btn__icon"></i>
           {{ $t('public.search') }}
         </el-button>
-        <el-button class="energy-btn" type="primary" @click="exportform">
+        <el-button class="energy-btn energy-btn--secondary" type="primary" @click="exportform">
           <i class="al_element-icons al_icondaochu energy-btn__icon energy-btn__icon--export"></i>
           {{ $t('public.exportData') }}
         </el-button>
@@ -74,7 +76,6 @@
 </template>
 <script>
 import {mapGetters} from "vuex";
-import {handlePost} from "@/utils/handlepost";
 import dayjs from "dayjs";
 
 export default {
@@ -142,17 +143,16 @@ export default {
       ],
       options:[],
       rules: {
-        drName: [{ required: true, message: "请选择设备", trigger: "change" }],
+        drName: [{ required: true, message: this.$t('prompt.pleaseSelect') + this.$t('prompt.device'), trigger: "change" }],
         timeList: [
           {
             required: true,
-            // message: "请选择日期",
             message: this.$t('prompt.pleaseSelect')+this.$t('dataDetails.selectDate'),
             trigger: "change",
           },
         ],
         timeSpace: [
-          { required: true, message: "请选择时间间隔", trigger: "change" },
+          { required: true, message: this.$t('prompt.pleaseSelect') + this.$t('public.timeInterval'), trigger: "change" },
         ],
       },
     };
@@ -177,7 +177,7 @@ export default {
       if(this.formInline.timeList.includes(this.time) || !this.time){
         return
       }else{
-        this.options.push(this.time)
+        this.options = [...new Set([...this.options, this.time])]
         this.formInline.timeList.push(this.time)
       }
     }
@@ -192,8 +192,26 @@ export default {
 ::v-deep .legacy-front-toolbar__form {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px 18px;
+  gap: 10px 14px;
   align-items: center;
+}
+
+::v-deep .energy-test-compare-search__device .el-select {
+  width: 198px;
+}
+
+::v-deep .energy-test-compare-search__time .el-date-editor,
+::v-deep .energy-test-compare-search__selected .el-select {
+  width: 276px;
+}
+
+::v-deep .energy-test-compare-search__actions {
+  margin-left: auto;
+}
+
+::v-deep .energy-test-compare-search__actions .el-form-item__content {
+  display: flex;
+  gap: 8px;
 }
 
 ::v-deep .el-form-item__label {

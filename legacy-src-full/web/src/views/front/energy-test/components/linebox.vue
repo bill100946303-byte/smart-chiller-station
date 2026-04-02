@@ -1,35 +1,54 @@
 <template>
   <div class="line-content">
-    <el-button class="btn" type="text">系统能效</el-button>
-    <div class="time">
-      <el-radio-group v-model="type" @change="groupchange">
-        <el-radio-button :label="$t('public.month')"></el-radio-button>
-        <el-radio-button :label="$t('public.day')"></el-radio-button>
-      </el-radio-group>
+    <div class="line-content__top">
+      <div class="line-content__heading">
+        <div class="line-content__eyebrow">能效等级</div>
+        <div class="line-content__title-row">
+          <div class="line-content__title">系统能效</div>
+          <span class="line-content__mode">{{ viewModeLabel }}</span>
+        </div>
+      </div>
+      <div class="time">
+        <el-radio-group v-model="type" @change="groupchange">
+          <el-radio-button :label="$t('public.month')"></el-radio-button>
+          <el-radio-button :label="$t('public.day')"></el-radio-button>
+        </el-radio-group>
+      </div>
     </div>
 
-    <div class="title">{{ time }}{{ $t('energytest_day.energyEfficiency') }}:（{{ num }}）</div>
+    <div class="line-content__summary">
+      <div class="line-content__main">
+        <strong>{{ formattedMainValue }}</strong>
+        <span>{{ $store.getters.unitSelete }}/{{ $store.getters.unitSelete }}</span>
+      </div>
+      <div class="line-content__sub">当前{{ viewModeLabel }} · 判断系统能效等级</div>
+    </div>
 
-    <div class="line-box" ref="numline">
-      <svg-icon ref="imgline" class="img" icon-class="dibiao"/>
-      <div
+    <div class="line-content__grade">
+      <div class="line-content__grade-head">
+        <span>等级带</span>
+        <span>{{ viewModeLabel }}</span>
+      </div>
+      <div class="line-box" ref="numline">
+        <svg-icon ref="imgline" class="img" icon-class="dibiao"/>
+        <div
           v-for="(item, index) in textlist"
           :key="index"
           :class="[item.classname, 'p-box']"
-      >
-        <!--        <p>{{ item.name }}</p>-->
-        <p>{{ $t('defaultpage.' + item.name) }}</p>
-        <div class="lai">
-          <div
+        >
+          <p>{{ $t('defaultpage.' + item.name) }}</p>
+          <div class="lai">
+            <div
               v-for="(item1, index2) in item.length"
               :key="index2"
               :class="[index2 >= item.showstart ? 'show' : '', 'line']"
-          >
-            <div v-if="item.text.hasOwnProperty(index2)" class="span">
-              {{ item.text[index2] }}
-            </div>
-            <div class="span">
-              {{ item.text2[index2] }}
+            >
+              <div v-if="item.text.hasOwnProperty(index2)" class="span">
+                {{ item.text[index2] }}
+              </div>
+              <div class="span">
+                {{ item.text2[index2] }}
+              </div>
             </div>
           </div>
         </div>
@@ -37,21 +56,14 @@
     </div>
 
     <div class="electol">
-      <div class="el-item">{{ $t('energytest_day.quantityOfElectricity') }}：{{ info.p }}KW*h</div>
-      <div class="el-item">{{ $t('energytest_day.coolingCapacity') }}：{{
-          info.c
-        }}{{ $store.getters.unitSelete }}*h
-      </div>
-      <div class="el-item" v-if="getMShow">{{ $t('energytest_day.electricCharge') }}：{{ info.k }}{{ $t('public.rmb') }}</div>
-      <div class="el-item" v-if="getMShow">{{ $t('energytest_day.coldUnitPrice') }}：{{
-          info.m
-        }}{{ $t('public.rmb') }}/{{ $store.getters.unitSelete }}*h
+      <div v-for="item in metricItems" :key="item.key" class="el-item">
+        <span class="el-item__label">{{ item.label }}</span>
+        <strong class="el-item__value">{{ item.value }}</strong>
       </div>
     </div>
   </div>
 </template>
 <script>
-import {findMonthEnergy, findTodayEnergy} from "@/api/front/energytest";
 import {mapGetters} from "vuex";
 
 export default {
@@ -156,8 +168,62 @@ export default {
   },
   computed: {
     ...mapGetters(["id", "path"]),
+    viewModeLabel() {
+      const monthLabel = this.$t("public.month");
+      return this.type === monthLabel || this.type === "月" ? "月视图" : "日视图";
+    },
+    formattedMainValue() {
+      return this.formatMetricValue(this.num, 2);
+    },
+    metricItems() {
+      const unit = this.$store.getters.unitSelete;
+      const items = [
+        {
+          key: "p",
+          label: this.$t("energytest_day.quantityOfElectricity"),
+          value: `${this.formatMetricValue(this.info && this.info.p, 1)} kWh`
+        },
+        {
+          key: "c",
+          label: this.$t("energytest_day.coolingCapacity"),
+          value: `${this.formatMetricValue(this.info && this.info.c, 1)} ${unit}*h`
+        }
+      ];
+      if (this.getMShow) {
+        items.push(
+          {
+            key: "k",
+            label: this.$t("energytest_day.electricCharge"),
+            value: `${this.formatMetricValue(this.info && this.info.k, 2)}${this.$t("public.rmb")}`
+          },
+          {
+            key: "m",
+            label: this.$t("energytest_day.coldUnitPrice"),
+            value: `${this.formatMetricValue(this.info && this.info.m, 2)}${this.$t("public.rmb")}/${unit}*h`
+          }
+        );
+      }
+      return items;
+    }
   },
   methods: {
+    toNumber(value) {
+      if (value === undefined || value === null || value === "" || value === "-1") {
+        return null;
+      }
+      const number = Number(String(value).replace(/,/g, ""));
+      return isNaN(number) ? null : number;
+    },
+    formatMetricValue(value, digits = 1) {
+      const number = this.toNumber(value);
+      if (number === null) {
+        return "--";
+      }
+      return number.toLocaleString("zh-CN", {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits
+      });
+    },
     caculatenum() {
       this.$nextTick(() => {
         let totalnum = window
@@ -252,7 +318,6 @@ export default {
       }
     },
     groupchange() {
-      console.log(this.type)
       let val
       if (this.type === 'month' || this.type === '月') {
         val = '月'
@@ -264,47 +329,100 @@ export default {
   },
 };
 </script>
-<style lang="scss">
-.time {
-  .el-radio-button__inner {
-    color: #fff;
-    background: #0b516b;
-    border-color: #137399;
-  }
-
-  .el-radio-button:first-child .el-radio-button__inner {
-    border-color: #137399;
-    border-radius: 20px 0 0 20px;
-  }
-
-  .el-radio-button:last-child .el-radio-button__inner {
-    border-radius: 0 20px 20px 0;
-    border-color: #137399;
-  }
-
-  .el-radio-button__orig-radio:checked + .el-radio-button__inner {
-    box-shadow: none;
-  }
-
-  .el-radio-button__orig-radio:checked + .el-radio-button__inner {
-    background: #0d8ebd;
-  }
-}
-
-</style>
 <style lang="scss" scoped>
 .line-content {
-  background: #08739a;
   position: relative;
-  box-shadow: 13px 13px 3px #bfbfbf; /* 右边和下边阴影 */
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 18px;
+  border: 1px solid rgba(132, 187, 255, 0.08);
+  background: linear-gradient(180deg, rgba(15, 33, 51, 0.9) 0%, rgba(8, 18, 31, 0.94) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
-.btn {
-  color: rgba(103, 236, 255, 0.92);
-  font-size: 18px;
-  height: 20px;
-  position: absolute;
-  left: 30px;
+.line-content__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.line-content__heading {
+  min-width: 0;
+}
+
+.line-content__eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(171, 205, 225, 0.66);
+}
+
+.line-content__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.line-content__title {
+  color: rgba(245, 251, 255, 0.96);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.line-content__mode {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(132, 187, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(197, 224, 239, 0.72);
+  font-size: 10px;
+}
+
+.line-content__summary {
+  display: grid;
+  gap: 2px;
+}
+
+.line-content__main {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  color: rgba(245, 251, 255, 0.96);
+
+  strong {
+    font-size: 30px;
+    line-height: 1;
+    font-weight: 700;
+  }
+
+  span {
+    font-size: 12px;
+    color: rgba(177, 201, 219, 0.74);
+  }
+}
+
+.line-content__sub {
+  font-size: 10px;
+  color: rgba(177, 201, 219, 0.68);
+}
+
+.line-content__grade {
+  display: grid;
+  gap: 8px;
+}
+
+.line-content__grade-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 10px;
+  color: rgba(177, 201, 219, 0.72);
 }
 
 .choose-box {
@@ -313,50 +431,51 @@ export default {
 .time {
   display: flex;
   justify-content: flex-end;
-  padding-top: 10px;
-
-  v-deep .el-radio-button__inner {
-    background: rgba(255, 255, 255, 0.04);
-  }
+  flex-shrink: 0;
 }
 
 .electol {
-  margin-top: 108px;
-  margin-left: 8%;
-  margin-right: 8%;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px 18px;
+  gap: 8px 10px;
   color: rgba(237, 245, 250, 0.92);
   display: grid;
 
   .el-item {
     margin-bottom: 0;
-    padding: 10px 12px;
-    border-radius: 14px;
+    display: grid;
+    gap: 3px;
+    padding: 8px 10px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(122, 210, 255, 0.08);
   }
-}
 
-.title {
-  margin-top: 2px;
-  margin-bottom: 24px;
-  margin-left: -36px;
-  color: rgba(245, 251, 255, 0.96);
-  text-align: center;
+  .el-item__label {
+    font-size: 10px;
+    line-height: 1.3;
+    color: rgba(185, 210, 228, 0.68);
+  }
+
+  .el-item__value {
+    font-size: 15px;
+    line-height: 1.2;
+    color: rgba(245, 251, 255, 0.96);
+    font-weight: 700;
+  }
 }
 
 .line-box {
   position: relative;
   display: flex;
   align-items: center;
-  width: calc(100% - 18px);
+  width: 100%;
   margin: 0 auto;
+  padding-top: 22px;
 
   .img {
     position: absolute;
-    top: -30px;
-    font-size: 30px;
+    top: -2px;
+    font-size: 26px;
   }
 
   .p-box {
@@ -366,7 +485,7 @@ export default {
     height: 34px;
     line-height: 34px;
     text-align: center;
-    font-size: 14px;
+    font-size: 12px;
 
     &:nth-child(2) {
       //background: rgba(91, 145, 229, 1);
@@ -434,8 +553,9 @@ export default {
       justify-content: space-between;
       position: absolute;
       width: 100%;
-      height: 20px;
+      height: 38px;
       left: 0;
+      top: 34px;
 
       .line {
         width: 1px;
@@ -456,17 +576,19 @@ export default {
         }
 
         .span {
-          margin-top: 18px;
+          margin-top: 12px;
           visibility: visible;
-          margin-left: -13.5px;
+          margin-left: -14px;
           color: rgba(206, 228, 239, 0.72);
+          font-size: 9px;
         }
 
         .span:nth-child(2) {
-          margin-top: 0;
+          margin-top: 4px;
           visibility: visible;
-          margin-left: -13.5px;
+          margin-left: -14px;
           color: rgba(206, 228, 239, 0.72);
+          font-size: 9px;
         }
 
         &:before {
@@ -482,5 +604,31 @@ export default {
       }
     }
   }
+}
+
+::v-deep .time .el-radio-group {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid rgba(132, 187, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+::v-deep .time .el-radio-button__inner {
+  min-width: 44px;
+  height: 26px;
+  line-height: 24px;
+  padding: 0 10px;
+  color: rgba(214, 231, 243, 0.7);
+  background: transparent;
+  border: none !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  font-size: 10px;
+}
+
+::v-deep .time .el-radio-button__orig-radio:checked + .el-radio-button__inner {
+  background: linear-gradient(135deg, #2d86ff 0%, #1ca2da 100%);
+  color: #fff;
 }
 </style>

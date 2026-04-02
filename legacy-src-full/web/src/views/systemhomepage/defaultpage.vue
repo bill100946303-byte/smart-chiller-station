@@ -432,40 +432,40 @@ export default {
     },
     shellStyleVars() {
       const scale = this.shellScale;
-      const edgePadding = Math.max(10, Math.min(16, Math.round(16 * scale)));
-      const navOffsetBase = this.is2DMode ? 84 : 88;
-      const navShellBase = this.is2DMode ? 62 : 68;
-      const navOffset = Math.max(60, Math.min(92, Math.round((navOffsetBase - (this.isSceneSimplified ? 14 : 0)) * scale)));
-      const navShellHeight = Math.max(46, Math.min(68, Math.round((navShellBase - (this.isSceneSimplified ? 12 : 0)) * scale)));
-      const menuWidth = Math.max(160, Math.min(188, Math.round(184 * scale)));
-      const panelGap = Math.max(10, Math.min(20, Math.round((this.is2DMode ? 16 : 16) * scale)) - (this.isSceneSimplified ? 2 : 0));
-      const panelWidthMax = (this.is2DMode ? 386 : 366) - (this.isSceneSimplified ? 88 : 0);
-      const panelWidthMin = (this.is2DMode ? 308 : 296) - (this.isSceneSimplified ? 56 : 0);
+      const edgePadding = Math.max(8, Math.min(14, Math.round(14 * scale)));
+      const navOffsetBase = this.is2DMode ? 78 : 82;
+      const navShellBase = this.is2DMode ? 58 : 62;
+      const navOffset = Math.max(54, Math.min(86, Math.round((navOffsetBase - (this.isSceneSimplified ? 12 : 0)) * scale)));
+      const navShellHeight = Math.max(42, Math.min(62, Math.round((navShellBase - (this.isSceneSimplified ? 10 : 0)) * scale)));
+      const menuWidth = Math.max(152, Math.min(180, Math.round(176 * scale)));
+      const panelGap = Math.max(8, Math.min(16, Math.round(14 * scale)) - (this.isSceneSimplified ? 2 : 0));
+      const panelWidthMax = (this.is2DMode ? 372 : 352) - (this.isSceneSimplified ? 80 : 0);
+      const panelWidthMin = (this.is2DMode ? 296 : 286) - (this.isSceneSimplified ? 52 : 0);
       const panelWidth = Math.max(panelWidthMin, Math.min(panelWidthMax, Math.round(panelWidthMax * scale)));
-      const panelBottom = Math.max(16, Math.min(58, Math.round(((this.is2DMode ? 48 : 42) - (this.isSceneSimplified ? 22 : 0)) * scale)));
-      const dockBottom = Math.max(12, Math.min(44, Math.round(((this.is2DMode ? 36 : 32) - (this.isSceneSimplified ? 14 : 0)) * scale)));
+      const panelBottom = Math.max(12, Math.min(48, Math.round(((this.is2DMode ? 38 : 34) - (this.isSceneSimplified ? 18 : 0)) * scale)));
+      const dockBottom = Math.max(10, Math.min(34, Math.round(((this.is2DMode ? 28 : 24) - (this.isSceneSimplified ? 10 : 0)) * scale)));
       const tempBarWidth = Math.max(
-        188,
+        176,
         Math.min(
-          (this.is2DMode ? 376 : 432) - (this.isSceneSimplified ? 132 : 0),
-          this.viewportWidth - (panelWidth * 2) - (panelGap * 2) - ((this.is2DMode ? 250 : 328) - (this.isSceneSimplified ? 64 : 0))
+          (this.is2DMode ? 352 : 404) - (this.isSceneSimplified ? 120 : 0),
+          this.viewportWidth - (panelWidth * 2) - (panelGap * 2) - ((this.is2DMode ? 222 : 298) - (this.isSceneSimplified ? 56 : 0))
         )
       );
-      let sceneFrameScale = this.is2DMode ? 0.89 : 0.94;
+      let sceneFrameScale = this.is2DMode ? 0.87 : 0.92;
       if (this.is2DMode) {
         const scalePressure = Math.min(1, Math.max(0, (0.96 - scale) / 0.18));
         const widthPressure = Math.min(1, Math.max(0, (1680 - this.viewportWidth) / 420));
         const heightPressure = Math.min(1, Math.max(0, (960 - this.viewportHeight) / 220));
         const pressure = Math.max(scalePressure, widthPressure, heightPressure);
-        sceneFrameScale = 0.89 - pressure * 0.08;
+        sceneFrameScale = 0.87 - pressure * 0.08;
         if (this.viewportHeight < 980) {
-          sceneFrameScale = Math.min(sceneFrameScale, 0.8);
+          sceneFrameScale = Math.min(sceneFrameScale, 0.78);
         }
       } else {
         const widthPressure = Math.min(1, Math.max(0, (1760 - this.viewportWidth) / 520));
         const heightPressure = Math.min(1, Math.max(0, (980 - this.viewportHeight) / 240));
         const pressure = Math.max(widthPressure, heightPressure);
-        sceneFrameScale = 0.94 - pressure * 0.04;
+        sceneFrameScale = 0.92 - pressure * 0.04;
       }
       return {
         "--shell-edge-padding": `${edgePadding}px`,
@@ -1955,8 +1955,8 @@ $yellow: #f8b514;
     z-index: 7;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 10px;
+    gap: 6px;
+    padding: 8px;
     border: 1px solid rgba(132, 187, 255, 0.12);
     border-radius: 22px;
     background: linear-gradient(135deg, rgba(9, 20, 36, 0.92) 0%, rgba(8, 18, 34, 0.8) 100%);
@@ -1968,13 +1968,13 @@ $yellow: #f8b514;
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      gap: 10px;
+      gap: 8px;
       flex: 1 1 0;
       min-width: 0;
-      min-height: 62px;
-      padding: 10px 12px;
-      border-radius: 16px;
-      font-size: 14px;
+      min-height: 56px;
+      padding: 8px 10px;
+      border-radius: 14px;
+      font-size: 13px;
       position: relative;
       color: var(--shell-text);
       cursor: pointer;
@@ -1989,8 +1989,8 @@ $yellow: #f8b514;
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
         border-radius: 12px;
         background: rgba(92, 200, 255, 0.1);
         color: var(--shell-accent);
@@ -2002,14 +2002,14 @@ $yellow: #f8b514;
         text-align: left;
 
         .num {
-          font-size: 20px;
+          font-size: 18px;
           font-weight: 600;
           letter-spacing: 0.02em;
         }
 
         p {
-          margin-top: 3px;
-          font-size: 11px;
+          margin-top: 2px;
+          font-size: 10px;
           letter-spacing: 0.08em;
           color: var(--shell-text-muted);
         }
@@ -2025,7 +2025,7 @@ $yellow: #f8b514;
 
   .middle-shell {
     position: absolute;
-    top: calc(var(--nav-offset) + 10px);
+    top: calc(var(--nav-offset) + 8px);
     right: calc(var(--panel-width) + var(--panel-gap));
     bottom: var(--panel-bottom);
     left: calc(var(--panel-width) + var(--panel-gap));
@@ -2044,7 +2044,7 @@ $yellow: #f8b514;
     width: 100%;
     height: 100%;
     overflow: hidden;
-    border-radius: 32px;
+    border-radius: 28px;
     border: 1px solid rgba(133, 184, 255, 0.12);
     background: linear-gradient(180deg, rgba(7, 17, 31, 0.36) 0%, rgba(7, 17, 31, 0.16) 100%);
     box-shadow: 0 28px 48px rgba(0, 0, 0, 0.24), inset 0 0 0 1px rgba(255, 255, 255, 0.03);
@@ -2079,15 +2079,15 @@ $yellow: #f8b514;
 
   .scene-stage__hud {
     position: absolute;
-    top: 18px;
-    left: 18px;
+    top: 14px;
+    left: 14px;
     z-index: 3;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    max-width: min(320px, calc(100% - 40px));
-    padding: 12px 14px;
-    border-radius: 20px;
+    gap: 6px;
+    max-width: min(286px, calc(100% - 32px));
+    padding: 10px 12px;
+    border-radius: 18px;
     border: 1px solid rgba(132, 187, 255, 0.14);
     background: linear-gradient(135deg, rgba(8, 20, 35, 0.92) 0%, rgba(7, 18, 31, 0.64) 100%);
     box-shadow: 0 18px 32px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.04);
@@ -2096,7 +2096,7 @@ $yellow: #f8b514;
   }
 
   .scene-stage__eyebrow {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.12em;
     color: rgba(191, 220, 236, 0.62);
@@ -2106,12 +2106,12 @@ $yellow: #f8b514;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
   }
 
   .scene-stage__title {
     min-width: 0;
-    font-size: 17px;
+    font-size: 15px;
     font-weight: 600;
     letter-spacing: 0.03em;
     color: rgba(245, 251, 255, 0.96);
@@ -2121,13 +2121,13 @@ $yellow: #f8b514;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 52px;
-    height: 28px;
-    padding: 0 12px;
+    min-width: 46px;
+    height: 24px;
+    padding: 0 10px;
     border-radius: 999px;
     border: 1px solid rgba(130, 209, 255, 0.2);
     background: linear-gradient(135deg, rgba(57, 129, 255, 0.28) 0%, rgba(88, 242, 255, 0.12) 100%);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -2135,7 +2135,7 @@ $yellow: #f8b514;
   }
 
   .scene-stage__meta {
-    font-size: 11px;
+    font-size: 10px;
     letter-spacing: 0.04em;
     color: rgba(191, 220, 236, 0.62);
   }
@@ -2243,10 +2243,10 @@ $yellow: #f8b514;
 
   .scene-stage__scanlines {
     position: absolute;
-    inset: auto 24px 24px 24px;
+    inset: auto 20px 20px 20px;
     z-index: 2;
-    height: 72px;
-    border-radius: 22px;
+    height: 60px;
+    border-radius: 18px;
     pointer-events: none;
     background:
       linear-gradient(180deg, rgba(5, 12, 24, 0) 0%, rgba(5, 12, 24, 0.68) 100%),
@@ -2256,18 +2256,18 @@ $yellow: #f8b514;
 
   .scene-stage__footer {
     position: absolute;
-    right: 18px;
-    bottom: 18px;
+    right: 14px;
+    bottom: 14px;
     z-index: 3;
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 12px;
+    gap: 8px;
+    padding: 6px 10px;
     border-radius: 999px;
     border: 1px solid rgba(132, 187, 255, 0.14);
     background: linear-gradient(135deg, rgba(8, 20, 35, 0.88) 0%, rgba(7, 18, 31, 0.6) 100%);
     color: rgba(245, 251, 255, 0.9);
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
     letter-spacing: 0.12em;
     pointer-events: none;
@@ -2281,8 +2281,8 @@ $yellow: #f8b514;
     z-index: 9;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 7px 9px;
+    gap: 8px;
+    padding: 6px 8px;
     border: 1px solid var(--shell-border);
     border-radius: 999px;
     background: linear-gradient(135deg, rgba(8, 18, 34, 0.9) 0%, rgba(10, 24, 42, 0.74) 100%);
@@ -2292,13 +2292,13 @@ $yellow: #f8b514;
 
     .switch_iframe {
       cursor: pointer;
-      width: 146px;
-      height: 42px;
+      width: 136px;
+      height: 38px;
       line-height: 1;
       display: flex;
       text-align: center;
       color: var(--shell-text-dim);
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 600;
       letter-spacing: 0.12em;
       padding: 3px;
@@ -2341,14 +2341,14 @@ $yellow: #f8b514;
     .bottom-actions {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding-left: 8px;
+      gap: 8px;
+      padding-left: 6px;
       border-left: 1px solid rgba(132, 187, 255, 0.08);
     }
 
     img {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       cursor: pointer;
       margin-left: 10px;
     }
@@ -2388,7 +2388,7 @@ $yellow: #f8b514;
     z-index: 7;
     display: flex;
     flex-direction: column;
-    padding: 10px 0 0;
+    padding: 8px 0 0;
     border: 1px solid var(--shell-border);
     border-radius: 28px;
     background: linear-gradient(180deg, rgba(10, 22, 39, 0.9) 0%, rgba(7, 17, 31, 0.76) 100%);
@@ -2408,8 +2408,8 @@ $yellow: #f8b514;
       gap: 10px;
       box-sizing: border-box;
       width: 100%;
-      height: 56px;
-      padding: 0 20px;
+      height: 50px;
+      padding: 0 16px;
       cursor: pointer;
       background: linear-gradient(90deg, rgba(92, 200, 255, 0.12) 0%, rgba(92, 200, 255, 0.02) 45%, rgba(92, 200, 255, 0) 100%);
       border-bottom: 1px solid rgba(132, 187, 255, 0.1);
@@ -2420,7 +2420,7 @@ $yellow: #f8b514;
       }
 
       .sm-title {
-        font-size: 16px;
+        font-size: 15px;
         line-height: 1;
         font-weight: 600;
         letter-spacing: 0.08em;

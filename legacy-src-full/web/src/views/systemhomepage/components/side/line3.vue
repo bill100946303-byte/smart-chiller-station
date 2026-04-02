@@ -56,7 +56,7 @@ export default {
 .metric-pair {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
+  gap: 4px;
   align-items: stretch;
   width: 100%;
   min-height: auto;
