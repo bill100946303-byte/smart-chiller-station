@@ -17,6 +17,7 @@ Current scope:
 - `/report-records`
 - `/knowledge-base`
 - `/work-orders`
+- `/operational-diagnostics`
 - `/environment-conditions`
 - `/alarms`
 - `/devices`

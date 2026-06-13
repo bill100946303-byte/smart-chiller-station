@@ -4037,8 +4037,8 @@ export default function OptimizeDemoPage() {
       evidence:
         coolingTowerCapabilityDiagnosticItem?.findings?.[0] ||
         coolingTowerCapabilityDiagnosticItem?.warnings?.[0] ||
-        "复核湿球、Approach、塔风机和塔单元运行一致性。",
-      boundary: "只做塔能力体检和 shadow 证据，不直接改塔风机。",
+        "复核湿球、逼近度、塔风机和塔单元运行一致性。",
+      boundary: "只做塔能力体检和影子证据，不直接改塔风机。",
       tone: mapBenchmarkTone(coolingTowerCapabilityDiagnosticItem?.status)
     },
     {
@@ -4911,7 +4911,7 @@ export default function OptimizeDemoPage() {
         {shadowVerificationError ? <p>{shadowVerificationError}</p> : null}
 
         <div className="optimize-response">
-          <strong>Shadow 复核统计</strong>
+          <strong>影子复核统计</strong>
           <p>只读统计摘要，不作为固定节能承诺，不改变执行单状态。</p>
           <div className="optimize-boundary-list optimize-boundary-list-compact">
             {shadowVerificationSummaryRows.map((item) => (
@@ -5525,7 +5525,7 @@ export default function OptimizeDemoPage() {
         </SectionCard>
 
         <SectionCard
-          title="Shadow 验证记录"
+          title="影子验证记录"
           action={<StatusPill label="人工记录" tone="warn" />}
         >
           {renderShadowVerificationRecordPanel()}
@@ -6645,7 +6645,7 @@ export default function OptimizeDemoPage() {
         </SectionCard>
 
         <SectionCard
-          title="Shadow 验证记录"
+          title="影子验证记录"
           action={<StatusPill label="人工记录" tone="warn" />}
         >
           {renderShadowVerificationRecordPanel()}

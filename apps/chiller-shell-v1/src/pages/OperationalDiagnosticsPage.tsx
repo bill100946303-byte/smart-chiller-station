@@ -760,13 +760,13 @@ export default function OperationalDiagnosticsPage() {
       ) : (
         <section className="operational-diagnostics-loading-panel" aria-label="运行诊断加载状态">
           <strong>{loading ? "正在读取诊断数据" : "暂无诊断数据"}</strong>
-          <span>{loading ? "读取站点运行点位、历史样本和诊断证据。" : "请刷新或检查 BFF 数据链路。"}</span>
+          <span>{loading ? "读取站点运行点位、历史样本和诊断证据。" : "请刷新或检查数据服务链路。"}</span>
         </section>
       )}
 
       <div className="operational-diagnostics-boundary-strip" aria-label="安全边界">
         <span>只读</span>
-        <span>shadow 验证</span>
+        <span>影子验证</span>
         <span>不下发 PLC</span>
         <span>不自动启停</span>
         <span>多机无单机流量不算单机 COP</span>
