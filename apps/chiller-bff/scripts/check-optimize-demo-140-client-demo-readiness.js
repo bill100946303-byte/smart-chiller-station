@@ -250,7 +250,7 @@ function summarizeDiagnosticUiSmoke(report, blockers) {
     pushUnique(blockers, "页面未显示“组合实测性能”口径。");
   }
   if (ui?.optimizeDemo?.hasChillerShadowVerification !== true) {
-    pushUnique(blockers, "页面未显示“shadow 验证”。");
+    pushUnique(blockers, "页面未显示“影子验证”。");
   }
   if (ui?.optimizeDemo?.hasChillerNoSingleCop !== true) {
     pushUnique(blockers, "页面未明确多机无单台流量时不计算单台 COP。");

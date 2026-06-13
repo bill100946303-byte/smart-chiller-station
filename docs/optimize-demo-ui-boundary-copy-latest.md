@@ -2,7 +2,7 @@
 
 - 结论：UI_BOUNDARY_COPY_READY
 - 源文件：apps/chiller-shell-v1/src/pages/OptimizeDemoPage.tsx
-- 生成时间：2026-06-13T01:34:58.661Z
+- 生成时间：2026-06-13T06:51:42.835Z
 
 ## 必须出现的边界文案
 
@@ -26,14 +26,14 @@
 | shadow_suite_gate | 通过 | 140 shadow suite | 5493 |
 | no_control_mutation_gate | 通过 | NO_CONTROL_MUTATION | 3914 |
 | one_vote_stop_gate | 通过 | 一票否决 | 5520 |
-| shadow_verification_record | 通过 | Shadow 验证记录 | 5528 |
+| shadow_verification_record | 通过 | 影子验证记录 | 5528 |
 | shadow_verification_window | 通过 | 30-60min 同负荷/湿球 band 对比 | 1843 |
 | manual_recording_boundary | 通过 | 人工记录 | 4406 |
 | no_fixed_savings_commitment | 通过 | 不作为固定节能承诺 | 1232 |
 | append_only_shadow_record | 通过 | append-only 记录 | 4821 |
 | manual_shadow_record_save | 通过 | 保存人工验证记录 | 4836 |
 | shadow_review_append_only | 通过 | 补录复核结果 | 4821 |
-| shadow_review_summary | 通过 | Shadow 复核统计 | 4914 |
+| shadow_review_summary | 通过 | 影子复核统计 | 4914 |
 | readonly_shadow_summary | 通过 | 只读统计摘要 | 4915 |
 | advisor_type_filter | 通过 | Advisor 类型筛选 | 4865 |
 | advisor_type_summary | 通过 | 按 Advisor 类型统计 | 4974 |

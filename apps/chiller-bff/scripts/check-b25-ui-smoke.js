@@ -1076,7 +1076,7 @@ async function runUiChecks(bffBaseUrl, appBaseUrl) {
               hasChillerCurrentCombination: text.includes("当前运行组合"),
               hasChillerTargetCombination: text.includes("推荐目标组合"),
               hasChillerEmpiricalPerformance: text.includes("组合实测性能"),
-              hasChillerShadowVerification: text.includes("shadow 验证"),
+              hasChillerShadowVerification: text.includes("影子验证") || text.includes("shadow 验证"),
               hasChillerNoSingleCop:
                 text.includes("不计算多机单台 COP") ||
                 text.includes("不计算多机单台COP") ||

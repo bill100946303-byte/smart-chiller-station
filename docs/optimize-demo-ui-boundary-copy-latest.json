@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-13T01:34:58.661Z",
+  "generatedAt": "2026-06-13T06:51:42.835Z",
   "sourceFile": "apps/chiller-shell-v1/src/pages/OptimizeDemoPage.tsx",
   "finalDecision": "UI_BOUNDARY_COPY_READY",
   "required": [
@@ -131,9 +131,9 @@
     },
     {
       "key": "shadow_verification_record",
-      "label": "Shadow 验证记录",
+      "label": "影子验证记录",
       "ok": true,
-      "matchedText": "Shadow 验证记录",
+      "matchedText": "影子验证记录",
       "lineNumber": 5528
     },
     {
@@ -180,9 +180,9 @@
     },
     {
       "key": "shadow_review_summary",
-      "label": "Shadow 复核统计",
+      "label": "影子复核统计",
       "ok": true,
-      "matchedText": "Shadow 复核统计",
+      "matchedText": "影子复核统计",
       "lineNumber": 4914
     },
     {

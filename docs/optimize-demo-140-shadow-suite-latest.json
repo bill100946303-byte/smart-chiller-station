@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-13T01:35:19.443Z",
+  "generatedAt": "2026-06-13T06:52:06.717Z",
   "siteId": "140",
   "bffBaseUrl": "http://127.0.0.1:8787",
   "finalDecision": "GO_SHADOW_PENDING",
@@ -30,7 +30,7 @@
           "CH7"
         ],
         "runningCount": 3,
-        "sampleTotal": 133,
+        "sampleTotal": 89,
         "sampleCaptureStatus": "skipped_recent"
       },
       "operationalDiagnostics": {
@@ -299,9 +299,9 @@
         },
         {
           "key": "shadow_verification_record",
-          "label": "Shadow 验证记录",
+          "label": "影子验证记录",
           "ok": true,
-          "matchedText": "Shadow 验证记录",
+          "matchedText": "影子验证记录",
           "lineNumber": 5528
         },
         {
@@ -348,9 +348,9 @@
         },
         {
           "key": "shadow_review_summary",
-          "label": "Shadow 复核统计",
+          "label": "影子复核统计",
           "ok": true,
-          "matchedText": "Shadow 复核统计",
+          "matchedText": "影子复核统计",
           "lineNumber": 4914
         },
         {
@@ -555,7 +555,7 @@
       "expected": "NO_CONTROL_MUTATION",
       "finalDecision": "NO_CONTROL_MUTATION",
       "before": {
-        "generatedAt": "2026-06-13T01:34:51.269Z",
+        "generatedAt": "2026-06-13T06:51:34.828Z",
         "tower": {
           "ok": true,
           "status": 200,
@@ -604,7 +604,7 @@
         }
       },
       "after": {
-        "generatedAt": "2026-06-13T01:35:19.441Z",
+        "generatedAt": "2026-06-13T06:52:06.708Z",
         "tower": {
           "ok": true,
           "status": 200,
@@ -665,21 +665,21 @@
       "readOnlyAdviceStatus": "READY",
       "telemetry": {
         "systemCop": 6.6,
-        "totalPowerKw": 1929,
-        "totalCoolingCapacity": 12613.7,
-        "currentLoadRate": 49.8,
-        "coolingReturnTemp": 28.7,
+        "totalPowerKw": 1885.2,
+        "totalCoolingCapacity": 12424.5,
+        "currentLoadRate": 49.1,
+        "coolingReturnTemp": 28.1,
         "coolingDeltaT": 4.7,
-        "calculatedTcwsC": 28.7,
-        "outdoorWetBulbC": 25.8,
+        "calculatedTcwsC": 28.1,
+        "outdoorWetBulbC": 25.2,
         "calculatedApproachC": 2.9,
         "advisorApproachC": 2.9,
         "advisorTargetApproachC": 3.4,
-        "advisorTargetTcwsC": 29.2,
-        "coolingTowerPowerKw": 59.7,
-        "chillerPowerKw": 1615.8,
-        "thermalUnbalanceRateRaw": 8.8,
-        "thermalUnbalancePct": 8.8,
+        "advisorTargetTcwsC": 28.6,
+        "coolingTowerPowerKw": 54.3,
+        "chillerPowerKw": 1578.5,
+        "thermalUnbalanceRateRaw": 9.5,
+        "thermalUnbalancePct": 9.5,
         "activeAlarmCount": 0
       },
       "dataReadinessGate": {
@@ -698,28 +698,28 @@
             "key": "system_power",
             "label": "系统总功率",
             "status": "ready",
-            "evidence": "totalPowerKw=1929.0 kW",
+            "evidence": "totalPowerKw=1885.2 kW",
             "recoveryAction": "核对冷站总电表、主机/泵/塔功率汇总点和 Dashboard 能源卡片映射。"
           },
           {
             "key": "cooling_load",
             "label": "系统总冷量",
             "status": "ready",
-            "evidence": "totalCoolingCapacity=12613.7 kW",
+            "evidence": "totalCoolingCapacity=12424.5 kW",
             "recoveryAction": "核对冷冻水总流量、供回水温差、冷量计算和额定冷量配置。"
           },
           {
             "key": "tcws",
             "label": "冷却水出水/Tcws",
             "status": "ready",
-            "evidence": "coolingReturnTemp=28.7℃ / signal=ok",
+            "evidence": "coolingReturnTemp=28.1℃ / signal=ok",
             "recoveryAction": "核对冷却塔出水、冷机冷凝器进水或冷却回水点位；确认物理位置和单位。"
           },
           {
             "key": "wet_bulb_live",
             "label": "实时湿球",
             "status": "ready",
-            "evidence": "outdoorWetBulbC=25.8℃ / signal=ok",
+            "evidence": "outdoorWetBulbC=25.2℃ / signal=ok",
             "recoveryAction": "核对室外湿球点位、气象站通讯和湿球计算来源；缺失时 Approach 只能只读。"
           },
           {
@@ -733,7 +733,7 @@
             "key": "tower_fan_feedback",
             "label": "冷却塔风机功率/反馈",
             "status": "ready",
-            "evidence": "coolingTowerPowerKw=59.7 kW",
+            "evidence": "coolingTowerPowerKw=54.3 kW",
             "recoveryAction": "核对塔风机运行反馈、频率反馈、功率或分组运行状态；无反馈时不做闭环目标。"
           },
           {
@@ -749,7 +749,7 @@
       "blockers": [],
       "warnings": [
         "历史样本置信度低，节能评估需 shadow 对比验证。",
-        "最终冷却水出水温目标 30℃ 需分 3 步 shadow 验证，本次仅提交 29.2℃。"
+        "最终冷却水出水温目标 30℃ 需分 4 步 shadow 验证，本次仅提交 28.6℃。"
       ],
       "reportJson": "docs/b25-tower-approach-readiness-latest.json",
       "reportMarkdown": "docs/b25-tower-approach-readiness-latest.md"
@@ -786,10 +786,10 @@
         "current": {
           "chilledDeltaT": 4.4,
           "coolingDeltaT": 4.7,
-          "chilledPumpPowerKw": 148.5,
-          "coolingPumpPowerKw": 105,
-          "chillerPowerKw": 1615.8,
-          "totalPowerKw": 1929,
+          "chilledPumpPowerKw": 149.8,
+          "coolingPumpPowerKw": 102.6,
+          "chillerPowerKw": 1578.5,
+          "totalPowerKw": 1885.2,
           "systemCop": 6.6,
           "chilledSupplyTemp": null,
           "coolingReturnTemp": null,
@@ -947,8 +947,8 @@
       "script": "check-optimize-demo-ui-boundary-copy.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-13T01:34:58.585Z",
-      "endedAt": "2026-06-13T01:34:58.667Z",
+      "startedAt": "2026-06-13T06:51:42.750Z",
+      "endedAt": "2026-06-13T06:51:42.841Z",
       "stdout": "optimize-demo UI boundary copy: UI_BOUNDARY_COPY_READY\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-ui-boundary-copy-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-ui-boundary-copy-latest.md",
       "stderr": "",
       "error": null
@@ -959,8 +959,8 @@
       "script": "check-optimize-demo-diagnostic-readiness.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-13T01:34:58.667Z",
-      "endedAt": "2026-06-13T01:35:06.792Z",
+      "startedAt": "2026-06-13T06:51:42.841Z",
+      "endedAt": "2026-06-13T06:51:50.883Z",
       "stdout": "optimize-demo diagnostic readiness: DIAGNOSTIC_READINESS_READY\nmatrix=4 ready / 5 directional / 1 point-gap\nfieldChecklist=4 P0 / 3 P1\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-diagnostic-readiness-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-diagnostic-readiness-latest.md",
       "stderr": "",
       "error": null
@@ -971,8 +971,8 @@
       "script": "check-optimize-demo-140-field-collection-package.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-13T01:35:06.792Z",
-      "endedAt": "2026-06-13T01:35:06.858Z",
+      "startedAt": "2026-06-13T06:51:50.883Z",
+      "endedAt": "2026-06-13T06:51:50.961Z",
       "stdout": "optimize-demo 140 field collection package: FIELD_COLLECTION_PACKAGE_READY_TO_COLLECT\ndocuments=4 templates=5 formalInputs=4\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-collection-package-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-collection-package-latest.md\nwarnings=4\n- 传感器校准/安装位置台账 尚未投放：docs/field-data/optimize-demo-140/sensor-calibration-installation.csv\n- 控制命令/反馈高频趋势 尚未投放：docs/field-data/optimize-demo-140/control-command-feedback.csv\n- 设备启停事件台账 尚未投放：docs/field-data/optimize-demo-140/start-stop-event.csv\n- PID/死区/延时参数台账 尚未投放：docs/field-data/optimize-demo-140/control-parameter.csv",
       "stderr": "",
       "error": null
@@ -983,8 +983,8 @@
       "script": "check-optimize-demo-140-field-data-preflight.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-13T01:35:06.858Z",
-      "endedAt": "2026-06-13T01:35:07.047Z",
+      "startedAt": "2026-06-13T06:51:50.961Z",
+      "endedAt": "2026-06-13T06:51:51.134Z",
       "stdout": "optimize-demo 140 field data preflight: FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS\nsensorStatus=SENSOR_LEDGER_PREFLIGHT_WAITING_FOR_INPUTS sensorAccepted=0\nimportStatus=CONTROL_LEDGER_IMPORT_BLOCKED accepted=0 warnings=0 blockers=3\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-preflight-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-preflight-latest.md\nblockers=4\n- 传感器校准/安装位置台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/sensor-calibration-installation.csv\n- 控制命令/反馈高频趋势 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-command-feedback.csv\n- 设备启停事件台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv\n- PID/死区/延时参数台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv",
       "stderr": "",
       "error": null
@@ -995,8 +995,8 @@
       "script": "promote-optimize-demo-140-field-data-ledgers.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-13T01:35:07.047Z",
-      "endedAt": "2026-06-13T01:35:07.112Z",
+      "startedAt": "2026-06-13T06:51:51.134Z",
+      "endedAt": "2026-06-13T06:51:51.193Z",
       "stdout": "optimize-demo 140 field data promote: FIELD_DATA_PROMOTE_WAITING_FOR_PREFLIGHT\npreflight=FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS importStatus=CONTROL_LEDGER_IMPORT_NOT_RUN accepted=0\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-promote-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-promote-latest.md\nblockers=5\n- 现场 CSV 预检未 READY：FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS\n- 传感器校准/安装位置台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/sensor-calibration-installation.csv\n- 控制命令/反馈高频趋势 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-command-feedback.csv\n- 设备启停事件台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv\n- PID/死区/延时参数台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv",
       "stderr": "",
       "error": null
@@ -1007,8 +1007,8 @@
       "script": "check-b25-tower-approach-readiness.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-13T01:35:07.112Z",
-      "endedAt": "2026-06-13T01:35:15.254Z",
+      "startedAt": "2026-06-13T06:51:51.193Z",
+      "endedAt": "2026-06-13T06:52:01.923Z",
       "stdout": "B25 tower approach readiness: GO_SHADOW\nreadOnlyAdvice=READY shadow=GO\njson=/Users/billchow/Documents/智慧冷冻站/docs/b25-tower-approach-readiness-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/b25-tower-approach-readiness-latest.md",
       "stderr": "",
       "error": null
@@ -1019,8 +1019,8 @@
       "script": "check-pump-delta-t-readiness.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-13T01:35:15.254Z",
-      "endedAt": "2026-06-13T01:35:19.040Z",
+      "startedAt": "2026-06-13T06:52:01.924Z",
+      "endedAt": "2026-06-13T06:52:06.289Z",
       "stdout": "pump delta-t readiness: GO_SHADOW_ONLY\nshadow=GO assisted=BLOCKED\njson=/Users/billchow/Documents/智慧冷冻站/docs/pump-delta-t-readiness-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/pump-delta-t-readiness-latest.md\nblockers=1\n- assisted 前缺 approve/rollback 点位映射或 dispatchMode 未配置为 assisted。",
       "stderr": "",
       "error": null
@@ -1031,8 +1031,8 @@
       "script": "check-optimize-shadow-governance.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-13T01:35:19.040Z",
-      "endedAt": "2026-06-13T01:35:19.134Z",
+      "startedAt": "2026-06-13T06:52:06.289Z",
+      "endedAt": "2026-06-13T06:52:06.401Z",
       "stdout": "optimize shadow governance: GO_SHADOW_PENDING\ntower=go_shadow_pending pump=go_shadow_pending\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-shadow-governance-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-shadow-governance-latest.md\nwarnings=1\n- 存在历史已批准 tower shadow 旧记录：opx-140-1780911209517-23t8ch",
       "stderr": "",
       "error": null
@@ -1054,7 +1054,7 @@
     "设备启停事件台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv",
     "PID/死区/延时参数台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv",
     "历史样本置信度低，节能评估需 shadow 对比验证。",
-    "最终冷却水出水温目标 30℃ 需分 3 步 shadow 验证，本次仅提交 29.2℃。",
+    "最终冷却水出水温目标 30℃ 需分 4 步 shadow 验证，本次仅提交 28.6℃。",
     "assisted 前缺 approve/rollback 点位映射或 dispatchMode 未配置为 assisted。",
     "当前草案仍存在部分降级或缺测信号，建议先稳住风险后再评审优化空间。",
     "当前 BFF 未接入末端阀位、关键压差或室温；shadow 可评审，assisted 前必须由 PLC 提供等效保护状态。",

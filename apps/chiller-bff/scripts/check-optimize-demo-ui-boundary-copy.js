@@ -110,8 +110,8 @@ const REQUIRED_COPY_GROUPS = [
   },
   {
     key: "shadow_verification_record",
-    label: "Shadow 验证记录",
-    anyOf: ["Shadow 验证记录"]
+    label: "影子验证记录",
+    anyOf: ["影子验证记录", "Shadow 验证记录"]
   },
   {
     key: "shadow_verification_window",
@@ -145,8 +145,8 @@ const REQUIRED_COPY_GROUPS = [
   },
   {
     key: "shadow_review_summary",
-    label: "Shadow 复核统计",
-    anyOf: ["Shadow 复核统计"]
+    label: "影子复核统计",
+    anyOf: ["影子复核统计", "Shadow 复核统计"]
   },
   {
     key: "readonly_shadow_summary",
