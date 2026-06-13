@@ -1,0 +1,3 @@
+eventAt,siteId,equipmentType,equipmentId,eventType,previousStatus,nextStatus,commandSource,reasonCode,runMinutesBeforeEvent,stopMinutesBeforeEvent,alarmActive,sourceSystem,remark
+2026-06-13T10:15:00+08:00,140,chiller,CH7,start,off,on,operator,load_increase,,240,false,SCADA,用于校验最小停机时间和频繁启停
+2026-06-13T11:05:00+08:00,140,cooling_tower,CT1,stop,on,off,auto,tcws_below_band,50,,false,SCADA,用于校验加减塔延时和防震荡死区

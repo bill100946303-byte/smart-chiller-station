@@ -1,0 +1,84 @@
+{
+  "checkedAt": "2026-06-10T02:49:35.196Z",
+  "status": "GO_SHADOW_SAMPLE",
+  "site": {
+    "siteId": "btwentyfive",
+    "legacySiteId": "140",
+    "siteCode": "btwentyfive",
+    "databaseKey": "140btwentyfive",
+    "projectKey": "126lnoffice"
+  },
+  "mode": {
+    "intended": "shadow",
+    "enforcedAllowed": false,
+    "dispatchWriteAttempted": false
+  },
+  "sources": {
+    "overviewStatus": 200,
+    "overviewOverall": "ok",
+    "adviceStatus": 200,
+    "adviceOverall": "ok",
+    "executionListStatus": 200,
+    "executionTotal": 4
+  },
+  "operatingPoint": {
+    "cop": 6.7,
+    "totalPowerKw": 1391.1,
+    "loadKw": 9638.1,
+    "loadRatePct": 38.1,
+    "loadRateSource": "overview.energyCards.currentLoadRate",
+    "loadBand": "low",
+    "wetBulbC": 21.5,
+    "outdoorTempC": 26.1,
+    "coolingReturnTempC": 24.5,
+    "coolingDeltaTC": 4.5,
+    "thermalUnbalanceRate": 0.13
+  },
+  "towerApproach": {
+    "advisorStatus": "ready",
+    "executionReady": true,
+    "currentApproachC": 3,
+    "calculatedApproachC": 3,
+    "targetApproachC": 3,
+    "targetTcwsC": 24.5,
+    "approachDeltaC": 0,
+    "tcwsDeltaC": 0,
+    "guardrails": [
+      {
+        "key": "alarmGate",
+        "status": "ready",
+        "message": "门禁允许继续评审接近度调节建议。"
+      },
+      {
+        "key": "chillerMinCondenserInletTempC",
+        "status": "ready",
+        "message": "目标冷却水温必须高于该下限。"
+      },
+      {
+        "key": "towerControlStep",
+        "status": "ready",
+        "message": "建议按小步长调整，避免塔风机频繁反向。"
+      },
+      {
+        "key": "plcControlPointMapping",
+        "status": "ready",
+        "message": "已具备接近度目标控制点/下发端点映射，可进入对应模式校验。"
+      }
+    ]
+  },
+  "latestExecution": {
+    "id": null,
+    "type": null,
+    "status": "rolled_back",
+    "targetApproachC": null,
+    "targetTcwsC": null,
+    "dispatchMode": null,
+    "lastApproveOk": null,
+    "lastRollbackOk": null
+  },
+  "blockers": [],
+  "warnings": [
+    "thermal balance deviation is above 10%; compare savings conservatively"
+  ],
+  "nextAction": "Keep collecting read-only shadow samples across low/medium/high load bands; do not enable enforced."
+}

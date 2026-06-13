@@ -1,0 +1,66 @@
+{
+  "generatedAt": "2026-06-13T01:35:06.973Z",
+  "siteId": "140",
+  "finalDecision": "SENSOR_LEDGER_PREFLIGHT_WAITING_FOR_INPUTS",
+  "scope": "optimize_demo_140_sensor_ledger_preflight",
+  "executionMode": "read_only",
+  "controlBoundary": "传感器台账预检只校验校准记录、安装位置和点位映射完整性；不判定仪表故障，不自动修正测点，不写真实 PLC。",
+  "input": {
+    "key": "sensor_calibration_installation_ledger",
+    "title": "传感器校准/安装位置台账",
+    "env": "OPTIMIZE_DEMO_SENSOR_LEDGER_INPUT_CSV",
+    "path": "docs/field-data/optimize-demo-140/sensor-calibration-installation.csv",
+    "exists": false,
+    "mode": "missing",
+    "requiredForReady": true
+  },
+  "inputs": [
+    {
+      "key": "sensor_calibration_installation_ledger",
+      "title": "传感器校准/安装位置台账",
+      "env": "OPTIMIZE_DEMO_SENSOR_LEDGER_INPUT_CSV",
+      "path": "docs/field-data/optimize-demo-140/sensor-calibration-installation.csv",
+      "exists": false,
+      "mode": "missing",
+      "requiredForReady": true
+    }
+  ],
+  "sourceHeaders": [],
+  "headerMap": {},
+  "summary": {
+    "totalRows": 0,
+    "acceptedRows": 0,
+    "blockersCount": 1,
+    "warningsCount": 0,
+    "expiredCalibrationCount": 0,
+    "missingRangeCount": 0,
+    "sensorTypeCount": 0,
+    "pointCodeCount": 0
+  },
+  "normalizedOutput": "docs/optimize-demo-140-sensor-calibration-installation-normalized-latest.csv",
+  "templateRows": [
+    {
+      "pointCode": "B25_CHW_SUPPLY_TEMP",
+      "pointName": "冷冻水总供水温度",
+      "sensorType": "temperature",
+      "systemSide": "chilled_water",
+      "equipmentId": "CHW-HEADER",
+      "location": "冷冻站机房总管",
+      "installPosition": "冷冻水供水总管出站侧",
+      "unit": "C",
+      "rangeLow": "0",
+      "rangeHigh": "50",
+      "accuracyClass": "0.2C",
+      "lastCalibrationDate": "2026-01-01",
+      "calibrationDueDate": "2027-01-01",
+      "calibrationProvider": "field_provider",
+      "owner": "site_operator",
+      "sourceSystem": "field_ledger",
+      "remark": "示例，请替换为现场真实台账"
+    }
+  ],
+  "blockers": [
+    "缺少传感器校准/安装位置台账 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/sensor-calibration-installation.csv"
+  ],
+  "warnings": []
+}

@@ -1,8 +1,20 @@
-import { deepArrayProbe, fetchLegacyJson } from "../lib/http.js";
+﻿import { deepArrayProbe, fetchLegacyJson } from "../lib/http.js";
 
 const ROOM_MONITOR_DEVICE_PAGE_SIZE = 200;
 const ROOM_MONITOR_DEVICE_TYPE_IDS = new Set(["192"]);
-const ROOM_MONITOR_DEVICE_KEYWORDS = ["风机盘管"];
+const ROOM_MONITOR_DEVICE_KEYWORDS = [
+  "\u98ce\u673a\u76d8\u7ba1",
+  "\u76d8\u7ba1\u98ce\u673a",
+  "\u98ce\u76d8",
+  "\u7a7a\u8c03\u7bb1",
+  "\u65b0\u98ce",
+  "\u672b\u7aef",
+  "\u73af\u5883",
+  "\u6e29\u6e7f\u5ea6",
+  "FCU"
+];
+const ENVIRONMENT_FALLBACK_DEVICE_SCAN_LIMIT = 80;
+const legacyCondition404Cache = new Set();
 
 function asTrimmedString(value, fallback = "") {
   if (value == null) {
@@ -51,12 +63,25 @@ function extractLegacyRows(payload) {
     return [];
   }
 
+  if (Array.isArray(payload?.data?.records?.records)) {
+    return payload.data.records.records.filter((item) => item && typeof item === "object");
+  }
+
   if (Array.isArray(payload?.data?.records)) {
     return payload.data.records.filter((item) => item && typeof item === "object");
   }
 
+  if (Array.isArray(payload?.records?.records)) {
+    return payload.records.records.filter((item) => item && typeof item === "object");
+  }
+
   if (Array.isArray(payload?.records)) {
     return payload.records.filter((item) => item && typeof item === "object");
+  }
+
+  const singletonNestedRecord = payload?.data?.records?.records ?? payload?.records?.records;
+  if (singletonNestedRecord && typeof singletonNestedRecord === "object" && !Array.isArray(singletonNestedRecord)) {
+    return [singletonNestedRecord];
   }
 
   const probed = deepArrayProbe(payload?.data ?? payload);
@@ -93,6 +118,43 @@ function normalizeCondition(item, index) {
     supplyAirValue: asTrimmedString(item?.supplyAirValue || ""),
     returnAirValue: asTrimmedString(item?.returnAirValue || "")
   };
+}
+
+function parseBuildFloorFromProjectKey(projectKey) {
+  const normalized = asTrimmedString(projectKey, "");
+  if (!normalized || !normalized.includes("-")) {
+    return null;
+  }
+  const parts = normalized.split("-");
+  const build = toFiniteNumber(parts[1]);
+  const floor = parts.length >= 3 ? toFiniteNumber(parts[2]) : null;
+  return {
+    build: build == null ? null : String(Math.max(0, Math.floor(build))),
+    floor: floor == null ? null : String(Math.max(0, Math.floor(floor)))
+  };
+}
+
+function resolveBuildFloorScope(options = {}) {
+  const fromProjectKey = parseBuildFloorFromProjectKey(options.projectKey);
+  const build = asTrimmedString(options.build || fromProjectKey?.build || "");
+  const floor = asTrimmedString(options.floor || fromProjectKey?.floor || "");
+  return {
+    build: build || null,
+    floor: floor || null
+  };
+}
+
+function matchesBuildFloorScope(device, scope) {
+  if (!scope?.build && !scope?.floor) {
+    return true;
+  }
+  if (scope.build && asTrimmedString(device?.buildingId || "") !== scope.build) {
+    return false;
+  }
+  if (scope.floor && asTrimmedString(device?.floorId || "") !== scope.floor) {
+    return false;
+  }
+  return true;
 }
 
 function buildEnvironmentBuildingEndpoint(siteId) {
@@ -141,6 +203,7 @@ function normalizeRoomDevice(item, index) {
     buildingId: asTrimmedString(item?.buildid || item?.buildingId || ""),
     buildingName: asTrimmedString(item?.buildname || item?.buildingName || ""),
     monitoringSite: asTrimmedString(item?.drname || item?.monitoringSite || item?.name || `monitor-${index + 1}`),
+    floorId: asTrimmedString(item?.floorId || item?.floorid || ""),
     floorName: asTrimmedString(item?.floorName || item?.floor || ""),
     deviceTypeId: asTrimmedString(item?.drtypeid || item?.deviceTypeId || ""),
     deviceTypeName: asTrimmedString(item?.drtypename || item?.deviceTypeName || "")
@@ -167,7 +230,8 @@ function containsKeyword(value, keywords) {
   if (!normalized) {
     return false;
   }
-  return keywords.some((keyword) => normalized.includes(keyword));
+  const normalizedLower = normalized.toLowerCase();
+  return keywords.some((keyword) => normalizedLower.includes(asTrimmedString(keyword, "").toLowerCase()));
 }
 
 function matchesMonitoringSite(monitoringSite, keyword) {
@@ -197,10 +261,24 @@ function isTemperatureRegister(register) {
   if (!name) {
     return false;
   }
-  if (name.includes("送风") || name.includes("回风") || name.includes("设定")) {
+  const normalized = name.toLowerCase();
+  const hasTempToken = /\u6e29\u5ea6/.test(name) || /\btemp(?:erature)?\b/.test(normalized);
+  if (!hasTempToken) {
     return false;
   }
-  return name.includes("内置温度") || name.includes("室内温度") || name === "温度";
+  if (/\u9001\u98ce|\u56de\u98ce/.test(name) || /\b(supply|return)\s*air\b/.test(normalized)) {
+    return false;
+  }
+  if (/\u8bbe\u5b9a|\u76ee\u6807/.test(name) || /\b(setpoint|setting|target)\b/.test(normalized)) {
+    return false;
+  }
+  if (/\u6e7f\u5ea6|\u6e7f\u7403|\u9732\u70b9/.test(name) || /\b(humidity|rh|dew)\b/.test(normalized)) {
+    return false;
+  }
+  if (/\u6a21\u5f0f/.test(name) || /\bmode\b/.test(normalized)) {
+    return false;
+  }
+  return true;
 }
 
 function isTemperatureSettingRegister(register) {
@@ -208,15 +286,32 @@ function isTemperatureSettingRegister(register) {
   if (!name) {
     return false;
   }
-  if (name.includes("设定温度") || name.includes("温度设定") || name.includes("目标温度")) {
+  const normalized = name.toLowerCase();
+  const hasTempToken = /\u6e29\u5ea6/.test(name) || /\btemp(?:erature)?\b/.test(normalized);
+  if (!hasTempToken) {
+    return false;
+  }
+  if (/\u8bbe\u5b9a|\u76ee\u6807/.test(name) || /\b(setpoint|setting|target)\b/.test(normalized)) {
     return true;
   }
-  return name.includes("温度") && register?.readWrite === "2" && !name.includes("模式") && !name.includes("内置");
+  return register?.readWrite === "2"
+    && !/\u6a21\u5f0f/.test(name)
+    && !/\bmode\b/.test(normalized)
+    && !/\u9001\u98ce|\u56de\u98ce/.test(name)
+    && !/\b(supply|return)\s*air\b/.test(normalized);
 }
 
 function isHumidityRegister(register) {
   const name = asTrimmedString(register?.name || "");
-  return Boolean(name) && name.includes("湿度") && !name.includes("设定");
+  if (!name) {
+    return false;
+  }
+  const normalized = name.toLowerCase();
+  const hasHumidityToken = /\u6e7f\u5ea6/.test(name) || /\b(humidity|rh)\b/.test(normalized);
+  if (!hasHumidityToken) {
+    return false;
+  }
+  return !/\u8bbe\u5b9a|\u76ee\u6807/.test(name) && !/\b(setpoint|setting|target)\b/.test(normalized);
 }
 
 function isHumiditySettingRegister(register) {
@@ -224,26 +319,43 @@ function isHumiditySettingRegister(register) {
   if (!name) {
     return false;
   }
-  if (name.includes("设定湿度") || name.includes("湿度设定") || name.includes("目标湿度")) {
+  const normalized = name.toLowerCase();
+  const hasHumidityToken = /\u6e7f\u5ea6/.test(name) || /\b(humidity|rh)\b/.test(normalized);
+  if (!hasHumidityToken) {
+    return false;
+  }
+  if (/\u8bbe\u5b9a|\u76ee\u6807/.test(name) || /\b(setpoint|setting|target)\b/.test(normalized)) {
     return true;
   }
-  return name.includes("湿度") && register?.readWrite === "2";
+  return register?.readWrite === "2";
 }
 
 function isSupplyAirRegister(register) {
   const name = asTrimmedString(register?.name || "");
-  return Boolean(name) && name.includes("送风") && name.includes("温度");
+  if (!name) {
+    return false;
+  }
+  const normalized = name.toLowerCase();
+  return (/\u9001\u98ce/.test(name) && /\u6e29\u5ea6/.test(name))
+    || /\b(supply|sa)\s*air\b/.test(normalized)
+    || /\bsupply\s*temp\b/.test(normalized);
 }
 
 function isReturnAirRegister(register) {
   const name = asTrimmedString(register?.name || "");
-  return Boolean(name) && name.includes("回风") && name.includes("温度");
+  if (!name) {
+    return false;
+  }
+  const normalized = name.toLowerCase();
+  return (/\u56de\u98ce/.test(name) && /\u6e29\u5ea6/.test(name))
+    || /\b(return|ra)\s*air\b/.test(normalized)
+    || /\breturn\s*temp\b/.test(normalized);
 }
 
 function inferCoolingOn(registers) {
   const currentFanSpeedRegister = pickRegister(registers, (item) => {
     const name = asTrimmedString(item?.name || "");
-    return name === "当前风速状态" || name.includes("风速状态");
+    return /\u5f53\u524d\u98ce\u901f\u72b6\u6001/.test(name) || /\u98ce\u901f\u72b6\u6001/.test(name);
   });
 
   if (currentFanSpeedRegister?.numericValue != null) {
@@ -252,7 +364,7 @@ function inferCoolingOn(registers) {
 
   const fanSpeedRegister = pickRegister(registers, (item) => {
     const name = asTrimmedString(item?.name || "");
-    return name === "风速" || (name.includes("风速") && !name.includes("当前"));
+    return name === "\u98ce\u901f" || (/\u98ce\u901f/.test(name) && !/\u5f53\u524d/.test(name));
   });
 
   if (fanSpeedRegister?.numericValue != null) {
@@ -261,7 +373,7 @@ function inferCoolingOn(registers) {
 
   const runningRegister = pickRegister(registers, (item) => {
     const name = asTrimmedString(item?.name || "");
-    return name === "运行" || name.includes("运行状态") || name.includes("空调开关");
+    return name === "\u8fd0\u884c" || /\u8fd0\u884c\u72b6\u6001/.test(name) || /\u7a7a\u8c03\u5f00\u5173/.test(name);
   });
 
   if (runningRegister) {
@@ -269,23 +381,37 @@ function inferCoolingOn(registers) {
       return runningRegister.numericValue > 0;
     }
     const stateText = asTrimmedString(runningRegister.statusText || runningRegister.value || "");
-    if (stateText.includes("开") || stateText.includes("运行")) {
+    if (/\u5f00|\u8fd0\u884c/.test(stateText)) {
       return true;
     }
-    if (stateText.includes("关") || stateText.includes("停")) {
+    if (/\u5173|\u505c/.test(stateText)) {
       return false;
     }
   }
 
   const modeRegister = pickRegister(registers, (item) => {
     const name = asTrimmedString(item?.name || "");
-    return name === "模式" || name.includes("温控器模式");
+    return name === "\u6a21\u5f0f" || /\u6e29\u63a7\u5668\u6a21\u5f0f/.test(name);
   });
   if (modeRegister?.numericValue != null) {
     return modeRegister.numericValue > 0;
   }
 
   return null;
+}
+
+function hasEnvironmentSignal(registers) {
+  if (!Array.isArray(registers) || registers.length === 0) {
+    return false;
+  }
+  return registers.some((register) =>
+    isTemperatureRegister(register)
+    || isTemperatureSettingRegister(register)
+    || isHumidityRegister(register)
+    || isHumiditySettingRegister(register)
+    || isSupplyAirRegister(register)
+    || isReturnAirRegister(register)
+  );
 }
 
 function normalizeFallbackCondition(device, registers, index) {
@@ -317,17 +443,34 @@ function normalizeFallbackCondition(device, registers, index) {
   };
 }
 
-async function loadEnvironmentConditionFallback(baseUrl, siteId, options, primarySourceStatus) {
+async function loadEnvironmentConditionFallback(baseUrl, siteId, options) {
   const catalogEndpoint = buildEnvironmentDeviceCatalogEndpoint(siteId);
   const catalogResponse = await fetchLegacyJson(baseUrl, catalogEndpoint);
   const catalogPayload = catalogResponse.payload && typeof catalogResponse.payload === "object" ? catalogResponse.payload : null;
   const catalogPayloadOk = catalogResponse.ok && isLegacyPayloadOk(catalogPayload);
   const catalogRows = catalogPayloadOk ? extractLegacyRows(catalogPayload) : [];
-  const roomDevices = catalogRows
-    .filter(isRoomMonitorDevice)
+  const catalogDevices = catalogRows
     .map(normalizeRoomDevice)
-    .filter((item) => (!options.buildingId || item.buildingId === options.buildingId))
     .filter((item) => matchesMonitoringSite(item.monitoringSite, options.monitoringSite));
+  const buildFloorScope = resolveBuildFloorScope(options);
+  const buildingScopedDevices = options.buildingId
+    ? catalogDevices.filter((item) => item.buildingId === options.buildingId)
+    : catalogDevices;
+  const scopedDevices = buildingScopedDevices.filter((item) => matchesBuildFloorScope(item, buildFloorScope));
+  const catalogScopedDevices = catalogDevices.filter((item) => matchesBuildFloorScope(item, buildFloorScope));
+  const hasBuildFloorScope = Boolean(buildFloorScope.build || buildFloorScope.floor);
+  const effectiveCatalogDevices =
+    scopedDevices.length > 0
+      ? scopedDevices
+      : catalogScopedDevices.length > 0
+        ? catalogScopedDevices
+        : hasBuildFloorScope
+          ? []
+          : buildingScopedDevices.length > 0
+            ? buildingScopedDevices
+            : catalogDevices;
+  const roomDevices = effectiveCatalogDevices.filter(isRoomMonitorDevice);
+  const fallbackDevices = roomDevices.slice(0, ENVIRONMENT_FALLBACK_DEVICE_SCAN_LIMIT);
 
   const catalogSourceStatus = {
     key: "environmentConditionsCatalog",
@@ -335,19 +478,19 @@ async function loadEnvironmentConditionFallback(baseUrl, siteId, options, primar
     ok: catalogPayloadOk,
     status: catalogResponse.status ?? null,
     message: extractMessage(catalogPayload, catalogPayloadOk ? "OK" : null),
-    rows: catalogPayloadOk ? roomDevices.length : null,
+    rows: catalogPayloadOk ? fallbackDevices.length : null,
     error: catalogPayloadOk ? null : catalogResponse.error || extractMessage(catalogPayload, "Legacy request failed")
   };
 
-  if (!catalogPayloadOk || roomDevices.length === 0) {
+  if (!catalogPayloadOk || fallbackDevices.length === 0) {
     return {
       items: [],
-      sourceStatuses: [primarySourceStatus, catalogSourceStatus]
+      sourceStatuses: [catalogSourceStatus]
     };
   }
 
   const runtimeResults = await Promise.all(
-    roomDevices.map(async (device) => {
+    fallbackDevices.map(async (device) => {
       const endpoint = buildEnvironmentRegisterEndpoint(siteId, device.deviceId);
       const response = await fetchLegacyJson(baseUrl, endpoint);
       const payload = response.payload && typeof response.payload === "object" ? response.payload : null;
@@ -376,6 +519,9 @@ async function loadEnvironmentConditionFallback(baseUrl, siteId, options, primar
     if (!result.payloadOk) {
       return false;
     }
+    if (!hasEnvironmentSignal(result.registers)) {
+      return false;
+    }
     if (options.cooledAir === "1") {
       return result.coolingOn === true;
     }
@@ -389,6 +535,9 @@ async function loadEnvironmentConditionFallback(baseUrl, siteId, options, primar
     key: "environmentConditionsRuntime",
     endpoint: `/zsqy/reg/${siteId}/findObject?pageCurrent=1&pageSize=200&drId=*`,
     ok: runtimeResults.length > 0 && runtimeFailureCount === 0,
+    fallback: false,
+    reasonCode: null,
+    originLabel: null,
     status: runtimeFailureCount === 0 ? 200 : runtimeSuccessCount > 0 ? 206 : firstRuntimeFailure?.status ?? null,
     message:
       runtimeFailureCount === 0
@@ -407,7 +556,7 @@ async function loadEnvironmentConditionFallback(baseUrl, siteId, options, primar
 
   return {
     items: visibleResults.map((result, index) => normalizeFallbackCondition(result.device, result.registers, index)),
-    sourceStatuses: [primarySourceStatus, catalogSourceStatus, runtimeSourceStatus]
+    sourceStatuses: [catalogSourceStatus, runtimeSourceStatus]
   };
 }
 
@@ -435,16 +584,39 @@ export async function loadEnvironmentConditions(baseUrl, siteId, options = {}) {
   const normalizedOptions = {
     buildingId: asTrimmedString(options.buildingId || ""),
     cooledAir: asTrimmedString(options.cooledAir || ""),
-    monitoringSite: asTrimmedString(options.monitoringSite || "")
+    monitoringSite: asTrimmedString(options.monitoringSite || ""),
+    projectKey: asTrimmedString(options.projectKey || ""),
+    build: asTrimmedString(options.build || ""),
+    floor: asTrimmedString(options.floor || "")
   };
   const endpoint = buildEnvironmentConditionEndpoint(siteId, normalizedOptions);
-  const response = await fetchLegacyJson(baseUrl, endpoint);
-  const payload = response.payload && typeof response.payload === "object" ? response.payload : null;
-  const payloadOk = response.ok && isLegacyPayloadOk(payload);
-  const rows = payloadOk ? toArray(payload?.data) : [];
-  const primarySourceStatus = normalizePrimarySourceStatus(endpoint, response, payload, rows);
+  const shouldSkipPrimary = legacyCondition404Cache.has(siteId);
+  let payloadOk = false;
+  let rows = [];
+  let primarySourceStatus = null;
 
-  if (payloadOk && rows.length > 0) {
+  if (!shouldSkipPrimary) {
+    const response = await fetchLegacyJson(baseUrl, endpoint);
+    const payload = response.payload && typeof response.payload === "object" ? response.payload : null;
+    payloadOk = response.ok && isLegacyPayloadOk(payload);
+    rows = payloadOk ? toArray(payload?.data) : [];
+    primarySourceStatus = normalizePrimarySourceStatus(endpoint, response, payload, rows);
+    if (response.status === 404) {
+      legacyCondition404Cache.add(siteId);
+    }
+  } else {
+    primarySourceStatus = {
+      key: "environmentConditionsLegacy",
+      endpoint,
+      ok: false,
+      status: 404,
+      message: "Skipped after cached 404",
+      rows: null,
+      error: "Legacy condition endpoint unavailable (cached 404)"
+    };
+  }
+
+  if (payloadOk) {
     return {
       filters: {
         buildingId: normalizedOptions.buildingId || null,
@@ -456,7 +628,16 @@ export async function loadEnvironmentConditions(baseUrl, siteId, options = {}) {
     };
   }
 
-  const fallback = await loadEnvironmentConditionFallback(baseUrl, siteId, normalizedOptions, primarySourceStatus);
+  const fallback = await loadEnvironmentConditionFallback(baseUrl, siteId, normalizedOptions);
+  const fallbackSources = Array.isArray(fallback.sourceStatuses) ? fallback.sourceStatuses : [];
+  const hasFallbackSuccess = fallbackSources.some((source) => source?.ok === true && Number(source?.rows || 0) > 0);
+  const shouldSuppressPrimarySource =
+    primarySourceStatus?.ok === false &&
+    Number(primarySourceStatus?.status) === 404 &&
+    hasFallbackSuccess;
+  const sourceStatuses = shouldSuppressPrimarySource
+    ? fallbackSources
+    : [primarySourceStatus, ...fallbackSources].filter(Boolean);
 
   return {
     filters: {
@@ -465,6 +646,11 @@ export async function loadEnvironmentConditions(baseUrl, siteId, options = {}) {
       monitoringSite: normalizedOptions.monitoringSite || null
     },
     items: fallback.items,
-    sourceStatuses: fallback.sourceStatuses
+    sourceStatuses
   };
 }
+
+
+
+
+

@@ -1,112 +1,112 @@
 {
-  "generatedAt": "2026-03-24T17:24:12.408Z",
+  "generatedAt": "2026-04-11T06:11:40.352Z",
   "sourceReadinessReport": "/tmp/chiller_readiness_report.json",
   "rule": "badge_result_must_come_from_backend_readiness_only",
   "global": {
-    "pass": true,
+    "pass": false,
     "text": {
-      "zh-CN": "非降级态：通过",
-      "en-US": "Non-Degraded: PASS",
-      "vi-VN": "Phi suy giảm: Đạt"
+      "zh-CN": "非降级态：未通过",
+      "en-US": "Non-Degraded: NOT PASS",
+      "vi-VN": "Phi suy giảm: Chưa đạt"
     }
   },
   "pages": {
     "dashboard": {
-      "pass": true,
+      "pass": false,
       "text": {
-        "zh-CN": "非降级态：通过",
-        "en-US": "Non-Degraded: PASS",
-        "vi-VN": "Phi suy giảm: Đạt"
+        "zh-CN": "非降级态：未通过",
+        "en-US": "Non-Degraded: NOT PASS",
+        "vi-VN": "Phi suy giảm: Chưa đạt"
       }
     },
     "systemOverview": {
-      "pass": true,
+      "pass": false,
       "text": {
-        "zh-CN": "非降级态：通过",
-        "en-US": "Non-Degraded: PASS",
-        "vi-VN": "Phi suy giảm: Đạt"
+        "zh-CN": "非降级态：未通过",
+        "en-US": "Non-Degraded: NOT PASS",
+        "vi-VN": "Phi suy giảm: Chưa đạt"
       }
     }
   },
   "evidence": {
-    "attribution": "none",
-    "ndFailedCount": 0,
+    "attribution": "upstream_interface",
+    "ndFailedCount": 38,
     "m123": {
       "dashboard": {
         "M1": {
-          "value": "0/4",
+          "value": "4/4",
           "threshold": "<=0/4",
-          "pass": true
+          "pass": false
         },
         "M2": {
-          "value": 0,
+          "value": 1,
           "threshold": "0",
-          "pass": true
+          "pass": false
         },
         "M3": {
-          "value": "3/3 (100.0%)",
+          "value": "0/3 (0.0%)",
           "threshold": ">=80% and non_empty_series>=2",
-          "pass": true,
+          "pass": false,
           "detail": {
-            "nonEmptySeries": 3,
+            "nonEmptySeries": 0,
             "metrics": [
               {
                 "metric": "totalPowerKw",
-                "validPointCount": 2,
-                "pass": true
+                "validPointCount": 0,
+                "pass": false
               },
               {
                 "metric": "currentCop",
-                "validPointCount": 144,
-                "pass": true
+                "validPointCount": 0,
+                "pass": false
               },
               {
                 "metric": "chilledDeltaT",
-                "validPointCount": 144,
-                "pass": true
+                "validPointCount": 0,
+                "pass": false
               }
             ]
           }
         },
-        "pass": true
+        "pass": false
       },
       "systemOverview": {
         "M1": {
-          "value": "0/1",
+          "value": "1/1",
           "threshold": "<=0/1",
-          "pass": true
+          "pass": false
         },
         "M2": {
-          "value": 0,
+          "value": 1,
           "threshold": "0",
-          "pass": true
+          "pass": false
         },
         "M3": {
-          "value": "3/3 (100.0%)",
+          "value": "0/3 (0.0%)",
           "threshold": ">=80% (chain proxy)",
-          "pass": true,
+          "pass": false,
           "detail": {
-            "nonEmptySeries": 3,
+            "nonEmptySeries": 0,
             "metrics": [
               {
                 "metric": "totalPowerKw",
-                "validPointCount": 2,
-                "pass": true
+                "validPointCount": 0,
+                "pass": false
               },
               {
                 "metric": "currentCop",
-                "validPointCount": 144,
-                "pass": true
+                "validPointCount": 0,
+                "pass": false
               },
               {
                 "metric": "chilledDeltaT",
-                "validPointCount": 144,
-                "pass": true
+                "validPointCount": 0,
+                "pass": false
               }
             ]
           }
         },
-        "pass": true
+        "pass": false
       }
     }
   }

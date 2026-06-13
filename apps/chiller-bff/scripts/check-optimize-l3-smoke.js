@@ -4,6 +4,17 @@ import https from "node:https";
 
 const BFF_BASE_URL = process.env.BFF_BASE_URL || "http://127.0.0.1:8787";
 const SITE_ID = process.env.SITE_ID || "btwentyfive";
+const EXPECTED_MIN_CONDENSER_INLET_TEMP_C = (() => {
+  const raw =
+    process.env.EXPECTED_TOWER_APPROACH_MIN_CONDENSER_INLET_TEMP_C ||
+    process.env.TOWER_APPROACH_MIN_CONDENSER_INLET_TEMP_C ||
+    "";
+  if (String(raw).trim().length === 0) {
+    return null;
+  }
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+})();
 const REQUEST = {
   loadKw: 1200,
   outdoorTempC: 27.6,
@@ -12,7 +23,10 @@ const REQUEST = {
 
 const BASE_CONFIG = {
   staleThresholdHours: 6,
-  ratedCoolingCapacityKw: 2400
+  ratedCoolingCapacityKw: 2400,
+  towerApproach: {
+    minCondenserInletTempC: 28
+  }
 };
 
 const BASE_OVERVIEW = {
@@ -210,28 +224,57 @@ async function runHttpBoundaryCheck() {
     throw new Error(`http boundary: response is not valid json (${String(error)})`);
   }
 
-  expect(response.status === 501, `http boundary: expected status 501, got ${response.status}`);
-  expect(payload?.ok === false, `http boundary: expected ok=false, got ${String(payload?.ok)}`);
-  expect(payload?.code === "NOT_IMPLEMENTED", `http boundary: expected code=NOT_IMPLEMENTED, got ${String(payload?.code)}`);
+  expect(response.status === 200, `http advisor: expected status 200, got ${response.status}`);
+  expect(payload?.ok === true, `http advisor: expected ok=true, got ${String(payload?.ok)}`);
+  expect(payload?.code === "OK", `http advisor: expected code=OK, got ${String(payload?.code)}`);
   expect(payload?.details && typeof payload.details === "object", "http boundary: missing details object");
 
   const historySource = getHistorySource(payload.details);
   expect(historySource, "http boundary: sourceStatus missing historyBenchmark source");
 
-  const optimizeDraftSource =
+  const optimizeEngineSource =
     Array.isArray(payload.details?.sourceStatus?.sources)
-      ? payload.details.sourceStatus.sources.find((item) => item?.key === "optimizeDraft")
+      ? payload.details.sourceStatus.sources.find((item) => item?.key === "optimizeEngine")
       : null;
-  expect(optimizeDraftSource, "http boundary: sourceStatus missing optimizeDraft source");
-  expect(optimizeDraftSource.ok === false, "http boundary: optimizeDraft source ok must be false");
+  expect(optimizeEngineSource, "http advisor: sourceStatus missing optimizeEngine source");
+  expect(optimizeEngineSource.ok === true, "http advisor: optimizeEngine source ok must be true");
   expect(
-    String(optimizeDraftSource.error || "").includes("not implemented"),
-    `http boundary: optimizeDraft source error must include "not implemented", got ${String(optimizeDraftSource.error)}`
+    optimizeEngineSource.reasonCode === "advisor_result_ready",
+    `http advisor: optimizeEngine reasonCode must be advisor_result_ready, got ${String(optimizeEngineSource.reasonCode)}`
   );
   expect(
     typeof payload.details?.historyBenchmark?.status === "string",
     "http boundary: details.historyBenchmark.status must exist"
   );
+  if (payload.details?.towerApproachAdvisor && typeof payload.details.towerApproachAdvisor === "object") {
+    expect(
+      typeof payload.details?.towerApproachAdvisor?.status === "string",
+      "http boundary: details.towerApproachAdvisor.status must exist"
+    );
+    expect(
+      payload.details?.towerApproachAdvisor?.advisorResult?.type === "tower_approach_ai_closed_loop",
+      "http advisor: details.towerApproachAdvisor.advisorResult.type must be tower_approach_ai_closed_loop"
+    );
+    if (EXPECTED_MIN_CONDENSER_INLET_TEMP_C !== null) {
+      const guardrails = Array.isArray(payload.details?.towerApproachAdvisor?.guardrails)
+        ? payload.details.towerApproachAdvisor.guardrails
+        : [];
+      const minTempGuardrail = guardrails.find((item) => item?.key === "chillerMinCondenserInletTempC") || null;
+      expect(minTempGuardrail, "http boundary: towerApproachAdvisor.guardrails missing chillerMinCondenserInletTempC");
+      expect(
+        minTempGuardrail.status === "ready",
+        `http boundary: min temp guardrail should be ready, got ${String(minTempGuardrail.status)}`
+      );
+      expect(
+        Number(minTempGuardrail.value) === EXPECTED_MIN_CONDENSER_INLET_TEMP_C,
+        `http boundary: expected min temp guardrail value=${EXPECTED_MIN_CONDENSER_INLET_TEMP_C}, got ${String(minTempGuardrail.value)}`
+      );
+    }
+  } else {
+    process.stdout.write(
+      "[WARN] http boundary: live endpoint has no towerApproachAdvisor yet; fixture checks still enforce L3 schema\n"
+    );
+  }
 }
 
 async function runReadyFixtureCheck() {
@@ -258,6 +301,12 @@ async function runReadyFixtureCheck() {
     response.historyBenchmark.matchedWetBulbBands.length >= 1,
     "ready fixture: matchedWetBulbBands should contain at least 1 bucket"
   );
+  expect(response.towerApproachAdvisor?.status === "ready", `ready fixture: expected towerApproachAdvisor.status=ready, got ${response.towerApproachAdvisor?.status}`);
+  expect(response.towerApproachAdvisor?.executionReady === true, "ready fixture: towerApproachAdvisor.executionReady must be true");
+  expect(
+    typeof response.towerApproachAdvisor?.targetApproachC === "number",
+    "ready fixture: towerApproachAdvisor.targetApproachC must be numeric"
+  );
 }
 
 async function runPartialFixtureCheck() {
@@ -279,6 +328,14 @@ async function runPartialFixtureCheck() {
     Array.isArray(response.historyBenchmark?.sampleWindow?.months) &&
       response.historyBenchmark.sampleWindow.months.length === 6,
     `partial fixture: sampleWindow.months should continue to 6, got ${response.historyBenchmark?.sampleWindow?.months?.length}`
+  );
+  expect(
+    response.towerApproachAdvisor?.status === "partial",
+    `partial fixture: expected towerApproachAdvisor.status=partial, got ${response.towerApproachAdvisor?.status}`
+  );
+  expect(
+    response.towerApproachAdvisor?.executionReady === false,
+    "partial fixture: towerApproachAdvisor.executionReady must be false"
   );
 }
 
@@ -304,6 +361,14 @@ async function runUnavailableFixtureCheck() {
     response.benefitEstimate?.status === "unavailable",
     `unavailable fixture: expected benefitEstimate.status=unavailable, got ${response.benefitEstimate?.status}`
   );
+  expect(
+    response.towerApproachAdvisor?.status === "partial",
+    `unavailable fixture: expected towerApproachAdvisor.status=partial, got ${response.towerApproachAdvisor?.status}`
+  );
+  expect(
+    response.towerApproachAdvisor?.executionReady === false,
+    "unavailable fixture: towerApproachAdvisor.executionReady must be false"
+  );
   const historySource = getHistorySource(response);
   expect(historySource, "unavailable fixture: sourceStatus missing historyBenchmark source");
   expect(historySource.ok === false, "unavailable fixture: historyBenchmark source ok must be false");
@@ -311,7 +376,7 @@ async function runUnavailableFixtureCheck() {
 
 async function main() {
   const checks = [
-    { name: "http-501-boundary", run: runHttpBoundaryCheck },
+    { name: "http-advisor-result", run: runHttpBoundaryCheck },
     { name: "fixture-ready-state", run: runReadyFixtureCheck },
     { name: "fixture-partial-state", run: runPartialFixtureCheck },
     { name: "fixture-unavailable-state", run: runUnavailableFixtureCheck }

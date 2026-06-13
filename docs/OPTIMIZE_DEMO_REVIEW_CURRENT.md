@@ -1,5 +1,7 @@
 # OPTIMIZE_DEMO_REVIEW_CURRENT
 
+> 2026-06-12 更新：本文保留为早期 `NOT_IMPLEMENTED/501` 阶段的历史复验记录。当前 `/optimize-demo` 已推进到 `200 OK + towerApproachAdvisor + pumpDeltaTAdvisor + chillerStagingAdvisor + operationalDiagnosticsAdvisor` 的 Advisor 演示阶段。当前状态以 `docs/OPTIMIZE_DEMO_ADVISOR_STATUS_CURRENT.md`、`docs/CHILLER_STAGING_ADVISOR_CURRENT.md` 和 `docs/OPERATIONAL_DIAGNOSTICS_ADVISOR_CURRENT.md` 为准。
+
 ## 1. 复验范围
 
 本轮基于真实页面：

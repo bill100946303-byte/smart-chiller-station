@@ -49,7 +49,7 @@ Validates OpenAPI examples (`overview/trends/anomalies/topology/recommendations`
 ## Environment variables
 
 - `BFF_PORT` (default `8787`)
-- `LEGACY_BASE_URL` (default `http://127.0.0.1:8098`)
+- `LEGACY_BASE_URL` (default `https://www.ssge.com.cn:8098`)
 - `DEFAULT_SITE_ID` (default `126lnoffice`)
 - `STALE_THRESHOLD_HOURS` (default `24`)
 - `FIELD_DICTIONARY_FILE` (default `../../docs/field-dictionary.json`)

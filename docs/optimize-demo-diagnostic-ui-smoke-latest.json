@@ -1,0 +1,210 @@
+{
+  "checkedAt": "2026-06-13T01:33:46.469Z",
+  "siteId": "140",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "appBaseUrl": "http://127.0.0.1:3002",
+  "cdpListUrl": "http://127.0.0.1:61392/json/list",
+  "api": {
+    "overview": {
+      "status": 200,
+      "currentCop": 6.6,
+      "totalPowerKw": 1930.5,
+      "totalCoolingCapacity": 12741.3,
+      "sourceOverall": "partial"
+    },
+    "optimize": {
+      "status": 200,
+      "code": "OK",
+      "schemeCount": 3,
+      "chillerStaging": {
+        "status": "partial",
+        "executionMode": "read_only",
+        "basis": "combination_empirical_performance",
+        "enforcedAllowed": false,
+        "exposesSingleChillerCop": false
+      },
+      "fieldCollectionPackage": {
+        "finalDecision": "FIELD_COLLECTION_PACKAGE_READY_TO_COLLECT",
+        "formalInputCount": 4,
+        "presentFormalInputCount": 0,
+        "missingFormalInputCount": 4,
+        "formalInputPaths": [
+          "docs/field-data/optimize-demo-140/sensor-calibration-installation.csv",
+          "docs/field-data/optimize-demo-140/control-command-feedback.csv",
+          "docs/field-data/optimize-demo-140/start-stop-event.csv",
+          "docs/field-data/optimize-demo-140/control-parameter.csv"
+        ]
+      }
+    }
+  },
+  "ui": {
+    "auth": {
+      "reusedSession": true,
+      "credentialTried": null
+    },
+    "project": {
+      "before": {
+        "href": "http://127.0.0.1:3002/projects?redirect=%2Fdashboard&siteId=140",
+        "pathname": "/projects",
+        "redirect": "/dashboard",
+        "cards": [
+          {
+            "index": 0,
+            "projectId": "126lnoffice::126lnoffice::1::::126lnoffice::::126lnoffice",
+            "siteId": "126lnoffice",
+            "siteName": "126lnoffice",
+            "isCurrent": false,
+            "disabled": false,
+            "buttonText": "进入项目"
+          },
+          {
+            "index": 1,
+            "projectId": "127::127::1::::127::::127",
+            "siteId": "127",
+            "siteName": "127",
+            "isCurrent": false,
+            "disabled": false,
+            "buttonText": "进入项目"
+          },
+          {
+            "index": 2,
+            "projectId": "140::126lnoffice::1::::btwentyfive::::观澜B25",
+            "siteId": "140",
+            "siteName": "观澜B25",
+            "isCurrent": true,
+            "disabled": false,
+            "buttonText": "进入当前项目"
+          }
+        ],
+        "openButtonVisible": true,
+        "topProjectValue": null
+      },
+      "clicked": {
+        "ok": true,
+        "projectId": "140::126lnoffice::1::::btwentyfive::::观澜B25",
+        "siteId": "140",
+        "siteName": "观澜B25"
+      },
+      "after": {
+        "href": "http://127.0.0.1:3002/dashboard?siteId=140",
+        "pathname": "/dashboard",
+        "siteIdParam": "140",
+        "currentProjectId": "140::126lnoffice::1::::btwentyfive::::观澜B25",
+        "storedProjectId": "140",
+        "topProjectValue": null
+      }
+    },
+    "dashboard": {
+      "url": "http://127.0.0.1:3002/dashboard?siteId=140",
+      "siteIdParam": "140",
+      "onLoginPage": false,
+      "hasOpsBoard": true,
+      "hasEfficiencyBlock": true,
+      "hasSourceObservableField": true,
+      "cardCount": 0,
+      "allDash": false,
+      "sampleValues": [],
+      "hasSnapshotHint": false
+    },
+    "optimizeDemo": {
+      "url": "http://127.0.0.1:3002/optimize-demo?siteId=140",
+      "siteIdParam": "140",
+      "onLoginPage": false,
+      "schemeCardCount": 0,
+      "responseCardCount": 141,
+      "readinessCount": 0,
+      "submitDisabled": false,
+      "loadInputValue": "1200",
+      "wetBulbInputValue": "25.8",
+      "sourceSummary": null,
+      "hasHistorySection": true,
+      "hasChillerStagingAdvisorSection": true,
+      "hasChillerCurrentCombination": true,
+      "hasChillerTargetCombination": true,
+      "hasChillerEmpiricalPerformance": true,
+      "hasChillerShadowVerification": true,
+      "hasChillerNoSingleCop": true,
+      "hasFieldCollectionPackageReadiness": true,
+      "hasFormalCsvReadiness": true,
+      "hasFormalCsvMissingDetails": true,
+      "hasBenefitSection": true,
+      "hasApproachSection": true,
+      "hasPumpDeltaTSection": true,
+      "hasOperationalDiagnosticsSection": true,
+      "hasClientDemoReadinessSection": true,
+      "hasClientDemoReadinessDecision": true,
+      "hasClientDemoReadinessNoMutation": true,
+      "hasClientDemoReadinessScope": true,
+      "hasDiagnosticReadinessSection": true,
+      "hasDiagnosticReadinessCanDo": true,
+      "hasDiagnosticReadinessDirectional": true,
+      "hasDiagnosticReadinessPointGap": true,
+      "hasDiagnosticReadinessNoFault": true,
+      "hasDiagnosticReadinessNoPlc": true,
+      "hasDiagnosticReadinessNoAutoDispatch": true,
+      "hasFieldVerificationChecklist": true,
+      "hasFieldVerificationReadonlyBoundary": true,
+      "hasFieldVerificationP0": true,
+      "hasInstrumentDriftV1": true,
+      "hasInstrumentDriftNoAutoCorrection": true,
+      "hasInstrumentDriftReviewBoundary": true,
+      "hasInstrumentDriftCrossChecks": true,
+      "hasInstrumentDriftFieldTargets": true,
+      "hasHydraulicBalanceV1": true,
+      "hasHydraulicNoAutoPumpDown": true,
+      "hasHydraulicNoTerminalFault": true,
+      "hasHydraulicRiskIndicators": true,
+      "hasHydraulicFieldTargets": true,
+      "hasControlOscillationV1": true,
+      "hasControlNoAutoPid": true,
+      "hasControlNoAutoStartStop": true,
+      "hasControlOscillationRiskIndicators": true,
+      "hasControlOscillationFieldTargets": true,
+      "hasControlLedgerImport": true,
+      "hasControlFieldDataPreflight": true,
+      "hasControlFieldDataPromote": true,
+      "diagnosticReadinessText": "数据资源与诊断可行性\n4 可做 / 5 疑似 / 1 补点\n现有 140/B25 数据能支撑哪些诊断\n\nA档可做 V1；B档只能疑似判断；C档暂不能做，只进入补点清单。所有内容只读诊断，不判定设备故障，不写 PLC。\n\n真实 PLC 下发锁定\n可做 V1\n4\n现有实时/趋势数据可支撑\n只能疑似判断\n5\n输出风险和复核建议\n暂不能做\n1\n只进入点位改造清单\n执行边界\n只读/shadow\n无真实启停，不开放 enforced\nA档 · 只读诊断\n可做 V1\n仪表数据偏移诊断\n实时闭合校验、24h 稳态窗口 COP/功率/温差偏移复核。\n已有：1215 个实时寄存器点 / 24h COP/总功率/温差趋势\n缺口：传感器校准记录 / 安装位置台账\n可做 V1\nA/B档 · 只读诊断\n可做 V1\n冷冻水水力平衡诊断\n站级低温差持续性、实时支路流量/压力离散度、旁通分流风险。\n已有：7 个支路线索 / 24h 冷冻水温差和总功率趋势\n缺口：支路历史趋势 / 末端阀位\n可做 V1\nA/B档 · 只读诊断\n可做 V1\n低温差根因诊断\n持续低温差、大流量小温差、旁通、支路分配和末端安全缺口排序。\n已有：24h 低温差持续性趋势 / 运行泵频率反馈\n缺口：末端阀位/室温/压差 / 支路历史趋势\n可做 V1\nA档 · shadow审阅\n可做 V1\n冷却塔能力诊断\n湿球、冷却水出水、Approach、塔风机/塔流量一致性复核。\n已有：实时湿球 / 冷却水温度\n缺口：塔单元长周期分摊 / 填料/布水现场巡检\n可做 V1\nA/B档 · shadow审阅\n只能疑似判断\n主机组合优化\n当前组合、组合容量、组合负荷率、组合 COP/冷站 COP、候选组合样本置信度。\n已有：当前运行组合 / 主机总功率\n缺口：组合历史样本 / 当前组合连续运行时间\n只能疑似判断\nB档 · 只读诊断\n只能疑似判断\n主机健康劣化诊断\n同组合/同负荷下冷站 COP 漂移、功率偏高和故障风险提示。\n已有：主机运行状态 / 主机功率\n缺口：单台冷冻水流量 / 厂家 COP 曲线\n只能疑似判断\nB/C档 · 只读诊断\n只能疑似判断\n水泵效率诊断\n频率/功率/压差异常、疑似偏离高效区提示。\n已有：泵频率反馈 / 部分总管压差/流量线索\n缺口：单泵流量 / 泵曲线\n只能疑似判断\nB/C档 · 只读诊断\n只能疑似判断\n阀门卡滞/执行器诊断\n阀位长期饱和、旁通分流和命令/反馈缺口提示。\n已有：阀门/旁通反馈线索 / 实时阀类点位关键词\n缺口：阀门命令值 / 阀门反馈值\n只能疑似判断\nB档 · 只读诊断\n只能疑似判断\n控制震荡/频繁启停诊断\n温差锯齿波、总功率 hunting、频率命令/反馈缺口和启停事件缺口。\n已有：24h COP/总功率/温差趋势 / 运行状态和频率实时摘要\n缺口：高频历史 / 控制命令历史\n只能疑似判断\nC档 · 补点计划\n暂不能做\n末端舒适/缺冷风险诊断\n代表末端缺冷风险、降泵前安全闭锁和投诉状态复核。\n缺口：代表房间温度 / 末端阀位\n暂不能做\n现场复核清单\n\n把 B/C 档数据缺口转成只读点位/资料补齐任务；用于提高诊断置信度，不触发审批、dispatch 或 PLC 写入。\n\n4 P0 / 3 P1\nP0 · A/B档\n制定主机组合样本采集计划\nCH4+CH5+CH7 等当前组合及候选组合\n缺口：组合历史样本 / 当前组合连续运行时间\n证据：组合连续运行时长 / 同负荷/湿球 band\n每个候选组合形成 >=30 条低置信可用样本，>=100 条才允许高置信表达。\n多机运行无单台冷冻水流量时仍只评价组合，不拆单台 COP，不自动启停主机。\nP0\nP0 · A/B档\n确认 PLC 泵频保护与回退点\n冷冻泵频率目标点、回退点、最小流量、频率上下限、斜率限制\n缺口：末端阀位/室温/压差 / ",
+      "hasPointDictionaryCopy": true,
+      "hasCoolingTowerGroupCopy": true,
+      "hasCoolingTowerFanCopy": true,
+      "towerSubmitVisible": true,
+      "towerSubmitDisabled": true,
+      "towerSubmitEnabled": false,
+      "towerSubmitLabel": "提交接近度审批",
+      "towerApproachReasonText": "当前环境只读，先核对目标值、边界和历史记录。",
+      "hasDraftBoundaryHint": true,
+      "hasNoWhiteScreen": true
+    },
+    "optimizeExecution": {
+      "siteId": "140",
+      "skipped": true,
+      "reason": "diagnostic_readiness_only",
+      "noSubmitApproveDispatchRollback": true
+    },
+    "diagnosticReadiness": {
+      "finalDecision": "UI_DIAGNOSTIC_READINESS_READY",
+      "readyNowCount": 4,
+      "directionalCount": 5,
+      "pointGapCount": 1,
+      "total": 10,
+      "controlBoundary": "read_only_or_shadow_only",
+      "fieldVerificationP0Count": 4,
+      "fieldVerificationP1Count": 3,
+      "fieldVerificationBoundary": "read_only_point_verification_only",
+      "instrumentDriftCandidateCount": 1,
+      "instrumentCrossCheckCount": 4,
+      "instrumentReviewBoundary": "仪表偏移 V1 只输出疑似候选和复核对象，不判定仪表故障，不自动修正测点。",
+      "hydraulicRiskIndicatorCount": 5,
+      "hydraulicFieldReviewTargetCount": 3,
+      "hydraulicReviewBoundary": "水力平衡 V1 只输出水力失衡风险排序、低温差持续性和现场复核对象；不自动降泵，不直接判定末端阀门故障。",
+      "controlOscillationRiskIndicatorCount": 5,
+      "controlOscillationFieldReviewTargetCount": 3,
+      "controlOscillationReviewBoundary": "控制震荡 V1 只输出温差锯齿波、总功率 hunting、频率/启停事件缺口和现场复核对象；不自动改 PID，不自动启停设备。",
+      "controlFieldDataPreflightStatus": "waiting",
+      "controlFieldDataPreflightMissingInputCount": 4,
+      "controlFieldDataPromoteStatus": "waiting",
+      "controlFieldDataPromoteFormalImportReady": false,
+      "textExcerpt": "数据资源与诊断可行性\n4 可做 / 5 疑似 / 1 补点\n现有 140/B25 数据能支撑哪些诊断\n\nA档可做 V1；B档只能疑似判断；C档暂不能做，只进入补点清单。所有内容只读诊断，不判定设备故障，不写 PLC。\n\n真实 PLC 下发锁定\n可做 V1\n4\n现有实时/趋势数据可支撑\n只能疑似判断\n5\n输出风险和复核建议\n暂不能做\n1\n只进入点位改造清单\n执行边界\n只读/shadow\n无真实启停，不开放 enforced\nA档 · 只读诊断\n可做 V1\n仪表数据偏移诊断\n实时闭合校验、24h 稳态窗口 COP/功率/温差偏移复核。\n已有：1215 个实时寄存器点 / 24h COP/总功率/温差趋势\n缺口：传感器校准记录 / 安装位置台账\n可做 V1\nA/B档 · 只读诊断\n可做 V1\n冷冻水水力平衡诊断\n站级低温差持续性、实时支路流量/压力离散度、旁通分流风险。\n已有：7 个支路线索 / 24h 冷冻水温差和总功率趋势\n缺口：支路历史趋势 / 末端阀位\n可做 V1\nA/B档 · 只读诊断\n可做 V1\n低温差根因诊断\n持续低温差、大流量小温差、旁通、支路分配和末端安全缺口排序。\n已有：24h 低温差持续性趋势 / 运行泵频率反馈\n缺口：末端阀位/室温/压差 / 支路历史趋势\n可做 V1\nA档 · shadow审阅\n可做 V1\n冷却塔能力诊断\n湿球、冷却水出水、Approach、塔风机/塔流量一致性复核。\n已有：实时湿球 / 冷却水温度\n缺口：塔单元长周期分摊 / 填料/布水现场巡检\n可做 V1\nA/B档 · shadow审阅\n只能疑似判断\n主机组合优化\n当前组合、组合容量、组合负荷率、组合 COP/冷站 COP、候选组合样本置信度。\n已有：当前运行组合 / 主机总功率\n缺口：组合历史样本 / 当前组合连续运行时间\n只能疑似判断\nB档 · 只读诊断\n只能疑似判断\n主机健康劣化诊断\n同组合/同负荷下冷站 COP 漂移、功率偏高和故障风险提示。\n已有：主机运行状态 / 主机功率\n缺口：单台冷冻水流量 / 厂家 COP 曲线\n只能疑似判断\nB/C档 · 只读诊断\n只能疑似判断\n水泵效率诊断\n频率/功率/压差异常、疑似偏离高效区提示。\n已有：泵频率反馈 / 部分总管压差/流量线索\n缺口：单泵流量 / 泵曲线\n只能疑似判断\nB/C档 · 只读诊断\n只能疑似判断\n阀门卡滞/执行器诊断\n阀位长期饱和、旁通分流和命令/反馈缺口提示。\n已有：阀门/旁通反馈线索 / 实时阀类点位关键词\n缺口：阀门命令值 / 阀门反馈值\n只能疑似判断\nB档 · 只读诊断\n只能疑似判断\n控制震荡/频繁启停诊断\n温差锯齿波、总功率 hunting、频率命令/反馈缺口和启停事件缺口。\n已有：24h COP/总功率/温差趋势 / 运行状态和频率实时摘要\n缺口：高频历史 / 控制命令历史\n只能疑似判断\nC档 · 补点计划\n暂不能做\n末端舒适/缺冷风险诊断\n代表末端缺冷风险、降泵前安全闭锁和投诉状态复核。\n缺口：代表房间温度 / 末端阀位\n暂不能做\n现场复核清单\n\n把 B/C 档数据缺口转成只读点位/资料补齐任务；用于提高诊断置信度，不触发审批、dispatch 或 PLC 写入。\n\n4 P0 / 3 P1\nP0 · A/B档\n制定主机组合样本采集计划\nCH4+CH5+CH7 等当前组合及候选组合\n缺口：组合历史样本 / 当前组合连续运行时间\n证据：组合连续运行时长 / 同负荷/湿球 band\n每个候选组合形成 >=30 条低置信可用样本，>=100 条才允许高置信表达。\n多机运行无单台冷冻水流量时仍只评价组合，不拆单台 COP，不自动启停主机。\nP0\nP0 · A/B档\n确认 PLC 泵频保护与回退点\n冷冻泵频率目标点、回退点、最小流量、频率上下限、斜率限制\n缺口：末端阀位/室温/压差 / "
+    }
+  }
+}

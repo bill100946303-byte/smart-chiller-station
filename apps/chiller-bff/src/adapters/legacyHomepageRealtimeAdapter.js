@@ -413,7 +413,8 @@ async function waitForRealtimeSnapshot(baseUrl, siteId, context) {
 export async function loadRealtimeHomepageSnapshot(baseUrl, siteId, context) {
   const userId = text(context?.userId);
   const template = text(context?.template) || "1";
-  const cacheKey = `${baseUrl}::${siteId}::${userId}::${template}`;
+  const projectKey = text(context?.projectKey) || text(siteId);
+  const cacheKey = `${baseUrl}::${siteId}::${userId}::${template}::${projectKey}`;
   const now = Date.now();
   const cached = snapshotCache.get(cacheKey);
   if (cached && cached.expiresAt > now) {

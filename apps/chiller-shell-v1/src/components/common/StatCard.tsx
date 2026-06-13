@@ -7,24 +7,30 @@ export default function StatCard({
   value,
   unit,
   delta,
-  tone
+  tone,
+  className = ""
 }: {
   title: string;
   value: string;
   unit: string;
   delta: string;
   tone: Tone;
+  className?: string;
 }) {
   const pillTone = tone === "warn" ? "warn" : tone === "good" ? "good" : "neutral";
+  const normalizedDelta = delta.trim();
+  const cardClassName = ["stat-card", `tone-${tone}`, className].filter(Boolean).join(" ");
 
   return (
-    <article className={`stat-card tone-${tone}`}>
-      <p className="stat-title">{title}</p>
+    <article className={cardClassName} aria-label={title}>
+      <p className="stat-title" title={title}>
+        {title}
+      </p>
       <div className="stat-main">
-        <strong>{value}</strong>
+        <strong title={value}>{value}</strong>
         {unit ? <span>{unit}</span> : null}
       </div>
-      <StatusPill label={delta} tone={pillTone} />
+      {normalizedDelta ? <StatusPill label={normalizedDelta} tone={pillTone} /> : null}
     </article>
   );
 }

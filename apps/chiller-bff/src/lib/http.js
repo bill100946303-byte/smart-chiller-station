@@ -109,7 +109,7 @@ function parseXmlPayload(text) {
   return payload;
 }
 
-function parsePayloadText(text) {
+export function parsePayloadText(text) {
   if (!text) {
     return null;
   }
@@ -147,7 +147,8 @@ export async function requestLegacy(baseUrl, path, options = {}) {
     response = await fetch(url, {
       method: options.method || "GET",
       headers: options.headers,
-      body: options.body
+      body: options.body,
+      signal: options.signal
     });
   } catch (error) {
     return {

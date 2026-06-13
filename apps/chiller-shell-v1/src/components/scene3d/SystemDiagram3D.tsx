@@ -1,5 +1,44 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import * as THREE from "three";
+import {
+  AmbientLight,
+  BackSide,
+  Box3,
+  BoxGeometry,
+  CanvasTexture,
+  CapsuleGeometry,
+  CatmullRomCurve3,
+  CircleGeometry,
+  Color,
+  CylinderGeometry,
+  DirectionalLight,
+  DoubleSide,
+  EdgesGeometry,
+  FogExp2,
+  GridHelper,
+  Group,
+  HemisphereLight,
+  LineBasicMaterial,
+  LineSegments,
+  Mesh,
+  MeshBasicMaterial,
+  MeshStandardMaterial,
+  type Object3D,
+  PerspectiveCamera,
+  PlaneGeometry,
+  Raycaster,
+  RingGeometry,
+  Scene,
+  SphereGeometry,
+  Sprite,
+  SpriteMaterial,
+  SRGBColorSpace,
+  TorusGeometry,
+  TorusKnotGeometry,
+  TubeGeometry,
+  Vector2,
+  Vector3,
+  WebGLRenderer
+} from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 import {
@@ -32,8 +71,8 @@ type HoverState = {
 } | null;
 
 type FlowPulse = {
-  mesh: THREE.Mesh;
-  curve: THREE.CatmullRomCurve3;
+  mesh: Mesh;
+  curve: CatmullRomCurve3;
   offset: number;
   speed: number;
 };
@@ -53,16 +92,16 @@ const NODE_STATUS_COLORS: Record<SystemDiagramResolvedNode["status"], string> = 
 
 const gltfLoader = new GLTFLoader();
 gltfLoader.setMeshoptDecoder(MeshoptDecoder);
-const modelPrototypeCache = new Map<DeviceModelCategory, Promise<THREE.Object3D>>();
+const modelPrototypeCache = new Map<DeviceModelCategory, Promise<Object3D>>();
 
-function loadModelPrototype(category: DeviceModelCategory): Promise<THREE.Object3D> {
+function loadModelPrototype(category: DeviceModelCategory): Promise<Object3D> {
   const cached = modelPrototypeCache.get(category);
   if (cached) {
     return cached;
   }
 
   const descriptor = getDeviceModelByCategory(category);
-  const pending = new Promise<THREE.Object3D>((resolve, reject) => {
+  const pending = new Promise<Object3D>((resolve, reject) => {
     gltfLoader.load(
       descriptor.path,
       (gltf) => resolve(gltf.scene),
@@ -132,24 +171,24 @@ function createLabelSprite(title: string, subtitle: string, color: string) {
   context.textBaseline = "middle";
   context.fillText(title, 34, 130);
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  const material = new THREE.SpriteMaterial({
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  const material = new SpriteMaterial({
     map: texture,
     transparent: true
   });
-  const sprite = new THREE.Sprite(material);
+  const sprite = new Sprite(material);
   sprite.scale.set(3.4, 0.98, 1);
   return sprite;
 }
 
-function createPipeCurve(points: THREE.Vector3[]) {
-  return new THREE.CatmullRomCurve3(points, false, "catmullrom", 0.02);
+function createPipeCurve(points: Vector3[]) {
+  return new CatmullRomCurve3(points, false, "catmullrom", 0.02);
 }
 
-function createPipeMesh(curve: THREE.CatmullRomCurve3, color: number, options?: { radius?: number; opacity?: number }) {
-  const geometry = new THREE.TubeGeometry(curve, 64, options?.radius ?? 0.09, 14, false);
-  const material = new THREE.MeshStandardMaterial({
+function createPipeMesh(curve: CatmullRomCurve3, color: number, options?: { radius?: number; opacity?: number }) {
+  const geometry = new TubeGeometry(curve, 64, options?.radius ?? 0.09, 14, false);
+  const material = new MeshStandardMaterial({
     color,
     transparent: typeof options?.opacity === "number",
     opacity: options?.opacity ?? 1,
@@ -158,40 +197,40 @@ function createPipeMesh(curve: THREE.CatmullRomCurve3, color: number, options?: 
     emissive: color,
     emissiveIntensity: 0.12
   });
-  return new THREE.Mesh(geometry, material);
+  return new Mesh(geometry, material);
 }
 
 function createLoopDeck(width: number, depth: number, color: number) {
-  const group = new THREE.Group();
-  const surface = new THREE.Mesh(
-    new THREE.PlaneGeometry(width, depth),
-    new THREE.MeshBasicMaterial({
+  const group = new Group();
+  const surface = new Mesh(
+    new PlaneGeometry(width, depth),
+    new MeshBasicMaterial({
       color,
       transparent: true,
       opacity: 0.12,
-      side: THREE.DoubleSide
+      side: DoubleSide
     })
   );
   surface.rotation.x = -Math.PI / 2;
   surface.position.y = 0.015;
   group.add(surface);
 
-  const innerSurface = new THREE.Mesh(
-    new THREE.PlaneGeometry(width * 0.92, depth * 0.84),
-    new THREE.MeshBasicMaterial({
+  const innerSurface = new Mesh(
+    new PlaneGeometry(width * 0.92, depth * 0.84),
+    new MeshBasicMaterial({
       color,
       transparent: true,
       opacity: 0.06,
-      side: THREE.DoubleSide
+      side: DoubleSide
     })
   );
   innerSurface.rotation.x = -Math.PI / 2;
   innerSurface.position.y = 0.022;
   group.add(innerSurface);
 
-  const outline = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.PlaneGeometry(width, depth)),
-    new THREE.LineBasicMaterial({
+  const outline = new LineSegments(
+    new EdgesGeometry(new PlaneGeometry(width, depth)),
+    new LineBasicMaterial({
       color,
       transparent: true,
       opacity: 0.32
@@ -205,9 +244,9 @@ function createLoopDeck(width: number, depth: number, color: number) {
 }
 
 function createFlowPulse(color: number) {
-  return new THREE.Mesh(
-    new THREE.SphereGeometry(0.14, 18, 18),
-    new THREE.MeshBasicMaterial({
+  return new Mesh(
+    new SphereGeometry(0.14, 18, 18),
+    new MeshBasicMaterial({
       color,
       transparent: true,
       opacity: 0.84
@@ -215,12 +254,12 @@ function createFlowPulse(color: number) {
   );
 }
 
-function fitModelToNode(model: THREE.Object3D, targetHeight: number) {
-  const modelRoot = new THREE.Group();
+function fitModelToNode(model: Object3D, targetHeight: number) {
+  const modelRoot = new Group();
   modelRoot.add(model);
-  const box = new THREE.Box3().setFromObject(modelRoot);
-  const size = box.getSize(new THREE.Vector3());
-  const center = box.getCenter(new THREE.Vector3());
+  const box = new Box3().setFromObject(modelRoot);
+  const size = box.getSize(new Vector3());
+  const center = box.getCenter(new Vector3());
   const safeHeight = size.y || Math.max(size.x, size.z, 1);
   const scale = targetHeight / safeHeight;
   model.scale.setScalar(scale);
@@ -260,27 +299,27 @@ function buildEdgePoints(
   }
 
   const points = [
-    new THREE.Vector3(fromNode.position[0], 0.9, fromNode.position[2]),
-    ...(edge.via || []).map(([x, y, z]) => new THREE.Vector3(x, y, z)),
-    new THREE.Vector3(toNode.position[0], 0.9, toNode.position[2])
+    new Vector3(fromNode.position[0], 0.9, fromNode.position[2]),
+    ...(edge.via || []).map(([x, y, z]) => new Vector3(x, y, z)),
+    new Vector3(toNode.position[0], 0.9, toNode.position[2])
   ];
   return points;
 }
 
 function createFallbackGeometry(category: SystemDiagramRenderableCategory) {
   if (category === "load") {
-    return new THREE.BoxGeometry(2.2, 0.92, 1.8);
+    return new BoxGeometry(2.2, 0.92, 1.8);
   }
   if (category === "valve") {
-    return new THREE.TorusKnotGeometry(0.36, 0.12, 64, 10);
+    return new TorusKnotGeometry(0.36, 0.12, 64, 10);
   }
   if (category === "pump") {
-    return new THREE.CapsuleGeometry(0.26, 0.9, 8, 14);
+    return new CapsuleGeometry(0.26, 0.9, 8, 14);
   }
   if (category === "cooling-tower") {
-    return new THREE.CylinderGeometry(0.52, 0.78, 1.2, 18);
+    return new CylinderGeometry(0.52, 0.78, 1.2, 18);
   }
-  return new THREE.BoxGeometry(1.4, 0.8, 3);
+  return new BoxGeometry(1.4, 0.8, 3);
 }
 
 export default function SystemDiagram3D({
@@ -334,37 +373,37 @@ export default function SystemDiagram3D({
     const width = mountNode.clientWidth || 320;
     const height = mountNode.clientHeight || 260;
 
-    const renderer = new THREE.WebGLRenderer({
+    const renderer = new WebGLRenderer({
       alpha: true,
       antialias: true
     });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.outputColorSpace = SRGBColorSpace;
     mountNode.appendChild(renderer.domElement);
 
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x07172b, 0.026);
+    const scene = new Scene();
+    scene.fog = new FogExp2(0x07172b, 0.026);
 
-    const camera = new THREE.PerspectiveCamera(34, width / height, 0.1, 160);
+    const camera = new PerspectiveCamera(34, width / height, 0.1, 160);
     camera.position.set(0.8, 8.8, 17.2);
     camera.lookAt(0, 1.8, 0.4);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.55);
-    const hemiLight = new THREE.HemisphereLight(0xbfe7ff, 0x04111d, 1.2);
-    const keyLight = new THREE.DirectionalLight(0xc3ecff, 2.4);
+    const ambientLight = new AmbientLight(0xffffff, 1.55);
+    const hemiLight = new HemisphereLight(0xbfe7ff, 0x04111d, 1.2);
+    const keyLight = new DirectionalLight(0xc3ecff, 2.4);
     keyLight.position.set(9, 11, 7);
-    const fillLight = new THREE.DirectionalLight(0xffffff, 1.3);
+    const fillLight = new DirectionalLight(0xffffff, 1.3);
     fillLight.position.set(-8, 5, -6);
-    const rimLight = new THREE.DirectionalLight(0x69e4ff, 1.1);
+    const rimLight = new DirectionalLight(0x69e4ff, 1.1);
     rimLight.position.set(0, 7, -10);
     scene.add(ambientLight, hemiLight, keyLight, fillLight, rimLight);
 
-    const atmosphere = new THREE.Mesh(
-      new THREE.SphereGeometry(34, 32, 32),
-      new THREE.MeshBasicMaterial({
+    const atmosphere = new Mesh(
+      new SphereGeometry(34, 32, 32),
+      new MeshBasicMaterial({
         color: 0x0a1d33,
-        side: THREE.BackSide,
+        side: BackSide,
         transparent: true,
         opacity: 0.32
       })
@@ -372,15 +411,15 @@ export default function SystemDiagram3D({
     atmosphere.position.set(0, 8.5, 0);
     scene.add(atmosphere);
 
-    const root = new THREE.Group();
+    const root = new Group();
     scene.add(root);
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-    const clickTargets: THREE.Object3D[] = [];
+    const raycaster = new Raycaster();
+    const pointer = new Vector2();
+    const clickTargets: Object3D[] = [];
 
-    const ground = new THREE.Mesh(
-      new THREE.CircleGeometry(12.5, 64),
-      new THREE.MeshBasicMaterial({
+    const ground = new Mesh(
+      new CircleGeometry(12.5, 64),
+      new MeshBasicMaterial({
         color: 0x0a2645,
         transparent: true,
         opacity: 0.5
@@ -390,20 +429,20 @@ export default function SystemDiagram3D({
     ground.position.y = -0.02;
     root.add(ground);
 
-    const innerGround = new THREE.Mesh(
-      new THREE.RingGeometry(8.2, 10.4, 56),
-      new THREE.MeshBasicMaterial({
+    const innerGround = new Mesh(
+      new RingGeometry(8.2, 10.4, 56),
+      new MeshBasicMaterial({
         color: 0x3b7ad4,
         transparent: true,
         opacity: 0.12,
-        side: THREE.DoubleSide
+        side: DoubleSide
       })
     );
     innerGround.rotation.x = -Math.PI / 2;
     innerGround.position.y = -0.01;
     root.add(innerGround);
 
-    const grid = new THREE.GridHelper(24, 18, 0x2d6f91, 0x163753);
+    const grid = new GridHelper(24, 18, 0x2d6f91, 0x163753);
     grid.position.y = 0;
     root.add(grid);
 
@@ -423,8 +462,8 @@ export default function SystemDiagram3D({
 
     const nodesById = new Map(resolved.nodes.map((node) => [node.id, node]));
     const flowPulses: FlowPulse[] = [];
-    const animatedRings: Array<{ mesh: THREE.Mesh; baseScale: number }> = [];
-    const animatedBeacons: THREE.Mesh[] = [];
+    const animatedRings: Array<{ mesh: Mesh; baseScale: number }> = [];
+    const animatedBeacons: Mesh[] = [];
 
     resolved.edges.forEach((edge, edgeIndex) => {
       const points = buildEdgePoints(edge, nodesById);
@@ -450,17 +489,18 @@ export default function SystemDiagram3D({
 
     let disposed = false;
     let animationFrame = 0;
+    let resizeFrame = 0;
 
     resolved.nodes.forEach((node) => {
-      const anchor = new THREE.Group();
+      const anchor = new Group();
       anchor.position.set(node.position[0], node.position[1], node.position[2]);
       root.add(anchor);
       const isSelected = selectedNodeId === node.id;
-      const statusColor = new THREE.Color(NODE_STATUS_COLORS[node.status]);
+      const statusColor = new Color(NODE_STATUS_COLORS[node.status]);
 
-      const pad = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.88, 1, 0.14, 24),
-        new THREE.MeshStandardMaterial({
+      const pad = new Mesh(
+        new CylinderGeometry(0.88, 1, 0.14, 24),
+        new MeshStandardMaterial({
           color: isSelected ? 0x1f5478 : 0x13395e,
           metalness: 0.24,
           roughness: 0.6
@@ -472,22 +512,22 @@ export default function SystemDiagram3D({
       pad.userData.systemNodeId = node.id;
       clickTargets.push(pad);
 
-      const halo = new THREE.Mesh(
-        new THREE.RingGeometry(1.2, 1.42, 42),
-        new THREE.MeshBasicMaterial({
+      const halo = new Mesh(
+        new RingGeometry(1.2, 1.42, 42),
+        new MeshBasicMaterial({
           color: statusColor,
           transparent: true,
           opacity: isSelected ? 0.28 : 0.14,
-          side: THREE.DoubleSide
+          side: DoubleSide
         })
       );
       halo.rotation.x = -Math.PI / 2;
       halo.position.y = 0.02;
       anchor.add(halo);
 
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(1.08, 0.05, 10, 36),
-        new THREE.MeshBasicMaterial({
+      const ring = new Mesh(
+        new TorusGeometry(1.08, 0.05, 10, 36),
+        new MeshBasicMaterial({
           color: statusColor,
           transparent: true,
           opacity: isSelected ? 1 : 0.9
@@ -501,9 +541,9 @@ export default function SystemDiagram3D({
       ring.userData.systemNodeId = node.id;
       clickTargets.push(ring);
 
-      const beaconStem = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.02, 0.02, node.targetHeight + 0.42, 10, 1, true),
-        new THREE.MeshBasicMaterial({
+      const beaconStem = new Mesh(
+        new CylinderGeometry(0.02, 0.02, node.targetHeight + 0.42, 10, 1, true),
+        new MeshBasicMaterial({
           color: statusColor,
           transparent: true,
           opacity: isSelected ? 0.22 : 0.12
@@ -512,9 +552,9 @@ export default function SystemDiagram3D({
       beaconStem.position.y = (node.targetHeight + 0.42) / 2 + 0.14;
       anchor.add(beaconStem);
 
-      const beacon = new THREE.Mesh(
-        new THREE.SphereGeometry(0.13, 18, 18),
-        new THREE.MeshBasicMaterial({
+      const beacon = new Mesh(
+        new SphereGeometry(0.13, 18, 18),
+        new MeshBasicMaterial({
           color: statusColor,
           transparent: true,
           opacity: 0.92
@@ -531,11 +571,11 @@ export default function SystemDiagram3D({
       }
       const instanceOffsets = buildInstanceOffsets(node.instanceCount || 1);
 
-      const fallbackGroup = new THREE.Group();
+      const fallbackGroup = new Group();
       instanceOffsets.forEach((instance) => {
-        const fallback = new THREE.Mesh(
+        const fallback = new Mesh(
           createFallbackGeometry(node.category),
-          new THREE.MeshStandardMaterial({
+          new MeshStandardMaterial({
             color: 0x6fd8ff,
             transparent: true,
             opacity: isSelected ? 0.56 : 0.4,
@@ -561,13 +601,13 @@ export default function SystemDiagram3D({
             return;
           }
 
-          const modelGroup = new THREE.Group();
+          const modelGroup = new Group();
           instanceOffsets.forEach((instance) => {
             const clone = prototype.clone(true);
             const fitted = fitModelToNode(clone, node.targetHeight * instance.scale);
             fitted.rotation.y = node.rotationY;
             fitted.position.set(instance.x, 0, instance.z);
-            fitted.traverse((child) => {
+            fitted.traverse((child: Object3D) => {
               child.userData.systemNodeId = node.id;
               clickTargets.push(child);
             });
@@ -686,15 +726,22 @@ export default function SystemDiagram3D({
     const resizeObserver = new ResizeObserver((entries) => {
       const nextWidth = entries[0]?.contentRect.width || width;
       const nextHeight = entries[0]?.contentRect.height || height;
-      renderer.setSize(nextWidth, nextHeight);
-      camera.aspect = nextWidth / nextHeight;
-      camera.updateProjectionMatrix();
+      window.cancelAnimationFrame(resizeFrame);
+      resizeFrame = window.requestAnimationFrame(() => {
+        if (disposed || nextWidth <= 0 || nextHeight <= 0) {
+          return;
+        }
+        renderer.setSize(nextWidth, nextHeight);
+        camera.aspect = nextWidth / nextHeight;
+        camera.updateProjectionMatrix();
+      });
     });
     resizeObserver.observe(mountNode);
 
     return () => {
       disposed = true;
       window.cancelAnimationFrame(animationFrame);
+      window.cancelAnimationFrame(resizeFrame);
       resizeObserver.disconnect();
       renderer.domElement.removeEventListener("pointerdown", handlePointerDown);
       renderer.domElement.removeEventListener("pointermove", handlePointerMove);

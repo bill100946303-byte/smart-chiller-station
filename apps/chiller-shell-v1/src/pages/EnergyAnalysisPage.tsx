@@ -1,10 +1,9 @@
-import { startTransition, useEffect, useRef, useState } from "react";
-import SectionCard from "../components/common/SectionCard";
-import SourceStatusBanner from "../components/common/SourceStatusBanner";
-import StatCard from "../components/common/StatCard";
+import { startTransition, useEffect, useRef, useState, type PointerEvent } from "react";
+import { ChevronDown } from "lucide-react";
 import { runtimeConfig } from "../config/runtimeConfig";
-import { buildSourceStatusLines, summarizeSourceStatus } from "../i18n/sourceStatusCN";
-import { zhCN } from "../i18n/zhCN";
+import { formatSourceStatusLineCompact, summarizeSourceStatus } from "../i18n/sourceStatusCN";
+import { getCurrentLocale, zhCN } from "../i18n/zhCN";
+import { getAuthSession, getCurrentProject } from "../services/auth";
 import {
   type EnergyAnalysisDto,
   type EnergyAnalysisNodeDto,
@@ -30,15 +29,31 @@ type QueryState = {
   deviceIds: string[];
 } | null;
 
-type SummaryCard = {
-  title: string;
-  value: string;
-  unit: string;
-  delta: string;
-  tone: "neutral" | "good" | "warn";
+type CompactSourceRow = {
+  key: string;
+  label: string;
+  rows: number | null;
+  ok: boolean;
 };
 
 const SERIES_COLORS = ["#63e6ff", "#8ff7d7", "#6fa7ff", "#ffd28b", "#ff8cc6", "#9aa8ff", "#4fd9b8", "#ffb574"];
+const ENERGY_ANALYSIS_VALUE_FORMATTER = new Intl.NumberFormat("zh-CN", {
+  maximumFractionDigits: 2
+});
+const ENERGY_ANALYSIS_COUNT_FORMATTER = new Intl.NumberFormat("zh-CN", {
+  maximumFractionDigits: 0
+});
+
+function mapLegacyLanguage(): string {
+  const locale = getCurrentLocale();
+  if (locale === "en-US") {
+    return "en";
+  }
+  if (locale === "vi-VN") {
+    return "vie";
+  }
+  return "zh";
+}
 
 function pad(value: number): string {
   return String(value).padStart(2, "0");
@@ -76,10 +91,38 @@ function formatDateTime(value: string | null | undefined): string {
 }
 
 function formatValue(value: number | null | undefined): string {
-  if (typeof value !== "number" || Number.isNaN(value)) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
     return "--";
   }
-  return value.toFixed(2).replace(/\.0+$/, "").replace(/(\.\d*?[1-9])0+$/, "$1");
+  return ENERGY_ANALYSIS_VALUE_FORMATTER.format(value);
+}
+
+function formatCount(value: number | null | undefined): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return "0";
+  }
+  return ENERGY_ANALYSIS_COUNT_FORMATTER.format(value);
+}
+
+function formatPercent(value: number | null | undefined): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return "--";
+  }
+  return `${Math.round(value)}%`;
+}
+
+function formatDateType(value: DateTypeValue | null | undefined): string {
+  switch (value) {
+    case "2":
+      return zhCN.energyAnalysisPage.intervalDay;
+    case "3":
+      return zhCN.energyAnalysisPage.intervalMonth;
+    case "4":
+      return zhCN.energyAnalysisPage.intervalYear;
+    case "1":
+    default:
+      return zhCN.energyAnalysisPage.intervalHour;
+  }
 }
 
 function csvEscape(value: string): string {
@@ -244,57 +287,16 @@ function buildDefaultSelection(treeItems: EnergyAnalysisNodeDto[]): string[] {
   return firstRoot ? collectDescendantIds(firstRoot) : [];
 }
 
-function buildSummaryCards(
-  data: EnergyAnalysisDto | null,
-  query: QueryState,
-  selectedDeviceCount: number
-): SummaryCard[] {
-  const seriesCount = data?.series?.length || 0;
-  const sourceReady = data?.sourceStatus?.overall === "ok";
-  return [
-    {
-      title: zhCN.energyAnalysisPage.summaryObjects,
-      value: String(seriesCount),
-      unit: zhCN.energyAnalysisPage.unitObjects,
-      delta: zhCN.energyAnalysisPage.summaryFilterHint,
-      tone: seriesCount > 0 ? "good" : "neutral"
-    },
-    {
-      title: zhCN.energyAnalysisPage.summaryDevices,
-      value: String(selectedDeviceCount),
-      unit: zhCN.energyAnalysisPage.unitDevices,
-      delta: zhCN.energyAnalysisPage.summaryFilterHint,
-      tone: selectedDeviceCount > 0 ? "neutral" : "warn"
-    },
-    {
-      title: zhCN.energyAnalysisPage.summaryRange,
-      value: `${query?.startDate || "--"} ~ ${query?.endDate || "--"}`,
-      unit: "",
-      delta: zhCN.energyAnalysisPage.summaryIntervalPrefix + getDateTypeLabel(query?.dateType || "1"),
-      tone: "neutral"
-    },
-    {
-      title: zhCN.energyAnalysisPage.summaryState,
-      value: sourceReady ? zhCN.energyAnalysisPage.stateReady : zhCN.energyAnalysisPage.stateFallback,
-      unit: "",
-      delta: zhCN.energyAnalysisPage.summaryStateHint,
-      tone: sourceReady ? "good" : "warn"
+function collectExpandableNodeIds(nodes: EnergyAnalysisNodeDto[], bucket: string[] = []): string[] {
+  nodes.forEach((node, index) => {
+    const children = node.children || [];
+    const nodeId = String(node.id || `node-${index + 1}`);
+    if (children.length > 0 && nodeId) {
+      bucket.push(nodeId);
+      collectExpandableNodeIds(children, bucket);
     }
-  ];
-}
-
-function getDateTypeLabel(dateType: string): string {
-  switch (dateType) {
-    case "2":
-      return zhCN.energyAnalysisPage.intervalDay;
-    case "3":
-      return zhCN.energyAnalysisPage.intervalMonth;
-    case "4":
-      return zhCN.energyAnalysisPage.intervalYear;
-    case "1":
-    default:
-      return zhCN.energyAnalysisPage.intervalHour;
-  }
+  });
+  return bucket;
 }
 
 function buildCsvContent(data: EnergyAnalysisDto): string {
@@ -313,6 +315,91 @@ function buildCsvContent(data: EnergyAnalysisDto): string {
   return `\uFEFF${[header, ...rows].map((row) => row.map(csvEscape).join(",")).join("\r\n")}`;
 }
 
+function hasVisibleEnergyAnalysisSeriesValue(series: NonNullable<EnergyAnalysisDto["series"]>[number]): boolean {
+  return (series.points || []).some((point) => (
+    typeof point.value === "number" && point.value > 0.1
+  ));
+}
+
+function isFiniteEnergyValue(value: number | null | undefined): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function sumSeriesPoints(series: NonNullable<EnergyAnalysisDto["series"]>[number]): number | null {
+  const total = (series.points || []).reduce((sum, point) => (
+    isFiniteEnergyValue(point.value) ? sum + point.value : sum
+  ), 0);
+  return total > 0 ? total : null;
+}
+
+function resolveEnergyUnit(data: EnergyAnalysisDto | null): string {
+  return data?.unit || data?.summaries?.find((row) => row.unit)?.unit || "--";
+}
+
+function resolveGlobalEnergyStats(data: EnergyAnalysisDto | null) {
+  const summaries = data?.summaries || [];
+  const series = data?.series || [];
+  const summaryTotals = summaries.map((row) => row.sumValue).filter(isFiniteEnergyValue);
+  const seriesTotals = series.map(sumSeriesPoints).filter(isFiniteEnergyValue);
+  const totalValue =
+    summaryTotals.length > 0
+      ? summaryTotals.reduce((sum, value) => sum + value, 0)
+      : (seriesTotals.length > 0 ? seriesTotals.reduce((sum, value) => sum + value, 0) : null);
+  const peakRow = summaries
+    .filter((row) => isFiniteEnergyValue(row.maxValue))
+    .sort((a, b) => (b.maxValue || 0) - (a.maxValue || 0))[0] || null;
+  const valleyRow = summaries
+    .filter((row) => isFiniteEnergyValue(row.minValue))
+    .sort((a, b) => (a.minValue || 0) - (b.minValue || 0))[0] || null;
+  const averages = summaries.map((row) => row.average).filter(isFiniteEnergyValue);
+  const averageValue =
+    averages.length > 0
+      ? averages.reduce((sum, value) => sum + value, 0) / averages.length
+      : null;
+  const majorRow = summaries
+    .filter((row) => isFiniteEnergyValue(row.sumValue))
+    .sort((a, b) => (b.sumValue || 0) - (a.sumValue || 0))[0] || null;
+
+  return {
+    totalValue,
+    peakValue: peakRow?.maxValue ?? null,
+    peakTime: peakRow?.maxTime || "--",
+    peakObject: peakRow?.objectName || "--",
+    valleyValue: valleyRow?.minValue ?? null,
+    valleyTime: valleyRow?.minTime || "--",
+    valleyObject: valleyRow?.objectName || "--",
+    averageValue,
+    majorObject: majorRow?.objectName || "--"
+  };
+}
+
+function buildEnergyStructureRows(data: EnergyAnalysisDto | null) {
+  const summaryRows = (data?.summaries || [])
+    .map((row) => ({
+      id: row.id || row.objectName || "",
+      name: row.objectName || zhCN.common.unknown,
+      value: row.sumValue
+    }))
+    .filter((row): row is { id: string; name: string; value: number } => isFiniteEnergyValue(row.value) && row.value > 0);
+  const rows = summaryRows.length > 0
+    ? summaryRows
+    : (data?.series || [])
+        .map((item) => ({
+          id: item.id || item.name || "",
+          name: item.name || zhCN.common.unknown,
+          value: sumSeriesPoints(item)
+        }))
+        .filter((row): row is { id: string; name: string; value: number } => isFiniteEnergyValue(row.value) && row.value > 0);
+  const total = rows.reduce((sum, row) => sum + row.value, 0);
+  return rows
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 4)
+    .map((row) => ({
+      ...row,
+      percent: total > 0 ? (row.value / total) * 100 : null
+    }));
+}
+
 function EnergyAnalysisTrendChart({
   data,
   loadError
@@ -320,16 +407,21 @@ function EnergyAnalysisTrendChart({
   data: EnergyAnalysisDto | null;
   loadError: string | null;
 }) {
-  const series = data?.series || [];
+  const rawSeries = data?.series || [];
+  const series = rawSeries.filter(hasVisibleEnergyAnalysisSeriesValue);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const numericValues = series
     .flatMap((item) => (item.points || []).map((point) => point.value))
     .filter((value): value is number => typeof value === "number");
 
   if (series.length === 0 || numericValues.length === 0) {
+    const hiddenZeroSeries = rawSeries.length > 0 && series.length === 0;
     return (
       <div className="trend-panel">
         {loadError ? <p className="empty-hint">{loadError}</p> : null}
-        <p className="empty-hint">{zhCN.energyAnalysisPage.chartEmpty}</p>
+        <p className="empty-hint">
+          {hiddenZeroSeries ? "当前范围曲线值过低，暂无可展示曲线。" : zhCN.energyAnalysisPage.chartEmpty}
+        </p>
       </div>
     );
   }
@@ -346,82 +438,135 @@ function EnergyAnalysisTrendChart({
     return yBottom - ratio * yRange;
   }
 
+  const yTicks = [1, 0.75, 0.5, 0.25, 0].map((ratio) => ({
+    top: yBottom - ratio * yRange,
+    value: globalMin + span * ratio
+  }));
+  const axisLabels = data?.axisLabels?.length
+    ? data.axisLabels
+    : series[0]?.points?.map((point) => point.label || "") || [];
+  const maxPointCount = Math.max(axisLabels.length, ...series.map((item) => item.points?.length || 0));
+  const xTickIndexes = Array.from(
+    new Set(
+      axisLabels.length <= 1
+        ? [0]
+        : [0, Math.floor((axisLabels.length - 1) / 2), axisLabels.length - 1]
+    )
+  ).filter((index) => index >= 0 && index < axisLabels.length);
+  const hoverX =
+    hoverIndex !== null && maxPointCount > 0 ? (maxPointCount <= 1 ? 50 : (hoverIndex / (maxPointCount - 1)) * 100) : null;
+  const hoverLabel =
+    hoverIndex !== null
+      ? axisLabels[hoverIndex] || series[0]?.points?.[hoverIndex]?.label || `#${hoverIndex + 1}`
+      : "";
+  const hoverRows =
+    hoverIndex !== null
+      ? series
+          .map((item, seriesIndex) => {
+            const value = item.points?.[hoverIndex]?.value;
+            if (typeof value !== "number") {
+              return null;
+            }
+            return {
+              id: item.id || `hover-series-${seriesIndex + 1}`,
+              name: item.name || zhCN.common.unknown,
+              value,
+              y: toY(value),
+              color: SERIES_COLORS[seriesIndex % SERIES_COLORS.length]
+            };
+          })
+          .filter((item): item is NonNullable<typeof item> => Boolean(item))
+      : [];
+
+  function handleChartPointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (maxPointCount <= 0) {
+      return;
+    }
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    const nextIndex = maxPointCount <= 1 ? 0 : Math.round(ratio * (maxPointCount - 1));
+    setHoverIndex((current) => (current === nextIndex ? current : nextIndex));
+  }
+
   return (
     <div className="trend-panel">
-      <div className="trend-meta">
-        <div>
-          <strong>{`${formatValue(globalMin)} / ${formatValue(globalMax)}`}</strong>
-          <p>{zhCN.energyAnalysisPage.chartRangeLabel}</p>
-        </div>
-        <div>
-          <strong>{series.length}</strong>
-          <p>{zhCN.energyAnalysisPage.summaryObjects}</p>
-        </div>
-      </div>
       {loadError ? <p className="empty-hint">{loadError}</p> : null}
       <div className="trend-chart-shell" aria-label={zhCN.energyAnalysisPage.chartAriaLabel}>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="trend-lines">
-          {[20, 40, 60, 80].map((line) => (
-            <line key={`grid-${line}`} x1="0" y1={line} x2="100" y2={line} className="trend-grid-line" />
+        <div className="energy-analysis-y-axis" aria-hidden="true">
+          {yTicks.map((tick) => (
+            <span key={`${tick.top}-${tick.value}`} style={{ top: `${tick.top}%` }}>
+              {formatValue(tick.value)}
+            </span>
           ))}
-          {series.map((item, seriesIndex) => {
-            const points = item.points || [];
-            const path = points.reduce((segments, point, pointIndex) => {
-              if (typeof point.value !== "number") {
-                return segments;
-              }
-              const x = points.length <= 1 ? 50 : (pointIndex / (points.length - 1)) * 100;
-              const y = toY(point.value);
-              const prefix = segments.length === 0 ? "M" : "L";
-              return `${segments} ${prefix} ${x.toFixed(2)} ${y.toFixed(2)}`.trim();
-            }, "");
-
-            return (
-              <g key={item.id || `series-${seriesIndex + 1}`}>
-                {path ? (
-                  <path
-                    d={path}
-                    fill="none"
-                    stroke={SERIES_COLORS[seriesIndex % SERIES_COLORS.length]}
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                ) : null}
-                {points.map((point, pointIndex) => {
+        </div>
+        <div className="energy-analysis-plot-stack">
+          <div
+            className="energy-analysis-chart-interactive"
+            onPointerMove={handleChartPointerMove}
+            onPointerLeave={() => setHoverIndex(null)}
+          >
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="trend-lines">
+              {[20, 40, 60, 80].map((line) => (
+                <line key={`grid-${line}`} x1="0" y1={line} x2="100" y2={line} className="trend-grid-line" />
+              ))}
+              {series.map((item, seriesIndex) => {
+                const points = item.points || [];
+                const path = points.reduce((segments, point, pointIndex) => {
                   if (typeof point.value !== "number") {
-                    return null;
+                    return segments;
                   }
                   const x = points.length <= 1 ? 50 : (pointIndex / (points.length - 1)) * 100;
                   const y = toY(point.value);
-                  return (
-                    <circle
-                      key={`${item.id || `series-${seriesIndex + 1}`}-${pointIndex + 1}`}
-                      cx={x}
-                      cy={y}
-                      r="1.2"
-                      fill={SERIES_COLORS[seriesIndex % SERIES_COLORS.length]}
-                    />
-                  );
-                })}
-              </g>
-            );
-          })}
-        </svg>
-      </div>
-      <div className="energy-analysis-legend">
-        {series.map((item, index) => (
-          <div key={item.id || `legend-${index + 1}`} className="energy-analysis-legend-item">
-            <span
-              className="energy-analysis-legend-dot"
-              style={{ backgroundColor: SERIES_COLORS[index % SERIES_COLORS.length] }}
-            />
-            <div>
-              <strong>{item.name || zhCN.common.unknown}</strong>
-              <p>{formatValue(item.points?.[(item.points?.length || 1) - 1]?.value ?? null)}</p>
-            </div>
+                  const prefix = segments.length === 0 ? "M" : "L";
+                  return `${segments} ${prefix} ${x.toFixed(2)} ${y.toFixed(2)}`.trim();
+                }, "");
+
+                return (
+                  <g key={item.id || `series-${seriesIndex + 1}`}>
+                    {path ? (
+                      <path
+                        d={path}
+                        className="trend-line-path trend-line-path--slim energy-analysis-line-path"
+                        fill="none"
+                        stroke={SERIES_COLORS[seriesIndex % SERIES_COLORS.length]}
+                        strokeWidth="0.45"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    ) : null}
+                  </g>
+                );
+              })}
+              {hoverX !== null ? (
+                <g className="energy-analysis-hover-layer">
+                  <line x1={hoverX} y1="0" x2={hoverX} y2="100" className="energy-analysis-hover-line" />
+                </g>
+              ) : null}
+            </svg>
+            {hoverX !== null && hoverRows.length > 0 ? (
+              <div
+                className={`energy-analysis-chart-tooltip${hoverX > 52 ? " is-left" : ""}`}
+                style={{ left: `${hoverX}%` }}
+              >
+                <strong>{hoverLabel}</strong>
+                {hoverRows.map((item) => (
+                  <span key={item.id}>
+                    <i style={{ backgroundColor: item.color }} />
+                    <em>{item.name}</em>
+                    <b>{formatValue(item.value)}</b>
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </div>
-        ))}
+          {xTickIndexes.length > 0 ? (
+            <div className="energy-analysis-x-axis" aria-hidden="true">
+              {xTickIndexes.map((index) => (
+                <span key={`${axisLabels[index] || "axis"}-${index + 1}`}>{axisLabels[index] || "--"}</span>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -429,6 +574,7 @@ function EnergyAnalysisTrendChart({
 
 export default function EnergyAnalysisPage() {
   const initialFiltersRef = useRef<FilterState>(buildInitialFilters());
+  const intervalDropdownRef = useRef<HTMLDivElement | null>(null);
   const [filters, setFilters] = useState<FilterState>(initialFiltersRef.current);
   const [query, setQuery] = useState<QueryState>(null);
   const [tree, setTree] = useState<EnergyAnalysisTreeDto | null>(null);
@@ -438,14 +584,57 @@ export default function EnergyAnalysisPage() {
   const [exportError, setExportError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [isIntervalDropdownOpen, setIsIntervalDropdownOpen] = useState(false);
+  const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(() => new Set());
   const initialAutoLoadedRef = useRef(false);
+
+  const currentProject = getCurrentProject(getAuthSession());
+  const projectSignature = [
+    currentProject?.siteId || "",
+    currentProject?.siteCode || "",
+    currentProject?.databaseKey || "",
+    currentProject?.modelKey || "",
+    currentProject?.template || ""
+  ].join("|");
+
+  useEffect(() => {
+    if (!isIntervalDropdownOpen) {
+      return;
+    }
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target;
+      if (target instanceof Node && intervalDropdownRef.current?.contains(target)) {
+        return;
+      }
+      setIsIntervalDropdownOpen(false);
+    }
+    window.addEventListener("mousedown", handlePointerDown);
+    return () => window.removeEventListener("mousedown", handlePointerDown);
+  }, [isIntervalDropdownOpen]);
+
+  const requestLanguage = mapLegacyLanguage();
 
   useEffect(() => {
     let active = true;
+    initialAutoLoadedRef.current = false;
+    startTransition(() => {
+      setTree(null);
+      setData(null);
+      setQuery(null);
+      setTreeError(null);
+      setLoadError(null);
+      setExportError(null);
+      setFilters((current) => ({
+        ...current,
+        selectedNodeIds: []
+      }));
+    });
 
     async function loadTree() {
       try {
-        const result = await fetchEnergyAnalysisTree(runtimeConfig.siteId);
+        const result = await fetchEnergyAnalysisTree(runtimeConfig.siteId, {
+          language: requestLanguage
+        });
         if (!active) {
           return;
         }
@@ -468,9 +657,19 @@ export default function EnergyAnalysisPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [requestLanguage, projectSignature]);
 
   const treeItems = tree?.items || [];
+
+  useEffect(() => {
+    const nextIds = collectExpandableNodeIds(treeItems);
+    setExpandedNodeIds((current) => {
+      if (current.size === nextIds.length && nextIds.every((id) => current.has(id))) {
+        return current;
+      }
+      return new Set(nextIds);
+    });
+  }, [treeItems]);
 
   useEffect(() => {
     if (initialAutoLoadedRef.current || treeItems.length === 0) {
@@ -499,7 +698,10 @@ export default function EnergyAnalysisPage() {
       }
       setLoading(true);
       try {
-        const result = await fetchEnergyAnalysis(runtimeConfig.siteId, query);
+        const result = await fetchEnergyAnalysis(runtimeConfig.siteId, {
+          ...query,
+          language: requestLanguage
+        });
         if (!active) {
           return;
         }
@@ -524,24 +726,86 @@ export default function EnergyAnalysisPage() {
     return () => {
       active = false;
     };
-  }, [query]);
+  }, [query, requestLanguage]);
 
   const selectedSet = new Set(filters.selectedNodeIds);
   const selectedRoots = collectSelectionRoots(treeItems, selectedSet);
   const selectedDevices = resolveSelectedDevices(selectedRoots);
   const querySet = new Set(query?.selectedNodeIds || []);
   const queriedDevices = resolveSelectedDevices(collectSelectionRoots(treeItems, querySet));
-  const summaryCards = buildSummaryCards(data, query, queriedDevices.length);
   const sourceSummary = summarizeSourceStatus([tree?.sourceStatus, data?.sourceStatus]);
-  const sourceStatusLines = buildSourceStatusLines([tree?.sourceStatus, data?.sourceStatus]);
-  const sourceStatusLinesCompact = buildSourceStatusLines([tree?.sourceStatus, data?.sourceStatus], {
-    labelMode: "short"
-  });
   const bannerText =
     exportError
     || loadError
     || treeError
     || (loading ? zhCN.energyAnalysisPage.loading : sourceSummary.text);
+  const sourceStateLabel = sourceSummary.warn ? zhCN.energyAnalysisPage.stateFallback : zhCN.energyAnalysisPage.stateReady;
+  const intervalLabel = formatDateType(filters.dateType);
+  const intervalOptions: Array<{ value: DateTypeValue; label: string }> = [
+    { value: "1", label: zhCN.energyAnalysisPage.intervalHour },
+    { value: "2", label: zhCN.energyAnalysisPage.intervalDay },
+    { value: "3", label: zhCN.energyAnalysisPage.intervalMonth },
+    { value: "4", label: zhCN.energyAnalysisPage.intervalYear }
+  ];
+  const queryIntervalLabel = formatDateType(query?.dateType || filters.dateType);
+  const latestFetchText = formatDateTime(data?.generatedAt || data?.freshness?.latestTimestamp);
+  const energyStats = resolveGlobalEnergyStats(data);
+  const energyUnit = resolveEnergyUnit(data);
+  const energyStructureRows = buildEnergyStructureRows(data);
+  const objectCount = data?.series?.length || data?.summaries?.length || 0;
+  const sourceRows: CompactSourceRow[] = [
+    ...(tree?.sourceStatus?.sources || []),
+    ...(data?.sourceStatus?.sources || [])
+  ].slice(0, 3).map((item, index) => ({
+    key: item.key || item.interfaceKind || item.originLabel || `source-${index + 1}`,
+    label: formatSourceStatusLineCompact(item),
+    rows: typeof item.rows === "number" ? item.rows : null,
+    ok: item.ok !== false && item.fallback !== true
+  }));
+  const commandTags: Array<{ label: string; value: string }> = [
+    { label: zhCN.energyAnalysisPage.filterStartDate, value: filters.startDate || "--" },
+    { label: zhCN.energyAnalysisPage.filterEndDate, value: filters.endDate || "--" },
+    { label: zhCN.energyAnalysisPage.filterDateType, value: intervalLabel },
+    { label: zhCN.energyAnalysisPage.selectionDevicesLabel, value: `${formatCount(selectedDevices.length)}${zhCN.energyAnalysisPage.unitDevices}` }
+  ];
+  const metricCards = [
+    {
+      title: zhCN.energyAnalysisPage.summaryObjects,
+      value: `${formatCount(objectCount)}${zhCN.energyAnalysisPage.unitObjects}`,
+      detail: "统计曲线对象",
+      tone: "good"
+    },
+    {
+      title: zhCN.energyAnalysisPage.selectionDevicesLabel,
+      value: `${formatCount(selectedDevices.length)}${zhCN.energyAnalysisPage.unitDevices}`,
+      detail: "设备树叶子节点",
+      tone: "neutral"
+    },
+    {
+      title: "总能耗",
+      value: formatValue(energyStats.totalValue),
+      detail: `${energyUnit}，当前范围`,
+      tone: "good"
+    },
+    {
+      title: zhCN.energyAnalysisPage.tablePeak,
+      value: formatValue(energyStats.peakValue),
+      detail: energyStats.peakTime,
+      tone: "warn"
+    },
+    {
+      title: zhCN.energyAnalysisPage.tableValley,
+      value: formatValue(energyStats.valleyValue),
+      detail: energyStats.valleyTime,
+      tone: "neutral"
+    },
+    {
+      title: zhCN.energyAnalysisPage.tableAverage,
+      value: formatValue(energyStats.averageValue),
+      detail: energyUnit === "--" ? "--" : `${energyUnit} / ${queryIntervalLabel}`,
+      tone: "neutral"
+    }
+  ];
 
   function updateFilter<K extends keyof FilterState>(key: K, value: FilterState[K]) {
     setFilters((current) => ({
@@ -550,6 +814,16 @@ export default function EnergyAnalysisPage() {
     }));
     setExportError(null);
     setLoadError(null);
+  }
+
+  function openDatePicker(input: HTMLInputElement) {
+    if (typeof input.showPicker === "function") {
+      try {
+        input.showPicker();
+      } catch (_error) {
+        // Some browsers reject showPicker unless the click is a direct user gesture.
+      }
+    }
   }
 
   function handleNodeToggle(nodeId: string, nextChecked: boolean) {
@@ -562,7 +836,20 @@ export default function EnergyAnalysisPage() {
     setLoadError(null);
   }
 
+  function handleNodeExpandToggle(nodeId: string) {
+    setExpandedNodeIds((current) => {
+      const next = new Set(current);
+      if (next.has(nodeId)) {
+        next.delete(nodeId);
+      } else {
+        next.add(nodeId);
+      }
+      return next;
+    });
+  }
+
   function handleSearch() {
+    setIsIntervalDropdownOpen(false);
     if (filters.startDate > filters.endDate) {
       setLoadError(zhCN.energyAnalysisPage.invalidRange);
       return;
@@ -578,6 +865,7 @@ export default function EnergyAnalysisPage() {
   }
 
   function handleReset() {
+    setIsIntervalDropdownOpen(false);
     const nextFilters = {
       ...buildInitialFilters(),
       selectedNodeIds: buildDefaultSelection(treeItems)
@@ -589,6 +877,7 @@ export default function EnergyAnalysisPage() {
   }
 
   function handleExport() {
+    setIsIntervalDropdownOpen(false);
     if (!data || (data.series?.length || 0) === 0) {
       setExportError(zhCN.energyAnalysisPage.exportEmpty);
       return;
@@ -615,52 +904,57 @@ export default function EnergyAnalysisPage() {
     }
   }
 
-  function renderSelectionChips(nodes: EnergyAnalysisNodeDto[], emptyText: string) {
-    if (nodes.length === 0) {
-      return <p className="energy-analysis-empty-inline">{emptyText}</p>;
-    }
-    const visibleNodes = nodes.slice(0, 12);
-    const overflow = nodes.length - visibleNodes.length;
-      return (
-      <div className="energy-analysis-chip-list">
-        {visibleNodes.map((node, index) => (
-          <span key={String(node.id || `${node.label || "chip"}-${index + 1}`)} className="energy-analysis-chip">
-            {node.label || zhCN.common.unknown}
-          </span>
-        ))}
-        {overflow > 0 ? <span className="energy-analysis-chip muted">+{overflow}</span> : null}
-      </div>
-    );
-  }
-
   function renderTree(nodes: EnergyAnalysisNodeDto[]) {
     return (
       <ul className="energy-analysis-tree-list">
         {nodes.map((node, index) => {
           const nodeId = String(node.id || `node-${index + 1}`);
           const state = getNodeCheckState(node, selectedSet);
+          const hasChildren = (node.children?.length || 0) > 0;
+          const isExpanded = hasChildren && expandedNodeIds.has(nodeId);
           return (
             <li key={nodeId}>
-              <label className={`energy-analysis-tree-node is-${node.nodeType || "unknown"}`}>
-                <input
-                  type="checkbox"
-                  checked={state.checked}
-                  ref={(input) => {
-                    if (input) {
-                      input.indeterminate = state.partial;
-                    }
-                  }}
-                  onChange={(event) => handleNodeToggle(nodeId, event.target.checked)}
-                />
-                <span className="energy-analysis-tree-label">{node.label || zhCN.common.unknown}</span>
+              <div
+                className={`energy-analysis-tree-node is-${node.nodeType || "unknown"}${hasChildren ? " has-children" : ""}${isExpanded ? " is-expanded" : " is-collapsed"}`}
+              >
+                {hasChildren ? (
+                  <button
+                    type="button"
+                    className={`energy-analysis-tree-toggle${isExpanded ? " is-expanded" : ""}`}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      handleNodeExpandToggle(nodeId);
+                    }}
+                    aria-label={isExpanded ? "折叠节点" : "展开节点"}
+                    aria-expanded={isExpanded}
+                  >
+                    <span className="energy-analysis-tree-toggle-icon" aria-hidden="true" />
+                  </button>
+                ) : (
+                  <span className="energy-analysis-tree-toggle is-placeholder" aria-hidden="true" />
+                )}
+                <label className="energy-analysis-tree-check">
+                  <input
+                    type="checkbox"
+                    checked={state.checked}
+                    ref={(input) => {
+                      if (input) {
+                        input.indeterminate = state.partial;
+                      }
+                    }}
+                    onChange={(event) => handleNodeToggle(nodeId, event.target.checked)}
+                  />
+                  <span className="energy-analysis-tree-label">{node.label || zhCN.common.unknown}</span>
+                </label>
                 {typeof node.deviceCount === "number" && node.deviceCount > 0 ? (
                   <span className="energy-analysis-tree-count">
-                    {node.deviceCount}
+                    {formatCount(node.deviceCount)}
                     {zhCN.energyAnalysisPage.unitDevices}
                   </span>
                 ) : null}
-              </label>
-              {(node.children?.length || 0) > 0 ? renderTree(node.children || []) : null}
+              </div>
+              {hasChildren && isExpanded ? renderTree(node.children || []) : null}
             </li>
           );
         })}
@@ -669,119 +963,224 @@ export default function EnergyAnalysisPage() {
   }
 
   return (
-    <div className="energy-analysis-page page-enter">
-      <SourceStatusBanner
-        summary={bannerText}
-        warn={Boolean(treeError || loadError || exportError) || sourceSummary.warn}
-        detailLines={sourceStatusLines}
-        detailLinesCompact={sourceStatusLinesCompact}
-      />
-
-      <section className="energy-analysis-header">
-        <h2>{zhCN.energyAnalysisPage.heading}</h2>
-        <p>{zhCN.energyAnalysisPage.subtitle}</p>
+    <div className="energy-analysis-compact-page-v2 page-enter">
+      <section className="energy-analysis-compact-hero">
+        <div className="energy-analysis-compact-hero-copy">
+          <span className="energy-analysis-compact-label">{runtimeConfig.appModeLabel}</span>
+          <h2>{zhCN.energyAnalysisPage.heading}</h2>
+          <div className="energy-analysis-compact-tags" aria-label={zhCN.energyAnalysisPage.sectionFilters}>
+            {commandTags.map((item) => (
+              <span key={item.label}>
+                <strong>{item.label}</strong>
+                <em>{item.value}</em>
+              </span>
+            ))}
+          </div>
+        </div>
+        <aside className="energy-analysis-compact-status" aria-label={zhCN.energyAnalysisPage.summaryState}>
+          <span className="energy-analysis-compact-label">{zhCN.energyAnalysisPage.summaryState}</span>
+          <strong>{sourceStateLabel}</strong>
+          <p>{bannerText}</p>
+        </aside>
       </section>
 
-      <SectionCard title={zhCN.energyAnalysisPage.sectionTree}>
-        <div className="energy-analysis-tree-grid">
-          <div className="energy-analysis-tree-shell">
-            <p className="energy-analysis-tree-hint">{zhCN.energyAnalysisPage.treeHint}</p>
-            {treeError ? (
-              <p className="empty-hint">{treeError}</p>
-            ) : treeItems.length === 0 ? (
-              <p className="empty-hint">{zhCN.energyAnalysisPage.treeLoading}</p>
-            ) : (
-              renderTree(treeItems)
-            )}
-          </div>
-          <div className="energy-analysis-selection-shell">
-            <div className="energy-analysis-selection-block">
-              <strong>{zhCN.energyAnalysisPage.selectionRootsLabel}</strong>
-              {renderSelectionChips(selectedRoots, zhCN.energyAnalysisPage.selectionEmpty)}
+      <section className="energy-analysis-compact-metrics" aria-label={zhCN.energyAnalysisPage.sectionSummary}>
+        {metricCards.map((item) => (
+          <article key={item.title} className={`energy-analysis-compact-metric is-${item.tone}`}>
+            <span>{item.title}</span>
+            <strong>{item.value}</strong>
+            <small>{item.detail}</small>
+          </article>
+        ))}
+      </section>
+
+      <section className="energy-analysis-compact-workspace" aria-label="能耗分析工作台">
+        <article className="energy-analysis-compact-panel">
+          <header className="energy-analysis-compact-panel-head">
+            <h3>设备树与查询</h3>
+            <span>{`${formatCount(treeItems.length)} 类 / ${formatCount(selectedDevices.length)}${zhCN.energyAnalysisPage.unitDevices}`}</span>
+          </header>
+          <div className="energy-analysis-compact-panel-body">
+            <div className="energy-analysis-compact-filter-grid">
+              <label className="energy-analysis-field">
+                <span>{zhCN.energyAnalysisPage.filterStartDate}</span>
+                <input
+                  type="date"
+                  value={filters.startDate}
+                  onChange={(event) => updateFilter("startDate", event.target.value)}
+                  onClick={(event) => openDatePicker(event.currentTarget)}
+                />
+              </label>
+              <label className="energy-analysis-field">
+                <span>{zhCN.energyAnalysisPage.filterEndDate}</span>
+                <input
+                  type="date"
+                  value={filters.endDate}
+                  onChange={(event) => updateFilter("endDate", event.target.value)}
+                  onClick={(event) => openDatePicker(event.currentTarget)}
+                />
+              </label>
+              <label className="energy-analysis-field is-wide">
+                <span>{zhCN.energyAnalysisPage.filterDateType}</span>
+                <div
+                  className={`energy-analysis-select${isIntervalDropdownOpen ? " is-open" : ""}`}
+                  ref={intervalDropdownRef}
+                >
+                  <button
+                    type="button"
+                    className={`energy-analysis-select-trigger${isIntervalDropdownOpen ? " is-open" : ""}`}
+                    onClick={() => setIsIntervalDropdownOpen((current) => !current)}
+                    aria-haspopup="listbox"
+                    aria-expanded={isIntervalDropdownOpen}
+                    aria-controls="energy-analysis-interval-listbox"
+                  >
+                    <span className="energy-analysis-select-trigger-text">{intervalLabel}</span>
+                    <ChevronDown className="energy-analysis-select-caret" size={14} aria-hidden="true" />
+                  </button>
+                  {isIntervalDropdownOpen ? (
+                    <div
+                      id="energy-analysis-interval-listbox"
+                      className="energy-analysis-select-menu"
+                      role="listbox"
+                      aria-label={zhCN.energyAnalysisPage.filterDateType}
+                    >
+                      {intervalOptions.map((item) => {
+                        const isActive = item.value === filters.dateType;
+                        return (
+                          <button
+                            key={item.value}
+                            type="button"
+                            role="option"
+                            aria-selected={isActive}
+                            className={`energy-analysis-select-option${isActive ? " is-active" : ""}`}
+                            onClick={() => {
+                              updateFilter("dateType", item.value);
+                              setIsIntervalDropdownOpen(false);
+                            }}
+                          >
+                            <span className="energy-analysis-select-option-label">{item.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </div>
+              </label>
             </div>
-            <div className="energy-analysis-selection-block">
-              <strong>{zhCN.energyAnalysisPage.selectionDevicesLabel}</strong>
-              {renderSelectionChips(selectedDevices, zhCN.energyAnalysisPage.selectionEmpty)}
+            <div className="energy-analysis-actions">
+              <button type="button" className="energy-analysis-button is-primary" onClick={handleSearch}>
+                {zhCN.energyAnalysisPage.search}
+              </button>
+              <button type="button" className="energy-analysis-button" onClick={handleReset}>
+                {zhCN.energyAnalysisPage.reset}
+              </button>
+              <button type="button" className="energy-analysis-button" onClick={handleExport}>
+                {exporting ? zhCN.energyAnalysisPage.exporting : zhCN.energyAnalysisPage.export}
+              </button>
+            </div>
+            <div className="energy-analysis-compact-tree-shell">
+              {treeError ? (
+                <p className="empty-hint">{treeError}</p>
+              ) : treeItems.length === 0 ? (
+                <p className="empty-hint">{zhCN.energyAnalysisPage.treeLoading}</p>
+              ) : (
+                renderTree(treeItems)
+              )}
             </div>
           </div>
-        </div>
-      </SectionCard>
+        </article>
 
-      <SectionCard title={zhCN.energyAnalysisPage.sectionFilters}>
-        <div className="energy-analysis-filter-grid">
-          <label className="energy-analysis-field">
-            <span>{zhCN.energyAnalysisPage.filterStartDate}</span>
-            <input
-              type="date"
-              value={filters.startDate}
-              onChange={(event) => updateFilter("startDate", event.target.value)}
-            />
-          </label>
-          <label className="energy-analysis-field">
-            <span>{zhCN.energyAnalysisPage.filterEndDate}</span>
-            <input
-              type="date"
-              value={filters.endDate}
-              onChange={(event) => updateFilter("endDate", event.target.value)}
-            />
-          </label>
-          <label className="energy-analysis-field">
-            <span>{zhCN.energyAnalysisPage.filterDateType}</span>
-            <select
-              value={filters.dateType}
-              onChange={(event) => updateFilter("dateType", event.target.value as DateTypeValue)}
-            >
-              <option value="1">{zhCN.energyAnalysisPage.intervalHour}</option>
-              <option value="2">{zhCN.energyAnalysisPage.intervalDay}</option>
-              <option value="3">{zhCN.energyAnalysisPage.intervalMonth}</option>
-              <option value="4">{zhCN.energyAnalysisPage.intervalYear}</option>
-            </select>
-          </label>
-        </div>
-        <div className="energy-analysis-actions">
-          <button type="button" className="energy-analysis-button is-primary" onClick={handleSearch}>
-            {zhCN.energyAnalysisPage.search}
-          </button>
-          <button type="button" className="energy-analysis-button" onClick={handleReset}>
-            {zhCN.energyAnalysisPage.reset}
-          </button>
-          <button type="button" className="energy-analysis-button" onClick={handleExport}>
-            {exporting ? zhCN.energyAnalysisPage.exporting : zhCN.energyAnalysisPage.export}
-          </button>
-        </div>
-      </SectionCard>
+        <article className="energy-analysis-compact-panel energy-analysis-compact-chart-panel">
+          <header className="energy-analysis-compact-panel-head">
+            <h3>{zhCN.energyAnalysisPage.sectionChart}</h3>
+            <span>{`${zhCN.energyAnalysisPage.rangeLatestFetch} ${latestFetchText}`}</span>
+          </header>
+          <div className="energy-analysis-compact-panel-body">
+            <div className="energy-analysis-compact-chart-top">
+              <article><span>{zhCN.energyAnalysisPage.chartRangeLabel}</span><strong>{`${formatValue(energyStats.valleyValue)} / ${formatValue(energyStats.peakValue)}`}</strong></article>
+              <article><span>{zhCN.energyAnalysisPage.rangeUnitLabel}</span><strong>{energyUnit}</strong></article>
+              <article><span>返回对象</span><strong>{`${formatCount(objectCount)}${zhCN.energyAnalysisPage.unitObjects}`}</strong></article>
+              <article><span>聚合粒度</span><strong>{queryIntervalLabel}</strong></article>
+            </div>
+            <div className="energy-analysis-compact-chart-box">
+              <div className="energy-analysis-compact-chart-head">
+                <strong>多序列趋势</strong>
+                <span>{`${zhCN.energyAnalysisPage.rangeSelectionLabel}${formatCount(queriedDevices.length)}${zhCN.energyAnalysisPage.unitDevices}`}</span>
+              </div>
+              <EnergyAnalysisTrendChart data={data} loadError={loadError} />
+            </div>
+            <div className="energy-analysis-compact-rank-grid">
+              <article><span>峰值对象</span><strong>{energyStats.peakObject}</strong></article>
+              <article><span>谷值对象</span><strong>{energyStats.valleyObject}</strong></article>
+              <article><span>最大占比</span><strong>{energyStats.majorObject}</strong></article>
+            </div>
+          </div>
+        </article>
 
-      <SectionCard title={zhCN.energyAnalysisPage.sectionSummary}>
-        <div className="energy-analysis-summary-grid">
-          {summaryCards.map((card) => (
-            <StatCard
-              key={card.title}
-              title={card.title}
-              value={card.value}
-              unit={card.unit}
-              delta={card.delta}
-              tone={card.tone}
-            />
-          ))}
-        </div>
-      </SectionCard>
+        <article className="energy-analysis-compact-panel">
+          <header className="energy-analysis-compact-panel-head">
+            <h3>来源与结构</h3>
+            <span>只读</span>
+          </header>
+          <div className="energy-analysis-compact-panel-body">
+            <div className="energy-analysis-compact-source-list">
+              {(sourceRows.length > 0 ? sourceRows : [
+                {
+                  key: "energy-analysis",
+                  label: `能耗曲线：${sourceSummary.warn ? "需复核" : "正常"}`,
+                  rows: objectCount,
+                  ok: !sourceSummary.warn
+                }
+              ]).map((item, index) => (
+                <article key={`${item.key || index}`} className="energy-analysis-compact-source-row">
+                  <span>
+                    <strong>{item.label || "数据来源"}</strong>
+                    <small>{typeof item.rows === "number" ? `${formatCount(item.rows)} 行` : "行数未知"}</small>
+                  </span>
+                  <em className={item.ok === false ? "is-warn" : "is-good"}>{item.ok === false ? "复核" : "正常"}</em>
+                </article>
+              ))}
+              <article className="energy-analysis-compact-source-row">
+                <span>
+                  <strong>导出边界</strong>
+                  <small>CSV 按当前查询结果导出</small>
+                </span>
+                <em className="is-good">可用</em>
+              </article>
+            </div>
+            <div className="energy-analysis-compact-structure">
+              {energyStructureRows.length > 0 ? energyStructureRows.map((item) => (
+                <div key={item.id || item.name} className="energy-analysis-compact-bar-row">
+                  <span>{item.name}</span>
+                  <div className="energy-analysis-compact-bar-track">
+                    <div style={{ width: `${Math.max(3, Math.min(100, item.percent || 0))}%` }} />
+                  </div>
+                  <b>{formatPercent(item.percent)}</b>
+                </div>
+              )) : (
+                <div className="energy-analysis-compact-empty">暂无结构占比</div>
+              )}
+            </div>
+          </div>
+        </article>
+      </section>
 
-      <SectionCard title={zhCN.energyAnalysisPage.sectionChart}>
-        <div className="energy-analysis-chart-meta">
-          <span>{`${zhCN.energyAnalysisPage.rangeLatestFetch} ${formatDateTime(data?.generatedAt || data?.freshness?.latestTimestamp)}`}</span>
-          <span>{`${zhCN.energyAnalysisPage.rangeUnitLabel} ${data?.unit || "--"}`}</span>
-          <span>{`${zhCN.energyAnalysisPage.rangeSelectionLabel} ${queriedDevices.length}${zhCN.energyAnalysisPage.unitDevices}`}</span>
-        </div>
-        <EnergyAnalysisTrendChart data={data} loadError={loadError} />
-      </SectionCard>
-
-      <SectionCard title={zhCN.energyAnalysisPage.sectionTable}>
-        <div className="energy-analysis-table-meta">
-          <span>{`${zhCN.energyAnalysisPage.rangeLatestFetch} ${formatDateTime(data?.generatedAt || data?.freshness?.latestTimestamp)}`}</span>
-          <span>{`${zhCN.energyAnalysisPage.rangeUnitLabel} ${data?.unit || "--"}`}</span>
-        </div>
-        <div className="table-scroll-shell">
-          <table className="data-table energy-analysis-table">
+      <section className="energy-analysis-compact-panel energy-analysis-compact-table-panel">
+        <header className="energy-analysis-compact-panel-head">
+          <h3>{zhCN.energyAnalysisPage.sectionTable}</h3>
+          <span>{`${zhCN.energyAnalysisPage.rangeLatestFetch} ${latestFetchText} · ${zhCN.energyAnalysisPage.rangeUnitLabel} ${energyUnit} · 汇总 ${formatCount(data?.summaries?.length || 0)} 项`}</span>
+        </header>
+        <div className="energy-analysis-compact-table-wrap">
+          <table className="energy-analysis-compact-table">
+            <colgroup>
+              <col className="energy-analysis-table-col-object" />
+              <col className="energy-analysis-table-col-number" />
+              <col className="energy-analysis-table-col-number" />
+              <col className="energy-analysis-table-col-time" />
+              <col className="energy-analysis-table-col-number" />
+              <col className="energy-analysis-table-col-time" />
+              <col className="energy-analysis-table-col-number" />
+            </colgroup>
             <thead>
               <tr>
                 <th>{zhCN.energyAnalysisPage.tableObject}</th>
@@ -809,14 +1208,21 @@ export default function EnergyAnalysisPage() {
               ) : (
                 <tr>
                   <td colSpan={7} className="energy-analysis-empty-inline">
-                    {loading ? zhCN.energyAnalysisPage.loading : zhCN.energyAnalysisPage.empty}
+                    {loading ? zhCN.energyAnalysisPage.loading : "暂无统计结果"}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-      </SectionCard>
+      </section>
+
+      <section className="energy-analysis-compact-boundary" aria-label="能耗分析边界">
+        <article><span>统计口径</span><strong>按设备树选择 + 时间间隔聚合</strong></article>
+        <article><span>查询边界</span><strong>开始日期 ≤ 结束日期</strong></article>
+        <article><span>导出内容</span><strong>时间列 + 全部对象曲线</strong></article>
+        <article><span>页面边界</span><strong>只读分析，不写入现场</strong></article>
+      </section>
     </div>
   );
 }

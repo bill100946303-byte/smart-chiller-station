@@ -6,12 +6,15 @@ import { fetchUiBadgeState, type UiBadgeDecisionDto, type UiBadgeStateDto } from
 
 type ReadinessBadgeProps = {
   pageKey: "dashboard" | "systemOverview";
+  liveViewModel?: ReadinessBadgeViewModel | null;
 };
 
-type BadgeViewModel = {
+export type ReadinessBadgeViewModel = {
   pass: boolean;
   text: string;
 };
+
+type BadgeViewModel = ReadinessBadgeViewModel;
 
 function pickLocaleText(decision: UiBadgeDecisionDto | undefined, locale: LocaleCode): string | null {
   const textMap = decision?.text;
@@ -43,10 +46,13 @@ function resolveBadgeViewModel(
   return { pass, text };
 }
 
-export default function ReadinessBadge({ pageKey }: ReadinessBadgeProps) {
+export default function ReadinessBadge({ pageKey, liveViewModel = null }: ReadinessBadgeProps) {
   const [viewModel, setViewModel] = useState<BadgeViewModel | null>(null);
 
   useEffect(() => {
+    if (liveViewModel) {
+      return;
+    }
     let active = true;
 
     async function load() {
@@ -68,16 +74,18 @@ export default function ReadinessBadge({ pageKey }: ReadinessBadgeProps) {
     return () => {
       active = false;
     };
-  }, [pageKey]);
+  }, [pageKey, liveViewModel]);
 
-  if (!viewModel) {
+  const resolvedViewModel = liveViewModel || viewModel;
+
+  if (!resolvedViewModel) {
     return null;
   }
 
   return (
     <div className="readiness-badge-row">
-      <span className={`status-pill readiness-badge-pill ${viewModel.pass ? "good" : "warn"}`}>
-        {viewModel.text}
+      <span className={`status-pill readiness-badge-pill ${resolvedViewModel.pass ? "good" : "warn"}`}>
+        {resolvedViewModel.text}
       </span>
     </div>
   );

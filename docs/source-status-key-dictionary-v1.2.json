@@ -115,7 +115,7 @@
     "unknownFallback": {
       "shortLabel": "规则指标",
       "fullLabelTemplate": "规则指标：{snake_case}",
-      "riskHint": "未收录 metric 禁止直接用于业务结论。"
+      "riskHint": "未映射指标禁止直接用于业务结论。"
     },
     "fieldCnMap": {
       "chilled_delta_t_c": "冷冻水温差",
@@ -131,9 +131,9 @@
     }
   },
   "fallback": {
-    "shortLabel": "未收录",
-    "fullLabelTemplate": "未收录来源（{rawKey}）",
-    "riskHint": "未收录 key 禁止直接用于业务结论。"
+    "shortLabel": "数据来源",
+    "fullLabelTemplate": "数据来源（{rawKey}）",
+    "riskHint": "未映射 key 禁止直接用于业务结论。"
   },
   "renderingPolicy": {
     "collapsed": {

@@ -1,0 +1,5 @@
+timestamp,siteId,loopKey,equipmentType,equipmentId,signalRole,pointCode,pointName,value,unit,controlMode,sampleIntervalSec,qualityFlag,sourceSystem,remark
+2026-06-13T10:00:00+08:00,140,chilled_water_delta_t,chilled_pump,CHP4,frequency_command,B25_AI_CHWP_FREQ_CMD,冷冻泵频率命令,40.0,Hz,auto,30,good,SCADA,ready-smoke 样例，不作为现场证据
+2026-06-13T10:00:00+08:00,140,chilled_water_delta_t,chilled_pump,CHP4,frequency_feedback,B25_CHWP_FREQ_FB,冷冻泵频率反馈,39.8,Hz,auto,30,good,SCADA,ready-smoke 样例，不作为现场证据
+2026-06-13T10:00:30+08:00,140,tower_fan_tcws,cooling_tower,CT1,frequency_command,B25_CT_FAN_FREQ_CMD,塔风机频率命令,32.0,Hz,auto,30,good,SCADA,ready-smoke 样例，不作为现场证据
+2026-06-13T10:00:30+08:00,140,tower_fan_tcws,cooling_tower,CT1,frequency_feedback,B25_CT_FAN_FREQ_FB,塔风机频率反馈,31.7,Hz,auto,30,good,SCADA,ready-smoke 样例，不作为现场证据

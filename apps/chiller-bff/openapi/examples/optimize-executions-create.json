@@ -1,0 +1,56 @@
+{
+  "ok": true,
+  "requestId": "req-20260408-create-0001",
+  "execution": {
+    "executionId": "opx-btwentyfive-1775237600000-cn4t8v",
+    "siteId": "btwentyfive",
+    "createdAt": "2026-04-08T09:33:20.000Z",
+    "updatedAt": "2026-04-08T09:33:20.000Z",
+    "approvedAt": null,
+    "approvedBy": null,
+    "rolledBackAt": null,
+    "rolledBackBy": null,
+    "status": "pending_approval",
+    "draft": {
+      "generatedAt": "2026-04-08T09:32:58.000Z",
+      "gateLevel": "caution"
+    },
+    "execution": {
+      "type": "scheme",
+      "schemeKey": "conservative",
+      "title": "保守方案",
+      "targetCop": 7.4,
+      "targetPowerKw": 1188.6,
+      "targetApproachC": null,
+      "targetTcwsC": null,
+      "reason": "关键现态信号缺失，先维持保守运行",
+      "actions": [
+        "维持当前主机组合",
+        "优先补齐 COP 与温差连续测点"
+      ]
+    },
+    "approval": {
+      "required": true,
+      "status": "pending",
+      "requestedAt": "2026-04-08T09:33:20.000Z",
+      "approvedAt": null,
+      "approverUserId": null,
+      "note": null
+    },
+    "rollback": {
+      "status": "none",
+      "reason": null,
+      "requestedBy": null,
+      "requestedAt": null,
+      "completedAt": null
+    },
+    "timeline": [
+      {
+        "at": "2026-04-08T09:33:20.000Z",
+        "actorUserId": "operator",
+        "action": "created",
+        "note": null
+      }
+    ]
+  }
+}

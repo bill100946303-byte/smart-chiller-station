@@ -5,9 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "check": "npm run check:source-status-dict && npm run check:route-scope && npm run check:ui-visible-copy && npm run check:energy-efficiency-ui && npm run check:visual-readability",
+    "verify": "npm run check && npm run build",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "check:source-status-dict": "node scripts/check-source-status-dictionary.js"
+    "check:source-status-dict": "node scripts/check-source-status-dictionary.js",
+    "check:route-scope": "node scripts/check-route-scope.js",
+    "check:ui-visible-copy": "node scripts/check-ui-visible-copy.js",
+    "check:energy-efficiency-ui": "node scripts/check-energy-efficiency-ui-contract.js",
+    "check:visual-readability": "node scripts/check-visual-readability-contract.js",
+    "check:energy-efficiency-delivery-scope": "node scripts/check-energy-efficiency-delivery-scope.js"
   },
   "dependencies": {
     "@google/model-viewer": "^4.2.0",
@@ -15,7 +22,7 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.8.2",
-    "three": "^0.183.0"
+    "three": "^0.182.0"
   },
   "devDependencies": {
     "@gltf-transform/cli": "^4.3.0",

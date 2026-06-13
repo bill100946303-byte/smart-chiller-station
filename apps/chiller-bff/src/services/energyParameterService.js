@@ -13,8 +13,26 @@ function mapSite(config, siteId) {
   };
 }
 
+function normalizeOptionalText(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+  return value.trim();
+}
+
+function resolveEnergyParameterLegacySiteId(config, siteId) {
+  return (
+    normalizeOptionalText(config?.siteSourceConfig?.databaseKey)
+    || normalizeOptionalText(config?.siteSourceConfig?.deviceDataProjectKey)
+    || normalizeOptionalText(siteId)
+  );
+}
+
 export async function getEnergyParameters(config, siteId) {
-  const parameters = await loadEnergyParameters(config.legacyBaseUrl, siteId);
+  const parameters = await loadEnergyParameters(
+    config.legacyBaseUrl,
+    resolveEnergyParameterLegacySiteId(config, siteId)
+  );
 
   return {
     site: mapSite(config, siteId),
@@ -26,7 +44,11 @@ export async function getEnergyParameters(config, siteId) {
 }
 
 export async function updateEnergyParameters(config, siteId, data) {
-  const updated = await updateLegacyEnergyParameters(config.legacyBaseUrl, siteId, data);
+  const updated = await updateLegacyEnergyParameters(
+    config.legacyBaseUrl,
+    resolveEnergyParameterLegacySiteId(config, siteId),
+    data
+  );
 
   if (!updated.ok) {
     return {

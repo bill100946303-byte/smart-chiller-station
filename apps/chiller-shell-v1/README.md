@@ -4,7 +4,25 @@ Standalone frontend shell for the legacy chiller station 2.0 upgrade.
 
 Current scope:
 - `/login`
+- `/projects`
 - `/dashboard`
+- `/trend-analysis`
+- `/cold-station-logs`
+- `/operation-records`
+- `/energy-analysis`
+- `/energy-efficiency`
+- `/energy-parameters`
+- `/meter-readings`
+- `/performance-report`
+- `/report-records`
+- `/knowledge-base`
+- `/work-orders`
+- `/environment-conditions`
+- `/alarms`
+- `/devices`
+- `/optimize-demo`
+- `/scene-control`
+- `/video-monitor`
 - `/system-overview`
 
 ## Run
@@ -29,9 +47,26 @@ cp .env.example .env.local
 
 Supported variables:
 
-- `VITE_BFF_BASE_URL` (default `http://127.0.0.1:8787`)
+- `VITE_BFF_BASE_URL` (default same-origin; in dev it is proxied to `http://127.0.0.1:8787` by Vite)
+- `VITE_LEGACY_BASE_URL` (default `https://www.ssge.com.cn:8098`)
 - `VITE_SITE_ID` (default `126lnoffice`)
 - `VITE_TREND_RANGE` (`24h` | `7d` | `30d`, default `24h`)
+
+## Verification
+
+Run the full frontend gate before handoff:
+
+```bash
+npm run verify
+```
+
+This runs:
+
+- `npm run check:source-status-dict`
+- `npm run check:ui-copy`
+- `npm run build`
+
+`check:ui-copy` prevents visible UI copy from leaking implementation terms such as internal endpoints, legacy labels, raw paths, video URLs, mojibake, and old English control terms.
 
 ## Notes
 

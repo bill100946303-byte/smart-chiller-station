@@ -1,0 +1,247 @@
+{
+  "ok": true,
+  "code": "OK",
+  "message": "chiller staging, tower approach and pump delta-t advisor result generated",
+  "requestId": "req-20260608-0001",
+  "details": {
+    "site": {
+      "siteId": "btwentyfive"
+    },
+    "decision": {
+      "summary": "tower approach AI advisor result",
+      "confidence": "rule-based-draft-stable"
+    },
+    "request": {
+      "loadKw": 1200,
+      "outdoorTempC": 27.6,
+      "mode": "cooling"
+    },
+    "recommendation": {
+      "systemCop": 4.8,
+      "totalPowerKw": 250,
+      "steps": [
+        "生成冷却塔 Approach 目标值并进入 shadow 验证。"
+      ]
+    },
+    "gate": {
+      "level": "ready",
+      "title": "可评审",
+      "reason": "关键数据和保护边界可用。"
+    },
+    "chillerStagingAdvisor": {
+      "status": "ready",
+      "executionReady": true,
+      "dispatchReady": false,
+      "executionMode": "shadow",
+      "dispatchMode": "shadow",
+      "basis": "combination_empirical_performance",
+      "confidence": "high",
+      "current": {
+        "runningCombination": ["OLD-1", "NEW-1"],
+        "runningCount": 2,
+        "combinationCapacityKw": 3600,
+        "systemCoolingLoadKw": 2600,
+        "combinationPlrPct": 72.2,
+        "chillerPowerTotalKw": 540,
+        "stationPowerTotalKw": 710,
+        "comboCop": 4.81,
+        "stationCop": 3.66
+      },
+      "recommendation": {
+        "action": "switch_combination",
+        "targetCombination": ["NEW-1", "NEW-2"],
+        "expectedTotalPowerDeltaKw": -90,
+        "expectedCopDelta": 0.53,
+        "reason": "相近负荷和湿球工况下，目标组合历史冷站 COP/总功率表现更优，建议进入 shadow 验证。"
+      },
+      "evidence": {
+        "learningBoundary": {
+          "singleChillerCopLearning": "only_when_single_chiller_running",
+          "multiChillerCop": "combination_only_without_single_chilled_water_flow",
+          "message": "单机 COP 只在单台运行窗口学习；多机并联无单机流量时，只评价组合 COP / 冷站 COP。"
+        },
+        "currentWindow": {
+          "runningCombination": ["OLD-1", "NEW-1"],
+          "runningCount": 2,
+          "currentRunMinutes": 120,
+          "canLearnSingleChillerCop": false,
+          "canLearnCombinationCop": true,
+          "sampleRole": "combination_learning_window"
+        },
+        "comparisonWindow": {
+          "loadKw": 2600,
+          "wetBulbC": 27.5,
+          "chilledSupplyTempC": 7,
+          "loadRateTolerancePct": 10,
+          "wetBulbToleranceC": 1.5,
+          "chilledSupplyTempToleranceC": 0.5
+        },
+        "sampleSummary": {
+          "historyRowCount": 2,
+          "sampleTotal": 212,
+          "candidateCombinationCount": 2,
+          "comparableCandidateCount": 2,
+          "highConfidenceCandidateCount": 1,
+          "lowConfidenceCandidateCount": 0,
+          "currentCombinationSamples": 86,
+          "targetCombinationSamples": 126,
+          "minSampleCount": 30,
+          "highConfidenceSampleCount": 100
+        },
+        "currentCombinationEvidence": {
+          "combination": ["OLD-1", "NEW-1"],
+          "sampleCount": 86,
+          "confidence": "medium",
+          "matchingTier": "same_load_wet_bulb_chws_band",
+          "stationCop": 3.66,
+          "comboCop": 4.81,
+          "kwPerRt": 0.96,
+          "source": "runtime_sample_aggregation",
+          "note": "多机并联窗口只作为组合 COP/冷站 COP 样本，不拆分单台主机 COP。"
+        },
+        "targetCombinationEvidence": {
+          "combination": ["NEW-1", "NEW-2"],
+          "sampleCount": 126,
+          "confidence": "high",
+          "matchingTier": "same_load_wet_bulb_chws_band",
+          "stationCop": 4.19,
+          "comboCop": 5.65,
+          "kwPerRt": 0.839,
+          "source": "runtime_sample_aggregation",
+          "note": "多机并联窗口只作为组合 COP/冷站 COP 样本，不拆分单台主机 COP。"
+        },
+        "shadowVerificationPlan": {
+          "method": "shadow_compare_30_60min_same_load_wet_bulb_band",
+          "durationMinutes": {
+            "min": 30,
+            "max": 60
+          },
+          "metrics": ["stationCop", "comboCop", "kwPerRt", "stationPowerTotalKw", "chillerPowerTotalKw", "alarmCount"],
+          "requiredBeforeSubmit": [
+            "目标组合样本 >= 30 条",
+            "当前组合稳定运行 >= 90 分钟",
+            "候选组合容量余量 >= 12%",
+            "预计节能 >= 30 kW 或 >= 5%"
+          ]
+        }
+      },
+      "sampleEvidence": {
+        "sampleSummary": {
+          "currentCombinationSamples": 86,
+          "targetCombinationSamples": 126,
+          "minSampleCount": 30
+        }
+      },
+      "candidates": [
+        {
+          "combination": ["OLD-1", "NEW-1"],
+          "isCurrent": true,
+          "sampleCount": 86,
+          "stationCop": 3.66,
+          "comboCop": 4.81,
+          "kwPerRt": 0.96,
+          "source": "runtime_sample_aggregation",
+          "matchingTier": "same_load_wet_bulb_chws_band",
+          "sampleRole": "combination_learning_window"
+        },
+        {
+          "combination": ["NEW-1", "NEW-2"],
+          "isCurrent": false,
+          "sampleCount": 126,
+          "stationCop": 4.19,
+          "comboCop": 5.65,
+          "kwPerRt": 0.839,
+          "source": "runtime_sample_aggregation",
+          "matchingTier": "same_load_wet_bulb_chws_band",
+          "sampleRole": "combination_learning_window"
+        }
+      ],
+      "blockers": [],
+      "warnings": [
+        "多机并联无单机冷冻水流量，不计算单机实时 COP。"
+      ],
+      "savingsVerification": {
+        "method": "shadow_compare_30_60min_same_load_wet_bulb_band",
+        "durationMinutes": {
+          "min": 30,
+          "max": 60
+        },
+        "metrics": ["stationCop", "comboCop", "kwPerRt", "stationPowerTotalKw", "chillerPowerTotalKw", "alarmCount"]
+      },
+      "advisorResult": {
+        "type": "chiller_staging_combination_advisor",
+        "status": "ready",
+        "lifecycleMode": "shadow",
+        "execution": {
+          "approvalRequired": true,
+          "allowedToCreateExecution": true,
+          "allowedToDispatch": false,
+          "dispatchMode": "shadow",
+          "controlPointMapped": false,
+          "rollbackMapped": false,
+          "enforcedAllowed": false
+        },
+        "savingsVerification": {
+          "method": "shadow_compare_30_60min_same_load_wet_bulb_band",
+          "durationMinutes": {
+            "min": 30,
+            "max": 60
+          },
+          "metrics": ["stationCop", "comboCop", "kwPerRt", "stationPowerTotalKw", "chillerPowerTotalKw", "alarmCount"]
+        }
+      }
+    },
+    "towerApproachAdvisor": {
+      "status": "ready",
+      "currentApproachC": 2.2,
+      "currentTcwsC": 29.8,
+      "requestedWetBulbC": 27.6,
+      "targetApproachC": 1.9,
+      "targetTcwsC": 29.5,
+      "executionReady": true,
+      "dispatchReady": false,
+      "executionMode": "read_only",
+      "controlMode": "read-only-advice",
+      "reason": "已生成接近度目标建议。",
+      "advisorResult": {
+        "type": "tower_approach_ai_closed_loop",
+        "status": "ready",
+        "lifecycleMode": "read_only",
+        "execution": {
+          "approvalRequired": true,
+          "allowedToCreateExecution": true,
+          "allowedToDispatch": false,
+          "dispatchMode": "off",
+          "controlPointMapped": false,
+          "rollbackMapped": false
+        }
+      }
+    },
+    "sourceStatus": {
+      "overall": "ok",
+      "sources": [
+        {
+          "key": "optimizeEngine",
+          "endpoint": "/bff/v1/sites/btwentyfive/optimize",
+          "ok": true,
+          "reasonCode": "advisor_result_ready",
+          "status": null,
+          "message": "chiller staging, tower approach and pump delta-t advisor result generated",
+          "error": null,
+          "rows": null
+        },
+        {
+          "key": "chillerStagingAdvisor",
+          "endpoint": "/bff/v1/sites/btwentyfive/optimize",
+          "ok": true,
+          "reasonCode": "chiller_staging_advisor_ready",
+          "status": null,
+          "message": "相近负荷和湿球工况下，目标组合历史冷站 COP/总功率表现更优，建议进入 shadow 验证。",
+          "error": null,
+          "rows": 2
+        }
+      ]
+    },
+    "generatedAt": "2026-06-08T00:00:00.000Z"
+  }
+}

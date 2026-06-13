@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import SectionCard from "../components/common/SectionCard";
-import SourceStatusBanner from "../components/common/SourceStatusBanner";
 import StatusPill from "../components/common/StatusPill";
 import { zhCN } from "../i18n/zhCN";
 import { getAuthSession } from "../services/auth";
@@ -263,42 +262,100 @@ export default function VideoLegacyPage() {
   }, [isAllowedUser, scriptState]);
 
   const detailLines = [
-    `${zhCN.videoLegacyPage.detailRuntime}: /module/PlayerControl.js`,
-    `${zhCN.videoLegacyPage.detailProtocol}: RTSP over WebSocket`,
+    `${zhCN.videoLegacyPage.detailRuntime}: 已配置`,
+    `${zhCN.videoLegacyPage.detailProtocol}: 已配置`,
     `${zhCN.videoLegacyPage.detailScope}: ${zhCN.videoLegacyPage.detailScopeValue}`
+  ];
+  const playingCount = streams.filter((stream) => stream.status === "playing").length;
+  const loadingCount = streams.filter((stream) => stream.status === "loading").length;
+  const failedCount = streams.filter((stream) => stream.status === "failed").length;
+  const accessLabel = !isAllowedUser
+    ? "未授权"
+    : scriptState === "ready"
+      ? "接入就绪"
+      : scriptState === "failed"
+        ? "接入异常"
+        : "接入中";
+  const renderModeLabel = streams.some((stream) => stream.renderMode === "video")
+    ? streams.some((stream) => stream.renderMode === "canvas")
+      ? "混合渲染"
+      : "视频直出"
+    : "画布解码";
+  const videoCommandTags = [
+    { label: "接入态", value: accessLabel },
+    { label: "播放中", value: `${playingCount}/${streams.length}` },
+    { label: "异常流", value: `${failedCount}` },
+    { label: "渲染", value: renderModeLabel }
+  ];
+  const videoWorkspaceTitle = !isAllowedUser
+    ? zhCN.videoLegacyPage.gateTitle
+    : `监看工作区 · ${playingCount}/${streams.length} 路已播放`;
+  const videoWorkspaceBody = !isAllowedUser
+    ? zhCN.videoLegacyPage.gateBody
+    : failedCount > 0
+      ? "优先处理异常通道，再核对摄像头、网络和播放链路。"
+      : loadingCount > 0
+        ? "视频通道仍在初始化，先等首轮播放状态稳定。"
+        : "当前可直接从流卡片定位异常，再核对摄像头和网络状态。";
+  const videoWorkspaceMeta = [
+    "接入 已配置",
+    "播放链路 已配置",
+    `范围 ${zhCN.videoLegacyPage.detailScopeValue}`,
+    `账号 ${isAllowedUser ? session?.username || "已授权" : "受限"}`
   ];
 
   return (
     <div className="video-legacy-page page-enter">
-      <SourceStatusBanner
-        summary={bannerSummary}
-        warn={!isAllowedUser || scriptState === "failed"}
-        detailLines={detailLines}
-        detailLinesCompact={detailLines}
-      />
-
-      <section className="video-legacy-header">
-        <div>
+      <section className="video-legacy-header subpage-command-board">
+        <div className="video-command-copy subpage-command-copy">
+          <p className="video-command-eyebrow">视频接入状态</p>
           <h2>{zhCN.videoLegacyPage.heading}</h2>
-          <p>{zhCN.videoLegacyPage.subtitle}</p>
+          <p>先看接入状态，再看每路通道是否已播放，最后处理摄像头或网络异常。</p>
+          <div className="video-command-tags">
+            {videoCommandTags.map((item) => (
+              <span key={item.label}>
+                <strong>{item.label}</strong>
+                <em>{item.value}</em>
+              </span>
+            ))}
+          </div>
         </div>
-        <div className="video-legacy-notes">
-          <article>
-            <label>{zhCN.videoLegacyPage.noteAccess}</label>
-            <strong>{zhCN.videoLegacyPage.noteAccessValue}</strong>
-          </article>
-          <article>
-            <label>{zhCN.videoLegacyPage.noteSecurity}</label>
-            <strong>{zhCN.videoLegacyPage.noteSecurityValue}</strong>
-          </article>
+        <div className="video-command-side subpage-command-side">
+          <div className="video-command-note">
+            <strong>{bannerSummary}</strong>
+            <p>{videoWorkspaceBody}</p>
+          </div>
+          <div className="video-command-statuses">
+            <StatusPill label={accessLabel} tone={!isAllowedUser || scriptState === "failed" ? "warn" : scriptState === "ready" ? "good" : "neutral"} />
+            <StatusPill label={`${playingCount}/${streams.length} 路播放`} tone={playingCount > 0 ? "good" : "neutral"} />
+            <StatusPill label={`${failedCount} 路异常`} tone={failedCount > 0 ? "warn" : "neutral"} />
+          </div>
+          <div className="video-command-lines">
+            {detailLines.map((line) => (
+              <span key={line}>{line}</span>
+            ))}
+          </div>
         </div>
       </section>
+
+      <div className="video-stream-stage">
+        <div className="video-stream-stage-copy">
+          <strong>{videoWorkspaceTitle}</strong>
+          <p>{videoWorkspaceBody}</p>
+        </div>
+        <div className="video-stream-stage-meta">
+          {videoWorkspaceMeta.map((item) => (
+            <span key={item}>{item}</span>
+          ))}
+        </div>
+      </div>
 
       {!isAllowedUser ? (
         <SectionCard title={zhCN.videoLegacyPage.sectionGate}>
           <div className="video-legacy-empty">
             <strong>{zhCN.videoLegacyPage.gateTitle}</strong>
             <p>{zhCN.videoLegacyPage.gateBody}</p>
+            <p>仅允许指定账号打开这组视频流，避免非授权用户误操作。</p>
           </div>
         </SectionCard>
       ) : (
@@ -309,7 +366,8 @@ export default function VideoLegacyPage() {
                 <header>
                   <div>
                     <strong>{stream.name}</strong>
-                    <small>{stream.wsURL}</small>
+                    <small>{`通道 ${index + 1} · 已配置`}</small>
+                    <small>{`播放方式：${stream.renderMode === "video" ? "视频直出" : "画布解码"}`}</small>
                   </div>
                   <StatusPill label={mapStreamLabel(stream.status)} tone={mapStreamTone(stream.status)} />
                 </header>
@@ -336,10 +394,12 @@ export default function VideoLegacyPage() {
                   <article>
                     <label>{zhCN.videoLegacyPage.metaProtocol}</label>
                     <strong>{zhCN.videoLegacyPage.metaProtocolValue}</strong>
+                    <small>固定协议，不会自动切换。</small>
                   </article>
                   <article>
-                    <label>{zhCN.videoLegacyPage.metaRtsp}</label>
-                    <strong>{stream.rtspURL}</strong>
+                    <label>通道配置</label>
+                    <strong>已配置</strong>
+                    <small>出流异常时优先核对摄像头和网络可达性。</small>
                   </article>
                 </div>
 

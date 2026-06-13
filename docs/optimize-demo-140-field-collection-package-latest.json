@@ -1,0 +1,374 @@
+{
+  "siteId": "140",
+  "generatedAt": "2026-06-13T01:35:06.852Z",
+  "finalDecision": "FIELD_COLLECTION_PACKAGE_READY_TO_COLLECT",
+  "scope": "optimize-demo-140-field-collection-package",
+  "documents": [
+    {
+      "key": "field-data-readme",
+      "path": "docs/field-data/optimize-demo-140/README.md",
+      "exists": true,
+      "missingPhrases": []
+    },
+    {
+      "key": "chiller-combination-field-collection",
+      "path": "docs/field-data/optimize-demo-140/CHILLER_COMBINATION_FIELD_COLLECTION.md",
+      "exists": true,
+      "missingPhrases": []
+    },
+    {
+      "key": "chiller-sampling-plan",
+      "path": "docs/OPTIMIZE_DEMO_140_CHILLER_SAMPLING_PLAN_CURRENT.md",
+      "exists": true,
+      "missingPhrases": []
+    },
+    {
+      "key": "advisor-status",
+      "path": "docs/OPTIMIZE_DEMO_ADVISOR_STATUS_CURRENT.md",
+      "exists": true,
+      "missingPhrases": []
+    }
+  ],
+  "templates": [
+    {
+      "key": "sensorLedger",
+      "path": "docs/field-data/optimize-demo-140/templates/sensor-calibration-installation.template.csv",
+      "exists": true,
+      "headerCount": 17,
+      "requiredHeaderCount": 17,
+      "missingHeaders": []
+    },
+    {
+      "key": "controlCommandFeedback",
+      "path": "docs/field-data/optimize-demo-140/templates/control-command-feedback.template.csv",
+      "exists": true,
+      "headerCount": 15,
+      "requiredHeaderCount": 15,
+      "missingHeaders": []
+    },
+    {
+      "key": "startStopEvent",
+      "path": "docs/field-data/optimize-demo-140/templates/start-stop-event.template.csv",
+      "exists": true,
+      "headerCount": 14,
+      "requiredHeaderCount": 14,
+      "missingHeaders": []
+    },
+    {
+      "key": "controlParameter",
+      "path": "docs/field-data/optimize-demo-140/templates/control-parameter.template.csv",
+      "exists": true,
+      "headerCount": 15,
+      "requiredHeaderCount": 15,
+      "missingHeaders": []
+    },
+    {
+      "key": "chillerCombinationSamplingLog",
+      "path": "docs/field-data/optimize-demo-140/templates/chiller-combination-sampling-log.template.csv",
+      "exists": true,
+      "headerCount": 22,
+      "requiredHeaderCount": 22,
+      "missingHeaders": []
+    }
+  ],
+  "formalInputs": [
+    {
+      "key": "sensorLedger",
+      "label": "传感器校准/安装位置台账",
+      "path": "docs/field-data/optimize-demo-140/sensor-calibration-installation.csv",
+      "status": "missing",
+      "lineCount": 0
+    },
+    {
+      "key": "controlCommandFeedback",
+      "label": "控制命令/反馈高频趋势",
+      "path": "docs/field-data/optimize-demo-140/control-command-feedback.csv",
+      "status": "missing",
+      "lineCount": 0
+    },
+    {
+      "key": "startStopEvent",
+      "label": "设备启停事件台账",
+      "path": "docs/field-data/optimize-demo-140/start-stop-event.csv",
+      "status": "missing",
+      "lineCount": 0
+    },
+    {
+      "key": "controlParameter",
+      "label": "PID/死区/延时参数台账",
+      "path": "docs/field-data/optimize-demo-140/control-parameter.csv",
+      "status": "missing",
+      "lineCount": 0
+    }
+  ],
+  "latestReports": {
+    "sensorLedgerPreflight": {
+      "path": "docs/optimize-demo-140-sensor-ledger-preflight-latest.json",
+      "finalDecision": "SENSOR_LEDGER_PREFLIGHT_WAITING_FOR_INPUTS",
+      "readError": null,
+      "blockers": 1
+    },
+    "chillerSamplingPlan": {
+      "path": "docs/optimize-demo-140-chiller-sampling-plan-latest.json",
+      "finalDecision": "CHILLER_SAMPLING_PLAN_READY_TO_COLLECT",
+      "coverageStatus": "baseline_high_confidence_only",
+      "total": 115,
+      "warnings": 4,
+      "readError": null
+    },
+    "diagnosticReadiness": {
+      "path": "docs/optimize-demo-diagnostic-readiness-latest.json",
+      "finalDecision": "DIAGNOSTIC_READINESS_READY",
+      "matrix": {
+        "basis": "available_runtime_history_and_safety_signals",
+        "scope": "optimize_demo_read_only_extension",
+        "total": 10,
+        "readyNowCount": 4,
+        "directionalCount": 5,
+        "pointGapCount": 1,
+        "controlBoundary": "read_only_or_shadow_only",
+        "boundaryNotes": [
+          "A档可进入 /optimize-demo 作为 V1 只读诊断或 shadow 证据。",
+          "B档只能输出疑似风险、待复核和样本治理建议。",
+          "C档只进入点位改造清单，不能输出正式诊断结论。",
+          "所有项均不新增真实 PLC 下发、自动启停或 enforced 能力。"
+        ],
+        "items": [
+          {
+            "key": "instrumentDataQuality",
+            "title": "仪表数据偏移诊断",
+            "tier": "A",
+            "status": "ready",
+            "currentFeasibility": "can_do_v1",
+            "firstVersionOutput": "实时闭合校验、24h 稳态窗口 COP/功率/温差偏移复核。",
+            "availableData": [
+              "1215 个实时寄存器点",
+              "24h COP/总功率/温差趋势",
+              "冷站总功率、分项功率、COP、冷冻/冷却温差"
+            ],
+            "missingData": [
+              "传感器校准记录",
+              "安装位置台账",
+              "冗余仪表或现场热平衡复核"
+            ],
+            "boundary": "只能提示疑似偏移和复核对象，不判定设备故障，不自动修正测点。",
+            "allowedMode": "read_only",
+            "confidence": "high"
+          },
+          {
+            "key": "chilledHydraulicBalance",
+            "title": "冷冻水水力平衡诊断",
+            "tier": "A/B",
+            "status": "ready",
+            "currentFeasibility": "can_do_v1",
+            "firstVersionOutput": "站级低温差持续性、实时支路流量/压力离散度、旁通分流风险。",
+            "availableData": [
+              "7 个支路线索",
+              "24h 冷冻水温差和总功率趋势",
+              "冷冻总管供回水温度/压差、旁通阀反馈"
+            ],
+            "missingData": [
+              "支路历史趋势",
+              "末端阀位",
+              "末端压差",
+              "代表房间温度"
+            ],
+            "boundary": "可做水力失衡风险提示，不能把实时支路差异外推为全天失衡或末端阀门故障。",
+            "allowedMode": "read_only",
+            "confidence": "medium"
+          },
+          {
+            "key": "lowDeltaTRootCause",
+            "title": "低温差根因诊断",
+            "tier": "A/B",
+            "status": "ready",
+            "currentFeasibility": "can_do_v1",
+            "firstVersionOutput": "持续低温差、大流量小温差、旁通、支路分配和末端安全缺口排序。",
+            "availableData": [
+              "24h 低温差持续性趋势",
+              "运行泵频率反馈",
+              "实时温差、泵频、旁通阀和支路线索"
+            ],
+            "missingData": [
+              "末端阀位/室温/压差",
+              "支路历史趋势",
+              "真实 PLC 降泵保护状态"
+            ],
+            "boundary": "只支持根因排序和 shadow 验证建议，不能自动降泵。",
+            "allowedMode": "read_only",
+            "confidence": "medium"
+          },
+          {
+            "key": "coolingTowerCapability",
+            "title": "冷却塔能力诊断",
+            "tier": "A",
+            "status": "ready",
+            "currentFeasibility": "can_do_v1",
+            "firstVersionOutput": "湿球、冷却水出水、Approach、塔风机/塔流量一致性复核。",
+            "availableData": [
+              "实时湿球",
+              "冷却水温度",
+              "塔风机功率/频率",
+              "塔侧流量/压力线索"
+            ],
+            "missingData": [
+              "塔单元长周期分摊",
+              "填料/布水现场巡检",
+              "厂家最低冷凝器进水温确认"
+            ],
+            "boundary": "只生成 Approach shadow 证据，不承诺自动调塔或突破最低水温保护。",
+            "allowedMode": "shadow_review",
+            "confidence": "medium"
+          },
+          {
+            "key": "chillerCombinationOptimization",
+            "title": "主机组合优化",
+            "tier": "A/B",
+            "status": "partial",
+            "currentFeasibility": "directional_review",
+            "firstVersionOutput": "当前组合、组合容量、组合负荷率、组合 COP/冷站 COP、候选组合样本置信度。",
+            "availableData": [
+              "当前运行组合",
+              "主机总功率",
+              "冷站功率/COP",
+              "组合样本 133 条"
+            ],
+            "missingData": [
+              "组合历史样本",
+              "当前组合连续运行时间",
+              "同工况人工切换验证"
+            ],
+            "boundary": "多机无单台冷冻水流量时只评价组合，不拆分单台主机实时 COP，不自动启停主机。",
+            "allowedMode": "shadow_review",
+            "confidence": "low"
+          },
+          {
+            "key": "chillerHealthDegradation",
+            "title": "主机健康劣化诊断",
+            "tier": "B",
+            "status": "partial",
+            "currentFeasibility": "directional_review",
+            "firstVersionOutput": "同组合/同负荷下冷站 COP 漂移、功率偏高和故障风险提示。",
+            "availableData": [
+              "主机运行状态",
+              "主机功率",
+              "组合 COP/冷站 COP",
+              "告警数量"
+            ],
+            "missingData": [
+              "单台冷冻水流量",
+              "厂家 COP 曲线",
+              "压缩机细码/维护记录"
+            ],
+            "boundary": "只能输出健康风险线索；多机运行时不能做单机实时 COP 排名。",
+            "allowedMode": "read_only",
+            "confidence": "low"
+          },
+          {
+            "key": "pumpEfficiency",
+            "title": "水泵效率诊断",
+            "tier": "B/C",
+            "status": "partial",
+            "currentFeasibility": "directional_review",
+            "firstVersionOutput": "频率/功率/压差异常、疑似偏离高效区提示。",
+            "availableData": [
+              "泵频率反馈",
+              "部分总管压差/流量线索"
+            ],
+            "missingData": [
+              "单泵流量",
+              "泵曲线",
+              "稳定压差口径",
+              "阀位和并联泵分摊"
+            ],
+            "boundary": "不能输出水泵效率百分比或高置信节能结论。",
+            "allowedMode": "read_only",
+            "confidence": "low"
+          },
+          {
+            "key": "valveStiction",
+            "title": "阀门卡滞/执行器诊断",
+            "tier": "B/C",
+            "status": "partial",
+            "currentFeasibility": "directional_review",
+            "firstVersionOutput": "阀位长期饱和、旁通分流和命令/反馈缺口提示。",
+            "availableData": [
+              "阀门/旁通反馈线索",
+              "实时阀类点位关键词"
+            ],
+            "missingData": [
+              "阀门命令值",
+              "阀门反馈值",
+              "控制模式",
+              "动作历史"
+            ],
+            "boundary": "只生成检修线索，不能直接判定阀门卡死。",
+            "allowedMode": "read_only",
+            "confidence": "low"
+          },
+          {
+            "key": "controlOscillation",
+            "title": "控制震荡/频繁启停诊断",
+            "tier": "B",
+            "status": "partial",
+            "currentFeasibility": "directional_review",
+            "firstVersionOutput": "温差锯齿波、总功率 hunting、频率命令/反馈缺口和启停事件缺口。",
+            "availableData": [
+              "24h COP/总功率/温差趋势",
+              "运行状态和频率实时摘要"
+            ],
+            "missingData": [
+              "高频历史",
+              "控制命令历史",
+              "PID 参数",
+              "精确启停事件"
+            ],
+            "boundary": "只能提示震荡风险，不自动改 PID，不自动启停设备。",
+            "allowedMode": "read_only",
+            "confidence": "low"
+          },
+          {
+            "key": "terminalComfortProtection",
+            "title": "末端舒适/缺冷风险诊断",
+            "tier": "C",
+            "status": "unavailable",
+            "currentFeasibility": "point_gap",
+            "firstVersionOutput": "代表末端缺冷风险、降泵前安全闭锁和投诉状态复核。",
+            "availableData": [],
+            "missingData": [
+              "代表房间温度",
+              "末端阀位",
+              "末端压差",
+              "缺冷投诉/工单联动"
+            ],
+            "boundary": "未闭合末端安全前，泵频建议只能 shadow/审阅，不允许 assisted 或 enforced。",
+            "allowedMode": "point_plan",
+            "confidence": "low"
+          }
+        ]
+      },
+      "readError": null
+    },
+    "clientDemoReadiness": {
+      "path": "docs/optimize-demo-140-client-demo-readiness-latest.json",
+      "finalDecision": "CLIENT_DEMO_READY_SHADOW_PENDING",
+      "mutationBoundary": null,
+      "readError": null
+    }
+  },
+  "boundaries": [
+    "不写真实 PLC",
+    "不自动启停主机",
+    "不自动修正测点",
+    "不拆单台主机 COP",
+    "不把单一组合样本高置信解释为切换节能结论",
+    "模板本身不作为现场证据"
+  ],
+  "blockers": [],
+  "warnings": [
+    "传感器校准/安装位置台账 尚未投放：docs/field-data/optimize-demo-140/sensor-calibration-installation.csv",
+    "控制命令/反馈高频趋势 尚未投放：docs/field-data/optimize-demo-140/control-command-feedback.csv",
+    "设备启停事件台账 尚未投放：docs/field-data/optimize-demo-140/start-stop-event.csv",
+    "PID/死区/延时参数台账 尚未投放：docs/field-data/optimize-demo-140/control-parameter.csv"
+  ]
+}

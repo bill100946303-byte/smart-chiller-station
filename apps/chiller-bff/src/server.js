@@ -1,4 +1,4 @@
-import path from "node:path";
+﻿import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import cors from "cors";
@@ -16,6 +16,17 @@ const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 function createRequestId() {
   return `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export function isAllowedReadOnlyV1Write(req) {
+  return (
+    req.method === "POST" &&
+    (req.path.endsWith("/optimize") ||
+      req.path.endsWith("/optimize/tower-approach/advice") ||
+      req.path.endsWith("/scene/device-command") ||
+      req.path.includes("/optimize/executions") ||
+      req.path.endsWith("/assistant/query"))
+  );
 }
 
 export function createReadOnlyMiddleware(options = {}) {
@@ -71,6 +82,8 @@ export function createApp(appConfig = config, dependencies = {}) {
       appModeLabel: appConfig.appModeLabel,
       readOnlyMode: appConfig.readOnlyMode,
       legacyBaseUrl: appConfig.legacyBaseUrl,
+      realtimeParamsBaseUrl: appConfig.realtimeParamsBaseUrl,
+      realtimeParamsTimeoutMs: appConfig.realtimeParamsTimeoutMs,
       adminDbFile: appConfig.adminDbFile
     });
   });
@@ -79,12 +92,7 @@ export function createApp(appConfig = config, dependencies = {}) {
     "/bff/v1",
     createReadOnlyMiddleware({
       appConfig,
-      allowWrite(req) {
-        return (
-          req.method === "POST" &&
-          (req.path.endsWith("/optimize") || req.path.endsWith("/assistant/query"))
-        );
-      }
+      allowWrite: isAllowedReadOnlyV1Write
     })
   );
   app.use("/bff/v1", buildV1Router(appConfig, { adminStore }));
@@ -119,9 +127,10 @@ export function createApp(appConfig = config, dependencies = {}) {
 
 export function startServer(appConfig = config, dependencies = {}) {
   const { app, adminStore, adminAuthService } = createApp(appConfig, dependencies);
-  const server = app.listen(appConfig.port, "127.0.0.1", () => {
+  const host = process.env.BFF_HOST || "0.0.0.0";
+  const server = app.listen(appConfig.port, host, () => {
     // eslint-disable-next-line no-console
-    console.log(`[chiller-bff] listening on http://127.0.0.1:${appConfig.port}`);
+    console.log(`[chiller-bff] listening on http://${host}:${appConfig.port}`);
   });
   return {
     app,

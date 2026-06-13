@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { createAdminStore } from "./lib/admin-db.js";
-import { createReadOnlyMiddleware } from "./server.js";
+import { createReadOnlyMiddleware, isAllowedReadOnlyV1Write } from "./server.js";
 
 test("bootstrapPlatformAdmin grants the first platform admin and importSites preserves admin-edited fields", () => {
   const adminStore = createAdminStore({ dbFile: ":memory:" });
@@ -25,6 +25,7 @@ test("bootstrapPlatformAdmin grants the first platform admin and importSites pre
         city: "Shanghai",
         databaseKey: "site-aA100",
         modelKey: "m1",
+        preferredProjectKey: "stable-k1",
         template: "t1",
         controlMode: "auto",
         ipAddress: "10.0.0.1",
@@ -59,6 +60,7 @@ test("bootstrapPlatformAdmin grants the first platform admin and importSites pre
         city: "Suzhou",
         databaseKey: "site-aA100-NEW",
         modelKey: "m2",
+        preferredProjectKey: "stable-k2",
         template: "t2",
         controlMode: "manual",
         ipAddress: "10.0.0.2",
@@ -76,6 +78,7 @@ test("bootstrapPlatformAdmin grants the first platform admin and importSites pre
   assert.equal(site.ownerName, "Bill");
   assert.equal(site.city, "Shanghai");
   assert.equal(site.sourceConfig.modelKey, "m1");
+  assert.equal(site.sourceConfig.preferredProjectKey, "stable-k1");
 
   adminStore.close();
 });
@@ -202,4 +205,28 @@ test("createReadOnlyMiddleware blocks admin writes while allowing safe methods",
 
   assert.equal(blockedStatus, 403);
   assert.equal(blockedBody.code, "READ_ONLY_MODE");
+});
+
+test("read-only v1 allowlist permits advisory endpoints without opening generic writes", () => {
+  assert.equal(
+    isAllowedReadOnlyV1Write({
+      method: "POST",
+      path: "/sites/140/optimize/tower-approach/advice"
+    }),
+    true
+  );
+  assert.equal(
+    isAllowedReadOnlyV1Write({
+      method: "POST",
+      path: "/sites/140/optimize"
+    }),
+    true
+  );
+  assert.equal(
+    isAllowedReadOnlyV1Write({
+      method: "POST",
+      path: "/sites/140/energy-parameters"
+    }),
+    false
+  );
 });

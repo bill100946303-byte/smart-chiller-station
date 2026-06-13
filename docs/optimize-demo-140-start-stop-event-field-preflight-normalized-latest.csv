@@ -1,0 +1,1 @@
+eventAt,siteId,equipmentType,equipmentId,eventType,previousStatus,nextStatus,commandSource,reasonCode,runMinutesBeforeEvent,stopMinutesBeforeEvent,alarmActive,sourceSystem,remark

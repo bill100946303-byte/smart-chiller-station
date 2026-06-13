@@ -1,0 +1,102 @@
+{
+  "generatedAt": "2026-06-13T01:35:19.129Z",
+  "site": {
+    "siteId": "140",
+    "siteCode": "btwentyfive",
+    "databaseKey": "140btwentyfive",
+    "projectKey": "126lnoffice",
+    "template": "1"
+  },
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "finalDecision": "GO_SHADOW_PENDING",
+  "health": {
+    "ok": true,
+    "payload": {
+      "ok": true,
+      "service": "chiller-bff",
+      "port": 8787,
+      "appMode": "local",
+      "appModeLabel": "本地开发",
+      "readOnlyMode": true,
+      "legacyBaseUrl": "https://www.ssge.com.cn:8098",
+      "realtimeParamsBaseUrl": "https://ln.szgreenenergy.com",
+      "realtimeParamsTimeoutMs": 1500,
+      "adminDbFile": "/Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/.local/admin.sqlite"
+    }
+  },
+  "tower": {
+    "validationStatus": "go_shadow_pending",
+    "total": 2,
+    "latestExecution": {
+      "executionId": "opx-140-1781266624535-ju3qeb",
+      "status": "pending_approval",
+      "approvalStatus": "pending",
+      "title": "140/B25 冷却塔多步 shadow 第1步（Tcws 28.0 °C）",
+      "type": "tower-approach",
+      "targetTcwsC": 28,
+      "targetApproachC": 3.4,
+      "targetChwpFreqTrimHz": null,
+      "targetCwpFreqTrimHz": null,
+      "guardrailSnapshot": {
+        "key": "chillerMinCondenserInletTempC",
+        "status": "ready",
+        "value": 30,
+        "message": "目标冷却水温必须高于该下限。",
+        "resolvedBy": "default",
+        "matchedKeys": []
+      },
+      "rollbackTarget": {
+        "mode": "shadow-baseline",
+        "targetTcwsC": 27.5,
+        "targetApproachC": 2.9,
+        "reason": "shadow 回退到提交前 Tcws/Approach，仅记录不下发 PLC"
+      },
+      "dispatch": null,
+      "timeline": [
+        {
+          "at": "2026-06-12T12:17:04.535Z",
+          "actorUserId": "operator",
+          "action": "created",
+          "note": null
+        }
+      ]
+    }
+  },
+  "pump": {
+    "validationStatus": "go_shadow_pending",
+    "total": 1,
+    "latestExecution": {
+      "executionId": "opx-140-1781265213665-wso34v",
+      "status": "pending_approval",
+      "approvalStatus": "pending",
+      "title": "140/B25 冷冻泵温差导向 shadow 降频验证",
+      "type": "pump-delta-t",
+      "targetTcwsC": null,
+      "targetApproachC": null,
+      "targetChwpFreqTrimHz": -1,
+      "targetCwpFreqTrimHz": 0,
+      "guardrailSnapshot": null,
+      "rollbackTarget": {
+        "mode": "zero-trim",
+        "targetTcwsC": null,
+        "targetApproachC": null,
+        "reason": "shadow 验证回退到 0Hz 修正量",
+        "targetChwpFreqTrimHz": 0,
+        "targetCwpFreqTrimHz": 0
+      },
+      "dispatch": null,
+      "timeline": [
+        {
+          "at": "2026-06-12T11:53:33.665Z",
+          "actorUserId": "operator",
+          "action": "created",
+          "note": null
+        }
+      ]
+    }
+  },
+  "blockers": [],
+  "warnings": [
+    "存在历史已批准 tower shadow 旧记录：opx-140-1780911209517-23t8ch"
+  ]
+}

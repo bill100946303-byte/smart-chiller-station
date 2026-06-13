@@ -1,0 +1,5 @@
+pointCode,pointName,sensorType,systemSide,equipmentId,location,installPosition,unit,rangeLow,rangeHigh,accuracyClass,lastCalibrationDate,calibrationDueDate,calibrationProvider,owner,sourceSystem,remark
+B25_CHW_SUPPLY_TEMP,冷冻水总供水温度,temperature,chilled_water,CHW-HEADER,冷冻站机房总管,冷冻水供水总管出站侧,C,0,50,0.2C,2026-01-01,2027-01-01,ready-smoke-provider,site_operator,field_ledger,ready-smoke 样例，不作为现场证据
+B25_CHW_RETURN_FLOW,冷冻水总回水流量,flow,chilled_water,CHW-HEADER,冷冻站机房总管,冷冻水回水总管,m3/h,0,5000,1.0%,2026-01-01,2027-01-01,ready-smoke-provider,site_operator,field_ledger,ready-smoke 样例，不作为现场证据
+B25_STATION_POWER_METER,冷站总功率表,power,power,METER-STATION,低压配电室,冷站总进线计量柜,kW,0,5000,0.5S,2026-01-01,2027-01-01,ready-smoke-provider,site_operator,field_ledger,ready-smoke 样例，不作为现场证据
+B25_OUTDOOR_WET_BULB,室外湿球温度,wet_bulb,weather,WB-01,冷却塔进风侧,避开排风回流的百叶外侧,C,-10,50,0.3C,2026-01-01,2027-01-01,ready-smoke-provider,site_operator,field_ledger,ready-smoke 样例，不作为现场证据

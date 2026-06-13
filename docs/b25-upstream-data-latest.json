@@ -1,0 +1,686 @@
+{
+  "generatedAt": "2026-04-11T11:57:47.329Z",
+  "baseUrl": "https://www.ssge.com.cn:8098",
+  "siteIds": [
+    "btwentyfive"
+  ],
+  "runtimeDiagnostics": {
+    "baseUrl": "https://www.ssge.com.cn:8098",
+    "hostname": "www.ssge.com.cn",
+    "loopbackHost": false
+  },
+  "site": {
+    "siteId": "btwentyfive",
+    "databaseKey": "140btwentyfive",
+    "legacyAppId": "140"
+  },
+  "probes": [
+    {
+      "siteId": "btwentyfive",
+      "key": "imbalanceCurve",
+      "path": "/zsqy/energyanalysis/getEnergyAnalysisCurve?appId=140&date=2026-04-11&dateType=0&energyType=4&startTime=2026-04-10&endTime=2026-04-11",
+      "url": "https://www.ssge.com.cn:8098/zsqy/energyanalysis/getEnergyAnalysisCurve?appId=140&date=2026-04-11&dateType=0&energyType=4&startTime=2026-04-10&endTime=2026-04-11",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data\":{\"title\":\"Thermal unbalance rate\",\"unit\":\"\",\"alarmValue\":\"\",\"curveValueList\":{\"curveValueList\":[{\"name\":\"2026-04-10 00:10\",\"value\":\"-3.6\"},{\"name\":\"2026-04-10 00:20\",\"value\":\"0.6\"},{\"name\":\"2026-04-10 00:…"
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "imbalanceTableLegacyAppPath",
+      "path": "/zsqy/energyanalysis/140/getEnergyAnalysisDeviceList?appId=140&date=2026-04-11&dateType=0&energyType=4&startTime=2026-04-10&endTime=2026-04-11",
+      "url": "https://www.ssge.com.cn:8098/zsqy/energyanalysis/140/getEnergyAnalysisDeviceList?appId=140&date=2026-04-11&dateType=0&energyType=4&startTime=2026-04-10&endTime=2026-04-11",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": false,
+      "status": 500,
+      "httpStatus": 500,
+      "businessStatus": "500",
+      "outcome": "http_5xx",
+      "error": "Legacy request failed: 500",
+      "transportError": null,
+      "bodyPreview": "{\"timestamp\":\"1775908664693\",\"status\":\"500\",\"error\":\"Internal Server Error\",\"path\":\"/zsqy/energyanalysis/140/getEnergyAnalysisDeviceList\"}"
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "imbalanceTableDatabasePath",
+      "path": "/zsqy/energyanalysis/140btwentyfive/getEnergyAnalysisDeviceList?appId=140&date=2026-04-11&dateType=0&energyType=4&startTime=2026-04-10&endTime=2026-04-11",
+      "url": "https://www.ssge.com.cn:8098/zsqy/energyanalysis/140btwentyfive/getEnergyAnalysisDeviceList?appId=140&date=2026-04-11&dateType=0&energyType=4&startTime=2026-04-10&endTime=2026-04-11",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data\":{\"dataStatisticsList\":{\"scalar\":\"235\",\"noScalar\":\"28\",\"scalarRate\":\"89.35%\",\"acquisitionValue\":\"263\"},\"tableList\":{\"scalarRate\":\"89.35%\"}},\"data2\":\"\",\"ok\":\"true\"}"
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "workOrdersDefault",
+      "path": "/zsqy/qsworkorder/140btwentyfive/findObject?pageCurrent=1&pageSize=10",
+      "url": "https://www.ssge.com.cn:8098/zsqy/qsworkorder/140btwentyfive/findObject?pageCurrent=1&pageSize=10",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data\":{\"currentPage\":\"1\",\"pageSize\":\"10\",\"rowCount\":\"0\",\"pageCount\":\"1\",\"records\":\"\"},\"data2\":\"\",\"ok\":\"true\"}"
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "workOrdersStatePending",
+      "path": "/zsqy/qsworkorder/140btwentyfive/findObject?pageCurrent=1&pageSize=50&state=1",
+      "url": "https://www.ssge.com.cn:8098/zsqy/qsworkorder/140btwentyfive/findObject?pageCurrent=1&pageSize=50&state=1",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data\":{\"currentPage\":\"1\",\"pageSize\":\"50\",\"rowCount\":\"0\",\"pageCount\":\"1\",\"records\":\"\"},\"data2\":\"\",\"ok\":\"true\"}"
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "workOrdersStateDone",
+      "path": "/zsqy/qsworkorder/140btwentyfive/findObject?pageCurrent=1&pageSize=50&state=0",
+      "url": "https://www.ssge.com.cn:8098/zsqy/qsworkorder/140btwentyfive/findObject?pageCurrent=1&pageSize=50&state=0",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data\":{\"currentPage\":\"1\",\"pageSize\":\"50\",\"rowCount\":\"0\",\"pageCount\":\"1\",\"records\":\"\"},\"data2\":\"\",\"ok\":\"true\"}"
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "workOrdersFindEc",
+      "path": "/zsqy/qsworkorder/140btwentyfive/findEC",
+      "url": "https://www.ssge.com.cn:8098/zsqy/qsworkorder/140btwentyfive/findEC",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data\":[{\"name\":\"未处理\",\"value\":\"0\"},{\"name\":\"正在处理\",\"value\":\"0\"},{\"name\":\"处理完毕\",\"value\":\"0\"}],\"data2\":\"\",\"ok\":\"true\"}"
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "workOrdersFindWorkOrderList",
+      "path": "/zsqy/qsworkorder/140btwentyfive/findWorkOrderList",
+      "url": "https://www.ssge.com.cn:8098/zsqy/qsworkorder/140btwentyfive/findWorkOrderList",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data2\":\"\",\"ok\":\"true\"}"
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "knowledgeDocuments",
+      "path": "/zsqy/instructions/140btwentyfive/findObject?pageCurrent=1&pageSize=50",
+      "url": "https://www.ssge.com.cn:8098/zsqy/instructions/140btwentyfive/findObject?pageCurrent=1&pageSize=50",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data\":{\"currentPage\":\"1\",\"pageSize\":\"50\",\"rowCount\":\"0\",\"pageCount\":\"1\",\"records\":\"\"},\"data2\":\"\",\"ok\":\"true\"}"
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "knowledgeDeviceTypes",
+      "path": "/zsqy/Drtypeinfo/140btwentyfive/findObject",
+      "url": "https://www.ssge.com.cn:8098/zsqy/Drtypeinfo/140btwentyfive/findObject",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data\":[{\"drtypeid\":\"72\",\"drtypename\":\"智能楼宇系统\",\"drtypenameEN\":\"351\",\"drtypenameCNEN\":\"\",\"drTypeCode\":\"\",\"parentid\":\"0\",\"ancestors\":\"\",\"drtypeiconid\":\"2\",\"isshow\":\"1\",\"isdrtype\":\"1\",\"iscustomType\":\"0\",\"picid\":\"22…"
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "knowledgeFindAll",
+      "path": "/zsqy/instructions/140btwentyfive/findAll",
+      "url": "https://www.ssge.com.cn:8098/zsqy/instructions/140btwentyfive/findAll",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data2\":\"\",\"ok\":\"true\"}"
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "knowledgeFindAll:72",
+      "path": "/zsqy/instructions/140btwentyfive/findAll?instructionsTypeid=72",
+      "url": "https://www.ssge.com.cn:8098/zsqy/instructions/140btwentyfive/findAll?instructionsTypeid=72",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "knowledgeFindAll:167",
+      "path": "/zsqy/instructions/140btwentyfive/findAll?instructionsTypeid=167",
+      "url": "https://www.ssge.com.cn:8098/zsqy/instructions/140btwentyfive/findAll?instructionsTypeid=167",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "knowledgeFindAll:172",
+      "path": "/zsqy/instructions/140btwentyfive/findAll?instructionsTypeid=172",
+      "url": "https://www.ssge.com.cn:8098/zsqy/instructions/140btwentyfive/findAll?instructionsTypeid=172",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "knowledgeFindAll:174",
+      "path": "/zsqy/instructions/140btwentyfive/findAll?instructionsTypeid=174",
+      "url": "https://www.ssge.com.cn:8098/zsqy/instructions/140btwentyfive/findAll?instructionsTypeid=174",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "imbalanceTableSample:2026-04-11",
+      "path": "/zsqy/energyanalysis/140btwentyfive/getEnergyAnalysisDeviceList?appId=140&date=2026-04-11&dateType=0&energyType=4&startTime=2026-04-10&endTime=2026-04-11",
+      "url": "https://www.ssge.com.cn:8098/zsqy/energyanalysis/140btwentyfive/getEnergyAnalysisDeviceList?appId=140&date=2026-04-11&dateType=0&energyType=4&startTime=2026-04-10&endTime=2026-04-11",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": null
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "imbalanceTableSample:2026-04-10",
+      "path": "/zsqy/energyanalysis/140btwentyfive/getEnergyAnalysisDeviceList?appId=140&date=2026-04-10&dateType=0&energyType=4&startTime=2026-04-09&endTime=2026-04-10",
+      "url": "https://www.ssge.com.cn:8098/zsqy/energyanalysis/140btwentyfive/getEnergyAnalysisDeviceList?appId=140&date=2026-04-10&dateType=0&energyType=4&startTime=2026-04-09&endTime=2026-04-10",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": null
+    },
+    {
+      "siteId": "btwentyfive",
+      "key": "imbalanceTableSample:2026-04-09",
+      "path": "/zsqy/energyanalysis/140btwentyfive/getEnergyAnalysisDeviceList?appId=140&date=2026-04-09&dateType=0&energyType=4&startTime=2026-04-08&endTime=2026-04-09",
+      "url": "https://www.ssge.com.cn:8098/zsqy/energyanalysis/140btwentyfive/getEnergyAnalysisDeviceList?appId=140&date=2026-04-09&dateType=0&energyType=4&startTime=2026-04-08&endTime=2026-04-09",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": null
+    }
+  ],
+  "imbalance": {
+    "curve": {
+      "siteId": "btwentyfive",
+      "key": "imbalanceCurve",
+      "path": "/zsqy/energyanalysis/getEnergyAnalysisCurve?appId=140&date=2026-04-11&dateType=0&energyType=4&startTime=2026-04-10&endTime=2026-04-11",
+      "url": "https://www.ssge.com.cn:8098/zsqy/energyanalysis/getEnergyAnalysisCurve?appId=140&date=2026-04-11&dateType=0&energyType=4&startTime=2026-04-10&endTime=2026-04-11",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data\":{\"title\":\"Thermal unbalance rate\",\"unit\":\"\",\"alarmValue\":\"\",\"curveValueList\":{\"curveValueList\":[{\"name\":\"2026-04-10 00:10\",\"value\":\"-3.6\"},{\"name\":\"2026-04-10 00:20\",\"value\":\"0.6\"},{\"name\":\"2026-04-10 00:…",
+      "title": "Thermal unbalance rate",
+      "pointCount": 287,
+      "latestPointLabel": "2026-04-11 23:50",
+      "latestPointValue": null
+    },
+    "table": {
+      "legacyAppPath": {
+        "siteId": "btwentyfive",
+        "key": "imbalanceTableLegacyAppPath",
+        "path": "/zsqy/energyanalysis/140/getEnergyAnalysisDeviceList?appId=140&date=2026-04-11&dateType=0&energyType=4&startTime=2026-04-10&endTime=2026-04-11",
+        "url": "https://www.ssge.com.cn:8098/zsqy/energyanalysis/140/getEnergyAnalysisDeviceList?appId=140&date=2026-04-11&dateType=0&energyType=4&startTime=2026-04-10&endTime=2026-04-11",
+        "attempts": 1,
+        "transportOk": true,
+        "ok": false,
+        "status": 500,
+        "httpStatus": 500,
+        "businessStatus": "500",
+        "outcome": "http_5xx",
+        "error": "Legacy request failed: 500",
+        "transportError": null,
+        "bodyPreview": "{\"timestamp\":\"1775908664693\",\"status\":\"500\",\"error\":\"Internal Server Error\",\"path\":\"/zsqy/energyanalysis/140/getEnergyAnalysisDeviceList\"}",
+        "statisticsCount": 0,
+        "deviceCount": 0,
+        "firstStatistic": null,
+        "firstDevice": null
+      },
+      "databaseKeyPath": {
+        "siteId": "btwentyfive",
+        "key": "imbalanceTableDatabasePath",
+        "path": "/zsqy/energyanalysis/140btwentyfive/getEnergyAnalysisDeviceList?appId=140&date=2026-04-11&dateType=0&energyType=4&startTime=2026-04-10&endTime=2026-04-11",
+        "url": "https://www.ssge.com.cn:8098/zsqy/energyanalysis/140btwentyfive/getEnergyAnalysisDeviceList?appId=140&date=2026-04-11&dateType=0&energyType=4&startTime=2026-04-10&endTime=2026-04-11",
+        "attempts": 1,
+        "transportOk": true,
+        "ok": true,
+        "status": 200,
+        "httpStatus": 200,
+        "businessStatus": "20000",
+        "outcome": "ready",
+        "error": null,
+        "transportError": null,
+        "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data\":{\"dataStatisticsList\":{\"scalar\":\"235\",\"noScalar\":\"28\",\"scalarRate\":\"89.35%\",\"acquisitionValue\":\"263\"},\"tableList\":{\"scalarRate\":\"89.35%\"}},\"data2\":\"\",\"ok\":\"true\"}",
+        "statisticsCount": 1,
+        "deviceCount": 1,
+        "firstStatistic": {
+          "acquisitionValue": "263",
+          "scalar": 235,
+          "noScalar": 28,
+          "scalarRate": 89.35
+        },
+        "firstDevice": {
+          "drName": null,
+          "drTypeName": null,
+          "scalarRate": 89.35
+        }
+      },
+      "samples": [
+        {
+          "startDate": "2026-04-10",
+          "endDate": "2026-04-11",
+          "path": "/zsqy/energyanalysis/140btwentyfive/getEnergyAnalysisDeviceList?appId=140&date=2026-04-11&dateType=0&energyType=4&startTime=2026-04-10&endTime=2026-04-11",
+          "ok": true,
+          "status": 200,
+          "error": null,
+          "statisticsCount": 1,
+          "deviceCount": 1,
+          "firstStatistic": {
+            "acquisitionValue": "263",
+            "scalar": 235,
+            "noScalar": 28,
+            "scalarRate": 89.35
+          },
+          "firstDevice": {
+            "drName": null,
+            "drTypeName": null,
+            "scalarRate": 89.35
+          }
+        },
+        {
+          "startDate": "2026-04-09",
+          "endDate": "2026-04-10",
+          "path": "/zsqy/energyanalysis/140btwentyfive/getEnergyAnalysisDeviceList?appId=140&date=2026-04-10&dateType=0&energyType=4&startTime=2026-04-09&endTime=2026-04-10",
+          "ok": true,
+          "status": 200,
+          "error": null,
+          "statisticsCount": 1,
+          "deviceCount": 1,
+          "firstStatistic": {
+            "acquisitionValue": "287",
+            "scalar": 263,
+            "noScalar": 24,
+            "scalarRate": 91.64
+          },
+          "firstDevice": {
+            "drName": null,
+            "drTypeName": null,
+            "scalarRate": 91.64
+          }
+        },
+        {
+          "startDate": "2026-04-08",
+          "endDate": "2026-04-09",
+          "path": "/zsqy/energyanalysis/140btwentyfive/getEnergyAnalysisDeviceList?appId=140&date=2026-04-09&dateType=0&energyType=4&startTime=2026-04-08&endTime=2026-04-09",
+          "ok": true,
+          "status": 200,
+          "error": null,
+          "statisticsCount": 1,
+          "deviceCount": 1,
+          "firstStatistic": {
+            "acquisitionValue": "287",
+            "scalar": 260,
+            "noScalar": 27,
+            "scalarRate": 90.59
+          },
+          "firstDevice": {
+            "drName": null,
+            "drTypeName": null,
+            "scalarRate": 90.59
+          }
+        }
+      ]
+    }
+  },
+  "workOrders": {
+    "findObject": {
+      "default": {
+        "siteId": "btwentyfive",
+        "key": "workOrdersDefault",
+        "path": "/zsqy/qsworkorder/140btwentyfive/findObject?pageCurrent=1&pageSize=10",
+        "url": "https://www.ssge.com.cn:8098/zsqy/qsworkorder/140btwentyfive/findObject?pageCurrent=1&pageSize=10",
+        "attempts": 1,
+        "transportOk": true,
+        "ok": true,
+        "status": 200,
+        "httpStatus": 200,
+        "businessStatus": "20000",
+        "outcome": "ready",
+        "error": null,
+        "transportError": null,
+        "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data\":{\"currentPage\":\"1\",\"pageSize\":\"10\",\"rowCount\":\"0\",\"pageCount\":\"1\",\"records\":\"\"},\"data2\":\"\",\"ok\":\"true\"}",
+        "rowCount": 0
+      },
+      "statePending": {
+        "siteId": "btwentyfive",
+        "key": "workOrdersStatePending",
+        "path": "/zsqy/qsworkorder/140btwentyfive/findObject?pageCurrent=1&pageSize=50&state=1",
+        "url": "https://www.ssge.com.cn:8098/zsqy/qsworkorder/140btwentyfive/findObject?pageCurrent=1&pageSize=50&state=1",
+        "attempts": 1,
+        "transportOk": true,
+        "ok": true,
+        "status": 200,
+        "httpStatus": 200,
+        "businessStatus": "20000",
+        "outcome": "ready",
+        "error": null,
+        "transportError": null,
+        "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data\":{\"currentPage\":\"1\",\"pageSize\":\"50\",\"rowCount\":\"0\",\"pageCount\":\"1\",\"records\":\"\"},\"data2\":\"\",\"ok\":\"true\"}",
+        "rowCount": 0
+      },
+      "stateDone": {
+        "siteId": "btwentyfive",
+        "key": "workOrdersStateDone",
+        "path": "/zsqy/qsworkorder/140btwentyfive/findObject?pageCurrent=1&pageSize=50&state=0",
+        "url": "https://www.ssge.com.cn:8098/zsqy/qsworkorder/140btwentyfive/findObject?pageCurrent=1&pageSize=50&state=0",
+        "attempts": 1,
+        "transportOk": true,
+        "ok": true,
+        "status": 200,
+        "httpStatus": 200,
+        "businessStatus": "20000",
+        "outcome": "ready",
+        "error": null,
+        "transportError": null,
+        "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data\":{\"currentPage\":\"1\",\"pageSize\":\"50\",\"rowCount\":\"0\",\"pageCount\":\"1\",\"records\":\"\"},\"data2\":\"\",\"ok\":\"true\"}",
+        "rowCount": 0
+      }
+    },
+    "findEc": {
+      "siteId": "btwentyfive",
+      "key": "workOrdersFindEc",
+      "path": "/zsqy/qsworkorder/140btwentyfive/findEC",
+      "url": "https://www.ssge.com.cn:8098/zsqy/qsworkorder/140btwentyfive/findEC",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data\":[{\"name\":\"未处理\",\"value\":\"0\"},{\"name\":\"正在处理\",\"value\":\"0\"},{\"name\":\"处理完毕\",\"value\":\"0\"}],\"data2\":\"\",\"ok\":\"true\"}",
+      "states": [
+        {
+          "name": "未处理",
+          "value": 0
+        },
+        {
+          "name": "正在处理",
+          "value": 0
+        },
+        {
+          "name": "处理完毕",
+          "value": 0
+        }
+      ]
+    },
+    "findWorkOrderList": {
+      "siteId": "btwentyfive",
+      "key": "workOrdersFindWorkOrderList",
+      "path": "/zsqy/qsworkorder/140btwentyfive/findWorkOrderList",
+      "url": "https://www.ssge.com.cn:8098/zsqy/qsworkorder/140btwentyfive/findWorkOrderList",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data2\":\"\",\"ok\":\"true\"}",
+      "rowCount": 0
+    }
+  },
+  "knowledge": {
+    "deviceTypes": {
+      "siteId": "btwentyfive",
+      "key": "knowledgeDeviceTypes",
+      "path": "/zsqy/Drtypeinfo/140btwentyfive/findObject",
+      "url": "https://www.ssge.com.cn:8098/zsqy/Drtypeinfo/140btwentyfive/findObject",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data\":[{\"drtypeid\":\"72\",\"drtypename\":\"智能楼宇系统\",\"drtypenameEN\":\"351\",\"drtypenameCNEN\":\"\",\"drTypeCode\":\"\",\"parentid\":\"0\",\"ancestors\":\"\",\"drtypeiconid\":\"2\",\"isshow\":\"1\",\"isdrtype\":\"1\",\"iscustomType\":\"0\",\"picid\":\"22…",
+      "items": [
+        {
+          "id": "72",
+          "name": "智能楼宇系统"
+        },
+        {
+          "id": "167",
+          "name": "电量记录"
+        },
+        {
+          "id": "172",
+          "name": "制冷量"
+        },
+        {
+          "id": "174",
+          "name": "散热量"
+        }
+      ]
+    },
+    "findObject": {
+      "siteId": "btwentyfive",
+      "key": "knowledgeDocuments",
+      "path": "/zsqy/instructions/140btwentyfive/findObject?pageCurrent=1&pageSize=50",
+      "url": "https://www.ssge.com.cn:8098/zsqy/instructions/140btwentyfive/findObject?pageCurrent=1&pageSize=50",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data\":{\"currentPage\":\"1\",\"pageSize\":\"50\",\"rowCount\":\"0\",\"pageCount\":\"1\",\"records\":\"\"},\"data2\":\"\",\"ok\":\"true\"}",
+      "rowCount": 0
+    },
+    "findAll": {
+      "siteId": "btwentyfive",
+      "key": "knowledgeFindAll",
+      "path": "/zsqy/instructions/140btwentyfive/findAll",
+      "url": "https://www.ssge.com.cn:8098/zsqy/instructions/140btwentyfive/findAll",
+      "attempts": 1,
+      "transportOk": true,
+      "ok": true,
+      "status": 200,
+      "httpStatus": 200,
+      "businessStatus": "20000",
+      "outcome": "ready",
+      "error": null,
+      "transportError": null,
+      "bodyPreview": "{\"status\":\"20000\",\"msg\":\"OK\",\"data2\":\"\",\"ok\":\"true\"}",
+      "items": []
+    },
+    "findAllByType": [
+      {
+        "typeId": "72",
+        "typeName": "智能楼宇系统",
+        "path": "/zsqy/instructions/140btwentyfive/findAll?instructionsTypeid=72",
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "items": []
+      },
+      {
+        "typeId": "167",
+        "typeName": "电量记录",
+        "path": "/zsqy/instructions/140btwentyfive/findAll?instructionsTypeid=167",
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "items": []
+      },
+      {
+        "typeId": "172",
+        "typeName": "制冷量",
+        "path": "/zsqy/instructions/140btwentyfive/findAll?instructionsTypeid=172",
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "items": []
+      },
+      {
+        "typeId": "174",
+        "typeName": "散热量",
+        "path": "/zsqy/instructions/140btwentyfive/findAll?instructionsTypeid=174",
+        "ok": true,
+        "status": 200,
+        "error": null,
+        "items": []
+      }
+    ]
+  },
+  "conclusions": {
+    "imbalanceTablePreferredPath": "140btwentyfive",
+    "imbalanceTableFieldDegradation": true,
+    "workOrdersLikelyUpstreamEmpty": true,
+    "knowledgeLikelyUpstreamEmpty": true
+  },
+  "summary": {
+    "identifiers": {
+      "btwentyfive": {
+        "readyCount": 17,
+        "failedCount": 1,
+        "transportFailures": 0,
+        "probeKeys": {
+          "imbalanceCurve": "ready",
+          "imbalanceTableLegacyAppPath": "http_5xx",
+          "imbalanceTableDatabasePath": "ready",
+          "workOrdersDefault": "ready",
+          "workOrdersStatePending": "ready",
+          "workOrdersStateDone": "ready",
+          "workOrdersFindEc": "ready",
+          "workOrdersFindWorkOrderList": "ready",
+          "knowledgeDocuments": "ready",
+          "knowledgeDeviceTypes": "ready",
+          "knowledgeFindAll": "ready",
+          "knowledgeFindAll:72": "ready",
+          "knowledgeFindAll:167": "ready",
+          "knowledgeFindAll:172": "ready",
+          "knowledgeFindAll:174": "ready",
+          "imbalanceTableSample:2026-04-11": "ready",
+          "imbalanceTableSample:2026-04-10": "ready",
+          "imbalanceTableSample:2026-04-09": "ready"
+        }
+      }
+    }
+  }
+}

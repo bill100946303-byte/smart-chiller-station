@@ -1,4 +1,12 @@
-import { fetchLegacyJson } from "../lib/http.js";
+import { deepArrayProbe, fetchLegacyJson } from "../lib/http.js";
+
+function asTrimmedString(value, fallback = "") {
+  if (value == null) {
+    return fallback;
+  }
+  const normalized = String(value).trim();
+  return normalized || fallback;
+}
 
 function asNumber(value) {
   if (value === null || value === undefined || value === "") {
@@ -38,18 +46,80 @@ function normalizeDate(input) {
   return formatDate(new Date());
 }
 
-function normalizeLegacyPath(siteId, options = {}) {
-  const projectKey =
-    typeof options.projectKey === "string" && options.projectKey.trim()
-      ? options.projectKey.trim()
-      : "";
-  return projectKey || siteId;
+function isLegacyStatusOk(value) {
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  return (
+    normalized === "20000" ||
+    normalized === "200" ||
+    normalized === "ok" ||
+    normalized === "success" ||
+    normalized === "true"
+  );
 }
 
-function buildEndpoint(siteId, date, options = {}) {
+function isLegacyPayloadFailed(payload) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return false;
+  }
+
+  if (payload.ok === false || payload.success === false) {
+    return true;
+  }
+
+  if (payload.ok === true || payload.success === true) {
+    return false;
+  }
+
+  if (payload.status != null) {
+    return !isLegacyStatusOk(payload.status);
+  }
+
+  if (payload.code != null) {
+    return !isLegacyStatusOk(payload.code);
+  }
+
+  return false;
+}
+
+function isLegacyResponseUsable(response) {
+  return response.ok && !isLegacyPayloadFailed(response.payload);
+}
+
+function buildIdentifierCandidates(
+  siteId,
+  projectKey,
+  projectKeyCandidates = [],
+  databaseKey = "",
+  databaseKeyCandidates = []
+) {
+  const dbCandidates = Array.isArray(databaseKeyCandidates) ? databaseKeyCandidates : [];
+  const extraCandidates = Array.isArray(projectKeyCandidates) ? projectKeyCandidates : [];
+  return Array.from(
+    new Set(
+      [...dbCandidates, databaseKey, ...extraCandidates, projectKey, siteId]
+        .map((value) => asTrimmedString(value))
+        .filter(Boolean)
+    )
+  );
+}
+
+function buildIdentifierProbeSummary(attempts = []) {
+  return attempts
+    .map((attempt) => {
+      if (attempt?.usable) {
+        return `${attempt.identifier}:rows=${attempt.rows ?? 0}`;
+      }
+      return `${attempt?.identifier || "unknown"}:failed`;
+    })
+    .join(",");
+}
+
+function buildEndpoint(siteId, date) {
   const search = new URLSearchParams();
   search.set("date", date);
-  return `/zsqy/lengzhanrecords/${normalizeLegacyPath(siteId, options)}/getLengZhanRecords?${search.toString()}`;
+  return `/zsqy/lengzhanrecords/${siteId}/getLengZhanRecords?${search.toString()}`;
 }
 
 function pickPayloadData(payload) {
@@ -73,6 +143,17 @@ function normalizeSummary(data) {
     coolingPumpPower: asNumber(data?.coolingPumpPower),
     coolingTowerPower: asNumber(data?.coolingTowerPower)
   };
+}
+
+function getDetailRows(payloadData) {
+  const directRows = payloadData?.lengZhanRecordsDetailVOList;
+  if (Array.isArray(directRows)) {
+    return directRows;
+  }
+  if (directRows && typeof directRows === "object") {
+    return deepArrayProbe({ data: directRows }).filter((item) => item && typeof item === "object");
+  }
+  return [];
 }
 
 function buildRowTimestamp(date, value) {
@@ -116,29 +197,89 @@ function normalizeRow(row, index, date) {
   };
 }
 
+async function fetchAcrossIdentifiers(baseUrl, siteId, date, options = {}) {
+  const identifiers = buildIdentifierCandidates(
+    siteId,
+    options.projectKey,
+    options.projectKeyCandidates,
+    options.databaseKey,
+    options.databaseKeyCandidates
+  );
+  const attempts = [];
+  let firstUsable = null;
+  let firstUsableWithRows = null;
+
+  for (const identifier of identifiers) {
+    const endpoint = buildEndpoint(identifier, date);
+    const response = await fetchLegacyJson(baseUrl, endpoint);
+    const payloadData = isLegacyResponseUsable(response) ? pickPayloadData(response.payload) : null;
+    const rows = payloadData ? getDetailRows(payloadData).length : null;
+    const attempt = {
+      identifier,
+      endpoint,
+      response,
+      payloadData,
+      rows,
+      usable: isLegacyResponseUsable(response)
+    };
+    attempts.push(attempt);
+    if (!firstUsable && attempt.usable) {
+      firstUsable = attempt;
+    }
+    if (!firstUsableWithRows && attempt.usable && typeof rows === "number" && rows > 0) {
+      firstUsableWithRows = attempt;
+      break;
+    }
+  }
+
+  return {
+    attempts,
+    selected: firstUsableWithRows || firstUsable || null
+  };
+}
+
 export async function loadColdStationLog(baseUrl, siteId, options = {}) {
   const date = normalizeDate(options.date);
-  const endpoint = buildEndpoint(siteId, date, options);
+  const lookup = await fetchAcrossIdentifiers(baseUrl, siteId, date, options);
+  const attempts = Array.isArray(lookup?.attempts) ? lookup.attempts : [];
+  const selected = lookup?.selected;
+  const fallbackEndpoint = buildEndpoint(asTrimmedString(siteId), date);
   const fetchedAt = new Date().toISOString();
-  const response = await fetchLegacyJson(baseUrl, endpoint);
-  const payloadData = response.ok ? pickPayloadData(response.payload) : null;
-  const detailRows = Array.isArray(payloadData?.lengZhanRecordsDetailVOList)
-    ? payloadData.lengZhanRecordsDetailVOList
-    : [];
+  const payloadData = selected?.usable ? selected.payloadData : null;
+  const detailRows = getDetailRows(payloadData);
+  const summary = normalizeSummary(payloadData);
   const items = detailRows.map((row, index) => normalizeRow(row, index, date));
+  const probeSummary = buildIdentifierProbeSummary(attempts);
+  const probeSuffix =
+    attempts.length > 1 && probeSummary
+      ? `; identifierProbe=${probeSummary}; selected=${selected?.identifier || "none"}`
+      : "";
+  const detailRowsMissing = selected?.usable && items.length === 0;
+  const integritySuffix = detailRowsMissing ? `${probeSuffix}; detailRows=0` : probeSuffix;
+  const message = selected?.usable
+    ? `${extractMessage(selected.response.payload, "OK") || "OK"}${integritySuffix}`
+    : null;
+  const failedAttempt = attempts.at(-1);
+  const failedPayload = failedAttempt?.response?.payload;
+  const failedMessage = extractMessage(failedPayload, null);
+  const sourceOk = Boolean(selected?.usable) && !detailRowsMissing;
 
   return {
     date,
-    summary: normalizeSummary(payloadData),
+    summary,
     items,
-    latestTimestamp: response.ok ? fetchedAt : null,
+    latestTimestamp: sourceOk ? fetchedAt : null,
     sourceStatus: {
-      endpoint,
-      ok: response.ok,
-      status: response.status ?? null,
-      message: response.ok ? extractMessage(response.payload, "OK") : null,
-      rows: response.ok ? items.length : null,
-      error: response.ok ? null : response.error
+      endpoint: selected?.endpoint || failedAttempt?.endpoint || fallbackEndpoint,
+      ok: sourceOk,
+      status: selected?.response?.status ?? failedAttempt?.response?.status ?? null,
+      message: message || failedMessage,
+      rows: selected?.usable ? items.length : null,
+      error: sourceOk
+        ? null
+        : detailRowsMissing
+          ? "Legacy detail rows missing"
+          : failedAttempt?.response?.error || failedMessage || "Legacy request failed"
     }
   };
 }

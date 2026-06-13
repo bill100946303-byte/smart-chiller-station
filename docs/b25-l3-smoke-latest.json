@@ -1,15 +1,15 @@
 {
-  "checkedAt": "2026-04-01T20:52:15.829Z",
+  "checkedAt": "2026-04-04T18:39:17.068Z",
   "siteId": "btwentyfive",
-  "bffBaseUrl": "http://127.0.0.1:8787",
-  "appBaseUrl": "http://127.0.0.1:3006",
+  "bffBaseUrl": "http://127.0.0.1:8788",
+  "appBaseUrl": "http://127.0.0.1:3004",
   "cdpListUrl": "http://127.0.0.1:61392/json/list",
   "api": {
     "overview": {
       "status": 200,
-      "currentCop": 0,
-      "totalPowerKw": 0.3,
-      "totalCoolingCapacity": 0,
+      "currentCop": 4.9,
+      "totalPowerKw": 711.6,
+      "totalCoolingCapacity": 3813.4,
       "sourceOverall": "ok"
     },
     "optimize": {
@@ -19,39 +19,121 @@
     }
   },
   "ui": {
+    "auth": {
+      "reusedSession": true,
+      "credentialTried": null
+    },
+    "project": {
+      "before": {
+        "href": "http://127.0.0.1:3004/projects?redirect=%2Fdashboard&siteId=btwentyfive",
+        "pathname": "/projects",
+        "redirect": "/dashboard",
+        "cards": [
+          {
+            "index": 0,
+            "siteId": "btwentyfive",
+            "siteName": "btwentyfive",
+            "isCurrent": true,
+            "disabled": false,
+            "buttonText": "进入当前项目"
+          }
+        ],
+        "openButtonVisible": false,
+        "topProjectValue": null
+      },
+      "clicked": {
+        "ok": true,
+        "siteId": "btwentyfive",
+        "siteName": "btwentyfive"
+      },
+      "after": {
+        "href": "http://127.0.0.1:3004/dashboard?siteId=btwentyfive",
+        "pathname": "/dashboard",
+        "siteIdParam": "btwentyfive",
+        "currentProjectId": "btwentyfive",
+        "storedProjectId": "btwentyfive",
+        "topProjectValue": null
+      }
+    },
     "dashboard": {
-      "url": "http://127.0.0.1:3006/dashboard",
+      "url": "http://127.0.0.1:3004/dashboard?siteId=btwentyfive",
+      "siteIdParam": "btwentyfive",
       "onLoginPage": false,
       "hasOpsBoard": true,
       "hasEfficiencyBlock": true,
       "hasSourceObservableField": true,
-      "cardCount": 13,
+      "cardCount": 9,
       "allDash": false,
       "sampleValues": [
-        "7.90",
-        "9.75",
-        "65.41",
-        "165.85",
-        "151.33",
-        "-- %",
-        "7430.1 kW",
-        "969.4 kW",
-        "3.2 / 4.6 °C",
-        "2台",
-        "0台",
-        "0项"
+        "--",
+        "--",
+        "--",
+        "--",
+        "--",
+        "--kW",
+        "--kW",
+        "待接入",
+        "-- / --°C"
       ],
       "hasSnapshotHint": false
     },
     "optimizeDemo": {
-      "url": "http://127.0.0.1:3006/optimize-demo",
+      "url": "http://127.0.0.1:3004/optimize-demo?siteId=btwentyfive",
+      "siteIdParam": "btwentyfive",
       "onLoginPage": false,
       "schemeCardCount": 3,
       "readinessCount": 3,
+      "submitDisabled": false,
+      "loadInputValue": "1200",
+      "wetBulbInputValue": "21.5",
+      "sourceSummary": "来源状态：1/5 异常",
       "hasHistorySection": true,
       "hasBenefitSection": true,
+      "hasApproachSection": true,
       "hasDraftBoundaryHint": true,
       "hasNoWhiteScreen": true
+    },
+    "optimizeExecution": {
+      "siteId": "btwentyfive",
+      "submittedSchemeKey": "conservative",
+      "pendingExecutionId": "opx-btwentyfive-1775327974076-es4l63",
+      "approvedStatus": "approved",
+      "rolledBackStatus": "rolled_back",
+      "finalHub": {
+        "href": "http://127.0.0.1:3004/optimize-demo?siteId=btwentyfive",
+        "pathname": "/optimize-demo",
+        "siteIdParam": "btwentyfive",
+        "latestExecutionId": "规则估算草案，仅供方案评审",
+        "latestStatusText": "已批准",
+        "pendingApproveEnabled": false,
+        "rollbackEnabled": false,
+        "hasHistory": true,
+        "text": "冷站系统\n\nbtwentyfive\n\n项目 btwentyfive\n\n远端联调\n只读保护\n\n值班\n\n驾驶舱\n告警页\n冷站日志\n操作记录\n工单管理\n\n诊断\n\n系统总览\n设备总览\n场景控制\n环境工况\n\n分析\n\n趋势分析\n能耗分析\n能效分析\n能耗抄表\n性能报告\n报表记录\n\n配置与知识\n\n能源参数\n知识库\n优化演示\n退出登录\n优化演示\nbtwentyfive · 项目 btwentyfive\nadmin\n2026/04/05 02:39\n语言\n中文\nEnglish\nTiếng Việt\n来源状态：1/5 异常\n优化草案：上游不可达或解析失败；总览聚合：数据正常；异常聚合：数据正常；建议聚合：数据正常\n展开来源状态（+1）\n优化演示\n\n当前接入基于站点现态的优化草案接口，用于固定输入、校验规则和解释型返回结构，不承诺真实优化结果。\n\n接口入口\n\n提交接口\n优化草案路径 /bff/v1/sites/{siteId}/optimize\n\n当前状态\n\n草案\n当前返回解释型草案，不代表真实优化已落地。\n\n请求状态\n\n已接受\n1200 kW / 21.5 °C\n输入参数\n当前负荷（kW）\n室外湿球温度（℃）\n运行模式\n制冷\n提交草案请求\n系统会优先自动带入当前总制冷量与室外湿球温度，你仍可手动修正。当前页面只展示草案估算，湿球仅作为参考边界，不执行真实控制。\n已自动带入当前总制冷量与室外湿球温度，可继续手动修正。\n重新带入当前值\n负荷来源：现态总制冷量快照\n湿球来源：室外湿球趋势最新点\n最近带入：2026-04-04 18:39\n数据可用性提示\n异常来源：上游接口返回 5xx，请先排查服务端异常。\n建议来源：当前来源处于部分回退状态，建议谨慎评审。\n历史对标来源：已回退到历史日历估算，请重点核对样本覆盖月份。\n草案边界：优化引擎尚未接入，当前仅返回治理态草案。\n看趋势来源\n看能效来源\n优化窗口\n谨慎评审\n\n当前草案仍存在部分降级或缺测信号，建议谨慎评审。\n\n谨慎评审\n草案口径\n规则估算草案，仅供方案评审\n当前判断\n当前草案仍存在部分降级或缺测信号，建议谨慎评审。\n决策摘要\n当前草案基于总览、异常（0）和建议卡片（1）生成；请求场景为 estimatedPowerRatio=0.34; historical benchmark ready (10%~20%负荷区间, samples=2)\n置信口径\n规则型部分草案\n统一评审可执行性\n关键现态齐全，但门禁仍提示谨慎，建议先做保守评审\n\n当前草案可继续，但还需要补齐部分数据后再定方案。\n\n需补数据后评审\n可执行性评分\n66\n规则估算\n评审说明\n关键现态齐全，但门禁仍提示谨慎，建议先做保守评审\n评分越高，草案越适合继续推进；评分偏低时先补数据或回看现场态。\n缺失信号\n\n当前没有额外缺失信号。\n\n评审建议\n先查看设备级动作卡，确认高优先级前置条件\n继续打开趋势页核对 COP 与总功率变化\n若需要稳妥推进，优先从保守方案开始\n现态基线\n现态 COP\n4.90\n总功率\n711.6 kW\n冷冻温差\n1.6 °C\n冷却温差\n2.3 °C\n冷机功率\n544.9 kW\n活跃异常数\n0\n现态补充明细\n\n冷冻泵功率：112.3 kW\n\n冷却泵功率：43.2 kW\n\n冷却塔功率：11.2 kW\n\n冷冻供水温：8.5 °C\n\n冷却回水温：25.7 °C\n\n热不平衡率：待补齐\n\n子系统功率拆分\n冷机功率\n544.9 kW\n冷冻泵功率\n112.3 kW\n冷却泵功率\n43.2 kW\n冷却塔功率\n11.2 kW\n请求场景\n当前负荷\n1200 kW\n室外湿球\n21.5 °C\n运行模式\n制冷\n建议步骤\n5\n历史对标\n负荷率区间对标\n\n按请求负荷率与湿球区间匹配历史高效区，样本不足时会逐级回退。\n\n已匹配\n低置信\n额定制冷能力\n8440.8 kW\n规则估算\n请求负荷率\n14.20%\n规则估算\n匹配负荷区间\n10%~20%负荷区间\n负荷率区间对标\n取样月份\n2026-04、2026-03、2026-02\n首版仅按负荷率区间和湿球区间做草案筛选，不执行真实控制。\n样本数\n2\n首版仅按负荷率区间和湿球区间做草案筛选，不执行真实控制。\n参考 COP 区间\n低 4.30 / 中位 4.56 / 高 4.82\n规则估算\n当前差值\nCOP -0.34 / 功率 -448.4 kW\n首版仅按负荷率区间和湿球区间做草案筛选，不执行真实控制。\n负荷率区间对标\n\n历史对标采用草案筛选口径按负荷区间与湿球边界回退，不执行真实控制；当前历史占比样本不足，已回退到历史日历日均冷量估算。\n\n首版仅按负荷率区间和湿球区间做草案筛选，不执行真实控制。\n看对比\n看占比\n匹配质量\n\n匹配质量：仅按负荷回退，回退层级 L2，请求湿球 21.5 ℃，匹配置信度 低置信\n\n匹配层级\n仅按负荷回退\n首版仅按负荷率区间和湿球区间做草案筛选，不执行真实控制。\n回退层级\nL2\n首版仅按负荷率区间和湿球区间做草案筛选，不执行真实控制。\n请求湿球\n21.5 ℃\n首版仅按负荷率区间和湿球区间做草案筛选，不执行真实控制。\n命中湿球区间\n待补齐\n当前暂无匹配质量数据，后端补齐后会显示匹配层级、回退层级、湿球区间和置信度。\n覆盖湿球区间\n待补齐\n当前暂无匹配质量数据，后端补齐后会显示匹配层级、回退层级、湿球区间和置信度。\n湿球容差\n±2.0 ℃\n首版仅按负荷率区间和湿球区间做草案筛选，不执行真实控制。\n匹配置信度\n低置信\n首版仅按负荷率区间和湿球区间做草案筛选，不执行真实控制。\n草案收益\n收益仅按历史高效区做草案估算，并会同时展示置信度与依据，不代表真实节能结果。\n\n历史对标收益为草案估算，不代表真实节能结果\n\n已估算\n高机会\n低置信\n机会等级\n高机会\n规则估算\n目标 COP\n4.56\n规则估算\n目标功率\n263.2 kW\n规则估算\n功率差\n-448.4 kW\n-63.00%\nCOP 差\n-0.34\n规则估算\n置信度与依据\n\n收益置信度：低置信，依据 样本数 2 / 月份数 3 / 匹配层级 仅按负荷回退 / 回退层级 L2\n\n收益置信度\n低置信\n历史对标收益为草案估算，不代表真实节能结果。\n依据\n样本数 2 / 月份数 3 / 匹配层级 仅按负荷回退 / 回退层级 L2\n历史对标收益为草案估算，不代表真实节能结果。\n覆盖湿球区间\n待补齐\n暂无置信依据，样本数、月份数和层级会在后端补齐后展示。\n历史对标收益为草案估算，不代表真实节能结果。\n\n历史对标收益为草案估算，不代表真实节能结果\n\n接近度执行前检查\n冷却塔接近度仅做执行前检查与目标建议，当前不下发任何真实控制。\n\n目标冷却水温触及机组最低温约束，需人工复核后再执行。\n\n需人工复核\n仅限评审\n当前接近度\n1.9 °C\n规则估算\n目标接近度\n1.8 °C\n规则估算\n当前冷却供水温\n23.4 °C\n规则估算\n目标冷却供水温\n23.3 °C\n规则估算\n目标带宽\n1.8 ~ 3.8 °C （低负荷区间）\n规则估算\n控制模式\n人工审批后执行\n当前仅输出建议，不自动执行。\n约束与保护\nalarmGate\ncaution\n约束就绪\n\n门禁允许继续评审接近度调节建议。\n\nchillerMinCondenserInletTempC\n30.2\n约束就绪\n\n目标冷却水温必须高于该下限。\n\ntowerControlStep\n≤0.5℃/step\n约束就绪\n\n建议按小步长调整，避免塔风机频繁反向。\n\n接近度边界说明\n\n当前仅提供接近度草案建议，不执行真实控制。\n\n处理中...\n执行台\n当前仅支持治理态模拟执行：提交审批、审批通过、回退记录，不下发真实控制。\n\n执行链路为治理态模拟，不下发真实控制。\n\n已批准\n待审批数 2\n最新执行 ID\nopx-btwentyfive-1775327974076-es4l63\n最新状态\n已批准\n最近更新时间\n2026-04-04T18:39:34.678Z\n目标摘要\n4.90 COP / 244.9 kW\n执行动作\n处理中...\n处理中...\n加载中...\n最近执行记录\nopx-btwentyfive-1775327974076-es4l63\n已批准\n2026-04-04T18:39:34.678Z\nopx-btwentyfive-1775327890516-tvslqg\n已回退\n2026-04-04T18:38:12.060Z\nopx-btwentyfive-1775327825418-6q2jmc\n已回退\n2026-04-04T18:37:06.821Z\nopx-btwentyfive-1775226984565-ydn0dp\n已批准\n2026-04-03T16:11:18.287Z\nopx-btwentyfive-1775228567776-5grq7q\n已回退\n2026-04-03T15:02:49.105Z\nopx-btwentyfive-1775228175633-hhb4gh\n已回退\n2026-04-03T14:56:16.809Z\nopx-btwentyfive-1775228047896-w28sua\n已回退\n2026-04-03T14:54:09.205Z\nopx-btwentyfive-1775224971176-8ssfp6\n待审批\n2026-04-03T14:02:51.175Z\nopx-btwentyfive-1775210136076-17hggh\n已回退\n2026-04-03T10:04:22.546Z\nopx-btwentyfive-1775210017293-6ahbgh\n待审批\n2026-04-03T09:53:37.293Z\n方案对比\n保守方案\n\n先稳住风险\n\n可评审\n中风险\n策略归类\n排障优先\n\n当前方案先把告警、保护与数据完整性放在节能动作之前。\n\n锚定依据\n历史高效区锚定\n\n当前方案优先参照历史相似负荷高效区，仍以草案估算为准。\n\n目标总功率\n244.9 kW\n规则估算\n目标 COP\n4.90\n规则估算\n功率变化\n-66.00%\n规则估算\nCOP 变化\n0.00\n规则估算\n动作清单\nCheck valve opening and balancing in secondary loop.\nTune chilled supply setpoint and avoid overcooling.\n以当前站点现态作为草案基线：COP=4.9，总功率=711.6\n请求场景推导出的草案功率低于当前快照（倍率=0.34），请核查当前设备组合是否存在放宽空间。\n设备级动作\n冷冻泵侧\n风险等级：低风险\n执行优先级：高优先级\n\n冷冻侧优先抬升温差\n\n目标建议：检查旁通与末端阀位，适度下调冷冻泵频率\n依据说明：当前冷冻温差 1.6°C 偏低，存在大流量小温差风险\n前置条件\n冷冻泵具备变频调节能力\n末端阀位与旁通开度可监测\n冷却塔侧\n风险等级：低风险\n执行优先级：高优先级\n\n冷却侧优先抬升温差\n\n目标建议：复核冷却泵与塔风机协同，避免过度降温\n依据说明：当前冷却温差 2.3°C 偏低，冷却侧效率偏弱\n前置条件\n冷却塔风机与冷却泵可联动调节\n冷凝侧关键测点连续可用\n方案可执行性\n可执行性评分\n56\n需确认\n评审说明\n\n当前方案可保守评审，建议先核对前置条件\n\n阻塞条件\n冷冻泵具备变频调节能力\n末端阀位与旁通开度可监测\n冷却塔风机与冷却泵可联动调节\n冷凝侧关键测点连续可用\n确认点\n\n暂无确认点。\n\n处理中...\n看设备\n看趋势\n看场景\n平衡方案\n\n兼顾效率与稳定\n\n谨慎评审\n中风险\n策略归类\n协同优化\n\n冷热两侧都需要配合判断，避免单边压榨导致系统效率回落。\n\n锚定依据\n历史高效区锚定\n\n当前方案优先参照历史相似负荷高效区，仍以草案估算为准。\n\n目标总功率\n263.2 kW\n规则估算\n目标 COP\n4.60\n规则估算\n功率变化\n-63.00%\n规则估算\nCOP 变化\n-0.34\n规则估算\n动作清单\nCheck valve opening and balancing in secondary loop.\nTune chilled supply setpoint and avoid overcooling.\n以当前站点现态作为草案基线：COP=4.9，总功率=711.6\n请求场景推导出的草案功率低于当前快照（倍率=0.34），请核查当前设备组合是否存在放宽空间。\n设备级动作\n冷冻泵侧\n风险等级：低风险\n执行优先级：高优先级\n\n冷冻侧优先抬升温差\n\n目标建议：检查旁通与末端阀位，适度下调冷冻泵频率\n依据说明：当前冷冻温差 1.6°C 偏低，存在大流量小温差风险\n前置条件\n冷冻泵具备变频调节能力\n末端阀位与旁通开度可监测\n冷却塔侧\n风险等级：低风险\n执行优先级：高优先级\n\n冷却侧优先抬升温差\n\n目标建议：复核冷却泵与塔风机协同，避免过度降温\n依据说明：当前冷却温差 2.3°C 偏低，冷却侧效率偏弱\n前置条件\n冷却塔风机与冷却泵可联动调节\n冷凝侧关键测点连续可用\n方案可执行性\n可执行性评分\n55\n需确认\n评审说明\n\n当前方案可保守评审，建议先核对前置条件\n\n阻塞条件\n冷冻泵具备变频调节能力\n末端阀位与旁通开度可监测\n冷却塔风机与冷却泵可联动调节\n冷凝侧关键测点连续可用\n确认点\n\n暂无确认点。\n\n处理中...\n看设备\n看趋势\n看场景\n节能优先\n\n优先挖节能空间\n\n暂不建议\n高风险\n策略归类\n协同优化\n\n冷热两侧都需要配合判断，避免单边压榨导致系统效率回落。\n\n锚定依据\n历史高效区锚定\n\n当前方案优先参照历史相似负荷高效区，仍以草案估算为准。\n\n目标总功率\n249.0 kW\n规则估算\n目标 COP\n4.80\n规则估算\n功率变化\n-65.00%\n规则估算\nCOP 变化\n-0.08\n规则估算\n动作清单\nCheck valve opening and balancing in secondary loop.\nTune chilled supply setpoint and avoid overcooling.\n以当前站点现态作为草案基线：COP=4.9，总功率=711.6\n请求场景推导出的草案功率低于当前快照（倍率=0.34），请核查当前设备组合是否存在放宽空间。\n设备级动作\n冷冻泵侧\n风险等级：中风险\n执行优先级：高优先级\n\n冷冻侧优先抬升温差\n\n目标建议：检查旁通与末端阀位，适度下调冷冻泵频率\n依据说明：当前冷冻温差 1.6°C 偏低，存在大流量小温差风险\n前置条件\n冷冻泵具备变频调节能力\n末端阀位与旁通开度可监测\n冷却塔侧\n风险等级：中风险\n执行优先级：高优先级\n\n冷却侧优先抬升温差\n\n目标建议：复核冷却泵与塔风机协同，避免过度降温\n依据说明：当前冷却温差 2.3°C 偏低，冷却侧效率偏弱\n前置条件\n冷却塔风机与冷却泵可联动调节\n冷凝侧关键测点连续可用\n方案可执行性\n可执行性评分\n15\n暂不可执行\n评审说明\n\n关键现态或前置条件不足，方案暂不可执行\n\n阻塞条件\n冷冻泵具备变频调节能力\n末端阀位与旁通开度可监测\n冷却塔风机与冷却泵可联动调节\n冷凝侧关键测点连续可用\n确认点\n\n暂无确认点。\n\n处理中...\n看设备\n看趋势\n看场景\n规则证据\n命中规则\n1\n跳过规则\n0\n命中规则 ID\nlow-delta-t-chilled-loop\n主要建议卡\nImprove chilled-water delta-T：Chilled-water delta-T remains below healthy range under non-trivial load.\n跳过规则详情\n\n当前没有跳过规则。\n\n草案诊断补充\n诊断信息\n总览来源状态=ok\n异常摘要来源状态=partial，异常总数=0\n建议来源状态=partial，卡片数=1\n规则评估：命中=1，跳过=0\nhistoryBenchmark.status=ready, samples=2\n优化引擎尚未实现；当前响应仅为基于现态的解释型草案。\n2026-04-04T18:39:33.811Z"
+      }
+    },
+    "trendAnalysis": {
+      "validUrl": {
+        "url": "http://127.0.0.1:3004/trend-analysis?metric=currentCop&range=7d&siteId=btwentyfive",
+        "onLoginPage": false,
+        "hasTrendHeader": true,
+        "metricParam": "currentCop",
+        "rangeParam": "7d",
+        "activeRangeLabel": "近7天",
+        "activeMetricLabel": "冷站 COP"
+      },
+      "invalidUrlFallback": {
+        "url": "http://127.0.0.1:3004/trend-analysis?range=24h&siteId=btwentyfive",
+        "onLoginPage": false,
+        "rangeParam": "24h",
+        "metricParam": null,
+        "rangeRecovered": true,
+        "metricRecovered": true
+      },
+      "interactionSync": {
+        "url": "http://127.0.0.1:3004/trend-analysis?range=30d&siteId=btwentyfive&metric=currentCop",
+        "rangeParam": "30d",
+        "metricParam": "currentCop"
+      }
     }
   }
 }

@@ -1,11 +1,11 @@
 import { startTransition, useEffect, useMemo, useState } from "react";
 import SectionCard from "../components/common/SectionCard";
-import SourceStatusBanner from "../components/common/SourceStatusBanner";
-import StatCard from "../components/common/StatCard";
+import useAiDigest from "../hooks/useAiDigest";
 import { runtimeConfig } from "../config/runtimeConfig";
 import { buildSourceStatusLines, summarizeSourceStatus } from "../i18n/sourceStatusCN";
 import { zhCN } from "../i18n/zhCN";
 import {
+  type AiDigestDto,
   type DeviceListDto,
   type DeviceListItemDto,
   type WorkOrderAssigneeDto,
@@ -42,14 +42,6 @@ type EditorState = {
   finishTime: string;
   state: string;
   workExplain: string;
-};
-
-type SummaryCard = {
-  title: string;
-  value: string;
-  unit: string;
-  delta: string;
-  tone: "neutral" | "good" | "warn";
 };
 
 type ChecklistCard = {
@@ -179,48 +171,6 @@ function buildEditorState(
   };
 }
 
-function buildSummaryCards(
-  orders: WorkOrderListDto | null,
-  assignees: WorkOrderAssigneeListDto | null,
-  devices: DeviceListDto | null,
-  query: FilterState
-): SummaryCard[] {
-  const total = typeof orders?.total === "number" ? orders.total : 0;
-  const assigneeCount = assignees?.items?.length || 0;
-  const deviceCount = devices?.items?.length || 0;
-  const stateLabel = query.state ? mapOptionLabel(WORK_STATE_OPTIONS, query.state) : zhCN.workOrderPage.filterStateAll;
-  return [
-    {
-      title: zhCN.workOrderPage.summaryTotal,
-      value: String(total),
-      unit: zhCN.common.unitItem,
-      delta: zhCN.workOrderPage.summaryTotalHint,
-      tone: total > 0 ? "good" : "neutral"
-    },
-    {
-      title: zhCN.workOrderPage.summaryAssignees,
-      value: String(assigneeCount),
-      unit: zhCN.common.unitItem,
-      delta: zhCN.workOrderPage.summaryAssigneesHint,
-      tone: assigneeCount > 0 ? "neutral" : "warn"
-    },
-    {
-      title: zhCN.workOrderPage.summaryDevices,
-      value: String(deviceCount),
-      unit: zhCN.common.unitItem,
-      delta: zhCN.workOrderPage.summaryDevicesHint,
-      tone: deviceCount > 0 ? "neutral" : "warn"
-    },
-    {
-      title: zhCN.workOrderPage.summaryState,
-      value: stateLabel,
-      unit: "",
-      delta: `${query.startDate || "--"} ~ ${query.endDate || "--"}`,
-      tone: query.state ? "good" : "neutral"
-    }
-  ];
-}
-
 function buildChecklistCards(rows: WorkOrderItemDto[], total: number, query: FilterState): ChecklistCard[] {
   const completedCount = rows.filter((item) => String(item.state || "") === "3").length;
   const activeCount = rows.filter((item) => String(item.state || "") === "1" || String(item.state || "") === "2").length;
@@ -257,6 +207,79 @@ function buildChecklistCards(rows: WorkOrderItemDto[], total: number, query: Fil
   ];
 }
 
+function getAiDigestSummaryText(digest: AiDigestDto | null): string | null {
+  return digest?.summary?.label || digest?.summary?.headline || digest?.summary?.summary || null;
+}
+
+function getAiDigestNextActionText(digest: AiDigestDto | null): string | null {
+  return digest?.nextAction?.summary || digest?.nextAction?.label || null;
+}
+
+function getAiDigestFreshnessLabel(digest: AiDigestDto | null): string | null {
+  const freshness = digest?.freshness;
+  if (!freshness) {
+    return null;
+  }
+  if (freshness.stale || freshness.label === "stale") {
+    return "AI摘要已过期";
+  }
+  if (freshness.label === "fresh" || freshness.latestTimestamp) {
+    return "AI摘要已更新";
+  }
+  return "AI摘要待确认";
+}
+
+function getAiDigestBlockerText(digest: AiDigestDto | null): string | null {
+  return digest?.operationsGate?.summary || digest?.operationsGate?.blockers?.[0]?.message || null;
+}
+
+function buildDigestChecklistCards(
+  digest: AiDigestDto | null,
+  fallback: ChecklistCard[]
+): ChecklistCard[] {
+  if (!digest) {
+    return fallback;
+  }
+
+  const summaryText = getAiDigestSummaryText(digest) || fallback[0]?.value || zhCN.workOrderPage.checklistStatePending;
+  const nextActionText = getAiDigestNextActionText(digest) || fallback[2]?.value || zhCN.workOrderPage.checklistNextPending;
+  const freshnessLabel = getAiDigestFreshnessLabel(digest) || zhCN.workOrderPage.checklistNextDetailPending;
+  const blockerText = getAiDigestBlockerText(digest) || fallback[1]?.value || zhCN.workOrderPage.checklistFields;
+
+  return [
+    {
+      ...fallback[0],
+      value: summaryText,
+      detail: digest.operationsGate?.summary || freshnessLabel,
+      tone: digest.operationsGate?.level === "blocked" ? "warn" : digest.operationsGate?.level === "caution" ? "warn" : "good"
+    },
+    {
+      ...fallback[1],
+      value: blockerText,
+      detail: digest.operationsGate?.reasonCodes?.length
+        ? digest.operationsGate.reasonCodes.join(" · ")
+        : digest.operationsGate?.risks?.[0]?.message || freshnessLabel,
+      tone: digest.operationsGate?.level === "blocked" ? "warn" : "neutral"
+    },
+    {
+      ...fallback[2],
+      value: nextActionText,
+      detail: digest.nextAction?.summary || freshnessLabel,
+      tone: "good"
+    }
+  ];
+}
+
+function buildFilterSummary(query: FilterState): string {
+  const parts = [
+    query.startDate ? `起始 ${query.startDate}` : "",
+    query.endDate ? `截止 ${query.endDate}` : "",
+    query.id ? `单号 ${query.id}` : "",
+    query.state ? `状态 ${mapOptionLabel(WORK_STATE_OPTIONS, query.state)}` : ""
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "当前筛选：全部工单";
+}
+
 export default function WorkOrdersPage() {
   const session = getAuthSession();
   const currentUsername = session?.username || zhCN.common.unknown;
@@ -283,6 +306,7 @@ export default function WorkOrdersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const { aiDigest } = useAiDigest(runtimeConfig.siteId);
 
   useEffect(() => {
     let active = true;
@@ -385,24 +409,87 @@ export default function WorkOrdersPage() {
     () => buildDeviceOptions(deviceRows, dialog?.deviceTypeId || ""),
     [deviceRows, dialog?.deviceTypeId]
   );
-  const summaryCards = buildSummaryCards(orders, assignees, devices, query);
   const sourceSummary = summarizeSourceStatus([orders?.sourceStatus, assignees?.sourceStatus, devices?.sourceStatus]);
-  const sourceStatusLines = buildSourceStatusLines([orders?.sourceStatus, assignees?.sourceStatus, devices?.sourceStatus]);
   const sourceStatusLinesCompact = buildSourceStatusLines(
     [orders?.sourceStatus, assignees?.sourceStatus, devices?.sourceStatus],
     { labelMode: "short" }
   );
+  const aiDigestSummaryText = getAiDigestSummaryText(aiDigest);
+  const aiDigestNextActionText = getAiDigestNextActionText(aiDigest);
+  const aiDigestFreshnessLabel = getAiDigestFreshnessLabel(aiDigest);
   const rows = orders?.items || [];
   const total = typeof orders?.total === "number" ? orders.total : 0;
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
-  const checklistCards = buildChecklistCards(rows, total, query);
-  const bannerText =
+  const checklistCards = buildDigestChecklistCards(aiDigest, buildChecklistCards(rows, total, query));
+  const sourceSummaryText =
     actionState?.message ||
     loadError ||
     assigneeError ||
     deviceError ||
+    aiDigestSummaryText ||
     (loading ? zhCN.workOrderPage.loading : sourceSummary.text);
-  const bannerWarn = Boolean(loadError || assigneeError || deviceError || actionState?.kind === "error") || sourceSummary.warn;
+  const statusDigestLines = Array.from(
+    new Set(
+      [
+        aiDigestFreshnessLabel,
+        ...sourceStatusLinesCompact
+      ].filter(Boolean)
+    )
+  ).slice(0, 4);
+  const latestFetchText = formatDateTime(orders?.generatedAt || orders?.freshness?.latestTimestamp);
+  const activeStateLabel = query.state ? mapOptionLabel(WORK_STATE_OPTIONS, query.state) : zhCN.workOrderPage.filterStateAll;
+  const filterSummary = buildFilterSummary(query);
+  const summaryStateText = aiDigestSummaryText || activeStateLabel;
+  const filterPanelToneClass =
+    actionState?.kind === "error" || loadError || assigneeError || deviceError || sourceSummary.warn
+      ? " is-warn"
+      : actionState?.kind === "success" || total > 0
+        ? " is-good"
+        : "";
+  const commandTags = [
+    { label: zhCN.workOrderPage.filterStartDate, value: query.startDate || "--" },
+    { label: zhCN.workOrderPage.filterEndDate, value: query.endDate || "--" },
+    { label: zhCN.workOrderPage.filterState, value: activeStateLabel },
+    { label: zhCN.workOrderPage.filterOrderId, value: query.id || "--" }
+  ];
+  const commandStats = [
+    {
+      title: zhCN.workOrderPage.summaryTotal,
+      value: `${total}${zhCN.common.unitItem}`,
+      detail: zhCN.workOrderPage.summaryTotalHint
+    },
+    {
+      title: zhCN.workOrderPage.summaryAssignees,
+      value: `${assignees?.items?.length || 0}${zhCN.common.unitItem}`,
+      detail: zhCN.workOrderPage.summaryAssigneesHint
+    },
+    {
+      title: zhCN.workOrderPage.summaryDevices,
+      value: `${deviceRows.length}${zhCN.common.unitItem}`,
+      detail: zhCN.workOrderPage.summaryDevicesHint
+    },
+    {
+      title: zhCN.workOrderPage.summaryState,
+      value: summaryStateText,
+      detail: aiDigestNextActionText || aiDigestFreshnessLabel || latestFetchText
+    }
+  ];
+  const filterMeta = [
+    `${zhCN.workOrderPage.summaryTotal} ${total}${zhCN.common.unitItem}`,
+    aiDigestFreshnessLabel
+      ? `${zhCN.workOrderPage.latestFetch} ${latestFetchText} · ${aiDigestFreshnessLabel}`
+      : `${zhCN.workOrderPage.latestFetch} ${latestFetchText}`,
+    `${zhCN.workOrderPage.pageInfo} ${page}/${pageCount}`,
+    filterSummary
+  ];
+  const listStageMeta = [
+    aiDigestFreshnessLabel
+      ? `${zhCN.workOrderPage.latestFetch} ${latestFetchText} · ${aiDigestFreshnessLabel}`
+      : `${zhCN.workOrderPage.latestFetch} ${latestFetchText}`,
+    `${zhCN.workOrderPage.pageInfo} ${page}/${pageCount}`,
+    `${zhCN.workOrderPage.pageSizeLabel} ${pageSize}`,
+    filterSummary
+  ];
 
   useEffect(() => {
     if (!dialog) {
@@ -664,88 +751,135 @@ export default function WorkOrdersPage() {
 
   return (
     <div className="work-order-page page-enter">
-      <SourceStatusBanner
-        summary={bannerText}
-        warn={bannerWarn}
-        detailLines={sourceStatusLines}
-        detailLinesCompact={sourceStatusLinesCompact}
-      />
-
-      <section className="work-order-header">
-        <h2>{zhCN.workOrderPage.heading}</h2>
-        <p>{zhCN.workOrderPage.subtitle}</p>
+      <section className="work-order-header subpage-command-board">
+        <div className="subpage-command-copy work-order-command-copy">
+          <p className="work-order-eyebrow">{runtimeConfig.appModeLabel}</p>
+          <h2>{zhCN.workOrderPage.heading}</h2>
+          <p>先筛选再导出，编辑和删除保留在表格内处理，减少在列表和弹窗之间来回跳转。</p>
+          <div className="work-order-command-tags" aria-label={zhCN.workOrderPage.sectionFilters}>
+            {commandTags.map((item) => (
+              <span key={`${item.label}-${item.value}`}>
+                <strong>{item.label}</strong>
+                <em>{item.value}</em>
+              </span>
+            ))}
+          </div>
+          <div className="work-order-command-summary-grid">
+            {commandStats.map((item) => (
+              <article key={`${item.title}-${item.value}`} className="work-order-command-stat">
+                <span>{item.title}</span>
+                <strong>{item.value}</strong>
+                <small>{item.detail}</small>
+              </article>
+            ))}
+          </div>
+        </div>
+        <div className="subpage-command-side work-order-command-side">
+          <span className="work-order-command-side-label">{zhCN.workOrderPage.summaryState}</span>
+          <strong>{summaryStateText}</strong>
+          <p>{sourceSummaryText}</p>
+          {statusDigestLines.length > 0 ? (
+            <div className="work-order-status-list" aria-label={zhCN.workOrderPage.summaryState}>
+              {statusDigestLines.map((line, index) => (
+                <span key={`work-order-status-${index + 1}-${line}`} className="work-order-status-chip">
+                  {line}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </section>
 
-      <SectionCard title={zhCN.workOrderPage.sectionFilters}>
-        <div className="work-order-filter-grid">
-          <label className="work-order-field">
-            <span>{zhCN.workOrderPage.filterStartDate}</span>
-            <input type="date" value={filters.startDate} onChange={(event) => updateFilter("startDate", event.target.value)} />
-          </label>
-          <label className="work-order-field">
-            <span>{zhCN.workOrderPage.filterEndDate}</span>
-            <input type="date" value={filters.endDate} onChange={(event) => updateFilter("endDate", event.target.value)} />
-          </label>
-          <label className="work-order-field">
-            <span>{zhCN.workOrderPage.filterOrderId}</span>
-            <input type="text" value={filters.id} onChange={(event) => updateFilter("id", event.target.value)} />
-          </label>
-          <label className="work-order-field">
-            <span>{zhCN.workOrderPage.filterState}</span>
-            <select value={filters.state} onChange={(event) => updateFilter("state", event.target.value)}>
-              <option value="">{zhCN.workOrderPage.filterStateAll}</option>
-              {WORK_STATE_OPTIONS.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.label}
-                </option>
+      <SectionCard
+        title={zhCN.workOrderPage.sectionFilters}
+        action={<span className="dashboard-section-hint">先筛选再导出，新增和编辑留在列表内处理</span>}
+      >
+        <div className="work-order-filter-layout">
+          <div className="work-order-filter-main">
+            <div className="work-order-filter-grid">
+              <label className="work-order-field">
+                <span>{zhCN.workOrderPage.filterStartDate}</span>
+                <input type="date" value={filters.startDate} onChange={(event) => updateFilter("startDate", event.target.value)} />
+              </label>
+              <label className="work-order-field">
+                <span>{zhCN.workOrderPage.filterEndDate}</span>
+                <input type="date" value={filters.endDate} onChange={(event) => updateFilter("endDate", event.target.value)} />
+              </label>
+              <label className="work-order-field">
+                <span>{zhCN.workOrderPage.filterOrderId}</span>
+                <input type="text" value={filters.id} onChange={(event) => updateFilter("id", event.target.value)} />
+              </label>
+              <label className="work-order-field">
+                <span>{zhCN.workOrderPage.filterState}</span>
+                <select value={filters.state} onChange={(event) => updateFilter("state", event.target.value)}>
+                  <option value="">{zhCN.workOrderPage.filterStateAll}</option>
+                  {WORK_STATE_OPTIONS.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="work-order-filter-footer">
+              <div className="work-order-filter-meta">
+                {filterMeta.map((item) => (
+                  <span key={item}>{item}</span>
+                ))}
+              </div>
+              <div className="work-order-actions">
+                <button type="button" className="work-order-button is-primary" onClick={handleSearch}>
+                  {zhCN.workOrderPage.search}
+                </button>
+                <button type="button" className="work-order-button is-primary" onClick={openCreateDialog} disabled={submitting || deviceRows.length === 0 || assigneeError !== null}>
+                  {zhCN.workOrderPage.create}
+                </button>
+                <button type="button" className="work-order-button" onClick={handleExport} disabled={loading || submitting || exporting}>
+                  {exporting ? zhCN.workOrderPage.exporting : zhCN.workOrderPage.export}
+                </button>
+                <button type="button" className="work-order-button" onClick={handleReset} disabled={loading || submitting || exporting}>
+                  {zhCN.workOrderPage.reset}
+                </button>
+              </div>
+            </div>
+          </div>
+          <aside className={`work-order-filter-panel${filterPanelToneClass}`}>
+            <span>{zhCN.workOrderPage.sectionChecklist}</span>
+            <strong>{checklistCards[0]?.value || summaryStateText || zhCN.workOrderPage.checklistStateEmpty}</strong>
+            <p>{sourceSummaryText}</p>
+            {statusDigestLines.length > 0 ? (
+              <div className="work-order-status-list" aria-label={zhCN.workOrderPage.sectionChecklist}>
+                {statusDigestLines.map((line, index) => (
+                  <span key={`work-order-filter-status-${index + 1}-${line}`} className="work-order-status-chip">
+                    {line}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            <div className="work-order-filter-panel-grid">
+              {checklistCards.map((item) => (
+                <article key={`${item.title}-${item.value}`} className={`strategy-audit-card tone-${item.tone}`}>
+                  <span>{item.title}</span>
+                  <strong>{item.value}</strong>
+                  <p>{item.detail}</p>
+                </article>
               ))}
-            </select>
-          </label>
-        </div>
-        <div className="work-order-actions">
-          <button type="button" className="work-order-button is-primary" onClick={handleSearch}>
-            {zhCN.workOrderPage.search}
-          </button>
-          <button type="button" className="work-order-button" onClick={handleReset} disabled={loading || submitting || exporting}>
-            {zhCN.workOrderPage.reset}
-          </button>
-          <button type="button" className="work-order-button" onClick={handleExport} disabled={loading || submitting || exporting}>
-            {exporting ? zhCN.workOrderPage.exporting : zhCN.workOrderPage.export}
-          </button>
-          <button
-            type="button"
-            className="work-order-button is-primary"
-            onClick={openCreateDialog}
-            disabled={submitting || deviceRows.length === 0 || assigneeError !== null}
-          >
-            {zhCN.workOrderPage.create}
-          </button>
-        </div>
-      </SectionCard>
-
-      <div className="work-order-summary-grid">
-        {summaryCards.map((item) => (
-          <StatCard key={item.title} title={item.title} value={item.value} unit={item.unit} delta={item.delta} tone={item.tone} />
-        ))}
-      </div>
-
-      <SectionCard title={zhCN.workOrderPage.sectionChecklist}>
-        <div className="strategy-audit-grid">
-          {checklistCards.map((item) => (
-            <article key={item.title} className={`strategy-audit-card tone-${item.tone}`}>
-              <span>{item.title}</span>
-              <strong>{item.value}</strong>
-              <p>{item.detail}</p>
-            </article>
-          ))}
+            </div>
+          </aside>
         </div>
       </SectionCard>
 
       <SectionCard title={zhCN.workOrderPage.sectionTable}>
-        <div className="work-order-meta">
-          <span>{`${zhCN.workOrderPage.latestFetch} ${formatDateTime(orders?.generatedAt || orders?.freshness?.latestTimestamp)}`}</span>
-          <span>{`${zhCN.workOrderPage.pageInfo} ${page}/${pageCount}`}</span>
-          <span>{`${zhCN.workOrderPage.pageSizeLabel} ${pageSize}`}</span>
+        <div className="work-order-table-stage">
+          <div className="work-order-table-stage-copy">
+            <strong>{zhCN.workOrderPage.sectionTable}</strong>
+            <p>{filterSummary}</p>
+          </div>
+          <div className="work-order-table-stage-meta">
+            {listStageMeta.map((item) => (
+              <span key={item}>{item}</span>
+            ))}
+          </div>
         </div>
 
         {rows.length > 0 ? (
@@ -783,13 +917,25 @@ export default function WorkOrdersPage() {
                       <td>{formatDateTime(item.executeTime)}</td>
                       <td>{formatDateTime(item.finishTime)}</td>
                       <td>{mapOptionLabel(WORK_STATE_OPTIONS, item.state)}</td>
-                      <td>{item.workExplain || "--"}</td>
+                      <td>
+                        <span title={item.workExplain || "--"}>{item.workExplain || "--"}</span>
+                      </td>
                       <td>
                         <div className="work-order-row-actions">
-                          <button type="button" onClick={() => openEditDialog(item)} disabled={isDeleting || submitting}>
+                          <button
+                            type="button"
+                            title={zhCN.workOrderPage.actionEdit}
+                            onClick={() => openEditDialog(item)}
+                            disabled={isDeleting || submitting}
+                          >
                             {zhCN.workOrderPage.actionEdit}
                           </button>
-                          <button type="button" onClick={() => handleDelete(item)} disabled={isDeleting || submitting}>
+                          <button
+                            type="button"
+                            title={zhCN.workOrderPage.actionDelete}
+                            onClick={() => handleDelete(item)}
+                            disabled={isDeleting || submitting}
+                          >
                             {isDeleting ? zhCN.workOrderPage.deleting : zhCN.workOrderPage.actionDelete}
                           </button>
                         </div>
@@ -802,7 +948,8 @@ export default function WorkOrdersPage() {
           </div>
         ) : (
           <div className="work-order-empty">
-            {loading ? zhCN.workOrderPage.loading : zhCN.workOrderPage.empty}
+            <strong>{loading ? zhCN.workOrderPage.loading : zhCN.workOrderPage.empty}</strong>
+            <p>{loading ? "正在加载当前筛选结果。" : "可以先放宽筛选条件，或者直接新建一条工单。"} </p>
           </div>
         )}
 

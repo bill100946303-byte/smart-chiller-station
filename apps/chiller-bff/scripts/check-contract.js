@@ -13,7 +13,8 @@ const CONTRACT_PATHS = [
   "/bff/v1/sites/{siteId}/devices/{deviceId}",
   "/bff/v1/sites/{siteId}/system/topology",
   "/bff/v1/sites/{siteId}/system/diagram",
-  "/bff/v1/sites/{siteId}/recommendations"
+  "/bff/v1/sites/{siteId}/recommendations",
+  "/bff/v1/sites/{siteId}/optimize/executions"
 ];
 
 function loadOpenApi() {
@@ -192,6 +193,23 @@ function collectExamples(doc) {
   return list;
 }
 
+function buildOperationExampleCheck(doc, { pathName, method = "get", status = "200", suffix = "" }) {
+  const op = doc?.paths?.[pathName]?.[method];
+  const schema = op?.responses?.[status]?.content?.["application/json"]?.schema;
+  const externalValue =
+    op?.responses?.[status]?.content?.["application/json"]?.examples?.default?.externalValue;
+
+  if (!schema || !externalValue) {
+    return null;
+  }
+
+  return {
+    pathName: suffix ? `${pathName}${suffix}` : pathName,
+    schema,
+    exampleFile: path.resolve(path.dirname(OPENAPI_FILE), externalValue)
+  };
+}
+
 function collectSupplementalExamples(doc) {
   const degradedDevicesTreeSchema =
     doc?.paths?.["/bff/v1/sites/{siteId}/devices/tree"]?.get?.responses?.["200"]?.content?.[
@@ -210,6 +228,44 @@ function collectSupplementalExamples(doc) {
       exampleFile: degradedDevicesTreeFile
     });
   }
+
+  const optimizeCreateCheck = buildOperationExampleCheck(doc, {
+    pathName: "/bff/v1/sites/{siteId}/optimize/executions",
+    method: "post",
+    status: "201",
+    suffix: "#create"
+  });
+  if (optimizeCreateCheck) {
+    list.push(optimizeCreateCheck);
+  }
+
+  const optimizeApproveCheck = buildOperationExampleCheck(doc, {
+    pathName: "/bff/v1/sites/{siteId}/optimize/executions/{executionId}/approve",
+    method: "post",
+    status: "200"
+  });
+  if (optimizeApproveCheck) {
+    list.push(optimizeApproveCheck);
+  }
+
+  const optimizeRollbackCheck = buildOperationExampleCheck(doc, {
+    pathName: "/bff/v1/sites/{siteId}/optimize/executions/{executionId}/rollback",
+    method: "post",
+    status: "200"
+  });
+  if (optimizeRollbackCheck) {
+    list.push(optimizeRollbackCheck);
+  }
+
+  const optimizeDraftCheck = buildOperationExampleCheck(doc, {
+    pathName: "/bff/v1/sites/{siteId}/optimize",
+    method: "post",
+    status: "200"
+  });
+  if (optimizeDraftCheck) {
+    list.push(optimizeDraftCheck);
+  }
+
   return list;
 }
 

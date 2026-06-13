@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { badRequest, forbidden, unauthorized } from "../lib/admin-errors.js";
+import { resolveSiteRuntimeConfig } from "../lib/site-runtime-config.js";
 const SITE_MEMBER_ROLES = new Set(["site_admin", "auditor"]);
 const SITE_STATUSES = new Set(["active", "paused", "disabled"]);
 
@@ -133,10 +134,39 @@ function normalizeRuntimeConfigPayload(body) {
     };
   }
 
+  const record = body;
+  const normalizeRuntimeJsonObject = (value, field) => {
+    let parsed = value;
+    if (typeof parsed === "string") {
+      const trimmed = parsed.trim();
+      if (!trimmed) {
+        return {};
+      }
+      try {
+        parsed = JSON.parse(trimmed);
+      } catch (_error) {
+        throw badRequest(`${field} must be valid JSON`, { field });
+      }
+    }
+    if (parsed == null) {
+      return {};
+    }
+    if (typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw badRequest(`${field} must be a JSON object`, { field });
+    }
+    return parsed;
+  };
+
   return {
-    energyParams: body.energyParams ?? {},
-    ruleThresholds: body.ruleThresholds ?? {},
-    featureFlags: body.featureFlags ?? {}
+    energyParams: normalizeRuntimeJsonObject(record.energyParams ?? record.energyParamsJson, "energyParams"),
+    ruleThresholds: normalizeRuntimeJsonObject(
+      record.ruleThresholds ?? record.ruleThresholdsJson,
+      "ruleThresholds"
+    ),
+    featureFlags: normalizeRuntimeJsonObject(
+      record.featureFlags ?? record.featureFlagsJson,
+      "featureFlags"
+    )
   };
 }
 
@@ -163,6 +193,7 @@ function normalizeSourceConfigPayload(body = {}) {
     port: normalizeOptionalText(body.port),
     databaseKey: normalizeOptionalText(body.databaseKey),
     modelKey: normalizeOptionalText(body.modelKey),
+    preferredProjectKey: normalizeOptionalText(body.preferredProjectKey),
     template: normalizeOptionalText(body.template),
     controlMode: normalizeOptionalText(body.controlMode),
     status: normalizeOptionalText(body.status)
@@ -206,6 +237,11 @@ function buildMeResponse(adminStore, context, requestId, autoImportedSiteIds = [
     managedSites,
     autoImportedSiteIds
   };
+}
+
+function buildEffectiveSourceConfig(config, adminStore, siteId) {
+  const runtimeConfig = resolveSiteRuntimeConfig(config, adminStore, siteId);
+  return runtimeConfig?.siteSourceConfig || null;
 }
 
 export function buildAdminRouter(options) {
@@ -319,7 +355,8 @@ export function buildAdminRouter(options) {
       adminStore.assertSiteExists(siteId);
       toResponse(res, req.requestId, {
         siteId,
-        sourceConfig: adminStore.getSiteSourceConfig(siteId)
+        sourceConfig: adminStore.getSiteSourceConfig(siteId),
+        effectiveSourceConfig: buildEffectiveSourceConfig(config, adminStore, siteId)
       });
     } catch (error) {
       next(error);
@@ -341,7 +378,8 @@ export function buildAdminRouter(options) {
       );
       toResponse(res, req.requestId, {
         siteId,
-        sourceConfig
+        sourceConfig,
+        effectiveSourceConfig: buildEffectiveSourceConfig(config, adminStore, siteId)
       });
     } catch (error) {
       next(error);

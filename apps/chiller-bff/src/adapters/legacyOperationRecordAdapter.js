@@ -1,4 +1,10 @@
-import { fetchLegacyJson } from "../lib/http.js";
+import { deepArrayProbe, fetchLegacyJson } from "../lib/http.js";
+import {
+  buildRuntimeDeviceOptions,
+  buildRuntimeDeviceTypeNodes,
+  isLegacyResponseUsable,
+  loadRuntimeReportCatalog
+} from "./runtimeReportCatalogAdapter.js";
 
 function asTrimmedString(value, fallback = "") {
   if (value == null) {
@@ -83,6 +89,33 @@ export function normalizeDateInput(value, fallback = formatDate(new Date())) {
   return fallback;
 }
 
+function resolveOperationRecordModelKey(siteId, options = {}) {
+  const runtimeSourceConfig =
+    options?.runtimeConfig && typeof options.runtimeConfig === "object"
+      ? options.runtimeConfig.siteSourceConfig
+      : null;
+  return (
+    asTrimmedString(options.modelKey, "")
+    || asTrimmedString(runtimeSourceConfig?.modelKey, "")
+    || asTrimmedString(runtimeSourceConfig?.preferredProjectKey, "")
+    || asTrimmedString(runtimeSourceConfig?.deviceDataProjectKey, "")
+    || asTrimmedString(runtimeSourceConfig?.databaseKey, "")
+    || asTrimmedString(siteId, "")
+  );
+}
+
+function resolveOperationRecordTemplate(options = {}) {
+  const runtimeSourceConfig =
+    options?.runtimeConfig && typeof options.runtimeConfig === "object"
+      ? options.runtimeConfig.siteSourceConfig
+      : null;
+  return (
+    asTrimmedString(options.template, "")
+    || asTrimmedString(runtimeSourceConfig?.template, "")
+    || "1"
+  );
+}
+
 function buildOperationRecordEndpoint(siteId, options) {
   const search = new URLSearchParams();
   search.set("pageCurrent", String(options.page));
@@ -95,16 +128,47 @@ function buildOperationRecordEndpoint(siteId, options) {
   if (options.drId != null) {
     search.set("drId", String(options.drId));
   }
+  if (options.language) {
+    search.set("language", options.language);
+  }
+  if (options.unit) {
+    search.set("unit", options.unit);
+  }
+  if (options.modelKey) {
+    search.set("modelKey", options.modelKey);
+  }
+  if (options.template) {
+    search.set("template", options.template);
+  }
   return `/zsqy/runrecords/${siteId}/findAll?${search.toString()}`;
 }
 
-function buildDeviceTypeEndpoint(siteId) {
-  return `/zsqy/Drtypeinfo/${siteId}/findAllDrtypeOfDevice`;
+function appendLegacyCommonParams(search, options = {}) {
+  if (options.language) {
+    search.set("language", options.language);
+  }
+  if (options.unit) {
+    search.set("unit", options.unit);
+  }
+  if (options.modelKey) {
+    search.set("modelKey", options.modelKey);
+  }
+  if (options.template) {
+    search.set("template", options.template);
+  }
 }
 
-function buildDeviceOptionEndpoint(siteId, drTypeId) {
+function buildDeviceTypeEndpoint(siteId, options = {}) {
+  const search = new URLSearchParams();
+  appendLegacyCommonParams(search, options);
+  const suffix = search.size > 0 ? `?${search.toString()}` : "";
+  return `/zsqy/Drtypeinfo/${siteId}/findAllDrtypeOfDevice${suffix}`;
+}
+
+function buildDeviceOptionEndpoint(siteId, drTypeId, options = {}) {
   const search = new URLSearchParams();
   search.set("drtypeid", String(drTypeId));
+  appendLegacyCommonParams(search, options);
   return `/zsqy/drinfo/${siteId}/findAll?${search.toString()}`;
 }
 
@@ -115,24 +179,37 @@ export async function loadOperationRecords(baseUrl, siteId, options = {}) {
   const endDate = normalizeDateInput(options.endDate, startDate);
   const drTypeId = toNullableFilterId(options.drTypeId);
   const drId = toNullableFilterId(options.drId);
+  const language = asTrimmedString(options.language, "zh");
+  const unit = asTrimmedString(options.unit, "KW");
+  const modelKey = resolveOperationRecordModelKey(siteId, options);
+  const template = resolveOperationRecordTemplate(options);
   const endpoint = buildOperationRecordEndpoint(siteId, {
     page,
     pageSize,
     startDate,
     endDate,
     drTypeId,
-    drId
+    drId,
+    language,
+    unit,
+    modelKey,
+    template
   });
   const fetchedAt = new Date().toISOString();
   const response = await fetchLegacyJson(baseUrl, endpoint);
-  const payload = response.ok && response.payload && typeof response.payload === "object" ? response.payload : null;
-  const records = Array.isArray(payload?.data?.records)
-    ? payload.data.records
-    : Array.isArray(payload?.records)
-      ? payload.records
-      : [];
-  const totalRaw = payload?.data?.rowCount ?? payload?.rowCount ?? records.length;
-  const total = Number.isFinite(Number(totalRaw)) ? Number(totalRaw) : records.length;
+  const usable = isLegacyResponseUsable(response);
+  const payload = usable && response.payload && typeof response.payload === "object" ? response.payload : null;
+  const records = usable
+    ? deepArrayProbe({
+      data:
+          payload?.data?.records
+          ?? payload?.records
+          ?? payload?.data
+          ?? payload
+    }).filter((item) => item && typeof item === "object" && !Array.isArray(item))
+    : [];
+  const totalRaw = usable ? payload?.data?.rowCount ?? payload?.rowCount ?? records.length : null;
+  const total = usable && Number.isFinite(Number(totalRaw)) ? Number(totalRaw) : records.length;
 
   return {
     items: records.map(normalizeRecord),
@@ -148,59 +225,133 @@ export async function loadOperationRecords(baseUrl, siteId, options = {}) {
     },
     sourceStatus: {
       endpoint,
-      ok: response.ok,
+      ok: usable,
       status: response.status ?? null,
-      message: response.ok ? extractMessage(response.payload, "OK") : null,
-      rows: response.ok ? records.length : null,
-      error: response.ok ? null : response.error
-    }
+      message: usable ? extractMessage(response.payload, "OK") : null,
+      rows: usable ? records.length : null,
+      error: usable ? null : response.error || extractMessage(response.payload, "Legacy operation records unavailable")
+    },
+    sourceStatuses: [
+      {
+        endpoint,
+        ok: usable,
+        status: response.status ?? null,
+        message: usable ? extractMessage(response.payload, "OK") : null,
+        rows: usable ? records.length : null,
+        error: usable ? null : response.error || extractMessage(response.payload, "Legacy operation records unavailable")
+      }
+    ]
   };
 }
 
-export async function loadOperationRecordDeviceTypes(baseUrl, siteId) {
-  const endpoint = buildDeviceTypeEndpoint(siteId);
+export async function loadOperationRecordDeviceTypes(baseUrl, siteId, options = {}) {
+  const language = asTrimmedString(options.language, "zh");
+  const unit = asTrimmedString(options.unit, "KW");
+  const modelKey = resolveOperationRecordModelKey(siteId, options);
+  const template = resolveOperationRecordTemplate(options);
+  const endpoint = buildDeviceTypeEndpoint(siteId, {
+    language,
+    unit,
+    modelKey,
+    template
+  });
   const response = await fetchLegacyJson(baseUrl, endpoint);
-  const payload = response.ok && response.payload && typeof response.payload === "object" ? response.payload : null;
-  const rows = Array.isArray(payload?.data)
-    ? payload.data
-    : Array.isArray(payload)
-      ? payload
-      : [];
+  const usable = isLegacyResponseUsable(response);
+  const payload = usable && response.payload && typeof response.payload === "object" ? response.payload : null;
+  const rows = usable
+    ? Array.isArray(payload?.data)
+      ? payload.data
+      : Array.isArray(payload)
+        ? payload
+        : []
+    : [];
+  const sourceStatus = {
+    endpoint,
+    ok: usable,
+    status: response.status ?? null,
+    message: usable ? extractMessage(response.payload, "OK") : null,
+    rows: usable ? rows.length : null,
+    error: usable ? null : response.error || extractMessage(response.payload, "Legacy device types unavailable")
+  };
+
+  if (usable) {
+    return {
+      items: rows.map((item, index) => normalizeTypeNode(item, index)),
+      sourceStatus,
+      sourceStatuses: [sourceStatus]
+    };
+  }
+
+  const runtimeCatalog = await loadRuntimeReportCatalog(baseUrl, options.runtimeConfig || { siteSourceConfig: options.siteSourceConfig }, siteId);
+  if (runtimeCatalog.sourceStatus.ok) {
+    return {
+      items: buildRuntimeDeviceTypeNodes(runtimeCatalog.items),
+      sourceStatus: runtimeCatalog.sourceStatus,
+      sourceStatuses: [sourceStatus, runtimeCatalog.sourceStatus]
+    };
+  }
 
   return {
-    items: rows.map((item, index) => normalizeTypeNode(item, index)),
-    sourceStatus: {
-      endpoint,
-      ok: response.ok,
-      status: response.status ?? null,
-      message: response.ok ? extractMessage(response.payload, "OK") : null,
-      rows: response.ok ? rows.length : null,
-      error: response.ok ? null : response.error
-    }
+    items: [],
+    sourceStatus,
+    sourceStatuses: [sourceStatus, runtimeCatalog.sourceStatus]
   };
 }
 
-export async function loadOperationRecordDevices(baseUrl, siteId, drTypeId) {
+export async function loadOperationRecordDevices(baseUrl, siteId, drTypeId, options = {}) {
   const normalizedTypeId = toNullableFilterId(drTypeId) || "0";
-  const endpoint = buildDeviceOptionEndpoint(siteId, normalizedTypeId);
+  const language = asTrimmedString(options.language, "zh");
+  const unit = asTrimmedString(options.unit, "KW");
+  const modelKey = resolveOperationRecordModelKey(siteId, options);
+  const template = resolveOperationRecordTemplate(options);
+  const endpoint = buildDeviceOptionEndpoint(siteId, normalizedTypeId, {
+    language,
+    unit,
+    modelKey,
+    template
+  });
   const response = await fetchLegacyJson(baseUrl, endpoint);
-  const payload = response.ok && response.payload && typeof response.payload === "object" ? response.payload : null;
-  const rows = Array.isArray(payload?.data)
-    ? payload.data
-    : Array.isArray(payload)
-      ? payload
-      : [];
+  const usable = isLegacyResponseUsable(response);
+  const payload = usable && response.payload && typeof response.payload === "object" ? response.payload : null;
+  const rows = usable
+    ? Array.isArray(payload?.data)
+      ? payload.data
+      : Array.isArray(payload)
+        ? payload
+        : []
+    : [];
+  const sourceStatus = {
+    endpoint,
+    ok: usable,
+    status: response.status ?? null,
+    message: usable ? extractMessage(response.payload, "OK") : null,
+    rows: usable ? rows.length : null,
+    error: usable ? null : response.error || extractMessage(response.payload, "Legacy device options unavailable")
+  };
+
+  if (usable) {
+    return {
+      drTypeId: normalizedTypeId,
+      items: rows.map(normalizeDeviceOption),
+      sourceStatus,
+      sourceStatuses: [sourceStatus]
+    };
+  }
+
+  const runtimeCatalog = await loadRuntimeReportCatalog(baseUrl, options.runtimeConfig || { siteSourceConfig: options.siteSourceConfig }, siteId);
+  if (runtimeCatalog.sourceStatus.ok) {
+    return {
+      drTypeId: normalizedTypeId,
+      items: buildRuntimeDeviceOptions(runtimeCatalog.items, normalizedTypeId),
+      sourceStatus: runtimeCatalog.sourceStatus,
+      sourceStatuses: [sourceStatus, runtimeCatalog.sourceStatus]
+    };
+  }
 
   return {
     drTypeId: normalizedTypeId,
-    items: rows.map(normalizeDeviceOption),
-    sourceStatus: {
-      endpoint,
-      ok: response.ok,
-      status: response.status ?? null,
-      message: response.ok ? extractMessage(response.payload, "OK") : null,
-      rows: response.ok ? rows.length : null,
-      error: response.ok ? null : response.error
-    }
+    items: [],
+    sourceStatus,
+    sourceStatuses: [sourceStatus, runtimeCatalog.sourceStatus]
   };
 }

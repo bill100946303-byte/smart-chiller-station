@@ -1,4 +1,4 @@
-import path from "node:path";
+﻿import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -44,11 +44,28 @@ export const config = {
   appMode,
   appModeLabel: resolveAppModeLabel(appMode),
   readOnlyMode: normalizeBooleanEnv(process.env.READ_ONLY_MODE, false),
-  legacyBaseUrl: (process.env.LEGACY_BASE_URL || "http://127.0.0.1:8098").replace(/\/+$/, ""),
+  legacyBaseUrl: (process.env.LEGACY_BASE_URL || "https://www.ssge.com.cn:8098").replace(/\/+$/, ""),
+  realtimeParamsBaseUrl:
+    (process.env.REALTIME_PARAMS_BASE_URL || "https://ln.szgreenenergy.com").replace(/\/+$/, ""),
+  realtimeParamsTimeoutMs: Number(process.env.REALTIME_PARAMS_TIMEOUT_MS || 1500),
   defaultSiteId: process.env.DEFAULT_SITE_ID || "126lnoffice",
   staleThresholdHours: Number(process.env.STALE_THRESHOLD_HOURS || 24),
-  adminDbFile:
-    process.env.ADMIN_DB_FILE || path.resolve(__dirname, "../.local/admin.sqlite"),
+  adminDbFile: process.env.ADMIN_DB_FILE || path.resolve(__dirname, "../.local/admin.sqlite"),
+  controlLedgerImportReportFile:
+    process.env.OPTIMIZE_DEMO_CONTROL_LEDGER_IMPORT_JSON ||
+    path.resolve(__dirname, "../../../docs/optimize-demo-140-control-ledger-import-latest.json"),
+  fieldDataPreflightReportFile:
+    process.env.OPTIMIZE_DEMO_FIELD_DATA_PREFLIGHT_JSON ||
+    path.resolve(__dirname, "../../../docs/optimize-demo-140-field-data-preflight-latest.json"),
+  fieldDataPromoteReportFile:
+    process.env.OPTIMIZE_DEMO_FIELD_DATA_PROMOTE_JSON ||
+    path.resolve(__dirname, "../../../docs/optimize-demo-140-field-data-promote-latest.json"),
+  sensorLedgerPreflightReportFile:
+    process.env.OPTIMIZE_DEMO_SENSOR_LEDGER_PREFLIGHT_JSON ||
+    path.resolve(__dirname, "../../../docs/optimize-demo-140-sensor-ledger-preflight-latest.json"),
+  fieldCollectionPackageReportFile:
+    process.env.OPTIMIZE_DEMO_FIELD_COLLECTION_PACKAGE_JSON ||
+    path.resolve(__dirname, "../../../docs/optimize-demo-140-field-collection-package-latest.json"),
   adminBootstrapUserIds: normalizeListEnv(process.env.ADMIN_BOOTSTRAP_USER_IDS),
   adminBootstrapUsernames: normalizeListEnv(process.env.ADMIN_BOOTSTRAP_USERNAMES),
   fieldDictionaryFile:

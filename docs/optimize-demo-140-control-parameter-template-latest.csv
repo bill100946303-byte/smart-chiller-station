@@ -1,0 +1,4 @@
+effectiveAt,siteId,loopKey,equipmentType,equipmentId,parameterKey,parameterName,value,unit,previousValue,rollbackValue,changeTicket,approvedBy,sourceSystem,remark
+2026-06-13T09:00:00+08:00,140,chilled_water_delta_t,chilled_pump,CHP4,ramp_limit_hz_per_min,冷冻泵频率斜率限制,1,Hz/min,,,,,PLC,只记录参数台账，不自动写 PLC
+2026-06-13T09:00:00+08:00,140,tower_fan_tcws,cooling_tower,CT1,deadband_c,冷却水温控制死区,0.5,℃,,,,,PLC,用于判断塔风机频率震荡，不自动改 PID
+2026-06-13T09:00:00+08:00,140,chiller_staging,chiller,CH7,min_on_minutes,主机最小运行时间,30,min,,,,,PLC,用于频繁启停诊断，不自动启停设备

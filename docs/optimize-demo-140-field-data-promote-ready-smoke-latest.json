@@ -1,0 +1,67 @@
+{
+  "generatedAt": "2026-06-12T20:39:09.501Z",
+  "siteId": "140",
+  "finalDecision": "FIELD_DATA_PROMOTE_READY",
+  "scope": "optimize_demo_140_field_data_promote_to_formal_ledger",
+  "executionMode": "read_only",
+  "controlBoundary": "promotion 只在现场 CSV 预检 READY 后执行正式台账导入；不自动改 PID，不自动启停设备，不写真实 PLC。",
+  "preflight": {
+    "reportPath": "docs/optimize-demo-140-field-data-preflight-ready-smoke-latest.json",
+    "finalDecision": "FIELD_DATA_PREFLIGHT_READY",
+    "generatedAt": "2026-06-12T20:22:42.826Z"
+  },
+  "inputs": [
+    {
+      "key": "control_command_feedback_trend",
+      "title": "控制命令/反馈高频趋势",
+      "path": "tmp/optimize-demo-140-control-ledger-ready-fixture/control-command-feedback-field-export.csv",
+      "exists": true,
+      "mode": "explicit_field_export",
+      "requiredForReady": true
+    },
+    {
+      "key": "start_stop_event_ledger",
+      "title": "设备启停事件台账",
+      "path": "tmp/optimize-demo-140-control-ledger-ready-fixture/start-stop-event-field-export.csv",
+      "exists": true,
+      "mode": "explicit_field_export",
+      "requiredForReady": true
+    },
+    {
+      "key": "control_parameter_ledger",
+      "title": "PID/死区/延时参数台账",
+      "path": "tmp/optimize-demo-140-control-ledger-ready-fixture/control-parameter-field-export.csv",
+      "exists": true,
+      "mode": "explicit_field_export",
+      "requiredForReady": true
+    }
+  ],
+  "import": {
+    "status": "CONTROL_LEDGER_IMPORT_READY",
+    "exitCode": 0,
+    "signal": null,
+    "acceptedRows": 9,
+    "totalRows": 9,
+    "warningsCount": 0,
+    "blockersCount": 0,
+    "reportJson": "docs/optimize-demo-140-control-ledger-promote-ready-smoke-import-latest.json",
+    "reportMarkdown": "docs/optimize-demo-140-control-ledger-promote-ready-smoke-import-latest.md",
+    "normalizedOutputs": {
+      "controlTrendCsv": "docs/optimize-demo-140-control-command-feedback-promote-ready-smoke-normalized-latest.csv",
+      "startStopCsv": "docs/optimize-demo-140-start-stop-event-promote-ready-smoke-normalized-latest.csv",
+      "controlParameterCsv": "docs/optimize-demo-140-control-parameter-promote-ready-smoke-normalized-latest.csv"
+    },
+    "stdout": [
+      "optimize-demo 140 control ledger import: CONTROL_LEDGER_IMPORT_READY",
+      "tables=3 rows=9 accepted=9",
+      "json=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-control-ledger-promote-ready-smoke-import-latest.json",
+      "markdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-control-ledger-promote-ready-smoke-import-latest.md",
+      "controlTrendCsv=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-control-command-feedback-promote-ready-smoke-normalized-latest.csv",
+      "startStopCsv=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-start-stop-event-promote-ready-smoke-normalized-latest.csv",
+      "controlParameterCsv=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-control-parameter-promote-ready-smoke-normalized-latest.csv"
+    ],
+    "stderr": []
+  },
+  "blockers": [],
+  "warnings": []
+}

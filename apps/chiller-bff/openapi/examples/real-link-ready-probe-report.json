@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-04-01T20:59:03.036Z",
+  "generatedAt": "2026-06-12T13:09:16.996Z",
   "ready": false,
   "exampleReady": false,
   "exampleReadyLine": "example-ready=false",
-  "runtimeReady": null,
-  "runtimeReadyLine": "runtime-ready=unknown",
+  "runtimeReady": false,
+  "runtimeReadyLine": "runtime-ready=false",
   "baselineSampleReady": true,
   "reasons": [
     "dashboardOverview.sourceStatus.overall=partial (expected ok)",
@@ -391,17 +391,24 @@
   },
   "runtimeProbe": {
     "enabled": true,
-    "available": false,
+    "available": true,
     "probeBaseUrl": "http://127.0.0.1:8787",
     "siteId": "126lnoffice",
     "timeoutMs": 1500,
-    "runtimeReady": null,
-    "runtimeReadyLine": "runtime-ready=unknown",
+    "runtimeReady": false,
+    "runtimeReadyLine": "runtime-ready=false",
     "reasons": [
-      "dashboardOverview runtime probe failed: TypeError: fetch failed (http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview)",
-      "dashboardTrends runtime probe failed: TypeError: fetch failed (http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/trends)",
-      "anomaliesSummary runtime probe failed: TypeError: fetch failed (http://127.0.0.1:8787/bff/v1/sites/126lnoffice/anomalies/summary)",
-      "recommendations runtime probe failed: TypeError: fetch failed (http://127.0.0.1:8787/bff/v1/sites/126lnoffice/recommendations)"
+      "dashboardOverview runtime probe failed: timeout >= 1500ms (http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/overview)",
+      "dashboardTrends runtime probe failed: timeout >= 1500ms (http://127.0.0.1:8787/bff/v1/sites/126lnoffice/dashboard/trends)",
+      "recommendations runtime probe failed: timeout >= 1500ms (http://127.0.0.1:8787/bff/v1/sites/126lnoffice/recommendations)",
+      "dashboardOverview.sourceStatus.overall=partial (expected ok)",
+      "dashboardOverview.sourceStatus has 1 source(s) with ok=false",
+      "dashboardTrends.sourceStatus.overall=partial (expected ok)",
+      "dashboardTrends.sourceStatus has 1 source(s) with ok=false",
+      "recommendations.sourceStatus.overall=partial (expected ok)",
+      "recommendations.sourceStatus has 1 source(s) with ok=false",
+      "dashboardTrends.freshness.stale=undefined (expected false)",
+      "dashboardTrends.series has no numeric point value"
     ],
     "groupedFailures": {
       "upstream_unreachable": [
@@ -417,14 +424,6 @@
           "endpoint": "/dashboard/trends",
           "category": "upstream_unreachable",
           "jsonPath": "/dashboard/trends.sourceStatus.sources[0]",
-          "key": "runtimeProbe",
-          "status": null,
-          "message": "key=runtimeProbe status=null"
-        },
-        {
-          "endpoint": "/anomalies/summary",
-          "category": "upstream_unreachable",
-          "jsonPath": "/anomalies/summary.sourceStatus.sources[0]",
           "key": "runtimeProbe",
           "status": null,
           "message": "key=runtimeProbe status=null"
@@ -470,20 +469,6 @@
         "upstream_5xx": [],
         "field_missing_or_invalid": []
       },
-      "/anomalies/summary": {
-        "upstream_unreachable": [
-          {
-            "endpoint": "/anomalies/summary",
-            "category": "upstream_unreachable",
-            "jsonPath": "/anomalies/summary.sourceStatus.sources[0]",
-            "key": "runtimeProbe",
-            "status": null,
-            "message": "key=runtimeProbe status=null"
-          }
-        ],
-        "upstream_5xx": [],
-        "field_missing_or_invalid": []
-      },
       "/recommendations": {
         "upstream_unreachable": [
           {
@@ -500,9 +485,9 @@
       }
     },
     "summary": {
-      "totalFailures": 4,
+      "totalFailures": 3,
       "byCategory": {
-        "upstream_unreachable": 4,
+        "upstream_unreachable": 3,
         "upstream_5xx": 0,
         "field_missing_or_invalid": 0
       },
@@ -514,12 +499,6 @@
           "field_missing_or_invalid": 0
         },
         "/dashboard/trends": {
-          "total": 1,
-          "upstream_unreachable": 1,
-          "upstream_5xx": 0,
-          "field_missing_or_invalid": 0
-        },
-        "/anomalies/summary": {
           "total": 1,
           "upstream_unreachable": 1,
           "upstream_5xx": 0,

@@ -1,0 +1,182 @@
+{
+  "ok": true,
+  "status": "CONTROL_LEDGER_IMPORT_PARTIAL",
+  "siteId": "140",
+  "generatedAt": "2026-06-12T20:09:11.424Z",
+  "scope": "optimize_demo_140_control_oscillation_field_ledgers",
+  "executionMode": "read_only",
+  "controlBoundary": "导入器只做现场台账回填、字段规范化和证据校验，不自动改 PID，不自动启停设备，不写真实 PLC。",
+  "summary": {
+    "tableCount": 3,
+    "totalRows": 8,
+    "acceptedRows": 8,
+    "blockersCount": 0,
+    "warningsCount": 9
+  },
+  "outputs": {
+    "json": "docs/optimize-demo-140-control-ledger-import-latest.json",
+    "markdown": "docs/optimize-demo-140-control-ledger-import-latest.md",
+    "controlTrendCsv": "docs/optimize-demo-140-control-command-feedback-normalized-latest.csv",
+    "startStopCsv": "docs/optimize-demo-140-start-stop-event-normalized-latest.csv",
+    "controlParameterCsv": "docs/optimize-demo-140-control-parameter-normalized-latest.csv"
+  },
+  "tables": [
+    {
+      "key": "control_command_feedback_trend",
+      "title": "控制命令/反馈高频趋势",
+      "inputMode": "template_sample",
+      "inputPath": "docs/optimize-demo-140-control-command-feedback-template-latest.csv",
+      "outputPath": "docs/optimize-demo-140-control-command-feedback-normalized-latest.csv",
+      "rowCount": 3,
+      "acceptedRowCount": 3,
+      "sourceHeaders": [
+        "timestamp",
+        "siteId",
+        "loopKey",
+        "equipmentType",
+        "equipmentId",
+        "signalRole",
+        "pointCode",
+        "pointName",
+        "value",
+        "unit",
+        "controlMode",
+        "sampleIntervalSec",
+        "qualityFlag",
+        "sourceSystem",
+        "remark"
+      ],
+      "headerMap": {
+        "timestamp": "timestamp",
+        "siteId": "siteId",
+        "loopKey": "loopKey",
+        "equipmentType": "equipmentType",
+        "equipmentId": "equipmentId",
+        "signalRole": "signalRole",
+        "pointCode": "pointCode",
+        "pointName": "pointName",
+        "value": "value",
+        "unit": "unit",
+        "controlMode": "controlMode",
+        "sampleIntervalSec": "sampleIntervalSec",
+        "qualityFlag": "qualityFlag",
+        "sourceSystem": "sourceSystem",
+        "remark": "remark"
+      },
+      "blockers": [],
+      "warnings": [
+        "控制命令/反馈高频趋势 当前使用模板示例输入；现场交付时需替换为 SCADA/PLC 导出文件。"
+      ]
+    },
+    {
+      "key": "start_stop_event_ledger",
+      "title": "设备启停事件台账",
+      "inputMode": "template_sample",
+      "inputPath": "docs/optimize-demo-140-start-stop-event-template-latest.csv",
+      "outputPath": "docs/optimize-demo-140-start-stop-event-normalized-latest.csv",
+      "rowCount": 2,
+      "acceptedRowCount": 2,
+      "sourceHeaders": [
+        "eventAt",
+        "siteId",
+        "equipmentType",
+        "equipmentId",
+        "eventType",
+        "previousStatus",
+        "nextStatus",
+        "commandSource",
+        "reasonCode",
+        "runMinutesBeforeEvent",
+        "stopMinutesBeforeEvent",
+        "alarmActive",
+        "sourceSystem",
+        "remark"
+      ],
+      "headerMap": {
+        "eventAt": "eventAt",
+        "siteId": "siteId",
+        "equipmentType": "equipmentType",
+        "equipmentId": "equipmentId",
+        "eventType": "eventType",
+        "previousStatus": "previousStatus",
+        "nextStatus": "nextStatus",
+        "commandSource": "commandSource",
+        "reasonCode": "reasonCode",
+        "runMinutesBeforeEvent": "runMinutesBeforeEvent",
+        "stopMinutesBeforeEvent": "stopMinutesBeforeEvent",
+        "alarmActive": "alarmActive",
+        "sourceSystem": "sourceSystem",
+        "remark": "remark"
+      },
+      "blockers": [],
+      "warnings": [
+        "设备启停事件台账 当前使用模板示例输入；现场交付时需替换为 SCADA/PLC 导出文件。"
+      ]
+    },
+    {
+      "key": "control_parameter_ledger",
+      "title": "PID/死区/延时参数台账",
+      "inputMode": "template_sample",
+      "inputPath": "docs/optimize-demo-140-control-parameter-template-latest.csv",
+      "outputPath": "docs/optimize-demo-140-control-parameter-normalized-latest.csv",
+      "rowCount": 3,
+      "acceptedRowCount": 3,
+      "sourceHeaders": [
+        "effectiveAt",
+        "siteId",
+        "loopKey",
+        "equipmentType",
+        "equipmentId",
+        "parameterKey",
+        "parameterName",
+        "value",
+        "unit",
+        "previousValue",
+        "rollbackValue",
+        "changeTicket",
+        "approvedBy",
+        "sourceSystem",
+        "remark"
+      ],
+      "headerMap": {
+        "effectiveAt": "effectiveAt",
+        "siteId": "siteId",
+        "loopKey": "loopKey",
+        "equipmentType": "equipmentType",
+        "equipmentId": "equipmentId",
+        "parameterKey": "parameterKey",
+        "parameterName": "parameterName",
+        "value": "value",
+        "unit": "unit",
+        "previousValue": "previousValue",
+        "rollbackValue": "rollbackValue",
+        "changeTicket": "changeTicket",
+        "approvedBy": "approvedBy",
+        "sourceSystem": "sourceSystem",
+        "remark": "remark"
+      },
+      "blockers": [],
+      "warnings": [
+        "控制参数台账第 1 行未提供 rollbackValue；若未来调整参数，必须另走人工审批和回退确认。",
+        "控制参数台账第 1 行未提供 approvedBy；当前只能作为现场资料回填，不能作为变更审批。",
+        "控制参数台账第 2 行未提供 rollbackValue；若未来调整参数，必须另走人工审批和回退确认。",
+        "控制参数台账第 2 行未提供 approvedBy；当前只能作为现场资料回填，不能作为变更审批。",
+        "控制参数台账第 3 行未提供 rollbackValue；若未来调整参数，必须另走人工审批和回退确认。",
+        "控制参数台账第 3 行未提供 approvedBy；当前只能作为现场资料回填，不能作为变更审批。",
+        "PID/死区/延时参数台账 当前使用模板示例输入；现场交付时需替换为 SCADA/PLC 导出文件。"
+      ]
+    }
+  ],
+  "blockers": [],
+  "warnings": [
+    "控制命令/反馈高频趋势: 控制命令/反馈高频趋势 当前使用模板示例输入；现场交付时需替换为 SCADA/PLC 导出文件。",
+    "设备启停事件台账: 设备启停事件台账 当前使用模板示例输入；现场交付时需替换为 SCADA/PLC 导出文件。",
+    "PID/死区/延时参数台账: 控制参数台账第 1 行未提供 rollbackValue；若未来调整参数，必须另走人工审批和回退确认。",
+    "PID/死区/延时参数台账: 控制参数台账第 1 行未提供 approvedBy；当前只能作为现场资料回填，不能作为变更审批。",
+    "PID/死区/延时参数台账: 控制参数台账第 2 行未提供 rollbackValue；若未来调整参数，必须另走人工审批和回退确认。",
+    "PID/死区/延时参数台账: 控制参数台账第 2 行未提供 approvedBy；当前只能作为现场资料回填，不能作为变更审批。",
+    "PID/死区/延时参数台账: 控制参数台账第 3 行未提供 rollbackValue；若未来调整参数，必须另走人工审批和回退确认。",
+    "PID/死区/延时参数台账: 控制参数台账第 3 行未提供 approvedBy；当前只能作为现场资料回填，不能作为变更审批。",
+    "PID/死区/延时参数台账: PID/死区/延时参数台账 当前使用模板示例输入；现场交付时需替换为 SCADA/PLC 导出文件。"
+  ]
+}

@@ -4,6 +4,9 @@ import path from "node:path";
 const SHELL_ROOT = path.resolve(process.cwd());
 const SOURCE_STATUS_FILE = path.join(SHELL_ROOT, "src/i18n/sourceStatusCN.ts");
 const DICT_FILE = path.resolve(SHELL_ROOT, "../..", "docs/source-status-key-dictionary-v1.2.json");
+const FORBIDDEN_SOURCE_STATUS_COPY = [
+  { name: "unmapped source wording", pattern: /未收录|Unmapped/i }
+];
 
 function extractObjectLiteral(source, constName) {
   const marker = `const ${constName}`;
@@ -163,6 +166,15 @@ function main() {
   const errors = [];
   const warnings = [];
   const maps = { sourceMap, metricMap, aliasMap };
+
+  FORBIDDEN_SOURCE_STATUS_COPY.forEach(({ name, pattern }) => {
+    if (pattern.test(sourceText)) {
+      errors.push(`sourceStatusCN.ts: forbidden ${name}`);
+    }
+    if (pattern.test(JSON.stringify(dict))) {
+      errors.push(`source-status-key-dictionary-v1.2.json: forbidden ${name}`);
+    }
+  });
 
   Object.entries(dict.labels || {}).forEach(([key, expected]) => {
     const actual = getSourceLabelRecord(key, maps);

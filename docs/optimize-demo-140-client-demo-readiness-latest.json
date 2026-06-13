@@ -1,0 +1,230 @@
+{
+  "generatedAt": "2026-06-13T01:35:19.451Z",
+  "siteId": "140",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "appBaseUrl": "http://127.0.0.1:3002",
+  "finalDecision": "CLIENT_DEMO_READY_SHADOW_PENDING",
+  "runs": [
+    {
+      "key": "diagnosticReadiness",
+      "label": "诊断可行性 API gate",
+      "script": "check-optimize-demo-diagnostic-readiness.js",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-06-13T01:33:37.073Z",
+      "endedAt": "2026-06-13T01:33:45.255Z",
+      "stdout": "optimize-demo diagnostic readiness: DIAGNOSTIC_READINESS_READY\nmatrix=4 ready / 5 directional / 1 point-gap\nfieldChecklist=4 P0 / 3 P1\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-diagnostic-readiness-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-diagnostic-readiness-latest.md",
+      "stderr": "",
+      "error": null
+    },
+    {
+      "key": "diagnosticUiSmoke",
+      "label": "登录态诊断矩阵 UI smoke",
+      "script": "check-b25-ui-smoke.js",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-06-13T01:33:45.255Z",
+      "endedAt": "2026-06-13T01:34:42.752Z",
+      "stdout": "{\n  \"checkedAt\": \"2026-06-13T01:33:46.469Z\",\n  \"siteId\": \"140\",\n  \"bffBaseUrl\": \"http://127.0.0.1:8787\",\n  \"appBaseUrl\": \"http://127.0.0.1:3002\",\n  \"cdpListUrl\": \"http://127.0.0.1:61392/json/list\",\n  \"api\": {\n    \"overview\": {\n      \"status\": 200,\n      \"currentCop\": 6.6,\n      \"totalPowerKw\": 1930.5,\n      \"totalCoolingCapacity\": 12741.3,\n      \"sourceOverall\": \"partial\"\n    },\n    \"optimize\": {\n      \"status\": 200,\n      \"code\": \"OK\",\n      \"schemeCount\": 3,\n      \"chillerStaging\": {\n        \"status\": \"partial\",\n        \"executionMode\": \"read_only\",\n        \"basis\": \"combination_empirical_performance\",\n        \"enforcedAllowed\": false,\n        \"exposesSingleChillerCop\": false\n      },\n      \"fieldCollectionPackage\": {\n        \"finalDecision\": \"FIELD_COLLECTION_PACKAGE_READY_TO_COLLECT\",\n        \"formalInputCount\": 4,\n        \"presentFormalInputCount\": 0,\n        \"missingFormalInputCount\": 4,\n        \"formalInputPaths\": [\n          \"docs/field-data/optimize-demo-140/sensor-calibration-installation.csv\",\n          \"docs/field-data/optimize-demo-140/control-command-feedback.csv\",\n          \"docs/field-data/optimize-demo-140/start-stop-event.csv\",\n          \"docs/field-data/optimize-demo-140/control-parameter.csv\"\n        ]\n      }\n    }\n  },\n  \"ui\": {\n    \"auth\": {\n      \"reusedSession\": true,\n      \"credentialTried\": null\n    },\n    \"project\": {\n      \"before\": {\n        \"href\": \"http://127.0.0.1:3002/projects?redirect=%2Fdashboard&siteId=140\",\n        \"pathname\": \"/projects\",\n        \"redirect\": \"/dashboard\",\n        \"cards\": [\n          {\n            \"index\": 0,\n            \"projectId\": \"126lnoffice::126lnoffice::1::::126lnoffice::::126lnoffice\",\n            \"siteId\": \"126lnoffice\",\n            \"siteName\": \"126lnoffice\",\n            \"isCurrent\": false,\n            \"disabled\": false,\n            \"buttonText\": \"进入项目\"\n          },\n          {\n            \"index\": 1,\n            \"projectId\": \"127::127::1::::127::::127\",\n            \"siteId\": \"127\",\n            \"siteName\": \"127\",\n            \"isCurrent\": false,\n            \"disabled\": false,\n            \"buttonText\": \"进入项目\"\n          },\n          {\n            \"index\": 2,\n            \"projectId\": \"140::126lnoffice::1::::btwentyfive::::观澜B25\",\n            \"siteId\": \"140\",\n            \"siteName\": \"观澜B25\",\n            \"isCurrent\": true,\n            \"disabled\": false,\n            \"buttonText\": \"进入当前项目\"\n          }\n        ],\n        \"openButtonVisible\": true,\n        \"topProjectValue\": null\n      },\n      \"clicked\": {\n        \"ok\": true,\n        \"projectId\": \"140::126lnoffice::1::::btwentyfive::::观澜B25\",\n        \"siteId\": \"140\",\n        \"siteName\": \"观澜B25\"\n      },\n      \"after\": {\n        \"href\": \"http://127.0.0.1:3002/dashboard?siteId=140\",\n        \"pathname\": \"/dashboard\",\n        \"siteIdParam\": \"140\",\n        \"currentProjectId\": \"140::126lnoffice::1::::btwentyfive::::观澜B25\",\n        \"storedProjectId\": \"140\",\n        \"topProjectValue\": null\n      }\n    },\n    \"dashboard\": {\n      \"url\": \"http://127.0.0.1:3002/dashboard?siteId=140\",\n      \"siteIdParam\": \"140\",\n      \"onLoginPage\": false,\n      \"hasOpsBoard\": true,\n      \"hasEfficiencyBlock\": true,\n      \"hasSourceObservableField\": true,\n      \"cardCount\": 0,\n      \"allDash\": false,\n      \"sampleValues\": [],\n      \"hasSnapshotHint\": false\n    },\n    \"optimizeDemo\": {\n      \"url\": \"http://127.0.0.1:3002/optimize-demo?siteId=140\",\n      \"siteIdParam\": \"140\",\n      \"onLoginPage\": false,\n      \"schemeCardCount\": 0,\n      \"responseCardCount\": 141,\n      \"readinessCount\": 0,\n      \"submitDisabled\": false,\n      \"loadInputValue\": \"1200\",\n      \"wetBulbInputValue\": \"25.8\",\n      \"sourceSummary\": null,\n      \"hasHistorySection\": true,\n      \"hasChillerStagingAdvisorSection\": true,\n      \"hasChillerCurrentCombination\": true,\n      \"hasChillerTargetCombination\": true,\n      \"hasChillerEmpiricalPerformance\": true,\n      \"hasChillerShadowVerification\": true,\n      \"hasChillerNoSingleCop\": true,\n      \"hasFieldCollectionPackageReadiness\": true,\n      \"hasFormalCsvReadiness\": true,\n      \"hasFormalCsvMissingDetails\": true,\n      \"hasBenefitSection\": true,\n      \"hasApproachSection\": true,\n      \"hasPumpDeltaTSection\": true,\n      \"hasOperationalDiagnosticsSection\": true,\n      \"hasClientDemoReadinessSection\": true,\n      \"hasClientDemoReadinessDecision\": true,\n      \"hasClientDemoReadinessNoMutation\": true,\n      \"hasClientDemoReadinessScope\": true,\n      \"hasDiagnosticReadinessSection\": true,\n      \"hasDiagnosticReadinessCanDo\": true,\n      \"hasDiagnosticReadinessDirectional\": true,\n      \"hasDiagnosticReadinessPointGap\": true,\n      \"hasDiagnosticReadinessNoFault\": true,\n      \"hasDiagnosticReadinessNoPlc\": true,\n      \"hasDiagnosticReadinessNoAutoDispatch\": true,\n      \"hasFieldVerificationChecklist\": true,\n      \"hasFieldVerificationReadonlyBoundary\": true,\n      \"hasFieldVerificationP0\": true,\n      \"hasInstrumentDriftV1\": true,\n      \"hasInstrumentDriftNoAutoCorrection\": true,\n      \"hasInstrumentDriftReviewBoundary\": true,\n      \"hasInstrumentDriftCrossChecks\": true,\n      \"hasInstrumentDriftFieldTargets\": true,\n      \"hasHydraulicBalanceV1\": true,\n      \"hasHydraulicNoAutoPumpDown\": true,\n      \"hasHydraulicNoTerminalFault\": true,\n      \"hasHydraulicRiskIndicators\": true,\n      \"hasHydraulicFieldTargets\": true,\n      \"hasControlOscillationV1\": true,\n      \"hasControlNoAutoPid\": true,\n      \"hasControlNoAutoStartStop\": true,\n      \"hasControlOscillationRiskIndicators\": true,\n      \"hasControlOscillationFieldTargets\": true,\n      \"hasControlLedgerImport\": true,\n      \"hasControlFieldDataPreflight\": true,\n      \"hasControlFieldDataPromote\": true,\n      \"diagnosticReadinessText\": \"数据资源与诊断可行性\\n4 可做 / 5 疑似 / 1 补点\\n现有 140/B25 数据能支撑哪些诊断\\n\\nA档可做 V1；B档只能疑似判断；C档暂不能做，只进入补点清单。所有内容只读诊断，不判定设备故障，不写 PLC。\\n\\n真实 PLC 下发锁定\\n可做 V1\\n4\\n现有实时/趋势数据可支撑\\n只能疑似判断\\n5\\n输出风险和复核建议\\n暂不能做\\n1\\n只进入点位改造清单\\n执行边界\\n只读/shadow\\n无真实启停，不开放 enforced\\nA档 · 只读诊断\\n可做 V1\\n仪表数据偏移诊断\\n实时闭合校验、24h 稳态窗口 COP/功率/温差偏移复核。\\n已有：1215 个实时寄存器点 / 24h COP/总功率/温差趋势\\n缺口：传感器校准记录 / 安装位置台账\\n可做 V1\\nA/B档 · 只读诊断\\n可做 V1\\n冷冻水水力平衡诊断\\n站级低温差持续性、实时支路流量/压力离散度、旁通分流风险。\\n已有：7 个支路线索 / 24h 冷冻水温差和总功率趋势\\n缺口：支路历史趋势 / 末端阀位\\n可做 V1\\nA/B档 · 只读诊断\\n可做 V1\\n低温差根因诊断\\n持续低温差、大流量小温差、旁通、支路分配和末端安全缺口排序。\\n已有：24h 低温差持续性趋势 / 运行泵频率反馈\\n缺口：末端阀位/室温/压差 / 支路历史趋势\\n可做 V1\\nA档 · shadow审阅\\n可做 V1\\n冷却塔能力诊断\\n湿球、冷却水出水、Approach、塔风机/塔流量一致性复核。\\n已有：实时湿球 / 冷却水温度\\n缺口：塔单元长周期分摊 / 填料/布水现场巡检\\n可做 V1\\nA/B档 · shadow审阅\\n只能疑似判断\\n主机组合优化\\n当前组合、组合容量、组合负荷率、组合 COP/冷站 COP、候选组合样本置信度。\\n已有：当前运行组合 / 主机总功率\\n缺口：组合历史样本 / 当前组合连续运行时间\\n只能疑似判断\\nB档 · 只读诊断\\n只能疑似判断\\n主机健康劣化诊断\\n同组合/同负荷下冷站 COP 漂移、功率偏高和故障风险提示。\\n已有：主机运行状态 / 主机功率\\n缺口：单台冷冻水流量 / 厂家 COP 曲线\\n只能疑似判断\\nB/C档 · 只读诊断\\n只能疑似判断\\n水泵效率诊断\\n频率/功率/压差异常、疑似偏离高效区提示。\\n已有：泵频率反馈 / 部分总管压差/流量线索\\n缺口：单泵流量 / 泵曲线\\n只能疑似判断\\nB/C档 · 只读诊断\\n只能疑似判断\\n阀门卡滞/执行器诊断\\n阀位长期饱和、旁通分流和命令/反馈缺口提示。\\n已有：阀门/旁通反馈线索 / 实时阀类点位关键词\\n缺口：阀门命令值 / 阀门反馈值\\n只能疑似判断\\nB档 · 只读诊断\\n只能疑似判断\\n控制震荡/频繁启停诊断\\n温差锯齿波、总功率 hunting、频率命令/反馈缺口和启停事件缺口。\\n已有：24h COP/总功率/温差趋势 / 运行状态和频率实时摘要\\n缺口：高频历史 / 控制命令历史\\n只能疑似判断\\nC档 · 补点计划\\n暂不能做\\n末端舒适/缺冷风险诊断\\n代表末端缺冷风险、降泵前安全闭锁和投诉状态复核。\\n缺口：代表房间温度 / 末端阀位\\n暂不能做\\n现场复核清单\\n\\n把 B/C 档数据缺口转成只读点位/资料补齐任务；用于提高诊断置信度，不触发审批、dispatch 或 PLC 写入。\\n\\n4 P0 / 3 P1\\nP0 · A/B档\\n制定主机组合样本采集计划\\nCH4+CH5+CH7 等当前组合及候选组合\\n缺口：组合历史样本 / 当前组合连续运行时间\\n证据：组合连续运行时长 / 同负荷/湿球 band\\n每个候选组合形成 >=30 条低置信可用样本，>=100 条才允许高置信表达。\\n多机运行无单台冷冻水流量时仍只评价组合，不拆单台 COP，不自动启停主机。\\nP0\\nP0 · A/B档\\n确认 PLC 泵频保护与回退点\\n冷冻泵频率目标点、回退点、最小流量、频率上下限、斜率限制\\n缺口：末端阀位/室温/压差 / \",\n      \"hasPointDictionaryCopy\": true,\n      \"hasCoolingTowerGroupCopy\": true,\n      \"hasCoolingTowerFanCopy\": true,\n      \"towerSubmitVisible\": true,\n      \"towerSubmitDisabled\": true,\n      \"towerSubmitEnabled\": false,\n      \"towerSubmitLabel\": \"提交接近度审批\",\n      \"towerApproachReasonText\": \"当前环境只读，先核对目标值、边界和历史记录。\",\n      \"hasDraftBoundaryHint\": true,\n      \"hasNoWhiteScreen\": true\n    },\n    \"optimizeExecution\": {\n      \"siteId\": \"140\",\n      \"skipped\": true,\n      \"reason\": \"diagnostic_readiness_only\",\n      \"noSubmitApproveDispatchRollback\": true\n    },\n    \"diagnosticReadiness\": {\n      \"finalDecision\": \"UI_DIAGNOSTIC_READINESS_READY\",\n      \"readyNowCount\": 4,\n      \"directionalCount\": 5,\n      \"pointGapCount\": 1,\n      \"total\": 10,\n      \"controlBoundary\": \"read_only_or_shadow_only\",\n      \"fieldVerificationP0Count\": 4,\n      \"fieldVerificationP1Count\": 3,\n      \"fieldVerificationBoundary\": \"read_only_point_verification_only\",\n      \"instrumentDriftCandidateCount\": 1,\n      \"instrumentCrossCheckCount\": 4,\n      \"instrumentReviewBoundary\": \"仪表偏移 V1 只输出疑似候选和复核对象，不判定仪表故障，不自动修正测点。\",\n      \"hydraulicRiskIndicatorCount\": 5,\n      \"hydraulicFieldReviewTargetCount\": 3,\n      \"hydraulicReviewBoundary\": \"水力平衡 V1 只输出水力失衡风险排序、低温差持续性和现场复核对象；不自动降泵，不直接判定末端阀门故障。\",\n      \"controlOscillationRiskIndicatorCount\": 5,\n      \"controlOscillationFieldReviewTargetCount\": 3,\n      \"controlOscillationReviewBoundary\": \"控制震荡 V1 只输出温差锯齿波、总功率 hunting、频率/启停事件缺口和现场复核对象；不自动改 PID，不自动启停设备。\",\n      \"controlFieldDataPreflightStatus\": \"waiting\",\n      \"controlFieldDataPreflightMissingInputCount\": 4,\n      \"controlFieldDataPromoteStatus\": \"waiting\",\n      \"controlFieldDataPromoteFormalImportReady\": false,\n      \"textExcerpt\": \"数据资源与诊断可行性\\n4 可做 / 5 疑似 / 1 补点\\n现有 140/B25 数据能支撑哪些诊断\\n\\nA档可做 V1；B档只能疑似判断；C档暂不能做，只进入补点清单。所有内容只读诊断，不判定设备故障，不写 PLC。\\n\\n真实 PLC 下发锁定\\n可做 V1\\n4\\n现有实时/趋势数据可支撑\\n只能疑似判断\\n5\\n输出风险和复核建议\\n暂不能做\\n1\\n只进入点位改造清单\\n执行边界\\n只读/shadow\\n无真实启停，不开放 enforced\\nA档 · 只读诊断\\n可做 V1\\n仪表数据偏移诊断\\n实时闭合校验、24h 稳态窗口 COP/功率/温差偏移复核。\\n已有：1215 个实时寄存器点 / 24h COP/总功率/温差趋势\\n缺口：传感器校准记录 / 安装位置台账\\n可做 V1\\nA/B档 · 只读诊断\\n可做 V1\\n冷冻水水力平衡诊断\\n站级低温差持续性、实时支路流量/压力离散度、旁通分流风险。\\n已有：7 个支路线索 / 24h 冷冻水温差和总功率趋势\\n缺口：支路历史趋势 / 末端阀位\\n可做 V1\\nA/B档 · 只读诊断\\n可做 V1\\n低温差根因诊断\\n持续低温差、大流量小温差、旁通、支路分配和末端安全缺口排序。\\n已有：24h 低温差持续性趋势 / 运行泵频率反馈\\n缺口：末端阀位/室温/压差 / 支路历史趋势\\n可做 V1\\nA档 · shadow审阅\\n可做 V1\\n冷却塔能力诊断\\n湿球、冷却水出水、Approach、塔风机/塔流量一致性复核。\\n已有：实时湿球 / 冷却水温度\\n缺口：塔单元长周期分摊 / 填料/布水现场巡检\\n可做 V1\\nA/B档 · shadow审阅\\n只能疑似判断\\n主机组合优化\\n当前组合、组合容量、组合负荷率、组合 COP/冷站 COP、候选组合样本置信度。\\n已有：当前运行组合 / 主机总功率\\n缺口：组合历史样本 / 当前组合连续运行时间\\n只能疑似判断\\nB档 · 只读诊断\\n只能疑似判断\\n主机健康劣化诊断\\n同组合/同负荷下冷站 COP 漂移、功率偏高和故障风险提示。\\n已有：主机运行状态 / 主机功率\\n缺口：单台冷冻水流量 / 厂家 COP 曲线\\n只能疑似判断\\nB/C档 · 只读诊断\\n只能疑似判断\\n水泵效率诊断\\n频率/功率/压差异常、疑似偏离高效区提示。\\n已有：泵频率反馈 / 部分总管压差/流量线索\\n缺口：单泵流量 / 泵曲线\\n只能疑似判断\\nB/C档 · 只读诊断\\n只能疑似判断\\n阀门卡滞/执行器诊断\\n阀位长期饱和、旁通分流和命令/反馈缺口提示。\\n已有：阀门/旁通反馈线索 / 实时阀类点位关键词\\n缺口：阀门命令值 / 阀门反馈值\\n只能疑似判断\\nB档 · 只读诊断\\n只能疑似判断\\n控制震荡/频繁启停诊断\\n温差锯齿波、总功率 hunting、频率命令/反馈缺口和启停事件缺口。\\n已有：24h COP/总功率/温差趋势 / 运行状态和频率实时摘要\\n缺口：高频历史 / 控制命令历史\\n只能疑似判断\\nC档 · 补点计划\\n暂不能做\\n末端舒适/缺冷风险诊断\\n代表末端缺冷风险、降泵前安全闭锁和投诉状态复核。\\n缺口：代表房间温度 / 末端阀位\\n暂不能做\\n现场复核清单\\n\\n把 B/C 档数据缺口转成只读点位/资料补齐任务；用于提高诊断置信度，不触发审批、dispatch 或 PLC 写入。\\n\\n4 P0 / 3 P1\\nP0 · A/B档\\n制定主机组合样本采集计划\\nCH4+CH5+CH7 等当前组合及候选组合\\n缺口：组合历史样本 / 当前组合连续运行时间\\n证据：组合连续运行时长 / 同负荷/湿球 band\\n每个候选组合形成 >=30 条低置信可用样本，>=100 条才允许高置信表达。\\n多机运行无单台冷冻水流量时仍只评价组合，不拆单台 COP，不自动启停主机。\\nP0\\nP0 · A/B档\\n确认 PLC 泵频保护与回退点\\n冷冻泵频率目标点、回退点、最小流量、频率上下限、斜率限制\\n缺口：末端阀位/室温/压差 / \"\n    }\n  }\n}",
+      "stderr": "",
+      "error": null
+    },
+    {
+      "key": "fieldVerificationPackage",
+      "label": "140 现场复核交付包",
+      "script": "check-optimize-demo-140-field-verification-package.js",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-06-13T01:34:42.752Z",
+      "endedAt": "2026-06-13T01:34:50.862Z",
+      "stdout": "optimize-demo 140 field verification package: FIELD_VERIFICATION_PACKAGE_READY\nfieldChecklist=4 P0 / 3 P1\nmatrix=4 ready / 5 directional / 1 point-gap\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-verification-package-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-verification-package-latest.md\nhtml=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-verification-package-latest.html\ncontrolTrendCsv=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-control-command-feedback-template-latest.csv\nstartStopCsv=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-start-stop-event-template-latest.csv\ncontrolParameterCsv=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-control-parameter-template-latest.csv",
+      "stderr": "",
+      "error": null
+    },
+    {
+      "key": "fieldCollectionPackage",
+      "label": "140 现场采集包 readiness",
+      "script": "check-optimize-demo-140-field-collection-package.js",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-06-13T01:34:50.862Z",
+      "endedAt": "2026-06-13T01:34:50.934Z",
+      "stdout": "optimize-demo 140 field collection package: FIELD_COLLECTION_PACKAGE_READY_TO_COLLECT\ndocuments=4 templates=5 formalInputs=4\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-collection-package-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-collection-package-latest.md\nwarnings=4\n- 传感器校准/安装位置台账 尚未投放：docs/field-data/optimize-demo-140/sensor-calibration-installation.csv\n- 控制命令/反馈高频趋势 尚未投放：docs/field-data/optimize-demo-140/control-command-feedback.csv\n- 设备启停事件台账 尚未投放：docs/field-data/optimize-demo-140/start-stop-event.csv\n- PID/死区/延时参数台账 尚未投放：docs/field-data/optimize-demo-140/control-parameter.csv",
+      "stderr": "",
+      "error": null
+    },
+    {
+      "key": "fieldDataPreflight",
+      "label": "140 正式现场 CSV 总预检",
+      "script": "check-optimize-demo-140-field-data-preflight.js",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-06-13T01:34:50.934Z",
+      "endedAt": "2026-06-13T01:34:51.121Z",
+      "stdout": "optimize-demo 140 field data preflight: FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS\nsensorStatus=SENSOR_LEDGER_PREFLIGHT_WAITING_FOR_INPUTS sensorAccepted=0\nimportStatus=CONTROL_LEDGER_IMPORT_BLOCKED accepted=0 warnings=0 blockers=3\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-preflight-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-preflight-latest.md\nblockers=4\n- 传感器校准/安装位置台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/sensor-calibration-installation.csv\n- 控制命令/反馈高频趋势 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-command-feedback.csv\n- 设备启停事件台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv\n- PID/死区/延时参数台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv",
+      "stderr": "",
+      "error": null
+    },
+    {
+      "key": "fieldDataPromote",
+      "label": "140 正式现场 CSV 导入 Gate",
+      "script": "promote-optimize-demo-140-field-data-ledgers.js",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-06-13T01:34:51.121Z",
+      "endedAt": "2026-06-13T01:34:51.184Z",
+      "stdout": "optimize-demo 140 field data promote: FIELD_DATA_PROMOTE_WAITING_FOR_PREFLIGHT\npreflight=FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS importStatus=CONTROL_LEDGER_IMPORT_NOT_RUN accepted=0\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-promote-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-promote-latest.md\nblockers=5\n- 现场 CSV 预检未 READY：FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS\n- 传感器校准/安装位置台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/sensor-calibration-installation.csv\n- 控制命令/反馈高频趋势 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-command-feedback.csv\n- 设备启停事件台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv\n- PID/死区/延时参数台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv",
+      "stderr": "",
+      "error": null
+    },
+    {
+      "key": "shadowSuite",
+      "label": "140 shadow suite",
+      "script": "check-optimize-demo-140-shadow-suite.js",
+      "exitCode": 0,
+      "signal": null,
+      "startedAt": "2026-06-13T01:34:51.184Z",
+      "endedAt": "2026-06-13T01:35:19.448Z",
+      "stdout": "optimize-demo 140 shadow suite: GO_SHADOW_PENDING\nadvisors=ADVISOR_CONTRACT_READY diagnostic=DIAGNOSTIC_READINESS_READY fieldCollection=FIELD_COLLECTION_PACKAGE_READY_TO_COLLECT fieldDataPreflight=FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS fieldDataPromote=FIELD_DATA_PROMOTE_WAITING_FOR_PREFLIGHT uiCopy=UI_BOUNDARY_COPY_READY mutation=NO_CONTROL_MUTATION tower=GO_SHADOW pump=GO_SHADOW_ONLY governance=GO_SHADOW_PENDING\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-shadow-suite-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-shadow-suite-latest.md\nwarnings=21\n- 传感器校准/安装位置台账 尚未投放：docs/field-data/optimize-demo-140/sensor-calibration-installation.csv\n- 控制命令/反馈高频趋势 尚未投放：docs/field-data/optimize-demo-140/control-command-feedback.csv\n- 设备启停事件台账 尚未投放：docs/field-data/optimize-demo-140/start-stop-event.csv\n- PID/死区/延时参数台账 尚未投放：docs/field-data/optimize-demo-140/control-parameter.csv\n- 传感器校准/安装位置台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/sensor-calibration-installation.csv\n- 控制命令/反馈高频趋势 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-command-feedback.csv\n- 设备启停事件台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv\n- PID/死区/延时参数台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv\n- 现场 CSV 预检未 READY：FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS\n- 传感器校准/安装位置台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/sensor-calibration-installation.csv",
+      "stderr": "",
+      "error": null
+    }
+  ],
+  "summary": {
+    "diagnosticReadiness": {
+      "finalDecision": "DIAGNOSTIC_READINESS_READY",
+      "readyNowCount": 4,
+      "directionalCount": 5,
+      "pointGapCount": 1,
+      "total": 10,
+      "controlBoundary": "read_only_or_shadow_only",
+      "reportJson": "docs/optimize-demo-diagnostic-readiness-latest.json"
+    },
+    "diagnosticUiSmoke": {
+      "finalDecision": "UI_DIAGNOSTIC_READINESS_READY",
+      "noSubmitApproveDispatchRollback": true,
+      "readyNowCount": 4,
+      "directionalCount": 5,
+      "pointGapCount": 1,
+      "controlBoundary": "read_only_or_shadow_only",
+      "chillerStagingVisible": true,
+      "chillerEmpiricalPerformanceVisible": true,
+      "chillerShadowVerificationVisible": true,
+      "chillerNoSingleCopVisible": true,
+      "fieldCollectionPackageVisible": true,
+      "formalCsvReadinessVisible": true,
+      "formalCsvMissingDetailsVisible": true,
+      "pageUrl": "http://127.0.0.1:3002/optimize-demo?siteId=140",
+      "reportJson": "docs/optimize-demo-diagnostic-ui-smoke-latest.json"
+    },
+    "fieldVerificationPackage": {
+      "finalDecision": "FIELD_VERIFICATION_PACKAGE_READY",
+      "fieldTaskSummary": "4 P0 / 3 P1",
+      "controlBoundary": "read_only_point_verification_only",
+      "p0Count": 4,
+      "p1Count": 3,
+      "reportJson": "docs/optimize-demo-140-field-verification-package-latest.json",
+      "reportMarkdown": "docs/optimize-demo-140-field-verification-package-latest.md",
+      "reportHtml": "docs/optimize-demo-140-field-verification-package-latest.html"
+    },
+    "fieldCollectionPackage": {
+      "finalDecision": "FIELD_COLLECTION_PACKAGE_READY_TO_COLLECT",
+      "formalInputCount": 4,
+      "missingFormalInputs": 4,
+      "presentFormalInputs": 0,
+      "templateCount": 5,
+      "reportJson": "docs/optimize-demo-140-field-collection-package-latest.json",
+      "reportMarkdown": "docs/optimize-demo-140-field-collection-package-latest.md"
+    },
+    "fieldDataPreflight": {
+      "finalDecision": "FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS",
+      "inputCount": 4,
+      "presentInputs": 0,
+      "missingInputs": 4,
+      "sensorStatus": "SENSOR_LEDGER_PREFLIGHT_WAITING_FOR_INPUTS",
+      "importStatus": "CONTROL_LEDGER_IMPORT_BLOCKED",
+      "controlBoundary": "预检只校验 4 张正式现场 CSV 的可读性、字段映射和证据边界；不判定仪表故障，不自动修正测点，不自动改 PID，不自动启停设备，不写真实 PLC，不覆盖正式 latest 导入报告。",
+      "reportJson": "docs/optimize-demo-140-field-data-preflight-latest.json",
+      "reportMarkdown": "docs/optimize-demo-140-field-data-preflight-latest.md"
+    },
+    "fieldDataPromote": {
+      "finalDecision": "FIELD_DATA_PROMOTE_WAITING_FOR_PREFLIGHT",
+      "preflightDecision": "FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS",
+      "inputCount": 4,
+      "presentInputs": 0,
+      "missingInputs": 4,
+      "importStatus": "CONTROL_LEDGER_IMPORT_NOT_RUN",
+      "controlBoundary": "promotion 只在现场 CSV 预检 READY 后执行正式台账导入；不自动改 PID，不自动启停设备，不写真实 PLC。",
+      "reportJson": "docs/optimize-demo-140-field-data-promote-latest.json",
+      "reportMarkdown": "docs/optimize-demo-140-field-data-promote-latest.md"
+    },
+    "shadowSuite": {
+      "finalDecision": "GO_SHADOW_PENDING",
+      "advisors": "ADVISOR_CONTRACT_READY",
+      "diagnosticReadiness": "DIAGNOSTIC_READINESS_READY",
+      "fieldDataPreflight": "FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS",
+      "fieldDataPromote": "FIELD_DATA_PROMOTE_WAITING_FOR_PREFLIGHT",
+      "uiCopy": "UI_BOUNDARY_COPY_READY",
+      "mutationGuard": "NO_CONTROL_MUTATION",
+      "tower": "GO_SHADOW",
+      "pump": "GO_SHADOW_ONLY",
+      "governance": "GO_SHADOW_PENDING",
+      "reportJson": "docs/optimize-demo-140-shadow-suite-latest.json",
+      "reportMarkdown": "docs/optimize-demo-140-shadow-suite-latest.md"
+    },
+    "visualEvidence": {
+      "clientDemoReadinessScreenshot": {
+        "path": "output/playwright/optimize-demo-140-client-demo-readiness.png",
+        "ok": true,
+        "bytes": 811147,
+        "minBytes": 51200,
+        "error": null
+      }
+    },
+    "docs": {
+      "clientDemoAcceptance": {
+        "path": "docs/OPTIMIZE_DEMO_140_CLIENT_DEMO_ACCEPTANCE_CURRENT.md",
+        "ok": true,
+        "missing": []
+      },
+      "advisorStatus": {
+        "path": "docs/OPTIMIZE_DEMO_ADVISOR_STATUS_CURRENT.md",
+        "ok": true,
+        "missing": []
+      },
+      "demoRoutes": {
+        "path": "docs/DEMO_ROUTES_CURRENT.md",
+        "ok": true,
+        "missing": []
+      }
+    }
+  },
+  "blockers": [],
+  "warnings": [
+    "传感器校准/安装位置台账 尚未投放：docs/field-data/optimize-demo-140/sensor-calibration-installation.csv",
+    "控制命令/反馈高频趋势 尚未投放：docs/field-data/optimize-demo-140/control-command-feedback.csv",
+    "设备启停事件台账 尚未投放：docs/field-data/optimize-demo-140/start-stop-event.csv",
+    "PID/死区/延时参数台账 尚未投放：docs/field-data/optimize-demo-140/control-parameter.csv",
+    "传感器校准/安装位置台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/sensor-calibration-installation.csv",
+    "控制命令/反馈高频趋势 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-command-feedback.csv",
+    "设备启停事件台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv",
+    "PID/死区/延时参数台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv",
+    "现场 CSV 预检未 READY：FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS",
+    "传感器校准/安装位置台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/sensor-calibration-installation.csv",
+    "控制命令/反馈高频趋势 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-command-feedback.csv",
+    "设备启停事件台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv",
+    "PID/死区/延时参数台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv",
+    "历史样本置信度低，节能评估需 shadow 对比验证。",
+    "最终冷却水出水温目标 30℃ 需分 3 步 shadow 验证，本次仅提交 29.2℃。",
+    "assisted 前缺 approve/rollback 点位映射或 dispatchMode 未配置为 assisted。",
+    "当前草案仍存在部分降级或缺测信号，建议先稳住风险后再评审优化空间。",
+    "当前 BFF 未接入末端阀位、关键压差或室温；shadow 可评审，assisted 前必须由 PLC 提供等效保护状态。",
+    "当前 BFF 未接入泵实际频率；执行前必须由 PLC 完成频率上下限、斜率和最小流量保护。",
+    "assisted 前必须确认 PLC 本地限幅、斜率、最小流量和联锁保护。",
+    "存在历史已批准 tower shadow 旧记录：opx-140-1780911209517-23t8ch"
+  ],
+  "reportFiles": {
+    "json": "docs/optimize-demo-140-client-demo-readiness-latest.json",
+    "markdown": "docs/optimize-demo-140-client-demo-readiness-latest.md"
+  }
+}

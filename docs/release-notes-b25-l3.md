@@ -30,6 +30,14 @@
 - 一键守护命令：
   - `cd /Users/billchow/Documents/智慧冷冻站/apps/chiller-bff`
   - `npm run check:b25-ui-smoke:guard -- --rounds=24 --interval-minutes=60`
+- 默认行为（已升级）：
+  - `strict-ui=1`（严格 UI 冒烟）
+  - `suite=1`（先跑 `optimize-l3-smoke` 再跑 `b25-ui-smoke`）
+  - `app-base-url=auto`（自动探测 `3006/3001`）
+- 可选降级参数：
+  - `--strict-ui=0`：CDP 不可用时允许跳过 UI 严格校验
+  - `--suite=0`：仅跑 `b25-ui-smoke`
+  - `--app-base-url=http://127.0.0.1:3001`：固定前端地址
 - 结果目录：`/Users/billchow/Documents/智慧冷冻站/docs/b25-smoke-guard`
 - 最新日志：`/Users/billchow/Documents/智慧冷冻站/docs/b25-smoke-guard-latest.log`
 
@@ -37,3 +45,18 @@
 
 - 当前版本满足“治理态可发布”条件。
 - Dashboard 已避免“全 --”失明态，Optimize Demo 维持 `501 + context-backed draft` 边界。
+
+## 2026-04-09 更新
+
+- `tower-approach` 治理态执行链路已继续推进：
+  - `towerApproachAdvisor` 执行前检查卡已在 BFF 与 `/optimize-demo` 落地
+  - `tower-approach` 专用执行记录、审批/回退、dispatch mode 已落地
+- 验收更新：
+  - `npm --prefix apps/chiller-bff test`：`75/75` 通过
+  - `node scripts/check-contract.js`（在 `apps/chiller-bff` 目录执行）：通过
+  - 合同 example 数已更新为 `16`
+  - `npm --prefix apps/chiller-shell-v1 run build`：通过
+- 当前未完成：
+  - 真实 optimize engine
+  - `tower-approach` 目标值到 legacy 具体控制点位的映射契约
+  - 基于上述映射的真实 dispatch endpoint 现场 shadow 联调
