@@ -367,7 +367,7 @@ export default function MeterReadingPage() {
     {
       title: "峰值电量",
       value: formatValue(maxValue(energyValues)),
-      detail: energyColumn || "--",
+      detail: energyColumn ? getColumnHeader(energyColumn) : "峰值字段未匹配",
       tone: "warn"
     },
     {

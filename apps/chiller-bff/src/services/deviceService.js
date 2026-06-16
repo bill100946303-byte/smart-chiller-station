@@ -920,6 +920,35 @@ export async function getChillerStagingRuntimeContext(config, siteId, options = 
   };
 }
 
+export async function getRuntimePointSummary(config, siteId, options = {}) {
+  const context = await getChillerStagingRuntimeContext(config, siteId, options);
+  const pointSummary = context.pointSummary || {};
+
+  return {
+    site: {
+      siteId: applyFieldNullStrategy(config, "site_id", siteId, siteId),
+      siteName: applyFieldNullStrategy(config, "site_name", siteId, siteId)
+    },
+    generatedAt: buildGeneratedAt(config),
+    status: pointSummary.status || "unavailable",
+    basis: pointSummary.basis || "legacy_realtime_register_summary",
+    pointDictionary: pointSummary.pointDictionary || {
+      applied: false,
+      source: null
+    },
+    counts: pointSummary.counts || {},
+    keySignals: pointSummary.keySignals || {},
+    groups: pointSummary.groups || {},
+    summary: {
+      ...(context.summary || {}),
+      activeChillerIds: context.equipmentContext?.activeChillerIds || [],
+      activeChillerModels: context.equipmentContext?.activeChillerModels || []
+    },
+    disclaimers: pointSummary.disclaimers || [],
+    sourceStatus: context.sourceStatus
+  };
+}
+
 export async function getDeviceList(config, siteId, options = {}) {
   const projectKey = resolveDeviceProjectKey(config, options);
   const databaseKey = resolveDeviceDatabaseKey(config, options);

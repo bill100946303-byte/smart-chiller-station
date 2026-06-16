@@ -4,7 +4,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { runtimeConfig } from "../config/runtimeConfig";
 import { ShellProjectDisplayProvider } from "../context/ShellProjectDisplayContext";
 import { getCurrentLocale, getLocaleOptions, setCurrentLocale, zhCN } from "../i18n/zhCN";
-import { recordProjectVisit } from "../services/projectSession";
+import { getProjectVisitStats, recordProjectVisit } from "../services/projectSession";
 import {
   type AuthProject,
   clearAuthSession,
@@ -45,13 +45,15 @@ type ProjectDropdownEntry =
       key: string;
       label: string;
       order: number;
-      children: Array<{
-        key: string;
-        label: string;
-        optionId: string;
-        order: number;
-      }>;
+      children: ProjectDropdownOption[];
     };
+
+type ProjectDropdownOption = {
+  key: string;
+  label: string;
+  optionId: string;
+  order: number;
+};
 
 const DEFAULT_INTERMEDIATE_PROJECT_LABELS = new Set(["默认", "default"]);
 
@@ -674,7 +676,7 @@ export default function AppShell() {
   const projectByOptionId = new Map(
     sessionProjects.map((project) => [resolveAuthProjectId(project), project] as const)
   );
-  const { entries: projectDropdownEntries, groupKeyByOptionId } = buildProjectDropdownEntries(
+  const { entries: projectDropdownEntriesRaw, groupKeyByOptionId } = buildProjectDropdownEntries(
     projectTree.roots,
     switchableOptionIds,
     currentProjectOptionId
@@ -682,20 +684,20 @@ export default function AppShell() {
   const currentProjectDisplayName = resolveCurrentProjectDisplayNameFromDropdown(
     currentProjectOptionId,
     fallbackCurrentProjectDisplayName,
-    projectDropdownEntries,
+    projectDropdownEntriesRaw,
     sessionProjects
   );
   const currentProjectCardDisplayName = resolveProjectCardDisplayNameFromDropdown(
     currentProjectOptionId,
     currentProjectDisplayName,
-    projectDropdownEntries
+    projectDropdownEntriesRaw
   );
   const currentProjectGroupKey = groupKeyByOptionId[currentProjectOptionId] || "";
   const expandedProjectNodeSet = new Set(expandedProjectNodeKeys);
   const normalizedCurrentProjectSiteId = normalizeProjectLabel(currentProject?.siteId);
   const normalizedCurrentProjectDisplayName = normalizeProjectLabel(currentProjectDisplayName);
   const visibleOptionSiteCount = new Map<string, number>();
-  projectDropdownEntries.forEach((entry) => {
+  projectDropdownEntriesRaw.forEach((entry) => {
     const optionIds = entry.type === "single"
       ? [entry.optionId]
       : entry.children.map((child) => child.optionId);
@@ -730,6 +732,128 @@ export default function AppShell() {
     const sameSiteVisibleOptionCount = visibleOptionSiteCount.get(candidateSiteId) || 0;
     return sameSiteVisibleOptionCount === 1;
   }
+  const projectVisitStats = getProjectVisitStats();
+
+  function resolveProjectVisitTimestamp(value: string | null | undefined): number {
+    if (!value) {
+      return 0;
+    }
+    const timestamp = new Date(value).getTime();
+    return Number.isFinite(timestamp) ? timestamp : 0;
+  }
+
+  function compareProjectDropdownOptions(left: ProjectDropdownOption, right: ProjectDropdownOption): number {
+    const leftIsActive = isProjectOptionActive(left.optionId, left.label);
+    const rightIsActive = isProjectOptionActive(right.optionId, right.label);
+    if (leftIsActive !== rightIsActive) {
+      return leftIsActive ? -1 : 1;
+    }
+
+    const leftProject = projectByOptionId.get(left.optionId);
+    const rightProject = projectByOptionId.get(right.optionId);
+    const leftVisitStat = leftProject ? projectVisitStats[leftProject.siteId] : undefined;
+    const rightVisitStat = rightProject ? projectVisitStats[rightProject.siteId] : undefined;
+    const visitCountDiff = (rightVisitStat?.visitCount || 0) - (leftVisitStat?.visitCount || 0);
+    if (visitCountDiff !== 0) {
+      return visitCountDiff;
+    }
+
+    const lastVisitedDiff =
+      resolveProjectVisitTimestamp(rightVisitStat?.lastVisitedAt) -
+      resolveProjectVisitTimestamp(leftVisitStat?.lastVisitedAt);
+    if (lastVisitedDiff !== 0) {
+      return lastVisitedDiff;
+    }
+
+    const labelDiff = left.label.localeCompare(right.label, "zh-CN", {
+      numeric: true,
+      sensitivity: "base"
+    });
+    if (labelDiff !== 0) {
+      return labelDiff;
+    }
+    return left.order - right.order;
+  }
+
+  function resolveProjectDropdownEntryScore(entry: ProjectDropdownEntry): {
+    isActive: boolean;
+    visitCount: number;
+    lastVisitedAt: number;
+    label: string;
+    order: number;
+  } {
+    const options = entry.type === "single" ? [entry] : entry.children;
+    return options.reduce((best, option) => {
+      const project = projectByOptionId.get(option.optionId);
+      const visitStat = project ? projectVisitStats[project.siteId] : undefined;
+      const candidate = {
+        isActive: isProjectOptionActive(option.optionId, option.label),
+        visitCount: visitStat?.visitCount || 0,
+        lastVisitedAt: resolveProjectVisitTimestamp(visitStat?.lastVisitedAt),
+        label: entry.label,
+        order: entry.order
+      };
+      if (!best) {
+        return candidate;
+      }
+      if (candidate.isActive !== best.isActive) {
+        return candidate.isActive ? candidate : best;
+      }
+      if (candidate.visitCount !== best.visitCount) {
+        return candidate.visitCount > best.visitCount ? candidate : best;
+      }
+      if (candidate.lastVisitedAt !== best.lastVisitedAt) {
+        return candidate.lastVisitedAt > best.lastVisitedAt ? candidate : best;
+      }
+      return best;
+    }, null as null | {
+      isActive: boolean;
+      visitCount: number;
+      lastVisitedAt: number;
+      label: string;
+      order: number;
+    }) || {
+      isActive: false,
+      visitCount: 0,
+      lastVisitedAt: 0,
+      label: entry.label,
+      order: entry.order
+    };
+  }
+
+  function compareProjectDropdownEntries(left: ProjectDropdownEntry, right: ProjectDropdownEntry): number {
+    const leftScore = resolveProjectDropdownEntryScore(left);
+    const rightScore = resolveProjectDropdownEntryScore(right);
+    if (leftScore.isActive !== rightScore.isActive) {
+      return leftScore.isActive ? -1 : 1;
+    }
+    if (leftScore.visitCount !== rightScore.visitCount) {
+      return rightScore.visitCount - leftScore.visitCount;
+    }
+    if (leftScore.lastVisitedAt !== rightScore.lastVisitedAt) {
+      return rightScore.lastVisitedAt - leftScore.lastVisitedAt;
+    }
+    const labelDiff = leftScore.label.localeCompare(rightScore.label, "zh-CN", {
+      numeric: true,
+      sensitivity: "base"
+    });
+    if (labelDiff !== 0) {
+      return labelDiff;
+    }
+    return leftScore.order - rightScore.order;
+  }
+
+  const projectDropdownEntries = projectDropdownEntriesRaw
+    .map((entry): ProjectDropdownEntry => {
+      if (entry.type === "single") {
+        return entry;
+      }
+      return {
+        ...entry,
+        children: entry.children.slice().sort(compareProjectDropdownOptions)
+      };
+    })
+    .sort(compareProjectDropdownEntries);
   const showRuntimeBadge = runtimeConfig.appMode !== "local";
   const isDashboardRoute = location.pathname === "/dashboard";
   const isSceneControlRoute = location.pathname === "/scene-control";
@@ -753,6 +877,16 @@ export default function AppShell() {
       ? shellSubtitleParts.join(" · ")
       : zhCN.projectSwitcher.pendingHint;
   const navModules = [
+    {
+      key: "scene-control",
+      label: zhCN.appShell.navSceneControl,
+      description: "2D / 3D 场景",
+      icon: <Box size={14} />,
+      defaultTo: "/scene-control",
+      items: [
+        { to: "/scene-control", icon: <Box size={14} />, label: zhCN.appShell.navSceneControl }
+      ]
+    },
     {
       key: "dashboard",
       label: zhCN.appShell.navDashboard,
@@ -785,7 +919,6 @@ export default function AppShell() {
       items: [
         { to: "/system-overview", icon: <LayoutGrid size={14} />, label: zhCN.appShell.navSystemOverview },
         { to: "/devices", icon: <Cpu size={14} />, label: zhCN.appShell.navDevices },
-        { to: "/scene-control", icon: <Box size={14} />, label: zhCN.appShell.navSceneControl },
         { to: "/video-monitor", icon: <Video size={14} />, label: zhCN.appShell.navVideoMonitor },
         { to: "/environment-conditions", icon: <Wind size={14} />, label: zhCN.appShell.navEnvironment },
         { to: "/operational-diagnostics", icon: <Gauge size={14} />, label: zhCN.appShell.navOperationalDiagnostics }
@@ -822,8 +955,9 @@ export default function AppShell() {
       label: "AI优化",
       description: "优化建议",
       icon: <Sparkles size={14} />,
-      defaultTo: "/optimize-demo",
+      defaultTo: "/ai-overview",
       items: [
+        { to: "/ai-overview", icon: <Sparkles size={14} />, label: zhCN.appShell.navAiOverview },
         { to: "/optimize-demo", icon: <Sparkles size={14} />, label: zhCN.appShell.navOptimizeDemo }
       ]
     }
@@ -962,7 +1096,7 @@ export default function AppShell() {
     );
     const nextPath =
       location.pathname === "/projects"
-        ? appendSiteIdToPath("/dashboard", nextProject.siteId)
+        ? appendSiteIdToPath("/scene-control", nextProject.siteId)
         : buildScopedLocationPath(location.pathname, location.search, location.hash, nextProject.siteId);
     window.location.assign(nextPath);
   }
@@ -1250,7 +1384,7 @@ export default function AppShell() {
                   key={item.to}
                   to={appendSiteIdToPath(item.to, currentSiteId)}
                   end
-                  className={({ isActive }) => `secondary-nav-link${isActive ? " active" : ""}`}
+                  className={({ isActive }) => `secondary-nav-link${isActive ? " active is-current" : ""}`}
                   data-shell-secondary-nav-link
                   data-shell-nav-target={item.to}
                 >

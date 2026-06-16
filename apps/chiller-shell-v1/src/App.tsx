@@ -27,6 +27,7 @@ const MeterReadingPage = lazy(() => import("./pages/MeterReadingPage"));
 const OperationRecordsPage = lazy(() => import("./pages/OperationRecordsPage"));
 const PerformanceReportPage = lazy(() => import("./pages/PerformanceReportPage"));
 const ReportRecordsPage = lazy(() => import("./pages/ReportRecordsPage"));
+const AiOverviewPage = lazy(() => import("./pages/AiOverviewPage"));
 const OptimizeDemoPage = lazy(() => import("./pages/OptimizeDemoPage"));
 const OperationalDiagnosticsPage = lazy(() => import("./pages/OperationalDiagnosticsPage"));
 const SceneControlPage = lazy(() => import("./pages/SceneControlPage"));
@@ -347,6 +348,7 @@ export default function App() {
         <Route path="/alarms" element={renderLazyPage(AlarmPage)} />
         <Route path="/devices" element={renderLazyPage(DeviceOverviewPage)} />
         <Route path="/operational-diagnostics" element={renderLazyPage(OperationalDiagnosticsPage)} />
+        <Route path="/ai-overview" element={renderLazyPage(AiOverviewPage)} />
         <Route path="/optimize-demo" element={renderLazyPage(OptimizeDemoPage)} />
         <Route path="/scene-control" element={renderLazyPage(SceneControlPage)} />
         <Route path="/video-monitor" element={renderLazyPage(VideoLegacyPage)} />

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-13T01:35:06.787Z",
+  "generatedAt": "2026-06-16T05:15:25.201Z",
   "siteId": "140",
   "bffBaseUrl": "http://127.0.0.1:8787",
   "finalDecision": "DIAGNOSTIC_READINESS_READY",
@@ -131,7 +131,7 @@
             "当前运行组合",
             "主机总功率",
             "冷站功率/COP",
-            "组合样本 133 条"
+            "组合样本 112 条"
           ],
           "missingData": [
             "组合历史样本",
@@ -440,17 +440,20 @@
         "current": {
           "deviceRows": 184,
           "registerPoints": 1215,
-          "subtotalPowerKw": 1932.9,
-          "totalPowerKw": 1932.9,
+          "subtotalPowerKw": 1941.1,
+          "totalPowerKw": 1941.1,
+          "loadKw": 1422,
+          "loadSource": "scenario",
+          "canUseLoadForCopClosure": false,
           "subtotalDeltaPct": 0,
           "systemCop": 6.6,
-          "calculatedCop": 0.74,
-          "copDeltaPct": -88.8,
+          "calculatedCop": null,
+          "copDeltaPct": null,
           "freshnessStale": false,
           "driftWindow": {
             "status": "ready",
             "range": "24h",
-            "generatedAt": "2026-06-13T01:34:59.991Z",
+            "generatedAt": "2026-06-16T05:15:17.522Z",
             "sourceOverall": "ok",
             "readyMetricCount": 4,
             "observedMetricCount": 4,
@@ -458,105 +461,105 @@
               "status": "ready",
               "basisMetric": "totalPowerKw",
               "basisLabel": "冷站总功率",
-              "sampleCount": 10,
-              "totalSampleCount": 56,
+              "sampleCount": 20,
+              "totalSampleCount": 144,
               "thresholdRangePct": 12,
-              "rangePct": 11.4,
-              "startAt": "2026-06-12T20:30:00.000Z",
-              "endAt": "2026-06-12T22:00:00.000Z",
-              "startMs": 1781296200000,
-              "endMs": 1781301600000,
-              "durationHours": 1.5,
-              "reason": "冷站总功率 稳态窗口样本 10 个，波动 11.4%。"
+              "rangePct": 11.7,
+              "startAt": "2026-06-15T20:00:00.000Z",
+              "endAt": "2026-06-15T23:10:00.000Z",
+              "startMs": 1781553600000,
+              "endMs": 1781565000000,
+              "durationHours": 3.2,
+              "reason": "冷站总功率 稳态窗口样本 20 个，波动 11.7%。"
             },
             "metrics": [
               {
                 "metric": "currentCop",
                 "label": "冷站COP",
                 "status": "ready",
-                "sampleCount": 10,
-                "totalSampleCount": 56,
+                "sampleCount": 20,
+                "totalSampleCount": 144,
                 "unit": null,
                 "windowBasis": "steady_state_window",
-                "first": 7.18,
-                "last": 6.78,
-                "min": 6.33,
-                "max": 7.18,
-                "mean": 6.73,
-                "range": 0.86,
-                "drift": -0.4,
-                "driftPct": -5.6,
-                "rangePct": 12.8,
-                "slopePerHour": -0.269,
-                "firstAt": "2026-06-12T20:30:00.000Z",
-                "lastAt": "2026-06-12T22:00:00.000Z",
-                "durationHours": 1.5
+                "first": 7.11,
+                "last": 7.11,
+                "min": 6.32,
+                "max": 7.11,
+                "mean": 6.8,
+                "range": 0.79,
+                "drift": 0,
+                "driftPct": 0.1,
+                "rangePct": 11.6,
+                "slopePerHour": 0.001,
+                "firstAt": "2026-06-15T20:00:00.000Z",
+                "lastAt": "2026-06-15T23:10:00.000Z",
+                "durationHours": 3.2
               },
               {
                 "metric": "totalPowerKw",
                 "label": "冷站总功率",
                 "status": "ready",
-                "sampleCount": 10,
-                "totalSampleCount": 56,
+                "sampleCount": 20,
+                "totalSampleCount": 144,
                 "unit": "kW",
                 "windowBasis": "steady_state_window",
-                "first": 1611.6,
-                "last": 1710.6,
-                "min": 1611.6,
-                "max": 1805.4,
-                "mean": 1706.2,
-                "range": 193.8,
-                "drift": 99,
-                "driftPct": 6.1,
-                "rangePct": 11.4,
-                "slopePerHour": 66,
-                "firstAt": "2026-06-12T20:30:00.000Z",
-                "lastAt": "2026-06-12T22:00:00.000Z",
-                "durationHours": 1.5
+                "first": 1714.8,
+                "last": 1686.6,
+                "min": 1686.6,
+                "max": 1894.2,
+                "mean": 1768.7,
+                "range": 207.6,
+                "drift": -28.2,
+                "driftPct": -1.6,
+                "rangePct": 11.7,
+                "slopePerHour": -8.91,
+                "firstAt": "2026-06-15T20:00:00.000Z",
+                "lastAt": "2026-06-15T23:10:00.000Z",
+                "durationHours": 3.2
               },
               {
                 "metric": "chilledDeltaT",
                 "label": "冷冻水温差",
                 "status": "ready",
-                "sampleCount": 10,
-                "totalSampleCount": 58,
+                "sampleCount": 20,
+                "totalSampleCount": 145,
                 "unit": "℃",
                 "windowBasis": "steady_state_window",
-                "first": 3.9,
-                "last": 4.1,
-                "min": 3.9,
-                "max": 4.1,
-                "mean": 4,
+                "first": 4.1,
+                "last": 4.2,
+                "min": 4,
+                "max": 4.2,
+                "mean": 4.1,
                 "range": 0.2,
-                "drift": 0.2,
-                "driftPct": 5.1,
-                "rangePct": 5,
-                "slopePerHour": 0.13,
-                "firstAt": "2026-06-12T20:30:00.000Z",
-                "lastAt": "2026-06-12T22:00:00.000Z",
-                "durationHours": 1.5
+                "drift": 0.1,
+                "driftPct": 2.4,
+                "rangePct": 4.9,
+                "slopePerHour": 0.03,
+                "firstAt": "2026-06-15T20:00:00.000Z",
+                "lastAt": "2026-06-15T23:10:00.000Z",
+                "durationHours": 3.2
               },
               {
                 "metric": "coolingDeltaT",
                 "label": "冷却水温差",
                 "status": "ready",
-                "sampleCount": 10,
-                "totalSampleCount": 58,
+                "sampleCount": 20,
+                "totalSampleCount": 145,
                 "unit": "℃",
                 "windowBasis": "steady_state_window",
-                "first": 4.7,
+                "first": 4.6,
                 "last": 4.6,
                 "min": 4.6,
-                "max": 4.8,
+                "max": 4.7,
                 "mean": 4.7,
-                "range": 0.2,
-                "drift": -0.1,
-                "driftPct": -2.1,
-                "rangePct": 4.3,
-                "slopePerHour": -0.07,
-                "firstAt": "2026-06-12T20:30:00.000Z",
-                "lastAt": "2026-06-12T22:00:00.000Z",
-                "durationHours": 1.5
+                "range": 0.1,
+                "drift": 0,
+                "driftPct": 0,
+                "rangePct": 2.1,
+                "slopePerHour": 0,
+                "firstAt": "2026-06-15T20:00:00.000Z",
+                "lastAt": "2026-06-15T23:10:00.000Z",
+                "durationHours": 3.2
               }
             ]
           },
@@ -568,29 +571,29 @@
               "value": 0,
               "unit": "%",
               "threshold": "abs <= 15%",
-              "evidence": "分项合计 1932.9 kW / 总功率 1932.9 kW",
+              "evidence": "分项合计 1941.1 kW / 总功率 1941.1 kW",
               "reviewTarget": "冷站总电表、主机/泵/塔分项电表和计量口径",
               "boundary": "只提示计量闭合偏差，不判定电表故障。"
             },
             {
               "key": "cop_closure",
-              "label": "输入负荷/总功率/COP闭合",
-              "status": "review",
-              "value": -88.8,
+              "label": "冷量/总功率/COP闭合",
+              "status": "insufficient",
+              "value": null,
               "unit": "%",
               "threshold": "abs <= 15%",
-              "evidence": "反算 COP 0.74 / 现态 COP 6.6",
-              "reviewTarget": "冷量表、总功率表和负荷输入口径",
-              "boundary": "只提示冷量/功率口径需核对，不自动修正 COP。"
+              "evidence": "负荷来源 scenario；未声明为实测冷量，跳过 COP 闭合。",
+              "reviewTarget": "独立冷量表、总功率表和实时负荷来源",
+              "boundary": "只有独立实测冷量可用于 COP 闭合；场景输入不判定仪表偏移，不自动修正 COP。"
             },
             {
               "key": "wet_bulb_physical_boundary",
               "label": "冷却水出水/湿球物理边界",
               "status": "normal",
-              "value": 2.9,
+              "value": 3,
               "unit": "℃",
-              "threshold": "Tcws >= WetBulb - 0.5℃",
-              "evidence": "Tcws 28.7℃ / 湿球 25.8℃",
+              "threshold": "0℃ <= Approach <= 20℃",
+              "evidence": "Tcws 28.5℃ / 湿球 25.5℃",
               "reviewTarget": "湿球温度、冷却塔出水温度和安装位置",
               "boundary": "只提示物理边界异常，不判定温度传感器损坏。"
             },
@@ -598,10 +601,10 @@
               "key": "trend_steady_state",
               "label": "24h稳态窗口",
               "status": "normal",
-              "value": 11.4,
+              "value": 11.7,
               "unit": "%",
               "threshold": "<= 12%",
-              "evidence": "冷站总功率 稳态窗口样本 10 个，波动 11.4%。",
+              "evidence": "冷站总功率 稳态窗口样本 20 个，波动 11.7%。",
               "reviewTarget": "同负荷/相近湿球历史窗口",
               "boundary": "负荷不稳时，漂移判断降级为趋势审阅。"
             }
@@ -609,50 +612,45 @@
           "driftCandidates": [
             {
               "confidence": "medium",
-              "status": "review",
-              "severity": "medium",
-              "key": "cop_closure_gap",
-              "metric": "copClosure",
-              "label": "COP 反算闭合偏差",
-              "value": -88.8,
-              "unit": "%",
-              "threshold": "abs <= 15%",
-              "suspectedSignals": [
-                "冷量表",
-                "总功率表",
-                "负荷输入"
-              ],
-              "reason": "按输入负荷与总功率反算 COP 与现态 COP 偏差 -88.8%。",
+              "status": "normal",
+              "severity": "info",
+              "key": "no_strong_drift_candidate",
+              "metric": "instrumentDataQuality",
+              "label": "暂无强偏移候选",
+              "value": null,
+              "unit": null,
+              "threshold": null,
+              "suspectedSignals": [],
+              "reason": "现有闭合校验和趋势窗口未触发强偏移候选。",
               "requiredEvidence": [
-                "冷量表口径",
-                "负荷输入来源",
-                "总功率表口径",
-                "采样时间对齐"
+                "传感器校准台账",
+                "安装位置台账"
               ],
-              "boundary": "只提示冷量/功率口径需核对，不自动修正 COP。"
+              "boundary": "未触发候选不等于仪表已校准，只表示当前窗口未见强异常。"
             }
           ],
           "fieldReviewTargets": [
             {
-              "key": "cooling-load-and-power-meter-review",
-              "priority": "P0",
-              "title": "复核冷量表与总功率表闭合",
-              "trigger": "按输入负荷与总功率反算 COP 与现态 COP 偏差 -88.8%。",
+              "key": "sensor-ledger-baseline",
+              "priority": "P1",
+              "title": "建立仪表校准与安装位置基线",
+              "trigger": "当前未触发强偏移候选，但缺校准/安装位置台账仍会限制置信度。",
               "requiredEvidence": [
-                "冷量表校准日期",
-                "总功率表校准日期",
-                "采样时间对齐",
-                "负荷来源说明"
+                "点位编号",
+                "安装位置",
+                "量程",
+                "最近校准日期",
+                "责任人"
               ],
-              "acceptanceCriteria": "同一稳态窗口内冷量、总功率和 COP 口径可闭合，偏差来源可解释。",
-              "boundary": "不自动修正 COP，不把疑似偏移当成仪表故障结论。"
+              "acceptanceCriteria": "形成可映射到 BFF 点位 key 的仪表台账。",
+              "boundary": "台账只用于提高诊断置信度，不自动修正测点。"
             }
           ],
           "sensorLedgerEvidence": {
             "status": "waiting",
             "finalDecision": "SENSOR_LEDGER_PREFLIGHT_WAITING_FOR_INPUTS",
             "readyForReview": false,
-            "generatedAt": "2026-06-13T01:34:51.047Z",
+            "generatedAt": "2026-06-13T07:00:02.467Z",
             "reportPath": "/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-sensor-ledger-preflight-latest.json",
             "acceptedRows": 0,
             "totalRows": 0,
@@ -685,16 +683,15 @@
         "findings": [
           "当前实时树包含 184 个设备块、1215 个寄存器点。",
           "总功率与分项功率偏差 0%。",
-          "按输入负荷/总功率反算 COP 为 0.74。",
+          "负荷输入来源为 scenario，未作为实测冷量参与 COP 闭合。",
           "24h 趋势窗口状态 ready，可用于仪表偏移方向性复核。",
-          "冷站总功率 稳态窗口样本 10 个，波动 11.4%。",
-          "冷站COP首末偏移 -5.6%。",
-          "仪表偏移 V1 形成 1 个待复核候选。",
+          "冷站总功率 稳态窗口样本 20 个，波动 11.7%。",
+          "冷站COP首末偏移 0.1%。",
+          "仪表偏移 V1 当前未形成强偏移候选。",
           "传感器台账预检状态 waiting，仍需补现场校准/安装位置证据。"
         ],
         "blockers": [],
         "warnings": [
-          "按输入负荷与总功率反算 COP 与现态 COP 偏差 -88.8%，需核对冷量口径。",
           "缺传感器校准/安装位置台账，仪表偏移 V1 只能保持疑似复核口径。"
         ],
         "evidence": [
@@ -707,25 +704,31 @@
           {
             "key": "currentCopDriftPct",
             "label": "24h COP首末偏移",
-            "value": -5.6,
+            "value": 0.1,
             "unit": "%"
           },
           {
             "key": "steadyStateRangePct",
             "label": "稳态窗口波动",
-            "value": 11.4,
+            "value": 11.7,
             "unit": "%"
+          },
+          {
+            "key": "loadSource",
+            "label": "负荷输入来源",
+            "value": "scenario",
+            "unit": null
           },
           {
             "key": "totalPowerKw",
             "label": "冷站总功率",
-            "value": 1932.9,
+            "value": 1941.1,
             "unit": "kW"
           },
           {
             "key": "subtotalPowerKw",
             "label": "分项功率合计",
-            "value": 1932.9,
+            "value": 1941.1,
             "unit": "kW"
           },
           {
@@ -754,52 +757,52 @@
         "status": "ready",
         "confidence": "medium",
         "current": {
-          "chilledDeltaT": 4.4,
-          "supplyPressureKpa": 490.6,
-          "returnPressureKpa": 390.6,
-          "differentialPressureKpa": 100,
+          "chilledDeltaT": 4.3,
+          "supplyPressureKpa": 515.4,
+          "returnPressureKpa": 417.3,
+          "differentialPressureKpa": 98.1,
           "bypassValveOpenPct": 0,
           "branchFlowSpread": {
             "count": 5,
-            "min": 33.4,
-            "max": 1274.2,
-            "ratio": 38.1,
-            "range": 1240.8
+            "min": 33.5,
+            "max": 1255,
+            "ratio": 37.5,
+            "range": 1221.5
           },
           "branchPressureSpread": {
             "count": 4,
-            "min": 440.2,
-            "max": 451.7,
+            "min": 465.6,
+            "max": 476.9,
             "ratio": 1,
-            "range": 11.5
+            "range": 11.3
           },
           "trendWindow": {
             "status": "ready",
             "range": "24h",
-            "generatedAt": "2026-06-13T01:34:59.991Z",
-            "reason": "稳态窗口内冷冻水温差均值 4℃，低于目标下限占比 100%。",
+            "generatedAt": "2026-06-16T05:15:17.522Z",
+            "reason": "稳态窗口内冷冻水温差均值 4.1℃，低于目标下限占比 100%。",
             "steadyState": {
               "status": "ready",
               "basisMetric": "totalPowerKw",
               "basisLabel": "冷站总功率",
-              "sampleCount": 10,
-              "totalSampleCount": 56,
+              "sampleCount": 20,
+              "totalSampleCount": 144,
               "thresholdRangePct": 12,
-              "rangePct": 11.4,
-              "startAt": "2026-06-12T20:30:00.000Z",
-              "endAt": "2026-06-12T22:00:00.000Z",
-              "startMs": 1781296200000,
-              "endMs": 1781301600000,
-              "durationHours": 1.5,
-              "reason": "冷站总功率 稳态窗口样本 10 个，波动 11.4%。"
+              "rangePct": 11.7,
+              "startAt": "2026-06-15T20:00:00.000Z",
+              "endAt": "2026-06-15T23:10:00.000Z",
+              "startMs": 1781553600000,
+              "endMs": 1781565000000,
+              "durationHours": 3.2,
+              "reason": "冷站总功率 稳态窗口样本 20 个，波动 11.7%。"
             },
             "chilledDeltaT": {
-              "sampleCount": 10,
-              "belowCount": 10,
+              "sampleCount": 20,
+              "belowCount": 20,
               "belowPct": 100,
-              "mean": 4,
-              "min": 3.9,
-              "max": 4.1
+              "mean": 4.1,
+              "min": 4,
+              "max": 4.2
             },
             "persistentLowDeltaT": true,
             "evidenceBoundary": "当前 24h 趋势只覆盖冷冻水温差/总功率等站级指标；支路流量、压差、旁通阀仍使用实时快照，不伪造支路历史趋势。"
@@ -816,8 +819,8 @@
               "threshold": "稳态窗口低于目标下限占比 >= 60%",
               "reason": "稳态窗口内低温差占比 100%，说明低温差不是瞬时扰动。",
               "evidence": [
-                "稳态窗口内冷冻水温差均值 4℃，低于目标下限占比 100%。",
-                "实时冷冻水温差 4.4℃ 低于 4.5℃。"
+                "稳态窗口内冷冻水温差均值 4.1℃，低于目标下限占比 100%。",
+                "实时冷冻水温差 4.3℃ 低于 4.5℃。"
               ],
               "requiredEvidence": [
                 "24h 冷冻水温差趋势",
@@ -833,10 +836,10 @@
               "status": "active",
               "severity": "medium",
               "confidence": "medium",
-              "value": 38.1,
+              "value": 37.5,
               "unit": "ratio",
               "threshold": "最大/最小流量比 > 3",
-              "reason": "实时支路流量最大/最小比 38.1。",
+              "reason": "实时支路流量最大/最小比 37.5。",
               "evidence": [
                 "支路流量样本数 5"
               ],
@@ -854,13 +857,13 @@
               "status": "watch",
               "severity": "low",
               "confidence": "medium",
-              "value": 11.5,
+              "value": 11.3,
               "unit": "kPa",
               "threshold": "支路压力差范围 > 30 kPa",
-              "reason": "实时支路压力差范围 11.5 kPa。",
+              "reason": "实时支路压力差范围 11.3 kPa。",
               "evidence": [
                 "支路压力样本数 4",
-                "总管压差 100 kPa"
+                "总管压差 98.1 kPa"
               ],
               "requiredEvidence": [
                 "支路压差历史趋势",
@@ -919,7 +922,7 @@
               "key": "branch-hydraulic-history-window",
               "priority": "P0",
               "title": "补支路水力历史趋势",
-              "trigger": "实时支路流量最大/最小比 38.1。；实时支路压力差范围 11.5 kPa。",
+              "trigger": "实时支路流量最大/最小比 37.5。；实时支路压力差范围 11.3 kPa。",
               "requiredEvidence": [
                 "24h 支路流量趋势",
                 "24h 支路压差趋势",
@@ -963,17 +966,17 @@
           "reviewBoundary": "水力平衡 V1 只输出水力失衡风险排序、低温差持续性和现场复核对象；不自动降泵，不直接判定末端阀门故障。"
         },
         "findings": [
-          "冷冻总管压差约 100 kPa。",
-          "支路流量最大/最小比约 38.1。",
+          "冷冻总管压差约 98.1 kPa。",
+          "支路流量最大/最小比约 37.5。",
           "冷冻旁通阀反馈开度 0%。",
-          "稳态窗口内冷冻水温差均值 4℃，低于目标下限占比 100%。",
+          "稳态窗口内冷冻水温差均值 4.1℃，低于目标下限占比 100%。",
           "水力平衡 V1 形成 2 个风险指示。",
           "水力平衡 V1 仍有 1 个证据缺口。"
         ],
         "blockers": [],
         "warnings": [
-          "冷冻水温差 4.4℃ 低于目标下限 4.5℃。",
-          "支路流量最大/最小比 38.1，存在水力分配不均风险，需结合末端阀位确认。",
+          "冷冻水温差 4.3℃ 低于目标下限 4.5℃。",
+          "支路流量最大/最小比 37.5，存在水力分配不均风险，需结合末端阀位确认。",
           "稳态窗口内冷冻水温差低于目标占比 100%，低温差具备持续性。",
           "当前缺支路流量/压差/旁通阀历史趋势，不能把实时支路差异外推为全天水力失衡。",
           "当前缺末端阀位/室温趋势，不能把支路流量差异直接判为末端故障。"
@@ -982,13 +985,13 @@
           {
             "key": "chilledDeltaT",
             "label": "冷冻水温差",
-            "value": 4.4,
+            "value": 4.3,
             "unit": "℃"
           },
           {
             "key": "trendChilledDeltaTMean",
             "label": "趋势温差均值",
-            "value": 4,
+            "value": 4.1,
             "unit": "℃"
           },
           {
@@ -1000,7 +1003,7 @@
           {
             "key": "differentialPressureKpa",
             "label": "冷冻总管压差",
-            "value": 100,
+            "value": 98.1,
             "unit": "kPa"
           },
           {
@@ -1012,7 +1015,7 @@
           {
             "key": "branchFlowRatio",
             "label": "支路流量比",
-            "value": 38.1,
+            "value": 37.5,
             "unit": null
           },
           {
@@ -1043,9 +1046,9 @@
           "trendWindow": {
             "status": "active",
             "range": "24h",
-            "generatedAt": "2026-06-13T01:34:59.991Z",
-            "sampleCount": 58,
-            "maxDirectionChangeCount": 31,
+            "generatedAt": "2026-06-16T05:15:17.522Z",
+            "sampleCount": 145,
+            "maxDirectionChangeCount": 99,
             "reason": "小时级趋势存在锯齿波/hunting 线索，需补高频命令/反馈复核。"
           },
           "riskIndicators": [
@@ -1055,14 +1058,14 @@
               "status": "active",
               "severity": "high",
               "confidence": "medium",
-              "value": 3,
+              "value": 11,
               "unit": "次",
               "threshold": "方向反转 >= 3 且波动 >= 0.6℃",
-              "reason": "冷冻水温差锯齿波在趋势窗口内方向反转 3 次，波动 0.6℃ / 14.8%。",
+              "reason": "冷冻水温差锯齿波在趋势窗口内方向反转 11 次，波动 0.8℃ / 19.4%。",
               "evidence": [
-                "样本 58 个",
-                "波动 0.6℃",
-                "波动率 14.8%"
+                "样本 145 个",
+                "波动 0.8℃",
+                "波动率 19.4%"
               ],
               "requiredEvidence": [
                 "冷冻供回水温度高频趋势",
@@ -1073,25 +1076,25 @@
               "reviewTarget": "冷冻水温差、冷冻泵频率和供水温控制回路",
               "boundary": "只提示温差锯齿波风险，不自动改 PID、不自动降泵。",
               "metric": "chilledDeltaT",
-              "sampleCount": 58,
-              "range": 0.6,
-              "rangePct": 14.8,
-              "directionChangeCount": 3
+              "sampleCount": 145,
+              "range": 0.8,
+              "rangePct": 19.4,
+              "directionChangeCount": 11
             },
             {
               "key": "cooling_delta_t_sawtooth",
               "label": "冷却水温差锯齿波",
-              "status": "normal",
+              "status": "watch",
               "severity": "low",
               "confidence": "medium",
-              "value": 1,
+              "value": 7,
               "unit": "次",
               "threshold": "方向反转 >= 3 且波动 >= 0.6℃",
-              "reason": "冷却水温差锯齿波当前趋势未触发锯齿波或 hunting 阈值。",
+              "reason": "冷却水温差锯齿波存在波动线索，方向反转 7 次，需结合控制命令/反馈复核。",
               "evidence": [
-                "样本 58 个",
-                "波动 0.3℃",
-                "波动率 6.4%"
+                "样本 145 个",
+                "波动 0.5℃",
+                "波动率 10.7%"
               ],
               "requiredEvidence": [
                 "冷却供回水温度高频趋势",
@@ -1102,10 +1105,10 @@
               "reviewTarget": "冷却水温差、冷却泵和冷却塔控制回路",
               "boundary": "只提示冷却侧震荡风险，不自动改塔风机或冷却泵控制参数。",
               "metric": "coolingDeltaT",
-              "sampleCount": 58,
-              "range": 0.3,
-              "rangePct": 6.4,
-              "directionChangeCount": 1
+              "sampleCount": 145,
+              "range": 0.5,
+              "rangePct": 10.7,
+              "directionChangeCount": 7
             },
             {
               "key": "station_power_hunting",
@@ -1113,14 +1116,14 @@
               "status": "active",
               "severity": "medium",
               "confidence": "medium",
-              "value": 31,
+              "value": 99,
               "unit": "次",
               "threshold": "方向反转 >= 3 且波动 >= 120kW 或 >= 6%",
-              "reason": "冷站总功率 hunting在趋势窗口内方向反转 31 次，波动 391.2kW / 22.4%。",
+              "reason": "冷站总功率 hunting在趋势窗口内方向反转 99 次，波动 826.2kW / 43.8%。",
               "evidence": [
-                "样本 56 个",
-                "波动 391.2kW",
-                "波动率 22.4%"
+                "样本 144 个",
+                "波动 826.2kW",
+                "波动率 43.8%"
               ],
               "requiredEvidence": [
                 "冷站总功率高频趋势",
@@ -1131,10 +1134,10 @@
               "reviewTarget": "冷站功率 hunting 与设备状态切换",
               "boundary": "只提示功率 hunting 风险，不自动切换设备组合。",
               "metric": "totalPowerKw",
-              "sampleCount": 56,
-              "range": 391.2,
-              "rangePct": 22.4,
-              "directionChangeCount": 31
+              "sampleCount": 144,
+              "range": 826.2,
+              "rangePct": 43.8,
+              "directionChangeCount": 99
             },
             {
               "key": "frequency_command_feedback_gap",
@@ -1147,9 +1150,9 @@
               "threshold": "需高频命令值、反馈值和控制模式同步记录",
               "reason": "当前只有泵/塔频率实时摘要，缺高频命令/反馈历史，不能判断 PID hunting 或执行器跟随问题。",
               "evidence": [
-                "冷冻泵均频 40.4Hz",
-                "冷却泵均频 36.9Hz",
-                "塔风机均频 29.4Hz"
+                "冷冻泵均频 40.3Hz",
+                "冷却泵均频 36.5Hz",
+                "塔风机均频 29.3Hz"
               ],
               "requiredEvidence": [
                 "泵频命令",
@@ -1233,7 +1236,7 @@
             }
           ],
           "activeRiskCount": 2,
-          "watchRiskCount": 0,
+          "watchRiskCount": 1,
           "gapCount": 2,
           "ledgerEvidence": {
             "status": "partial",
@@ -1250,7 +1253,7 @@
               "status": "waiting",
               "finalDecision": "FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS",
               "readyForImport": false,
-              "generatedAt": "2026-06-13T01:34:51.117Z",
+              "generatedAt": "2026-06-13T07:00:02.540Z",
               "reportPath": "/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-preflight-latest.json",
               "acceptedRows": 0,
               "totalRows": 0,
@@ -1299,7 +1302,7 @@
               "status": "waiting",
               "finalDecision": "FIELD_DATA_PROMOTE_WAITING_FOR_PREFLIGHT",
               "formalImportReady": false,
-              "generatedAt": "2026-06-13T01:34:51.179Z",
+              "generatedAt": "2026-06-13T07:00:02.604Z",
               "reportPath": "/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-promote-latest.json",
               "acceptedRows": 0,
               "totalRows": 0,
@@ -1345,11 +1348,13 @@
         "findings": [
           "控制震荡 V1 已读取 24h 趋势窗口。",
           "控制震荡 V1 形成 2 个风险指示。",
+          "控制震荡 V1 有 1 个观察项。",
           "仍有 2 个高频控制/启停证据缺口。"
         ],
         "blockers": [],
         "warnings": [
           "控制震荡 V1 形成 2 个风险指示，需人工复核控制命令/反馈。",
+          "控制震荡 V1 有 1 个观察项，建议补高频趋势。",
           "控制震荡 V1 仍有 2 个证据缺口，不能下 PID 或启停结论。",
           "控制震荡台账导入为 PARTIAL，只能用于方向性复核，不能提升为高置信控制结论。",
           "现场 CSV 预检正在等待三张现场导出文件，不作为诊断证据。",
@@ -1366,7 +1371,7 @@
           {
             "key": "oscillationWatchRiskCount",
             "label": "控制震荡观察项",
-            "value": 0,
+            "value": 1,
             "unit": null
           },
           {
@@ -1378,7 +1383,7 @@
           {
             "key": "oscillationMaxDirectionChangeCount",
             "label": "最大方向反转次数",
-            "value": 31,
+            "value": 99,
             "unit": null
           },
           {
@@ -1400,17 +1405,17 @@
         "status": "ready",
         "confidence": "medium",
         "current": {
-          "chilledDeltaT": 4.4,
-          "coolingDeltaT": 4.7,
-          "chilledPumpAvgHz": 40.4,
-          "coolingPumpAvgHz": 36.9,
+          "chilledDeltaT": 4.3,
+          "coolingDeltaT": 4.8,
+          "chilledPumpAvgHz": 40.3,
+          "coolingPumpAvgHz": 36.5,
           "bypassValveOpenPct": 0,
           "branchFlowSpread": {
             "count": 5,
-            "min": 33.4,
-            "max": 1274.2,
-            "ratio": 38.1,
-            "range": 1240.8
+            "min": 33.5,
+            "max": 1255,
+            "ratio": 37.5,
+            "range": 1221.5
           },
           "trendLinkage": {
             "status": "active",
@@ -1429,7 +1434,7 @@
                 "status": "active",
                 "priority": "high",
                 "confidence": "medium",
-                "reason": "冷冻泵平均频率约 40.4 Hz，需结合末端不缺冷条件判断是否可小步降频。"
+                "reason": "冷冻泵平均频率约 40.3 Hz，需结合末端不缺冷条件判断是否可小步降频。"
               },
               {
                 "key": "persistentLowDeltaT",
@@ -1445,7 +1450,7 @@
                 "status": "active",
                 "priority": "medium",
                 "confidence": "medium",
-                "reason": "实时支路流量最大/最小比约 38.1，可能造成部分支路过流量、回水温度被稀释。"
+                "reason": "实时支路流量最大/最小比约 37.5，可能造成部分支路过流量、回水温度被稀释。"
               },
               {
                 "key": "bypassShortCircuit",
@@ -1469,13 +1474,13 @@
         "findings": [
           "当前存在低温差诊断触发条件。",
           "稳态窗口显示冷冻侧低温差具备持续性。",
-          "运行冷冻泵平均频率约 40.4 Hz。",
-          "运行冷却泵平均频率约 36.9 Hz。",
+          "运行冷冻泵平均频率约 40.3 Hz。",
+          "运行冷却泵平均频率约 36.5 Hz。",
           "当前根因首位：大流量小温差 / 泵频偏高。"
         ],
         "blockers": [],
         "warnings": [
-          "冷冻水温差 4.4℃ 偏低，优先查大流量小温差。",
+          "冷冻水温差 4.3℃ 偏低，优先查大流量小温差。",
           "趋势已证明冷冻侧低温差具备持续性，根因排序优先级上调。",
           "低温差根因候选：大流量小温差 / 泵频偏高、低温差持续性、支路水力分配不均。",
           "支路流量差异大，可能造成部分支路过流量、回水温度被稀释。",
@@ -1485,13 +1490,13 @@
           {
             "key": "chilledDeltaT",
             "label": "冷冻水温差",
-            "value": 4.4,
+            "value": 4.3,
             "unit": "℃"
           },
           {
             "key": "coolingDeltaT",
             "label": "冷却水温差",
-            "value": 4.7,
+            "value": 4.8,
             "unit": "℃"
           },
           {
@@ -1503,13 +1508,13 @@
           {
             "key": "chilledPumpAvgHz",
             "label": "冷冻泵平均频率",
-            "value": 40.4,
+            "value": 40.3,
             "unit": "Hz"
           },
           {
             "key": "coolingPumpAvgHz",
             "label": "冷却泵平均频率",
-            "value": 36.9,
+            "value": 36.5,
             "unit": "Hz"
           }
         ],
@@ -1525,13 +1530,13 @@
         "status": "ready",
         "confidence": "medium",
         "current": {
-          "wetBulbC": 25.8,
-          "currentTcwsC": 28.7,
-          "currentApproachC": 2.9,
-          "targetApproachC": 3.4,
-          "targetTcwsC": 29.2,
-          "towerPowerKw": 59.7,
-          "towerAvgHz": 29.4,
+          "wetBulbC": 25.5,
+          "currentTcwsC": 28.5,
+          "currentApproachC": 3,
+          "targetApproachC": 3.5,
+          "targetTcwsC": 29,
+          "towerPowerKw": 59.5,
+          "towerAvgHz": 29.3,
           "towerFlowSpread": {
             "count": 0,
             "min": null,
@@ -1541,8 +1546,8 @@
           }
         },
         "findings": [
-          "当前冷却塔接近度约 2.9℃。",
-          "冷却塔功率约 59.7 kW。"
+          "当前冷却塔接近度约 3℃。",
+          "冷却塔功率约 59.5 kW。"
         ],
         "blockers": [],
         "warnings": [],
@@ -1550,19 +1555,19 @@
           {
             "key": "wetBulbC",
             "label": "湿球温度",
-            "value": 25.8,
+            "value": 25.5,
             "unit": "℃"
           },
           {
             "key": "currentTcwsC",
             "label": "冷却塔出水/冷机冷凝器进水温",
-            "value": 28.7,
+            "value": 28.5,
             "unit": "℃"
           },
           {
             "key": "currentApproachC",
             "label": "接近度",
-            "value": 2.9,
+            "value": 3,
             "unit": "℃"
           },
           {
@@ -1589,12 +1594,12 @@
             "CH7"
           ],
           "runningCount": 3,
-          "chillerPowerTotalKw": 1620.1,
-          "comboCop": 0.88,
+          "chillerPowerTotalKw": 1630.4,
+          "comboCop": 7.86,
           "stationCop": 6.6,
-          "sampleTotal": 133,
-          "currentCombinationSamples": 22,
-          "targetCombinationSamples": 22,
+          "sampleTotal": 112,
+          "currentCombinationSamples": 19,
+          "targetCombinationSamples": 19,
           "recommendationAction": "keep",
           "targetCombination": [
             "CH4",
@@ -1604,12 +1609,12 @@
         },
         "findings": [
           "当前运行组合：CH4+CH5+CH7。",
-          "已归集组合样本 133 条。",
+          "已归集组合样本 112 条。",
           "未发现满足样本、容量余量和节能门槛的候选组合，保持当前组合。"
         ],
         "blockers": [],
         "warnings": [
-          "推荐组合样本 22 条，仍为低置信。",
+          "推荐组合样本 19 条，仍为低置信。",
           "当前为多机并联，且无单台冷冻水流量，不计算单机实时 COP。"
         ],
         "evidence": [
@@ -1622,7 +1627,7 @@
           {
             "key": "comboCop",
             "label": "主机组合COP",
-            "value": 0.88,
+            "value": 7.86,
             "unit": null
           },
           {
@@ -1634,7 +1639,7 @@
           {
             "key": "sampleTotal",
             "label": "组合样本总量",
-            "value": 133,
+            "value": 112,
             "unit": null
           }
         ],

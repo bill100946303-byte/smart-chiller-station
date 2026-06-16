@@ -60,5 +60,8 @@ export const runtimeConfig = {
   trendRange: normalizeTrendRange(import.meta.env.VITE_TREND_RANGE),
   badgeStateUrl: import.meta.env.VITE_UI_BADGE_STATE_URL || "/ui-badge-state-v1.8.json",
   sceneBaseUrl: import.meta.env.VITE_SCENE_BASE_URL || "http://127.0.0.1:4000",
+  sceneIdle3dPrewarm: import.meta.env.VITE_SCENE_IDLE_3D_PREWARM === undefined
+    ? true
+    : normalizeBooleanFlag(import.meta.env.VITE_SCENE_IDLE_3D_PREWARM),
   legacyBaseUrl: import.meta.env.VITE_LEGACY_BASE_URL || "https://www.ssge.com.cn:8098"
 };

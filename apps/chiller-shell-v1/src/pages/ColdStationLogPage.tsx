@@ -6,6 +6,7 @@ import { zhCN } from "../i18n/zhCN";
 import {
   type ColdStationLogDto,
   type ColdStationLogItemDto,
+  type SourceEndpointStatusDto,
   fetchColdStationLogs
 } from "../services/bffClient";
 
@@ -129,6 +130,75 @@ function formatCountValue(value: number | null | undefined): string {
   return new Intl.NumberFormat("zh-CN", {
     maximumFractionDigits: 0
   }).format(value);
+}
+
+function stripDataStatusPrefix(value: string): string {
+  return value.replace(/^数据状态[:：]\s*/, "").trim();
+}
+
+function isB25HistorySource(source: SourceEndpointStatusDto | null | undefined): boolean {
+  const fingerprint = [
+    source?.originLabel,
+    source?.interfaceKind,
+    source?.endpoint,
+    source?.message
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return fingerprint.includes("b25") || fingerprint.includes("140btwentyfive") || fingerprint.includes("cloud-reg-history");
+}
+
+function getColdLogSourceHealthText(
+  loadError: string | null,
+  loading: boolean,
+  warn: boolean
+): string {
+  if (loadError) {
+    return "来源异常";
+  }
+  if (loading) {
+    return "加载中";
+  }
+  return warn ? "来源需复核" : "来源正常";
+}
+
+function getColdLogSourceCaption(loadError: string | null, loading: boolean): string {
+  if (loadError) {
+    return "请检查冷站日志来源。";
+  }
+  if (loading) {
+    return "正在拉取逐时记录。";
+  }
+  return "日累计电耗构成。";
+}
+
+function buildColdLogStatusDigestLines(
+  data: ColdStationLogDto | null,
+  fallbackLines: string[],
+  sourceSummaryText: string
+): string[] {
+  const primarySource = data?.sourceStatus?.sources?.[0];
+  const siteId = data?.site?.siteId || runtimeConfig.siteId;
+  const stationScope = siteId ? String(siteId) : "";
+  const chips: string[] = [];
+
+  if (stationScope) {
+    chips.push(`站点${stationScope}`);
+  }
+
+  chips.push(stripDataStatusPrefix(sourceSummaryText));
+
+  if (isB25HistorySource(primarySource)) {
+    chips.push("B25链路");
+  }
+
+  if (typeof primarySource?.rows === "number" && Number.isFinite(primarySource.rows)) {
+    chips.push(`记录${formatCountValue(primarySource.rows)}条`);
+  }
+
+  const uniqueChips = Array.from(new Set(chips.filter(Boolean))).slice(0, 4);
+  return uniqueChips.length > 0 ? uniqueChips : fallbackLines;
 }
 
 function formatSummaryMetric(
@@ -377,7 +447,13 @@ export default function ColdStationLogPage() {
       : sourceSummary.warn
         ? "兼容模式"
         : "数据就绪";
-  const statusDigestLines = Array.from(new Set(sourceStatusLinesCompact.filter(Boolean))).slice(0, 4);
+  const sourceHealthText = getColdLogSourceHealthText(loadError, loading, sourceSummary.warn);
+  const sourceCaptionText = getColdLogSourceCaption(loadError, loading);
+  const statusDigestLines = buildColdLogStatusDigestLines(
+    data,
+    Array.from(new Set(sourceStatusLinesCompact.filter(Boolean))).slice(0, 4),
+    sourceSummaryText
+  );
   const commandStats = [
     {
       title: summaryCards[0]?.title || zhCN.coldStationLogPage.summaryInputPower,
@@ -515,8 +591,8 @@ export default function ColdStationLogPage() {
         </div>
         <div className="cold-log-command-side subpage-command-side">
           <span className="cold-log-command-side-label">数据状态</span>
-          <strong>{sourceSummaryText}</strong>
-          <p>日汇总、COP、电耗构成合并展示。</p>
+          <strong>{sourceHealthText}</strong>
+          <p>{sourceCaptionText}</p>
           {statusDigestLines.length > 0 ? (
             <div className="cold-log-status-list">
               {statusDigestLines.map((item) => (

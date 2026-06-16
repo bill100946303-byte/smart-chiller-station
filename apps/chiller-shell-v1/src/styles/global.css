@@ -1706,6 +1706,17 @@
   }
 }
 
+html body #root#root#root .content.is-subpage-compact .cold-station-log-page.cold-log-cop-page,
+html body #root#root#root .cold-station-log-page.cold-log-cop-page {
+  grid-template-rows: 176px minmax(0, 1fr) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-header,
+html body #root#root#root .cold-log-cop-page .cold-log-header {
+  height: 176px !important;
+  min-height: 176px !important;
+}
+
 @media (max-width: 1280px) {
   .dashboard-anomaly-queue,
   .dashboard-duty-side .dashboard-comfort-list {
@@ -41505,6 +41516,7 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
 }
 
 .scene-embed-stage {
+  position: relative;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -41543,6 +41555,147 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
 .scene-embed-frame.is-fit-zoom {
   transform: scale(1.12);
   will-change: transform;
+}
+
+.scene-embed-frame.is-prewarm {
+  position: absolute;
+  top: 0;
+  left: -10000px;
+  width: var(--scene-native-width, 2500px) !important;
+  height: var(--scene-native-height, 920px) !important;
+  min-width: var(--scene-native-width, 2500px) !important;
+  min-height: var(--scene-native-height, 920px) !important;
+  opacity: 0;
+  visibility: visible;
+  pointer-events: none;
+  transform: none !important;
+  will-change: auto;
+}
+
+.scene-embed-loading-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at center, rgba(13, 42, 58, 0.82) 0, rgba(6, 19, 31, 0.62) 38%, rgba(3, 10, 17, 0.34) 72%),
+    linear-gradient(180deg, rgba(6, 18, 30, 0.12), rgba(6, 18, 30, 0.38));
+}
+
+.scene-embed-loading-card {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-width: 188px;
+  padding: 18px 22px 16px;
+  border: 1px solid rgba(116, 211, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(7, 22, 36, 0.76);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+}
+
+.scene-embed-loading-mark {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(113, 238, 182, 0.18) 0 30%, rgba(113, 238, 182, 0) 32%);
+}
+
+.scene-embed-loading-mark::before,
+.scene-embed-loading-mark::after {
+  position: absolute;
+  content: "";
+  border-radius: inherit;
+}
+
+.scene-embed-loading-mark::before {
+  inset: 0;
+  background: conic-gradient(from 0deg, rgba(111, 211, 255, 0.1), rgba(111, 211, 255, 0.92), rgba(115, 232, 162, 0.78), rgba(111, 211, 255, 0.1));
+  mask: radial-gradient(circle, transparent 55%, #000 57%);
+  animation: scene-loading-ring 1.45s linear infinite;
+}
+
+.scene-embed-loading-mark::after {
+  inset: 15px;
+  background: rgba(117, 233, 181, 0.92);
+  box-shadow: 0 0 22px rgba(117, 233, 181, 0.4);
+  animation: scene-loading-breathe 1.8s ease-in-out infinite;
+}
+
+.scene-embed-loading-card strong {
+  color: #f4fbff;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.scene-embed-loading-card > span:not(.scene-embed-loading-mark) {
+  color: rgba(202, 224, 238, 0.76);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.scene-embed-loading-meter {
+  display: grid;
+  grid-template-columns: repeat(3, 18px);
+  gap: 5px;
+  margin-top: 3px;
+}
+
+.scene-embed-loading-meter i {
+  display: block;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(111, 211, 255, 0.28);
+  animation: scene-loading-meter 1.2s ease-in-out infinite;
+}
+
+.scene-embed-loading-meter i:nth-child(2) {
+  animation-delay: 0.14s;
+}
+
+.scene-embed-loading-meter i:nth-child(3) {
+  animation-delay: 0.28s;
+}
+
+@keyframes scene-loading-ring {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes scene-loading-breathe {
+  0%,
+  100% {
+    transform: scale(0.86);
+    opacity: 0.72;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes scene-loading-meter {
+  0%,
+  100% {
+    background: rgba(111, 211, 255, 0.2);
+  }
+  50% {
+    background: rgba(117, 233, 181, 0.86);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-embed-loading-mark::before,
+  .scene-embed-loading-mark::after,
+  .scene-embed-loading-meter i {
+    animation: none;
+  }
 }
 
 .scene-embed-empty {
@@ -41690,10 +41843,10 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
   display: flex;
   overflow: hidden;
   flex-direction: column;
-  width: min(1200px, calc(100vw - 56px));
-  height: min(750px, calc(100vh - 56px));
-  min-height: min(750px, calc(100vh - 56px));
-  max-height: min(750px, calc(100vh - 56px));
+  width: min(1320px, calc(100% - 48px));
+  height: min(780px, calc(100vh - 48px));
+  min-height: min(780px, calc(100vh - 48px));
+  max-height: min(780px, calc(100vh - 48px));
   border: 1px solid rgba(112, 201, 255, 0.26);
   background: linear-gradient(145deg, rgba(5, 19, 34, 0.96), rgba(8, 30, 48, 0.94));
   color: rgba(221, 239, 250, 0.94);
@@ -41810,6 +41963,31 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
   white-space: nowrap;
 }
 
+.scene-embed-device-confirm .scene-embed-device-confirm-runtime p {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.scene-embed-device-confirm .scene-embed-device-confirm-runtime p em {
+  overflow: visible;
+  color: rgba(179, 212, 236, 0.78);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.scene-embed-device-confirm .scene-embed-device-confirm-runtime p b {
+  min-width: 0;
+  overflow: hidden;
+  color: #5de797;
+  font-size: 14px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .scene-embed-device-confirm-route {
   display: grid;
   gap: 5px;
@@ -41870,10 +42048,10 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
 .scene-embed-device-dialog-head {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  flex: 0 0 52px;
+  flex: 0 0 44px;
   align-items: center;
-  gap: 16px;
-  padding: 8px 20px;
+  gap: 12px;
+  padding: 6px 18px;
   border-bottom: 1px solid rgba(112, 201, 255, 0.14);
 }
 
@@ -41897,7 +42075,7 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
   overflow: hidden;
   gap: 12px;
   color: #f5fbff;
-  font-size: 22px;
+  font-size: 19px;
   line-height: 1.22;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -41915,9 +42093,9 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
 }
 
 .scene-embed-device-dialog button {
-  height: 32px;
+  height: 30px;
   border: 1px solid rgba(112, 201, 255, 0.24);
-  border-radius: 10px;
+  border-radius: 8px;
   background: rgba(8, 31, 50, 0.72);
   color: rgba(216, 237, 250, 0.92);
   cursor: pointer;
@@ -41933,8 +42111,12 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
 
 .scene-embed-device-close {
   flex: 0 0 auto;
-  min-width: 72px;
+  min-width: 64px;
+  height: 26px !important;
   justify-self: end;
+  border-color: rgba(154, 189, 212, 0.22) !important;
+  background: rgba(8, 24, 39, 0.42) !important;
+  color: rgba(213, 232, 244, 0.9) !important;
 }
 
 .scene-embed-device-tabs {
@@ -41946,10 +42128,42 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
 }
 
 .scene-embed-device-tabs button {
-  min-width: 96px;
-  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 82px;
+  height: 26px;
+  padding: 0 11px;
   background: rgba(7, 26, 43, 0.56);
   color: rgba(189, 219, 239, 0.86);
+  font-size: 13px;
+}
+
+.scene-embed-device-tabs button span {
+  overflow: hidden;
+  color: inherit;
+  font-size: inherit;
+  font-weight: 750;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scene-embed-device-tabs button em {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(111, 211, 255, 0.13);
+  color: rgba(193, 228, 249, 0.92);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .scene-embed-device-tabs button.active {
@@ -41959,11 +42173,16 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
+.scene-embed-device-tabs button.active em {
+  background: rgba(103, 220, 255, 0.22);
+  color: #e9fbff;
+}
+
 .scene-embed-device-dialog-body {
   flex: 1 1 auto;
   overflow: auto;
   min-height: 0;
-  padding: 16px 20px;
+  padding: 8px 12px;
   scrollbar-color: rgba(104, 190, 255, 0.34) transparent;
 }
 
@@ -42022,12 +42241,281 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
   white-space: nowrap;
 }
 
+.scene-embed-device-detail-compact {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.scene-embed-device-compact-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.scene-embed-device-compact-summary article,
+.scene-embed-device-compact-panel,
+.scene-embed-device-compact-details details {
+  min-width: 0;
+  border: 1px solid rgba(112, 201, 255, 0.14);
+  background: rgba(7, 27, 44, 0.54);
+}
+
+.scene-embed-device-compact-summary article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 10px;
+}
+
+.scene-embed-device-compact-summary span,
+.scene-embed-device-tower-table span {
+  overflow: hidden;
+  color: rgba(179, 212, 236, 0.76);
+  font-size: 12px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scene-embed-device-compact-cell span {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(179, 212, 236, 0.78);
+  font-size: 12px;
+  line-height: 15px;
+  text-overflow: clip;
+  white-space: normal;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.scene-embed-device-compact-summary strong {
+  color: #5de797;
+  font-size: 16px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.scene-embed-device-compact-main {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.82fr) minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+}
+
+.scene-embed-device-compact-wide {
+  display: grid;
+  grid-template-columns: 1.05fr 1.25fr 1.2fr;
+  gap: 10px;
+  min-width: 0;
+}
+
+.scene-embed-device-compact-panel {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 10px;
+}
+
+.scene-embed-device-compact-panel h4 {
+  margin: 0;
+  color: rgba(114, 216, 255, 0.94);
+  font-size: 14px;
+  line-height: 18px;
+}
+
+.scene-embed-device-tower-table {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 80px;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid rgba(112, 201, 255, 0.1);
+  background: rgba(112, 201, 255, 0.08);
+}
+
+.scene-embed-device-tower-table > * {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 28px;
+  padding: 0 8px;
+  background: rgba(5, 22, 36, 0.76);
+}
+
+.scene-embed-device-tower-table > span {
+  min-height: 24px;
+  background: rgba(13, 48, 72, 0.74);
+  color: rgba(119, 218, 255, 0.94);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.scene-embed-device-tower-table strong,
+.scene-embed-device-tower-table b,
+.scene-embed-device-tower-table em {
+  overflow: hidden;
+  color: #eef9ff;
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scene-embed-device-tower-table em {
+  justify-content: center;
+  margin: 4px 8px;
+  min-height: 20px;
+  border: 1px solid rgba(112, 201, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(8, 31, 50, 0.8);
+  color: rgba(207, 229, 245, 0.92);
+  font-size: 12px;
+}
+
+.scene-embed-device-tower-table em.is-good {
+  border-color: rgba(93, 231, 151, 0.44);
+  background: rgba(22, 102, 68, 0.62);
+  color: #dfffee;
+}
+
+.scene-embed-device-tower-table em.is-caution {
+  border-color: rgba(255, 185, 98, 0.4);
+  background: rgba(88, 52, 16, 0.66);
+  color: #ffdfad;
+}
+
+.scene-embed-device-compact-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+}
+
+.scene-embed-device-compact-grid.is-key-settings {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.scene-embed-device-compact-grid.is-dense {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.scene-embed-device-compact-grid.is-load {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.scene-embed-device-compact-grid.is-remaining {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding-top: 8px;
+}
+
+.scene-embed-device-compact-cell {
+  display: grid;
+  grid-template-columns: minmax(72px, 1fr) max-content;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 40px;
+  padding: 6px 8px;
+  border: 1px solid rgba(112, 201, 255, 0.1);
+  background: rgba(8, 31, 50, 0.46);
+}
+
+.scene-embed-device-compact-cell strong {
+  overflow: hidden;
+  color: #f3fbff;
+  font-size: 13px;
+  line-height: 17px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scene-embed-device-compact-grid.is-dense .scene-embed-device-compact-cell,
+.scene-embed-device-compact-grid.is-load .scene-embed-device-compact-cell {
+  grid-template-columns: 1fr;
+  align-content: center;
+  align-items: start;
+  gap: 3px;
+  min-height: 52px;
+}
+
+.scene-embed-device-compact-grid.is-dense .scene-embed-device-compact-cell strong,
+.scene-embed-device-compact-grid.is-load .scene-embed-device-compact-cell strong {
+  justify-self: start;
+  max-width: 100%;
+  text-align: left;
+}
+
+.scene-embed-device-compact-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.scene-embed-device-compact-details details {
+  min-width: 0;
+  padding: 0;
+}
+
+.scene-embed-device-compact-details details[open] {
+  grid-column: 1 / -1;
+  padding: 0 10px 10px;
+}
+
+.scene-embed-device-compact-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 10px;
+  color: rgba(199, 225, 242, 0.92);
+  cursor: pointer;
+  list-style: none;
+}
+
+.scene-embed-device-compact-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.scene-embed-device-compact-details summary span,
+.scene-embed-device-compact-details summary strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scene-embed-device-compact-details summary span {
+  min-width: 0;
+  color: rgba(119, 218, 255, 0.94);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.scene-embed-device-compact-details summary strong {
+  flex: 0 0 auto;
+  color: #5de797;
+  font-size: 12px;
+}
+
 .scene-embed-device-info-board {
   display: grid;
   grid-template-columns: minmax(0, 0.6fr) minmax(420px, 1.58fr) minmax(0, 0.72fr);
   grid-template-rows: minmax(34px, 0.445fr) minmax(41px, 0.5fr) minmax(82px, 1fr) minmax(22px, 0.22fr);
   gap: 0;
+  height: 100%;
   min-height: 100%;
+  overflow: hidden;
   background:
     radial-gradient(circle at 50% 48%, rgba(76, 182, 255, 0.14), transparent 58%),
     radial-gradient(circle at 50% 72%, rgba(35, 91, 136, 0.14), transparent 62%),
@@ -42106,6 +42594,11 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
   margin-inline: auto;
 }
 
+.scene-embed-device-info-list.is-basic {
+  width: min(100%, 340px);
+  gap: 4px;
+}
+
 .scene-embed-device-info-title {
   overflow: hidden;
   justify-self: center;
@@ -42121,12 +42614,47 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
 }
 
 .scene-embed-device-info-list article {
+  position: relative;
   display: flex;
   align-items: baseline;
   justify-content: flex-start;
   gap: 4px;
   min-width: 0;
   max-width: 100%;
+}
+
+.scene-embed-device-info-list.is-default .scene-embed-device-info-row::before {
+  flex: 0 0 auto;
+  width: 5px;
+  height: 5px;
+  margin-right: 2px;
+  border-radius: 999px;
+  background: rgba(178, 212, 236, 0.34);
+  content: "";
+}
+
+.scene-embed-device-info-list.is-default .scene-embed-device-info-row.is-good::before {
+  background: rgba(112, 239, 181, 0.86);
+  box-shadow: 0 0 9px rgba(112, 239, 181, 0.26);
+}
+
+.scene-embed-device-info-list.is-default .scene-embed-device-info-row.is-warn::before {
+  background: rgba(255, 198, 103, 0.92);
+  box-shadow: 0 0 9px rgba(255, 198, 103, 0.24);
+}
+
+.scene-embed-device-info-list.is-default .scene-embed-device-info-row.is-danger::before {
+  background: rgba(255, 103, 112, 0.92);
+  box-shadow: 0 0 9px rgba(255, 103, 112, 0.26);
+}
+
+.scene-embed-device-info-list.is-basic article {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  width: 100%;
+  padding: 1px 0;
 }
 
 .scene-embed-device-info-list span {
@@ -42147,6 +42675,33 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
   white-space: nowrap;
 }
 
+.scene-embed-device-info-list.is-default .scene-embed-device-info-row.is-good strong,
+.scene-embed-device-info-list.is-default .scene-embed-device-info-row.is-good em {
+  color: rgba(142, 244, 205, 0.98);
+}
+
+.scene-embed-device-info-list.is-default .scene-embed-device-info-row.is-warn strong,
+.scene-embed-device-info-list.is-default .scene-embed-device-info-row.is-warn em {
+  color: rgba(255, 210, 139, 0.98);
+}
+
+.scene-embed-device-info-list.is-default .scene-embed-device-info-row.is-danger strong,
+.scene-embed-device-info-list.is-default .scene-embed-device-info-row.is-danger em {
+  color: rgba(255, 145, 145, 0.98);
+}
+
+.scene-embed-device-info-list.is-basic strong {
+  min-width: 0;
+  color: rgba(235, 247, 255, 0.94);
+  font-size: 13px;
+  text-align: left;
+}
+
+.scene-embed-device-info-list.is-basic span {
+  font-size: 12px;
+  text-align: right;
+}
+
 .scene-embed-device-info-list em {
   overflow: hidden;
   color: rgba(178, 212, 236, 0.78);
@@ -42154,6 +42709,71 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
   font-style: normal;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.scene-embed-device-status-badges {
+  display: grid;
+  gap: 6px;
+  width: min(100%, 210px);
+  justify-self: center;
+}
+
+.scene-embed-device-status-badge {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 1px solid rgba(112, 201, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(8, 28, 46, 0.46);
+}
+
+.scene-embed-device-status-badge span,
+.scene-embed-device-status-badge strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scene-embed-device-status-badge span {
+  color: rgba(178, 212, 236, 0.72);
+  font-size: 12px;
+}
+
+.scene-embed-device-status-badge strong {
+  color: rgba(235, 247, 255, 0.94);
+  font-size: 13px;
+  text-align: right;
+}
+
+.scene-embed-device-status-badge.is-good {
+  border-color: rgba(112, 239, 181, 0.28);
+  background: rgba(26, 102, 72, 0.22);
+}
+
+.scene-embed-device-status-badge.is-good strong {
+  color: rgba(142, 244, 205, 0.98);
+}
+
+.scene-embed-device-status-badge.is-warn {
+  border-color: rgba(255, 198, 103, 0.32);
+  background: rgba(91, 58, 18, 0.24);
+}
+
+.scene-embed-device-status-badge.is-warn strong {
+  color: rgba(255, 210, 139, 0.98);
+}
+
+.scene-embed-device-status-badge.is-danger {
+  border-color: rgba(255, 103, 112, 0.34);
+  background: rgba(91, 30, 36, 0.24);
+}
+
+.scene-embed-device-status-badge.is-danger strong {
+  color: rgba(255, 145, 145, 0.98);
 }
 
 .scene-embed-device-info-panel.is-center-top .scene-embed-device-info-list {
@@ -42190,41 +42810,51 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
   grid-column: 2;
   grid-row: 2 / 5;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto auto;
   overflow: hidden;
   padding: 0;
   background: transparent;
 }
 
 .scene-embed-device-info-image-stage {
-  display: grid;
+  position: relative;
+  display: block;
   overflow: hidden;
   min-height: 0;
-  place-items: center;
-  padding: 10px;
+  padding: 0;
 }
 
 .scene-embed-device-info-image img {
   display: block;
-  max-width: 100%;
-  max-height: 100%;
+  position: absolute;
+  inset: 6px 10px 28px;
+  width: calc(100% - 20px);
+  height: calc(100% - 34px);
+  max-width: none;
+  max-height: none;
   filter:
     drop-shadow(0 18px 34px rgba(5, 19, 34, 0.34))
     drop-shadow(0 0 18px rgba(76, 182, 255, 0.08));
+  image-rendering: auto;
   -webkit-mask-image: radial-gradient(ellipse 86% 82% at 50% 50%, #000 66%, rgba(0, 0, 0, 0.82) 80%, transparent 100%);
   mask-image: radial-gradient(ellipse 86% 82% at 50% 50%, #000 66%, rgba(0, 0, 0, 0.82) 80%, transparent 100%);
   object-fit: contain;
+  transform: translateZ(0) scale(0.988);
+  transform-origin: center;
+  backface-visibility: hidden;
 }
 
 .scene-embed-device-info-image img.is-gif {
   filter:
-    blur(0.18px)
-    saturate(0.96)
-    contrast(0.98)
+    blur(0.32px)
+    saturate(0.98)
+    contrast(0.99)
     drop-shadow(0 16px 30px rgba(5, 19, 34, 0.42))
-    drop-shadow(0 0 22px rgba(76, 182, 255, 0.12));
-  -webkit-mask-image: radial-gradient(ellipse 82% 78% at 50% 50%, #000 58%, rgba(0, 0, 0, 0.84) 74%, transparent 100%);
-  mask-image: radial-gradient(ellipse 82% 78% at 50% 50%, #000 58%, rgba(0, 0, 0, 0.84) 74%, transparent 100%);
+    drop-shadow(0 0 1px rgba(126, 222, 255, 0.24))
+    drop-shadow(0 0 24px rgba(76, 182, 255, 0.16));
+  -webkit-mask-image: radial-gradient(ellipse 82% 78% at 50% 50%, #000 60%, rgba(0, 0, 0, 0.9) 74%, transparent 100%);
+  mask-image: radial-gradient(ellipse 82% 78% at 50% 50%, #000 60%, rgba(0, 0, 0, 0.9) 74%, transparent 100%);
+  transform: translateZ(0) scale(0.982);
 }
 
 .scene-embed-device-info-image-empty {
@@ -42235,8 +42865,8 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
 .scene-embed-device-info-load {
   display: grid;
   align-content: center;
-  gap: 8px;
-  padding: 8px 12px 10px;
+  gap: 5px;
+  padding: 7px 12px 8px;
   border-top: 0;
   background: transparent;
 }
@@ -42258,17 +42888,44 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
   font-size: 18px;
 }
 
+.scene-embed-device-info-load em {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(112, 239, 181, 0.12);
+  color: rgba(142, 244, 205, 0.96);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.scene-embed-device-info-load.is-warn em {
+  background: rgba(255, 198, 103, 0.13);
+  color: rgba(255, 210, 139, 0.98);
+}
+
+.scene-embed-device-info-load.is-danger em {
+  background: rgba(255, 103, 112, 0.14);
+  color: rgba(255, 145, 145, 0.98);
+}
+
 .scene-embed-device-info-load i {
+  position: relative;
   display: block;
   overflow: hidden;
   height: 10px;
   border-radius: 999px;
   border: 0;
-  background: rgba(76, 182, 255, 0.12);
+  background:
+    linear-gradient(90deg, rgba(255, 198, 103, 0.14) 0 30%, rgba(112, 239, 181, 0.12) 30% 85%, rgba(255, 145, 145, 0.13) 85% 100%);
   box-shadow: inset 0 0 0 1px rgba(112, 201, 255, 0.08);
 }
 
 .scene-embed-device-info-load b {
+  position: relative;
+  z-index: 1;
   display: block;
   height: 100%;
   border-radius: inherit;
@@ -42276,15 +42933,191 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
   box-shadow: 0 0 14px rgba(91, 221, 181, 0.32);
 }
 
+.scene-embed-device-info-load.is-warn b {
+  background: linear-gradient(90deg, rgba(255, 193, 98, 0.9), rgba(255, 221, 151, 0.94));
+  box-shadow: 0 0 14px rgba(255, 198, 103, 0.26);
+}
+
+.scene-embed-device-info-load.is-danger b {
+  background: linear-gradient(90deg, rgba(255, 103, 112, 0.9), rgba(255, 166, 154, 0.94));
+  box-shadow: 0 0 14px rgba(255, 103, 112, 0.26);
+}
+
+.scene-embed-device-info-load-marker {
+  position: absolute;
+  z-index: 2;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: rgba(235, 247, 255, 0.34);
+}
+
+.scene-embed-device-info-load-marker.is-low {
+  left: 30%;
+}
+
+.scene-embed-device-info-load-marker.is-high {
+  left: 85%;
+}
+
+.scene-embed-device-info-load-bands {
+  display: grid !important;
+  grid-template-columns: 0.3fr 0.55fr 0.15fr;
+  gap: 0 !important;
+  min-width: 0;
+}
+
+.scene-embed-device-info-load-bands span {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(178, 212, 236, 0.58);
+  font-size: 10px;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scene-embed-device-info-load-bands span:nth-child(2) {
+  text-align: center;
+}
+
+.scene-embed-device-info-load-bands span:nth-child(3) {
+  text-align: right;
+}
+
+.scene-embed-device-info-control-dock {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  max-height: 178px;
+  margin: 0 14px 10px;
+  padding: 8px 10px 9px;
+  overflow: auto;
+  border: 1px solid rgba(112, 201, 255, 0.18);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(7, 24, 39, 0.82), rgba(5, 18, 31, 0.86)),
+    radial-gradient(circle at top left, rgba(99, 213, 255, 0.1), transparent 54%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 -12px 34px rgba(5, 17, 28, 0.2);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(104, 190, 255, 0.34) transparent;
+}
+
+.scene-embed-device-info-control-dock::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.scene-embed-device-info-control-dock::-webkit-scrollbar-track,
+.scene-embed-device-info-control-dock::-webkit-scrollbar-track-piece,
+.scene-embed-device-info-control-dock::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.scene-embed-device-info-control-dock::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(104, 190, 255, 0.34);
+  background-clip: padding-box;
+}
+
+.scene-embed-device-info-control-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 20px;
+}
+
+.scene-embed-device-info-control-head strong {
+  color: rgba(118, 219, 255, 0.96);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.scene-embed-device-info-control-head span {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 189, 97, 0.28);
+  border-radius: 999px;
+  background: rgba(76, 47, 16, 0.34);
+  color: rgba(255, 220, 164, 0.95);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.scene-embed-device-info-control-dock .scene-embed-device-parameter-groups.is-control {
+  gap: 5px;
+  overflow: visible;
+}
+
+.scene-embed-device-info-control-dock .scene-embed-device-command-state {
+  min-height: 22px;
+  padding: 3px 7px;
+  font-size: 11px;
+  line-height: 15px;
+}
+
+.scene-embed-device-info-control-dock .scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group {
+  gap: 4px;
+  padding: 5px 6px;
+  border-color: rgba(112, 201, 255, 0.13);
+  border-radius: 8px;
+  background: rgba(8, 28, 46, 0.48);
+}
+
+.scene-embed-device-info-control-dock .scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group h4 {
+  font-size: 12px;
+  line-height: 14px;
+}
+
+.scene-embed-device-info-control-dock .scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group.is-control-wide {
+  grid-column: 1 / -1;
+}
+
+.scene-embed-device-info-control-dock .scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-grid {
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 4px;
+}
+
+.scene-embed-device-info-control-dock .scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-grid article {
+  min-height: 32px;
+  padding: 3px 5px;
+  border-radius: 6px;
+}
+
+.scene-embed-device-info-control-dock .scene-embed-device-control-options {
+  gap: 4px;
+}
+
+.scene-embed-device-info-control-dock .scene-embed-device-control-options button {
+  min-width: 46px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0 7px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
 .scene-embed-device-parameter-groups {
   display: grid;
-  gap: 12px;
+  gap: 8px;
+}
+
+.scene-embed-device-parameter-groups.is-control {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: start;
+  gap: 4px;
 }
 
 .scene-embed-device-parameter-group {
   display: grid;
-  gap: 10px;
-  padding: 12px;
+  gap: 8px;
+  padding: 10px;
   border: 1px solid rgba(112, 201, 255, 0.14);
   background: rgba(6, 24, 40, 0.54);
 }
@@ -42295,17 +43128,71 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
   font-size: 15px;
 }
 
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group {
+  grid-column: 1 / -1;
+  gap: 3px;
+  padding: 4px 6px;
+}
+
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group.is-control-mode {
+  order: 1;
+}
+
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group.is-control-compact {
+  grid-column: span 4;
+  order: 2;
+}
+
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group.is-control-medium {
+  grid-column: span 6;
+  order: 2;
+}
+
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group.is-control-tower {
+  order: 3;
+}
+
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group.is-control-system {
+  order: 4;
+}
+
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group.is-control-extra {
+  order: 5;
+}
+
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group h4 {
+  font-size: 12.5px;
+  line-height: 13px;
+}
+
 .scene-embed-device-parameter-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 6px;
+}
+
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-grid {
+  grid-template-columns: repeat(auto-fit, minmax(154px, 1fr));
+  gap: 3px;
+}
+
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group.is-control-mode .scene-embed-device-parameter-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group.is-control-compact .scene-embed-device-parameter-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group.is-control-medium .scene-embed-device-parameter-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .scene-embed-device-parameter-grid article {
   display: grid;
   min-width: 0;
-  gap: 4px;
-  padding: 9px 10px;
+  gap: 5px;
+  padding: 7px 8px;
   border: 1px solid rgba(112, 201, 255, 0.1);
   background: rgba(8, 31, 50, 0.48);
 }
@@ -42319,40 +43206,85 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
 
 .scene-embed-device-parameter-grid span {
   color: rgba(179, 212, 236, 0.78);
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 16px;
 }
 
 .scene-embed-device-parameter-grid strong {
   color: #f3fbff;
-  font-size: 15px;
+  font-size: 14px;
+  line-height: 18px;
 }
 
 .scene-embed-device-parameter-grid article.is-control-editable {
-  gap: 7px;
+  gap: 6px;
 }
 
 .scene-embed-device-parameter-grid article.is-control-options {
-  gap: 7px;
+  gap: 6px;
+}
+
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-grid article {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+  min-height: 34px;
+  padding: 3px 5px;
+}
+
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-grid article > span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-grid article > strong {
+  justify-self: end;
+  font-size: 13px;
+  line-height: 16px;
+  text-align: right;
+}
+
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-grid article.is-control-editable {
+  grid-template-columns: 1fr;
+  align-content: center;
+  gap: 2px;
+  min-height: 40px;
+}
+
+.scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-grid article.is-control-options {
+  grid-template-columns: 1fr;
+  align-content: center;
+  gap: 2px;
+  min-height: 40px;
 }
 
 .scene-embed-device-control-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(28px, auto) 58px;
+  grid-template-columns: minmax(50px, 1fr) minmax(16px, auto) 46px;
   align-items: center;
-  gap: 6px;
+  gap: 3px;
   min-width: 0;
 }
 
 .scene-embed-device-control-row input {
   min-width: 0;
-  height: 30px;
-  padding: 0 9px;
+  height: 20px;
+  padding: 0 5px;
   border: 1px solid rgba(112, 201, 255, 0.18);
-  border-radius: 8px;
+  border-radius: 5px;
   outline: none;
   background: rgba(5, 19, 32, 0.76);
   color: #f3fbff;
-  font-size: 15px;
+  font-size: 11.5px;
   font-weight: 600;
 }
 
@@ -42362,25 +43294,37 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
 }
 
 .scene-embed-device-control-row em {
-  min-width: 24px;
+  min-width: 14px;
   overflow: hidden;
   color: rgba(199, 225, 242, 0.78);
-  font-size: 13px;
+  font-size: 10.5px;
   font-style: normal;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .scene-embed-device-control-row button {
-  height: 30px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  width: 38px;
+  min-width: 38px;
+  max-width: 38px;
+  height: 22px;
+  min-height: 22px;
   padding: 0;
   border: 1px solid rgba(106, 194, 255, 0.22);
-  border-radius: 8px;
+  border-radius: 5px;
   background: rgba(8, 28, 46, 0.74);
   color: rgba(207, 229, 245, 0.92);
   cursor: pointer;
   font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
-  font-size: 13px;
+  font-size: 11px;
+  line-height: 20px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .scene-embed-device-control-row button:hover {
@@ -42397,21 +43341,22 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
 .scene-embed-device-control-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  justify-content: flex-start;
+  gap: 2px;
   min-width: 0;
 }
 
 .scene-embed-device-control-options button {
-  min-width: 58px;
-  height: 30px;
-  padding: 0 10px;
+  min-width: 36px;
+  height: 20px;
+  padding: 0 5px;
   border: 1px solid rgba(106, 194, 255, 0.22);
-  border-radius: 8px;
+  border-radius: 5px;
   background: rgba(8, 28, 46, 0.74);
   color: rgba(207, 229, 245, 0.92);
   cursor: pointer;
   font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
-  font-size: 13px;
+  font-size: 10.5px;
   white-space: nowrap;
 }
 
@@ -42424,7 +43369,7 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
   border-color: rgba(93, 231, 151, 0.58);
   background: linear-gradient(135deg, rgba(34, 154, 88, 0.88), rgba(18, 102, 70, 0.9));
   color: #ecfff5;
-  box-shadow: 0 0 0 1px rgba(92, 231, 151, 0.16), 0 10px 22px rgba(21, 118, 70, 0.24);
+  box-shadow: 0 0 0 1px rgba(92, 231, 151, 0.16), 0 6px 14px rgba(21, 118, 70, 0.18);
 }
 
 .scene-embed-device-control-options button.is-current:hover:not(:disabled) {
@@ -42488,17 +43433,27 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
   min-width: 0;
 }
 
+.scene-embed-device-record-note {
+  margin: 0 0 8px;
+  padding: 7px 10px;
+  border: 1px solid rgba(112, 201, 255, 0.14);
+  background: rgba(8, 31, 50, 0.5);
+  color: rgba(199, 225, 242, 0.86);
+  font-size: 12px;
+  line-height: 16px;
+}
+
 .scene-embed-device-record-table {
   width: 100%;
   border-collapse: separate;
-  border-spacing: 0 3px;
+  border-spacing: 0 2px;
   table-layout: fixed;
 }
 
 .scene-embed-device-record-table th {
-  padding: 0 10px 7px;
+  padding: 0 8px 6px;
   color: rgba(119, 218, 255, 0.94);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.25;
   text-align: left;
@@ -42506,13 +43461,13 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
 }
 
 .scene-embed-device-record-table td {
-  padding: 9px 10px;
+  padding: 7px 8px;
   border-top: 1px solid rgba(112, 201, 255, 0.1);
   border-bottom: 1px solid rgba(112, 201, 255, 0.1);
   background: rgba(8, 31, 50, 0.46);
   color: rgba(232, 244, 252, 0.92);
-  font-size: 14px;
-  line-height: 1.35;
+  font-size: 12px;
+  line-height: 1.32;
   vertical-align: top;
   word-break: break-word;
 }
@@ -42540,6 +43495,27 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
 .scene-embed-device-record-table.is-alarm td.is-alarming {
   color: #ffd66e;
   font-weight: 700;
+}
+
+.scene-embed-device-operation-result {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.scene-embed-device-operation-result span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 7px;
+  border: 1px solid rgba(93, 231, 151, 0.22);
+  border-radius: 999px;
+  background: rgba(31, 118, 78, 0.2);
+  color: rgba(218, 255, 237, 0.95);
+  font-size: 11px;
+  line-height: 18px;
+  white-space: nowrap;
 }
 
 .scene-embed-device-record-table.is-operation th:nth-child(1),
@@ -42718,7 +43694,7 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
   }
 
   .scene-embed-device-dialog {
-    width: calc(100vw - 24px);
+    width: calc(100% - 24px);
     height: calc(100vh - 40px);
     min-height: calc(100vh - 40px);
     max-height: calc(100vh - 40px);
@@ -42726,6 +43702,32 @@ button:not(.knowledge-modal-close):not(.exit-link):hover:not(:disabled) {
 
   .scene-embed-device-tabs {
     overflow-x: auto;
+  }
+
+  .scene-embed-device-compact-summary,
+  .scene-embed-device-compact-main,
+  .scene-embed-device-compact-wide,
+  .scene-embed-device-compact-details {
+    grid-template-columns: 1fr;
+  }
+
+  .scene-embed-device-compact-grid,
+  .scene-embed-device-compact-grid.is-key-settings,
+  .scene-embed-device-compact-grid.is-dense,
+  .scene-embed-device-compact-grid.is-load,
+  .scene-embed-device-compact-grid.is-remaining,
+  .scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .scene-embed-device-parameter-groups.is-control {
+    grid-template-columns: 1fr;
+  }
+
+  .scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group,
+  .scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group.is-control-compact,
+  .scene-embed-device-parameter-groups.is-control .scene-embed-device-parameter-group.is-control-medium {
+    grid-column: 1 / -1;
   }
 
   .scene-embed-device-dialog-grid,
@@ -71207,6 +72209,33 @@ html body #root .content.is-subpage-compact .optimize-page > .optimize-diagnosti
   margin: 0 !important;
 }
 
+html body #root .content.is-subpage-compact .optimize-page .optimize-diagnostic-summary-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+html body #root .content.is-subpage-compact .optimize-page .optimize-diagnostic-summary-actions a {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 118px !important;
+  height: 28px !important;
+  padding: 0 12px !important;
+  border: 1px solid rgba(87, 211, 170, 0.52) !important;
+  border-radius: 8px !important;
+  background: linear-gradient(180deg, rgba(31, 139, 104, 0.94), rgba(18, 101, 83, 0.94)) !important;
+  color: #ecfff8 !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  line-height: 28px !important;
+  text-decoration: none !important;
+  white-space: nowrap !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+}
+
 html body #root .content.is-subpage-compact .optimize-page > .optimize-workspace-stage {
   height: 132px !important;
   min-height: 132px !important;
@@ -72104,4 +73133,4267 @@ html body #root .content.is-subpage-compact .optimize-page > .section-card:nth-o
   .operational-diagnostics-loading-panel {
     display: grid;
   }
+}
+
+/* Full-site visual acceptance guard: remove first-viewport text clipping at 1280x720. */
+html body #root .content.is-dashboard-content > .dashboard-cockpit-v2 {
+  grid-template-rows: 32px 56px 72px minmax(0, 1fr) 104px !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-status {
+  grid-template-rows: 12px 18px 14px !important;
+  align-content: center !important;
+  gap: 1px !important;
+  padding: 4px 9px !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-status span,
+html body #root .content.is-dashboard-content .dashboard-cockpit-status strong,
+html body #root .content.is-dashboard-content .dashboard-cockpit-status small {
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-status span {
+  font-size: 10.6px !important;
+  line-height: 12px !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-status strong {
+  font-size: 13.6px !important;
+  line-height: 18px !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-status small {
+  font-size: 10.4px !important;
+  line-height: 14px !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-kpi {
+  grid-template-rows: 13px 27px 14px !important;
+  align-content: center !important;
+  padding: 5px 9px !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-kpi span,
+html body #root .content.is-dashboard-content .dashboard-cockpit-kpi small {
+  min-height: 0 !important;
+  line-height: 13px !important;
+  white-space: nowrap !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-value {
+  line-height: 27px !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-bottom-grid {
+  height: 104px !important;
+  min-height: 104px !important;
+  transform: translateY(-2px) !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-bottom-grid .dashboard-cockpit-panel-head {
+  height: 28px !important;
+  min-height: 28px !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-bottom-grid .dashboard-cockpit-panel-body {
+  height: calc(100% - 28px) !important;
+  padding: 5px 9px !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-bottom-grid .dashboard-cockpit-list > div,
+html body #root .content.is-dashboard-content .dashboard-cockpit-bottom-grid .dashboard-cockpit-row-link {
+  min-height: 19px !important;
+  height: 19px !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-header {
+  height: 86px !important;
+  min-height: 86px !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-list {
+  flex-wrap: nowrap !important;
+  gap: 4px !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  overflow: hidden !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-chip {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  min-height: 20px !important;
+  height: 20px !important;
+  padding: 0 5px !important;
+  font-size: 10px !important;
+  line-height: 20px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-table-head,
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-table-row {
+  grid-template-columns: 116px minmax(0, 1fr) 104px 86px !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-cell-time {
+  align-content: center !important;
+  gap: 1px !important;
+  white-space: normal !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-cell-time strong {
+  min-height: 13px !important;
+  font-size: 11.6px !important;
+  line-height: 13px !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-cell-time small {
+  min-height: 22px !important;
+  font-size: 9.6px !important;
+  line-height: 11px !important;
+  white-space: normal !important;
+  overflow: hidden !important;
+  text-overflow: clip !important;
+}
+
+html body #root .content.is-subpage-compact .work-order-page .work-order-filter-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.42fr) !important;
+  gap: 8px !important;
+  overflow: visible !important;
+}
+
+html body #root .content.is-subpage-compact .work-order-page .work-order-filter-footer {
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+  overflow: visible !important;
+}
+
+html body #root .content.is-subpage-compact .work-order-page .work-order-filter-meta {
+  min-width: 0 !important;
+  overflow: visible !important;
+}
+
+html body #root .content.is-subpage-compact .system-overview-one-screen .system-overview-kpi {
+  min-height: 76px !important;
+  height: 76px !important;
+  align-content: center !important;
+  gap: 2px !important;
+  padding: 7px 10px !important;
+}
+
+html body #root .content.is-subpage-compact .system-overview-one-screen .system-overview-kpi :is(span, strong, small, em) {
+  min-height: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root .content.is-subpage-compact .environment-compact-page-v2 .environment-compact-hero-side {
+  height: 88px !important;
+  min-height: 88px !important;
+  align-content: center !important;
+  padding-top: 7px !important;
+  padding-bottom: 7px !important;
+}
+
+html body #root .content.is-subpage-compact .environment-compact-page-v2 .environment-compact-hero-side :is(span, strong, em) {
+  min-height: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 {
+  grid-template-rows: 88px 70px minmax(0, 1fr) 72px 30px !important;
+}
+
+html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-hero {
+  height: 88px !important;
+  min-height: 88px !important;
+}
+
+html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-status {
+  height: 70px !important;
+  min-height: 70px !important;
+  align-content: center !important;
+}
+
+html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-metrics,
+html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-metric {
+  height: 70px !important;
+  min-height: 70px !important;
+}
+
+html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-metric {
+  grid-template-rows: 13px 26px 14px !important;
+  align-content: center !important;
+  gap: 2px !important;
+  padding: 5px 8px !important;
+}
+
+html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-metric :is(span, strong, small),
+html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-status :is(span, strong, p) {
+  min-height: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 {
+  grid-template-rows: 84px 76px minmax(0, 1fr) 30px !important;
+}
+
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-hero {
+  height: 84px !important;
+  min-height: 84px !important;
+  padding: 8px 9px !important;
+}
+
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-tags article {
+  height: 46px !important;
+  min-height: 46px !important;
+  grid-template-rows: 13px 18px !important;
+  align-content: center !important;
+  gap: 2px !important;
+  padding: 5px 8px !important;
+}
+
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-tags article :is(span, strong),
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-status :is(span, strong, em) {
+  min-height: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-status {
+  height: 54px !important;
+  min-height: 54px !important;
+  align-content: center !important;
+  padding: 6px 8px !important;
+}
+
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-metrics,
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-metric {
+  height: 76px !important;
+  min-height: 76px !important;
+}
+
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-metric {
+  grid-template-rows: 13px 28px 14px !important;
+  align-content: center !important;
+  gap: 2px !important;
+  padding: 6px 8px !important;
+}
+
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-metric :is(span, strong, small) {
+  min-height: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root .content.is-subpage-compact .report-record-page .report-record-command-state strong {
+  font-size: 11.4px !important;
+  line-height: 14px !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+html body #root .content.is-subpage-compact .report-record-page .report-record-chart-head > div {
+  min-height: 20px !important;
+  line-height: 20px !important;
+  overflow: visible !important;
+}
+
+html body #root .content.is-subpage-compact .energy-parameter-compact-page-v2 .energy-parameter-compact-metric strong {
+  height: 28px !important;
+  min-height: 28px !important;
+  line-height: 28px !important;
+}
+
+html body #root .content.is-subpage-compact .knowledge-base-page .knowledge-type-panel,
+html body #root .content.is-subpage-compact .knowledge-base-page .knowledge-source-panel {
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+html body #root .content.is-subpage-compact .knowledge-base-page .knowledge-source-panel {
+  height: 132px !important;
+}
+
+html body #root .content.is-subpage-compact .optimize-page .optimize-response-card strong,
+html body #root .content.is-subpage-compact .optimize-page .optimize-result-card-grid strong {
+  min-width: 0 !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+html body #root .content.is-subpage-compact .scene-control-page .scene-compat-overview-card p,
+html body #root .content.is-subpage-compact .scene-control-page .scene-compat-summary-card p,
+html body #root .content.is-subpage-compact .scene-embed-page .scene-embed-kpi small {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+}
+
+/* Full-site visual acceptance pass 2: final cascade for 1280x720 no cover/no tiny text. */
+html body #root .content.is-dashboard-content .dashboard-cockpit-status small {
+  font-size: 10.8px !important;
+  line-height: 14px !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-status strong {
+  font-size: 13px !important;
+  line-height: 18px !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-kpi small {
+  min-height: 28px !important;
+  line-height: 14px !important;
+  white-space: normal !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-water-tag {
+  min-height: 28px !important;
+  line-height: 13px !important;
+  white-space: normal !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-footer-grid,
+html body #root .content.is-subpage-compact.has-secondary-nav .report-record-table-footer,
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-boundary,
+html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-boundary {
+  transform: none !important;
+}
+
+html body #root .content.is-subpage-compact .alarm-page-v2 .alarm-queue-body {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: thin !important;
+}
+
+html body #root .content.is-subpage-compact .alarm-page-v2 .alarm-queue-body .alarm-queue-row {
+  position: relative !important;
+  min-height: 48px !important;
+}
+
+html body #root .content.is-subpage-compact .alarm-page-v2 .alarm-focus-card {
+  min-height: 54px !important;
+  overflow: hidden !important;
+}
+
+html body #root .content.is-subpage-compact .alarm-page-v2 .alarm-focus-card :is(span, p) {
+  min-height: 14px !important;
+  font-size: 10.8px !important;
+  line-height: 14px !important;
+}
+
+html body #root .content.is-subpage-compact .cold-log-energy-split {
+  grid-template-columns: repeat(3, minmax(66px, 1fr)) !important;
+}
+
+html body #root .content.is-subpage-compact .cold-log-energy-split span strong,
+html body #root .content.is-subpage-compact .cold-log-table th small {
+  min-height: 13px !important;
+  font-size: 10.8px !important;
+  line-height: 13px !important;
+  white-space: nowrap !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-list {
+  height: 24px !important;
+  min-height: 24px !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-chip {
+  height: 22px !important;
+  min-height: 22px !important;
+  font-size: 10.8px !important;
+  line-height: 22px !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-chip:last-child {
+  flex: 1.45 1 0 !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-table-head,
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-table-row {
+  grid-template-columns: 110px minmax(0, 1fr) 128px 82px !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-cell-time small {
+  min-height: 24px !important;
+  font-size: 10.6px !important;
+  line-height: 12px !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-result-stack {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(56px, 1fr)) !important;
+  gap: 4px !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-result-stack .status-pill {
+  width: auto !important;
+  min-width: 56px !important;
+  padding: 0 6px !important;
+  text-align: center !important;
+}
+
+html body #root .content.is-subpage-compact .work-order-page .work-order-filter-layout {
+  max-height: 138px !important;
+  overflow: hidden !important;
+}
+
+html body #root .content.is-subpage-compact .work-order-page .work-order-filter-footer {
+  min-height: 34px !important;
+  padding-bottom: 2px !important;
+}
+
+html body #root .content.is-subpage-compact .system-overview-one-screen .system-overview-topbar,
+html body #root .content.is-subpage-compact .device-overview-page .device-ops-header {
+  min-height: 66px !important;
+  padding-bottom: 8px !important;
+}
+
+html body #root .content.is-subpage-compact .system-overview-one-screen .system-overview-title-block p,
+html body #root .content.is-subpage-compact .device-overview-page .device-ops-title span {
+  min-height: 15px !important;
+  line-height: 15px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root .content.is-subpage-compact .system-overview-one-screen .system-overview-evidence strong {
+  min-height: 20px !important;
+  line-height: 20px !important;
+}
+
+html body #root .content.is-subpage-compact .trend-analysis-page--effect .trend-stat-list--compact span,
+html body #root .content.is-subpage-compact .trend-analysis-page--effect .trend-axis--dense small,
+html body #root .content.is-subpage-compact .energy-efficiency-overview-day-metrics span,
+html body #root .content.is-subpage-compact .energy-efficiency-overview-day-metrics strong {
+  min-height: 12px !important;
+  font-size: 10.8px !important;
+  line-height: 12px !important;
+}
+
+html body #root .content.is-subpage-compact .trend-analysis-page--effect .trend-axis--dense {
+  pointer-events: none !important;
+}
+
+html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-status strong {
+  min-height: 28px !important;
+  line-height: 28px !important;
+}
+
+html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-metric strong {
+  min-height: 24px !important;
+  line-height: 24px !important;
+}
+
+html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-tree-list,
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-table-wrap,
+html body #root .content.is-subpage-compact .report-record-page .report-record-table-shell {
+  overflow: auto !important;
+  scrollbar-width: thin !important;
+}
+
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-tags article {
+  grid-template-rows: 14px 18px !important;
+}
+
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-tags article span,
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-tags article strong {
+  min-height: 14px !important;
+  line-height: 14px !important;
+}
+
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-status strong {
+  min-height: 22px !important;
+  line-height: 22px !important;
+}
+
+html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-metric strong,
+html body #root .content.is-subpage-compact .energy-parameter-compact-page-v2 .energy-parameter-compact-metric strong {
+  height: 30px !important;
+  min-height: 30px !important;
+  line-height: 30px !important;
+}
+
+html body #root .content.is-subpage-compact .report-record-page .report-record-filter-grid {
+  grid-template-columns: repeat(4, minmax(128px, 1fr)) minmax(218px, 0.95fr) 230px !important;
+}
+
+html body #root .content.is-subpage-compact .report-record-page .report-record-side-block.is-point-picker .report-record-empty.is-compact {
+  min-height: 58px !important;
+  height: 58px !important;
+  padding: 10px !important;
+}
+
+html body #root .content.is-subpage-compact .report-record-page .report-record-trace-grid span {
+  min-height: 12px !important;
+  font-size: 10.8px !important;
+  line-height: 12px !important;
+}
+
+html body #root .content.is-subpage-compact .report-record-page .report-record-chart-head strong {
+  min-height: 21px !important;
+  line-height: 21px !important;
+}
+
+html body #root .content.is-subpage-compact .knowledge-page--compact .knowledge-table-shell {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+html body #root .content.is-subpage-compact .knowledge-page--compact .knowledge-table {
+  min-width: 0 !important;
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+
+html body #root .content.is-subpage-compact .knowledge-page--compact .knowledge-source-panel,
+html body #root .content.is-subpage-compact .knowledge-page--compact .knowledge-type-panel {
+  overflow: hidden !important;
+}
+
+html body #root .content.is-subpage-compact .optimize-page .optimize-command-tags strong,
+html body #root .content.is-subpage-compact .optimize-page .optimize-form-prefill-meta span {
+  min-height: 13px !important;
+  font-size: 10.8px !important;
+  line-height: 13px !important;
+}
+
+html body #root .content.is-subpage-compact .optimize-page .optimize-response-card strong {
+  display: block !important;
+  width: 100% !important;
+  min-height: 20px !important;
+  font-size: 12.6px !important;
+  line-height: 20px !important;
+  white-space: normal !important;
+}
+
+html body #root .content.is-scene-embed-content .scene-embed-runtime-card p {
+  min-height: 28px !important;
+  font-size: 10.8px !important;
+  line-height: 14px !important;
+  white-space: normal !important;
+}
+
+html body #root .content.is-scene-embed-content .scene-embed-switchbar {
+  grid-template-columns: minmax(130px, 0.85fr) minmax(260px, 1.25fr) minmax(330px, 1.65fr) !important;
+  transform: none !important;
+}
+
+html body #root .content.is-scene-embed-content .scene-embed-current,
+html body #root .content.is-scene-embed-content .scene-embed-environment,
+html body #root .content.is-scene-embed-content .scene-embed-toolbar {
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Full-site visual acceptance pass 3: stronger selectors for residual compact-page clipping. */
+html body #root .content.is-subpage-compact .alarm-page-v2 .alarm-focus-card {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  column-gap: 8px !important;
+}
+
+html body #root .content.is-subpage-compact .alarm-page-v2 .alarm-focus-card > span {
+  position: relative !important;
+  z-index: 1 !important;
+  min-width: 0 !important;
+}
+
+html body #root .content.is-subpage-compact .alarm-page-v2 .alarm-focus-card > em {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-list .operation-record-status-chip:first-child {
+  flex: 1.28 1 0 !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-list .operation-record-status-chip:last-child {
+  flex: 1.12 1 0 !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-result-stack .status-pill {
+  font-size: 11.2px !important;
+  line-height: 24px !important;
+}
+
+html body #root .content.is-subpage-compact .system-overview-one-screen .system-overview-title-block p,
+html body #root .content.is-subpage-compact .device-overview-page .device-ops-title span {
+  transform: translateY(-9px) !important;
+}
+
+html body #root .energy-efficiency-overview-calendar-grid .energy-efficiency-overview-day .energy-efficiency-overview-day-metrics span,
+html body #root .energy-efficiency-overview-calendar-grid .energy-efficiency-overview-day .energy-efficiency-overview-day-metrics strong {
+  min-height: 12px !important;
+  height: 12px !important;
+  font-size: 10.8px !important;
+  line-height: 12px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .energy-analysis-compact-page-v2 .energy-analysis-compact-status {
+  grid-template-rows: 14px 30px 16px !important;
+  gap: 1px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .energy-analysis-compact-page-v2 .energy-analysis-compact-status .energy-analysis-compact-label,
+html body #root .content.is-subpage-compact.has-secondary-nav .energy-analysis-compact-page-v2 .energy-analysis-compact-status p {
+  min-height: 14px !important;
+  height: 14px !important;
+  line-height: 14px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .energy-analysis-compact-page-v2 .energy-analysis-compact-status strong {
+  min-height: 30px !important;
+  height: 30px !important;
+  line-height: 30px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .meter-reading-compact-page-v2 .meter-reading-compact-tags article {
+  grid-template-rows: 18px 18px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .meter-reading-compact-page-v2 .meter-reading-compact-tags article span,
+html body #root .content.is-subpage-compact.has-secondary-nav .meter-reading-compact-page-v2 .meter-reading-compact-tags article strong {
+  display: flex !important;
+  align-items: center !important;
+  min-height: 18px !important;
+  height: 18px !important;
+  line-height: 18px !important;
+  overflow: hidden !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .meter-reading-compact-page-v2 .meter-reading-compact-status {
+  grid-template-rows: 14px 22px 14px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .meter-reading-compact-page-v2 .meter-reading-compact-status .meter-reading-compact-label {
+  min-height: 14px !important;
+  height: 14px !important;
+  line-height: 14px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .report-record-page .report-record-command-state article strong {
+  font-size: 12.3px !important;
+  line-height: 18px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .report-record-page .report-record-trace-grid article span {
+  min-height: 12px !important;
+  height: 12px !important;
+  font-size: 10.8px !important;
+  line-height: 12px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .energy-parameter-compact-page-v2 .energy-parameter-compact-metric {
+  grid-template-rows: 12px 28px 13px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .energy-parameter-compact-page-v2 .energy-parameter-compact-metric strong {
+  height: 28px !important;
+  min-height: 28px !important;
+  line-height: 28px !important;
+}
+
+html body #root .optimize-form-prefill .optimize-form-prefill-meta {
+  min-height: 14px !important;
+  height: 14px !important;
+  grid-template-rows: 14px !important;
+}
+
+html body #root .optimize-form-prefill .optimize-form-prefill-meta span {
+  min-height: 14px !important;
+  height: 14px !important;
+  font-size: 10.8px !important;
+  line-height: 14px !important;
+}
+
+html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid .optimize-compact-metric-grid,
+html body #root .content.is-subpage-compact .optimize-page .section-card .optimize-compact-metric-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid .optimize-compact-metric-grid .optimize-response-card strong,
+html body #root .content.is-subpage-compact .optimize-page .section-card .optimize-compact-metric-grid .optimize-response-card strong {
+  width: 100% !important;
+  min-height: 20px !important;
+  font-size: 12.6px !important;
+  line-height: 20px !important;
+  white-space: normal !important;
+  overflow: hidden !important;
+}
+
+html body #root .content.is-scene-embed-content .scene-embed-fit-actions button {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 32px !important;
+  height: 32px !important;
+  font-size: 13.2px !important;
+  line-height: 32px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+}
+
+/* Full-site visual acceptance pass 4: exact selectors for remaining rendered deltas. */
+html body #root .content.is-subpage-compact .device-overview-page .device-ops-title span {
+  display: block !important;
+  margin-top: -14px !important;
+  transform: none !important;
+}
+
+html body #root .content.is-subpage-compact .report-record-page .report-record-actions-inline {
+  grid-template-columns: repeat(3, 70px) !important;
+  justify-content: end !important;
+  gap: 4px !important;
+}
+
+html body #root .content.is-subpage-compact .report-record-page .report-record-actions-inline .report-record-button {
+  width: 70px !important;
+  min-width: 70px !important;
+  padding: 0 4px !important;
+  font-size: 11px !important;
+}
+
+html body #root .content.is-subpage-compact .energy-efficiency-page.page-enter[data-tab="calendar"] .energy-efficiency-overview-day-metrics span,
+html body #root .content.is-subpage-compact .energy-efficiency-page.page-enter[data-tab="calendar"] .energy-efficiency-overview-day-metrics strong,
+html body #root .energy-efficiency-page.page-enter[data-tab="calendar"] .energy-efficiency-overview-day-metrics span,
+html body #root .energy-efficiency-page.page-enter[data-tab="calendar"] .energy-efficiency-overview-day-metrics strong {
+  min-height: 12px !important;
+  height: 12px !important;
+  font-size: 10.8px !important;
+  line-height: 12px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .energy-analysis-compact-page-v2 .energy-analysis-compact-status {
+  grid-template-rows: 14px 34px 14px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .energy-analysis-compact-page-v2 .energy-analysis-compact-status strong {
+  min-height: 34px !important;
+  height: 34px !important;
+  line-height: 34px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .meter-reading-compact-page-v2 .meter-reading-compact-tags article {
+  height: 54px !important;
+  min-height: 54px !important;
+  grid-template-rows: 22px 22px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .meter-reading-compact-page-v2 .meter-reading-compact-tags article span,
+html body #root .content.is-subpage-compact.has-secondary-nav .meter-reading-compact-page-v2 .meter-reading-compact-tags article strong {
+  min-height: 22px !important;
+  height: 22px !important;
+  line-height: 22px !important;
+}
+
+html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid > .section-card:first-child .optimize-form-prefill-meta {
+  height: 14px !important;
+  min-height: 14px !important;
+  grid-template-rows: 14px !important;
+}
+
+html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid > .section-card:first-child .optimize-form-prefill-meta span,
+html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid > .section-card:first-child .optimize-form-prefill-meta span:last-child {
+  height: 14px !important;
+  min-height: 14px !important;
+  font-size: 10.8px !important;
+  line-height: 14px !important;
+}
+
+html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid > .section-card:nth-child(3) .optimize-compact-metric-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid > .section-card:nth-child(3) .optimize-compact-metric-grid .optimize-response-card strong {
+  width: 100% !important;
+  min-height: 20px !important;
+  font-size: 12.2px !important;
+  line-height: 20px !important;
+  white-space: nowrap !important;
+}
+
+/* Full-site visual acceptance pass 5: final residual text geometry correction. */
+html body #root .content.is-subpage-compact .device-overview-page .device-ops-title {
+  position: relative !important;
+}
+
+html body #root .content.is-subpage-compact .device-overview-page .device-ops-title span {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  width: auto !important;
+  margin-top: 0 !important;
+  transform: none !important;
+}
+
+html body #root .content.is-subpage-compact .device-overview-page .device-ops-detail-metric span {
+  min-height: 13px !important;
+  font-size: 10.8px !important;
+  line-height: 13px !important;
+}
+
+html body #root .content.is-subpage-compact .energy-efficiency-page.page-enter[data-tab="calendar"] .energy-efficiency-overview-day-metrics span,
+html body #root .content.is-subpage-compact .energy-efficiency-page.page-enter[data-tab="calendar"] .energy-efficiency-overview-day-metrics strong,
+html body #root .energy-efficiency-page.page-enter[data-tab="calendar"] .energy-efficiency-overview-day-metrics span,
+html body #root .energy-efficiency-page.page-enter[data-tab="calendar"] .energy-efficiency-overview-day-metrics strong {
+  font-size: 10.5px !important;
+  line-height: 12px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .meter-reading-compact-page-v2 .meter-reading-compact-tags article {
+  height: 60px !important;
+  min-height: 60px !important;
+  grid-template-rows: 26px 22px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .meter-reading-compact-page-v2 .meter-reading-compact-tags article span {
+  min-height: 26px !important;
+  height: 26px !important;
+  line-height: 26px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .meter-reading-compact-page-v2 .meter-reading-compact-tags article strong {
+  min-height: 22px !important;
+  height: 22px !important;
+  line-height: 22px !important;
+}
+
+html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid > .section-card:nth-child(3) .optimize-compact-metric-grid {
+  grid-template-columns: minmax(60px, 0.75fr) minmax(96px, 1.2fr) minmax(68px, 0.85fr) minmax(92px, 1.15fr) !important;
+}
+
+html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid > .section-card:nth-child(3) .optimize-compact-metric-grid .optimize-response-card {
+  padding-left: 3px !important;
+  padding-right: 3px !important;
+}
+
+html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid > .section-card:nth-child(3) .optimize-compact-metric-grid .optimize-response-card strong {
+  font-size: 11.8px !important;
+}
+
+/* Full-site visual acceptance pass 6: close final single-point overlaps. */
+html body #root .content.is-subpage-compact .device-overview-page .device-ops-title p {
+  max-width: calc(100% - 156px) !important;
+}
+
+html body #root .energy-efficiency-overview-donut-callout.position-3.align-left {
+  transform: translateX(34px) !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-list {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: repeat(2, 18px) !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  gap: 2px !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-chip,
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-list .operation-record-status-chip:first-child,
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-list .operation-record-status-chip:last-child {
+  width: 100% !important;
+  height: 18px !important;
+  min-height: 18px !important;
+  font-size: 10.5px !important;
+  line-height: 18px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .meter-reading-compact-page-v2 .meter-reading-compact-tags article {
+  height: 66px !important;
+  min-height: 66px !important;
+  grid-template-rows: 32px 24px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .meter-reading-compact-page-v2 .meter-reading-compact-tags article span {
+  min-height: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .meter-reading-compact-page-v2 .meter-reading-compact-tags article strong {
+  min-height: 24px !important;
+  height: 24px !important;
+  line-height: 24px !important;
+}
+
+html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid > .section-card:nth-child(3) .optimize-compact-metric-grid {
+  grid-template-columns: minmax(46px, 0.7fr) minmax(58px, 0.9fr) minmax(84px, 1.2fr) minmax(84px, 1.2fr) !important;
+}
+
+/* Full-site visual acceptance pass 7: clear final donut and meter-tag overlaps. */
+html body #root .energy-efficiency-overview-donut-callout.position-3.align-left {
+  transform: translate(174px, 8px) !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .meter-reading-compact-page-v2 .meter-reading-compact-tags article {
+  height: 76px !important;
+  min-height: 76px !important;
+  grid-template-rows: 40px 24px !important;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+html body #root .content.is-subpage-compact.has-secondary-nav .meter-reading-compact-page-v2 .meter-reading-compact-tags article span {
+  min-height: 40px !important;
+  height: 40px !important;
+  line-height: 40px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Full-site visual acceptance pass 8: readable lower bound for visible compact text. */
+html body #root .nav-module-count,
+html body #root .content.is-dashboard-content .nav-module-count,
+html body #root .content.is-subpage-compact .nav-module-count {
+  min-width: 22px !important;
+  min-height: 18px !important;
+  font-size: 11.5px !important;
+  line-height: 18px !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-status {
+  grid-template-rows: 14px 18px 15px !important;
+  min-height: 56px !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-status span {
+  min-height: 14px !important;
+  font-size: 11.4px !important;
+  line-height: 14px !important;
+}
+
+html body #root .content.is-dashboard-content .dashboard-cockpit-status small {
+  min-height: 15px !important;
+  font-size: 11.2px !important;
+  line-height: 15px !important;
+}
+
+html body #root .content :is([class*="-command-tags"]) span,
+html body #root .content :is([class*="-command-tags"]) strong,
+html body #root .content :is([class*="-command-tags"]) em,
+html body #root .content :is(
+  .environment-compact-label,
+  .energy-analysis-compact-label,
+  .meter-reading-compact-label,
+  .energy-parameter-compact-label,
+  .video-command-eyebrow,
+  .video-command-copy > p,
+  .work-order-eyebrow,
+  .operation-record-status-chip,
+  .alarm-page-size,
+  .alarm-page-size-row > span,
+  .cold-log-command-stat span,
+  .cold-log-command-stat small,
+  .operation-record-cell-time small,
+  .project-switch-command-side-label,
+  .project-switch-queue-head span,
+  .project-switch-rank,
+  .project-switch-state-pill,
+  .project-switch-card-band span,
+  .project-switch-card-meta span,
+  .project-switch-command-stat span,
+  .project-switch-command-stat small,
+  .project-switch-command-lines span,
+  .project-switch-workspace-stage-meta span,
+  .work-order-command-side-label,
+  .work-order-field > span,
+  .work-order-table-stage-meta span,
+  .work-order-pagination span,
+  .work-order-pagination label,
+  .work-order-page-size span,
+  .work-order-page-size label,
+  .device-ops-detail-metric span,
+  .dashboard-cockpit-list small,
+  .dashboard-cockpit-row-link small,
+  .system-overview-evidence article small,
+  .performance-report-series-list article span,
+  .performance-report-series-list article em,
+  .energy-efficiency-overview-day-metrics span,
+  .energy-efficiency-overview-day-metrics strong,
+  .energy-efficiency-proportion-x-axis-label,
+  .energy-efficiency-proportion-x-axis-number,
+  .trend-stat-list--compact span,
+  .trend-axis--dense small,
+  .report-record-trace-grid span,
+  .optimize-form-prefill-meta span,
+  .scene-embed-runtime-card p,
+  .scene-embed-kpi small
+) {
+  font-size: 11.5px !important;
+  line-height: 14px !important;
+}
+
+html body #root .content :is(
+  .cold-log-command-stat span,
+  .cold-log-command-stat small,
+  .operation-record-cell-time small,
+  .performance-report-series-list article span,
+  .performance-report-series-list article em,
+  .energy-efficiency-overview-day-metrics span,
+  .energy-efficiency-overview-day-metrics strong,
+  .trend-stat-list--compact span,
+  .trend-axis--dense small,
+  .report-record-trace-grid span,
+  .optimize-form-prefill-meta span
+) {
+  min-height: 14px !important;
+}
+
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-chip,
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-list .operation-record-status-chip:first-child,
+html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-list .operation-record-status-chip:last-child {
+  min-height: 20px !important;
+  height: 20px !important;
+  font-size: 11.5px !important;
+  line-height: 20px !important;
+}
+
+html body #root .content.is-subpage-compact .optimize-page .optimize-form-prefill-meta,
+html body #root .optimize-form-prefill .optimize-form-prefill-meta {
+  min-height: 16px !important;
+  height: 16px !important;
+  grid-template-rows: 16px !important;
+}
+
+html body #root .content.is-subpage-compact .optimize-page .optimize-form-prefill-meta span,
+html body #root .optimize-form-prefill .optimize-form-prefill-meta span {
+  min-height: 16px !important;
+  height: 16px !important;
+  font-size: 11.5px !important;
+  line-height: 16px !important;
+}
+
+html body #root .content.is-subpage-compact .energy-efficiency-overview-calendar-grid .energy-efficiency-overview-day .energy-efficiency-overview-day-metrics span,
+html body #root .content.is-subpage-compact .energy-efficiency-overview-calendar-grid .energy-efficiency-overview-day .energy-efficiency-overview-day-metrics strong {
+  min-height: 13px !important;
+  height: 13px !important;
+  font-size: 11.2px !important;
+  line-height: 13px !important;
+}
+
+/* Full-site visual acceptance pass 9: override high-specificity compact rules. */
+html body #root#root#root .content :is(
+  .dashboard-cockpit-kpi small,
+  .dashboard-cockpit-value em,
+  .dashboard-cockpit-trend-facts article small,
+  .alarm-focus-card span,
+  .alarm-focus-card p,
+  .cold-log-command-side-label,
+  .cold-log-status-chip,
+  .cold-log-energy-split small,
+  .cold-log-energy-split strong,
+  .cold-log-energy-split em,
+  .cold-log-table th small,
+  .operation-record-cell-time small,
+  .operation-record-result-stack .status-pill,
+  .section-action .status-pill,
+  .work-order-command-summary-grid span,
+  .work-order-field > span,
+  .work-order-table-stage-meta span,
+  .work-order-pagination span,
+  .work-order-pagination label,
+  .work-order-page-size span,
+  .work-order-page-size label,
+  .performance-report-series-list strong,
+  .performance-report-series-list span,
+  .performance-report-series-list em,
+  .report-record-command-state article span,
+  .report-record-trace-grid article span,
+  .energy-parameter-compact-label,
+  .energy-parameter-compact-tags article span,
+  .energy-parameter-compact-metric span,
+  .energy-parameter-compact-metric small,
+  .knowledge-strategy-list article span,
+  .optimize-command-tags strong,
+  .optimize-command-tags em,
+  .optimize-form-grid label > span,
+  .optimize-form-prefill-head small,
+  .optimize-form-refresh,
+  .optimize-form-prefill-meta span,
+  .scene-embed-runtime-card p,
+  .video-command-note p
+) {
+  font-size: 11.5px !important;
+  line-height: 14px !important;
+}
+
+html body #root#root#root .content :is(
+  .cold-log-energy-split small,
+  .cold-log-energy-split strong,
+  .cold-log-energy-split em,
+  .performance-report-series-list strong,
+  .performance-report-series-list span,
+  .performance-report-series-list em,
+  .report-record-trace-grid article span,
+  .optimize-command-tags strong,
+  .optimize-command-tags em
+) {
+  min-height: 14px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .alarm-page-v2 .alarm-queue-table {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .alarm-page-v2 .alarm-queue-body {
+  height: 56px !important;
+  max-height: 56px !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .alarm-page-v2 .alarm-pagination {
+  position: relative !important;
+  z-index: 3 !important;
+  background: rgba(7, 20, 33, 0.98) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-filter-layout {
+  max-height: 128px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-filter-main,
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-filter-panel {
+  max-height: 128px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-filter-footer {
+  min-height: 30px !important;
+  height: 30px !important;
+  overflow: hidden !important;
+}
+
+/* Full-site visual acceptance pass 10: page-level compact readability floor. */
+html body #root#root#root .content :is(
+  .system-overview-one-screen span,
+  .system-overview-one-screen small,
+  .system-overview-one-screen p,
+  .device-overview-page span,
+  .device-overview-page small,
+  .device-overview-page p,
+  .meter-reading-compact-page-v2 span,
+  .meter-reading-compact-page-v2 small,
+  .meter-reading-compact-page-v2 em,
+  .energy-parameter-compact-page-v2 span,
+  .energy-parameter-compact-page-v2 small,
+  .energy-parameter-compact-page-v2 em,
+  .performance-report-source-list span,
+  .performance-report-source-list strong,
+  .performance-report-source-list em,
+  .performance-report-series-row span,
+  .performance-report-series-row strong,
+  .performance-report-series-row em,
+  .optimize-compact-metric-grid .optimize-response-card span,
+  .energy-efficiency-page[data-tab="calendar"] .energy-efficiency-overview-kpi-value em,
+  .energy-efficiency-page[data-tab="calendar"] .energy-efficiency-calendar-month-field span,
+  .energy-efficiency-page[data-tab="calendar"] .energy-efficiency-overview-day-head strong,
+  .energy-efficiency-page[data-tab="calendar"] .energy-efficiency-overview-day-head span,
+  .energy-efficiency-page[data-tab="calendar"] .energy-efficiency-overview-day-metrics span,
+  .energy-efficiency-page[data-tab="calendar"] .energy-efficiency-overview-day-metrics strong,
+  .cold-log-table-stage-meta span,
+  .scene-embed-environment-pill strong
+) {
+  font-size: 11.3px !important;
+  line-height: 14px !important;
+}
+
+html body #root#root#root .content :is(
+  .energy-efficiency-page[data-tab="calendar"] .energy-efficiency-overview-day-head strong,
+  .energy-efficiency-page[data-tab="calendar"] .energy-efficiency-overview-day-head span,
+  .energy-efficiency-page[data-tab="calendar"] .energy-efficiency-overview-day-metrics span,
+  .energy-efficiency-page[data-tab="calendar"] .energy-efficiency-overview-day-metrics strong,
+  .energy-parameter-compact-page-v2 .energy-parameter-compact-metric span,
+  .energy-parameter-compact-page-v2 .energy-parameter-compact-metric small
+) {
+  min-height: 14px !important;
+  height: 14px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-header h2,
+html body #root#root#root .content.is-subpage-compact .subpage-command-copy.work-order-command-copy h2 {
+  min-height: 30px !important;
+  line-height: 30px !important;
+  overflow: visible !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-result-stack {
+  grid-template-columns: repeat(2, minmax(62px, 1fr)) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-result-stack .status-pill {
+  min-width: 62px !important;
+  font-size: 11.3px !important;
+}
+
+/* Full-site visual acceptance pass 11: remaining dense visible labels. */
+html body #root#root#root .content :is(
+  .dashboard-cockpit-water-tag,
+  .dashboard-cockpit-equip b span,
+  .dashboard-cockpit-equip small,
+  .dashboard-cockpit-trend-facts article small,
+  .system-overview-equipment em,
+  .system-overview-equipment b,
+  .device-ops-access-copy em,
+  .environment-compact-tags strong,
+  .environment-compact-tags em,
+  .environment-compact-metric small,
+  .trend-source-cell span,
+  .trend-meta p,
+  .trend-quality-card p,
+  .trend-quality-card span,
+  .energy-analysis-compact-tags strong,
+  .energy-analysis-compact-tags em,
+  .energy-analysis-compact-metric small,
+  .energy-efficiency-overview-card-head > span,
+  .energy-efficiency-overview-donut span,
+  .energy-efficiency-overview-donut small,
+  .energy-efficiency-overview-donut-callout span,
+  .energy-efficiency-overview-donut-callout strong,
+  .energy-efficiency-overview-donut-callout small,
+  .meter-reading-compact-table th,
+  .meter-reading-compact-table td
+) {
+  font-size: 11.2px !important;
+  line-height: 14px !important;
+}
+
+html body #root#root#root .content :is(
+  .dashboard-cockpit-water-tag,
+  .dashboard-cockpit-equip b span,
+  .dashboard-cockpit-equip small,
+  .dashboard-cockpit-trend-facts article small,
+  .system-overview-equipment em,
+  .system-overview-equipment b,
+  .device-ops-access-copy em,
+  .environment-compact-tags strong,
+  .environment-compact-tags em,
+  .environment-compact-metric small,
+  .trend-source-cell span,
+  .trend-meta p,
+  .trend-quality-card p,
+  .trend-quality-card span,
+  .energy-analysis-compact-tags strong,
+  .energy-analysis-compact-tags em,
+  .energy-analysis-compact-metric small,
+  .energy-efficiency-overview-card-head > span,
+  .energy-efficiency-overview-donut span,
+  .energy-efficiency-overview-donut small,
+  .energy-efficiency-overview-donut-callout span,
+  .energy-efficiency-overview-donut-callout strong,
+  .energy-efficiency-overview-donut-callout small
+) {
+  min-height: 14px !important;
+}
+
+html body #root#root#root .content .dashboard-cockpit-trend-facts article small {
+  min-height: 30px !important;
+  height: 30px !important;
+  line-height: 15px !important;
+  white-space: normal !important;
+}
+
+html body #root#root#root .content .dashboard-cockpit-water-tag {
+  min-height: 30px !important;
+  height: 30px !important;
+  line-height: 15px !important;
+}
+
+/* Full-site visual acceptance pass 12: final helper-label readability. */
+html body #root#root#root .content :is(
+  .dashboard-cockpit-control-row small,
+  .dashboard-cockpit-ai-status-grid strong,
+  .dashboard-cockpit-ai-row p,
+  .system-overview-boundary strong,
+  .system-overview-verdict strong,
+  .system-overview-verdict em,
+  .system-overview-concerns strong,
+  .system-overview-plc-rules strong,
+  .system-overview-node-preview strong,
+  .environment-compact-note-list span,
+  .environment-compact-detail-grid span,
+  .environment-compact-detail-grid small,
+  .environment-compact-source-list small,
+  .energy-analysis-field span,
+  .energy-analysis-tree-count,
+  .energy-analysis-compact-chart-top span,
+  .energy-analysis-compact-chart-box .empty-hint,
+  .energy-analysis-compact-rank-grid span,
+  .energy-efficiency-overview-trend-axis span,
+  .energy-efficiency-overview-trend-stats span
+) {
+  font-size: 11.2px !important;
+  line-height: 14px !important;
+  min-height: 14px !important;
+}
+
+html body #root#root#root .content .dashboard-cockpit-ai-row p {
+  min-height: 28px !important;
+  line-height: 14px !important;
+}
+
+/* Full-site visual acceptance pass 13: direct final overrides for legacy compact selectors. */
+html body #root#root#root .dashboard-cockpit-control-row small,
+html body #root#root#root .dashboard-cockpit-ai-status-grid strong,
+html body #root#root#root .dashboard-cockpit-ai-row p,
+html body #root#root#root .system-overview-boundary strong,
+html body #root#root#root .system-overview-verdict strong,
+html body #root#root#root .system-overview-verdict em,
+html body #root#root#root .system-overview-concerns strong,
+html body #root#root#root .system-overview-plc-rules strong,
+html body #root#root#root .system-overview-node-preview strong,
+html body #root#root#root .environment-compact-source-list em,
+html body #root#root#root .environment-compact-boundary span,
+html body #root#root#root .environment-compact-note-list span,
+html body #root#root#root .environment-compact-detail-grid span,
+html body #root#root#root .environment-compact-detail-grid small,
+html body #root#root#root .energy-analysis-compact-source-list small,
+html body #root#root#root .energy-analysis-compact-source-list em,
+html body #root#root#root .energy-analysis-compact-table th,
+html body #root#root#root .energy-analysis-compact-table td,
+html body #root#root#root .trend-axis--dense small,
+html body #root#root#root .energy-efficiency-overview-load-row span,
+html body #root#root#root .energy-efficiency-overview-load-row small,
+html body #root#root#root .energy-efficiency-overview-load-row em {
+  font-size: 11.2px !important;
+  line-height: 14px !important;
+  min-height: 14px !important;
+}
+
+html body #root#root#root .dashboard-cockpit-ai-row p {
+  min-height: 42px !important;
+  height: 42px !important;
+  white-space: normal !important;
+}
+
+html body #root#root#root .system-overview-title-block p {
+  display: inline-block !important;
+  position: relative !important;
+  z-index: 8 !important;
+  width: fit-content !important;
+  max-width: 440px !important;
+  transform: translateY(-5px) !important;
+  padding-right: 6px !important;
+  background: rgba(8, 22, 34, 0.92) !important;
+}
+
+html body #root#root#root .energy-analysis-compact-boundary span,
+html body #root#root#root .energy-analysis-compact-boundary strong,
+html body #root#root#root .energy-efficiency-overview-modules span,
+html body #root#root#root .energy-efficiency-overview-modules strong {
+  font-size: 11.2px !important;
+  line-height: 14px !important;
+  min-height: 14px !important;
+}
+
+/* Full-site visual acceptance pass 14: Chrome runtime no clipped text/no low-contrast labels. */
+html body #root#root#root .nav-brand .runtime-mode-chip,
+html body #root#root#root .runtime-mode-chip {
+  min-height: 22px !important;
+  height: 22px !important;
+  padding: 0 9px !important;
+  font-size: 11.6px !important;
+  line-height: 22px !important;
+}
+
+html body #root#root#root .content.is-dashboard-content .dashboard-cockpit-trend svg text:is(.dashboard-cockpit-axis-x, .dashboard-cockpit-axis-y) {
+  font-size: 11.2px !important;
+  line-height: 12px !important;
+}
+
+html body #root#root#root .content.is-dashboard-content .dashboard-cockpit-kpi {
+  grid-template-rows: 13px 26px 30px !important;
+  align-content: center !important;
+}
+
+html body #root#root#root .content.is-dashboard-content .dashboard-cockpit-kpi small {
+  min-height: 30px !important;
+  height: 30px !important;
+  font-size: 11.5px !important;
+  line-height: 15px !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+html body #root#root#root .content.is-dashboard-content .dashboard-cockpit-trend-facts article small {
+  min-width: 150px !important;
+  max-width: none !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-header {
+  height: 96px !important;
+  min-height: 96px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-list {
+  grid-template-rows: repeat(3, 20px) !important;
+  height: 64px !important;
+  min-height: 64px !important;
+  max-height: 64px !important;
+  gap: 2px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-chip,
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-list .operation-record-status-chip:first-child,
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-list .operation-record-status-chip:last-child {
+  min-height: 20px !important;
+  height: 20px !important;
+  font-size: 11.5px !important;
+  line-height: 20px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-result-stack {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(70px, 1fr)) !important;
+  gap: 5px !important;
+  min-width: 150px !important;
+  overflow: visible !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-result-stack .status-pill {
+  min-width: 70px !important;
+  max-width: none !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 0 8px !important;
+  font-size: 11.5px !important;
+  line-height: 24px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-table-head,
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-table-row {
+  grid-template-columns: 92px minmax(0, 1fr) minmax(162px, 0.28fr) 78px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-header {
+  height: 122px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-side {
+  display: grid !important;
+  grid-template-rows: 14px 20px 14px 20px minmax(46px, auto) !important;
+  gap: 2px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-energy-split {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 3px !important;
+  min-height: 46px !important;
+  align-self: stretch !important;
+  overflow: visible !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-energy-split span {
+  min-height: 44px !important;
+  padding: 3px 4px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-energy-split :is(small, strong, em) {
+  min-height: 13px !important;
+  height: 13px !important;
+  font-size: 11.2px !important;
+  line-height: 13px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-filter-footer {
+  min-height: 38px !important;
+  height: 38px !important;
+  overflow: visible !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-actions {
+  align-items: center !important;
+  min-height: 34px !important;
+  overflow: visible !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-button {
+  min-height: 32px !important;
+  height: 32px !important;
+  font-size: 12px !important;
+  line-height: 32px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 {
+  grid-template-rows: 80px 68px minmax(0, 1fr) 24px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-table-panel {
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-table-wrap {
+  height: calc(100% - 30px) !important;
+  padding-bottom: 18px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-table-meta {
+  height: 30px !important;
+  min-height: 30px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-table th,
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-table td {
+  height: 28px !important;
+  min-height: 28px !important;
+  line-height: 14px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-empty-inline {
+  min-height: 30px !important;
+  height: 30px !important;
+  line-height: 30px !important;
+  vertical-align: middle !important;
+}
+
+html body #root#root#root .energy-efficiency-page[data-tab="calendar"] .energy-efficiency-overview-load-row,
+html body #root#root#root .content.is-subpage-compact .energy-efficiency-page[data-tab="calendar"] .energy-efficiency-overview-load-row {
+  grid-template-columns: 54px minmax(0, 1fr) 36px 32px !important;
+}
+
+html body #root#root#root .energy-efficiency-page[data-tab="calendar"] .energy-efficiency-overview-load-row > span,
+html body #root#root#root .content.is-subpage-compact .energy-efficiency-page[data-tab="calendar"] .energy-efficiency-overview-load-row > span {
+  min-width: 54px !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .energy-parameter-compact-page-v2 .energy-parameter-compact-hour em,
+html body #root#root#root .content.is-subpage-compact .energy-parameter-compact-page-v2 .energy-parameter-compact-hour strong,
+html body #root#root#root .energy-parameter-compact-hour em,
+html body #root#root#root .energy-parameter-compact-hour strong {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 22px !important;
+  min-height: 15px !important;
+  height: 15px !important;
+  padding: 0 3px !important;
+  border-radius: 4px !important;
+  color: #f8fdff !important;
+  background: rgba(4, 17, 28, 0.78) !important;
+  text-shadow: none !important;
+  font-size: 11.5px !important;
+  line-height: 15px !important;
+}
+
+/* Full-site visual acceptance pass 15: close second Chrome audit findings. */
+html body #root#root#root .content.is-dashboard-content .dashboard-cockpit-control-row article {
+  overflow: visible !important;
+}
+
+html body #root#root#root .content.is-dashboard-content .dashboard-cockpit-control-row article small {
+  min-height: 28px !important;
+  height: auto !important;
+  line-height: 14px !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  text-overflow: clip !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-station-log-page.cold-log-cop-page,
+html body #root#root#root .cold-station-log-page.cold-log-cop-page {
+  grid-template-rows: 124px minmax(0, 1fr) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-header,
+html body #root#root#root .cold-log-cop-page .cold-log-header {
+  height: 124px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-side p,
+html body #root#root#root .cold-log-cop-page .cold-log-command-side p {
+  display: none !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-side,
+html body #root#root#root .cold-log-cop-page .cold-log-command-side {
+  grid-template-rows: 13px 20px 20px 48px !important;
+  gap: 2px !important;
+  padding: 6px 7px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-status-list,
+html body #root#root#root .cold-log-cop-page .cold-log-status-list {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 3px !important;
+  min-height: 20px !important;
+  height: 20px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-status-chip,
+html body #root#root#root .cold-log-cop-page .cold-log-status-chip {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  min-height: 18px !important;
+  height: 18px !important;
+  padding: 0 5px !important;
+  font-size: 11px !important;
+  line-height: 18px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-energy-split strong,
+html body #root#root#root .cold-log-cop-page .cold-log-energy-split strong {
+  font-size: 10.8px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact.has-secondary-nav .trend-analysis-page--effect .trend-legend-item strong,
+html body #root#root#root .content.is-subpage-compact.has-secondary-nav .trend-analysis-page--effect .trend-legend-item span,
+html body #root#root#root .content.is-subpage-compact.has-secondary-nav .trend-analysis-page--effect .trend-stat-list--compact .trend-stat-item div span {
+  min-height: 14px !important;
+  font-size: 11.2px !important;
+  line-height: 14px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact.has-secondary-nav .trend-analysis-page--effect .trend-legend-item {
+  min-height: 30px !important;
+}
+
+html body #root#root#root .energy-parameter-compact-slot.is-sharp {
+  background-image: none !important;
+  background-color: #e95155 !important;
+  color: #fff7f6 !important;
+}
+
+html body #root#root#root .energy-parameter-compact-slot.is-peak {
+  background-image: none !important;
+  background-color: #ffd166 !important;
+  color: #1f1500 !important;
+}
+
+html body #root#root#root .energy-parameter-compact-slot.is-flat {
+  background-image: none !important;
+  background-color: #61dec9 !important;
+  color: #041f22 !important;
+}
+
+html body #root#root#root .energy-parameter-compact-slot.is-valley {
+  background-image: none !important;
+  background-color: #4b63d8 !important;
+  color: #f8fbff !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-workspace,
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-table-panel,
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-table-wrap {
+  contain: paint !important;
+}
+
+/* Full-site visual acceptance pass 16: final visible-edge clipping fixes. */
+html body #root#root#root .content.is-subpage-compact .alarm-page-v2 .alarm-focus-card > em {
+  position: absolute !important;
+  top: 6px !important;
+  right: 8px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 22px !important;
+  height: 22px !important;
+  font-size: 13px !important;
+  line-height: 22px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-station-log-page.cold-log-cop-page,
+html body #root#root#root .cold-station-log-page.cold-log-cop-page {
+  grid-template-rows: 136px minmax(0, 1fr) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-header,
+html body #root#root#root .cold-log-cop-page .cold-log-header {
+  height: 136px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-summary-grid {
+  height: 46px !important;
+  grid-auto-rows: 46px !important;
+  align-items: stretch !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-stat {
+  min-height: 42px !important;
+  height: 42px !important;
+  padding: 4px 6px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-stat strong {
+  min-height: 18px !important;
+  height: 18px !important;
+  margin-top: 1px !important;
+  font-size: 15px !important;
+  line-height: 18px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-side,
+html body #root#root#root .cold-log-cop-page .cold-log-command-side {
+  grid-template-rows: 13px 20px 20px 66px !important;
+  gap: 2px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-energy-split,
+html body #root#root#root .cold-log-cop-page .cold-log-energy-split {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  min-height: 64px !important;
+  gap: 3px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-energy-split span,
+html body #root#root#root .cold-log-cop-page .cold-log-energy-split span {
+  min-height: 30px !important;
+  height: 30px !important;
+  padding: 2px 5px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-energy-split small,
+html body #root#root#root .cold-log-cop-page .cold-log-energy-split small,
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-energy-split strong,
+html body #root#root#root .cold-log-cop-page .cold-log-energy-split strong {
+  min-height: 13px !important;
+  height: 13px !important;
+  font-size: 11.2px !important;
+  line-height: 13px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-energy-split em,
+html body #root#root#root .cold-log-cop-page .cold-log-energy-split em {
+  display: none !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-table-wrap {
+  height: calc(100% - 47px) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-empty-inline {
+  position: static !important;
+  top: auto !important;
+  height: 14px !important;
+  min-height: 14px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: 14px !important;
+}
+
+html body #root#root#root .energy-parameter-compact-slot.is-sharp {
+  background-color: #b8202a !important;
+  color: #ffffff !important;
+}
+
+/* Full-site visual acceptance pass 17: keep operation-record audit card inside the hero row. */
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 {
+  grid-template-rows: 104px 58px minmax(0, 1fr) 46px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-header,
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-command-board {
+  height: 104px !important;
+  min-height: 104px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-command-side {
+  display: grid !important;
+  grid-template-rows: 15px 24px 44px !important;
+  align-content: center !important;
+  gap: 4px !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  padding: 7px 9px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-command-side > p {
+  display: none !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-command-side-label {
+  min-height: 15px !important;
+  height: 15px !important;
+  font-size: 12px !important;
+  line-height: 15px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-command-side > strong {
+  min-height: 24px !important;
+  height: 24px !important;
+  font-size: 18px !important;
+  line-height: 24px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-list {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-template-rows: repeat(2, 20px) !important;
+  grid-auto-rows: 20px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  gap: 2px 4px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-list .operation-record-status-chip:first-child {
+  grid-column: 1 / -1 !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-chip,
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-list .operation-record-status-chip:first-child,
+html body #root#root#root .content.is-subpage-compact .operation-record-page-v2 .operation-record-status-list .operation-record-status-chip:last-child {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 20px !important;
+  height: 20px !important;
+  padding: 0 8px !important;
+  font-size: 11.5px !important;
+  line-height: 20px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* Full-site visual acceptance pass 18: keep work-order filter buttons fully inside the query card. */
+html body #root#root#root .content.is-subpage-compact .work-order-page {
+  grid-template-rows: 132px 168px minmax(0, 1fr) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page > .section-card:nth-of-type(2) {
+  height: 168px !important;
+  min-height: 168px !important;
+  grid-template-rows: 30px minmax(0, 1fr) !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page > .section-card:nth-of-type(2) > .section-card-body {
+  padding: 6px 8px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-filter-layout {
+  align-items: stretch !important;
+  height: 100% !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-filter-main {
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-rows: 52px 34px !important;
+  align-content: start !important;
+  gap: 5px !important;
+  height: 100% !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  padding: 5px 7px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-filter-grid {
+  grid-template-rows: 52px !important;
+  min-height: 0 !important;
+  height: 52px !important;
+  gap: 6px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-field {
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-rows: 14px 28px !important;
+  gap: 3px !important;
+  height: 52px !important;
+  min-height: 52px !important;
+  padding: 4px 7px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-field span {
+  min-height: 14px !important;
+  height: 14px !important;
+  font-size: 12px !important;
+  line-height: 14px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-field input,
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-field select {
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 9px !important;
+  font-size: 12px !important;
+  line-height: 28px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-filter-footer {
+  box-sizing: border-box !important;
+  align-items: center !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  margin-top: 0 !important;
+  gap: 6px !important;
+  overflow: visible !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-actions {
+  align-items: center !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  gap: 6px !important;
+  overflow: visible !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-button {
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 11px !important;
+  font-size: 12px !important;
+  line-height: 32px !important;
+}
+
+/* Full-site visual acceptance pass 19: restore energy-analysis statistics row readability. */
+html body #root#root#root .content.is-subpage-compact > .energy-analysis-compact-page-v2,
+html body #root#root#root .content.is-subpage-compact .energy-analysis-compact-page-v2 {
+  height: calc(100% - 12px) !important;
+  grid-template-rows: 82px 58px minmax(0, 1fr) 104px 28px !important;
+  gap: 4px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-table-panel {
+  display: grid !important;
+  grid-template-rows: 32px minmax(0, 1fr) !important;
+  height: 104px !important;
+  min-height: 104px !important;
+  max-height: 104px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-table-wrap {
+  height: 70px !important;
+  min-height: 70px !important;
+  max-height: 70px !important;
+  overflow: auto !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-table th,
+html body #root#root#root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-table td {
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 0 7px !important;
+  font-size: 11.2px !important;
+  line-height: 24px !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-empty-inline {
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 0 7px !important;
+  line-height: 24px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-boundary {
+  height: 28px !important;
+  min-height: 28px !important;
+  transform: none !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-boundary article {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 3px 8px !important;
+  gap: 7px !important;
+}
+
+/* Full-site visual acceptance pass 20: keep knowledge toolbar away from top status pills. */
+html body #root#root#root .content.is-subpage-compact > .knowledge-page--compact,
+html body #root#root#root .content.is-subpage-compact .knowledge-page--compact {
+  grid-template-rows: 54px 88px minmax(0, 1fr) !important;
+  gap: 5px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .knowledge-page--compact .knowledge-compact-head {
+  align-items: center !important;
+  height: 54px !important;
+  min-height: 54px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .knowledge-page--compact .knowledge-compact-status {
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  justify-content: flex-end !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding-bottom: 0 !important;
+  gap: 6px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .knowledge-page--compact .knowledge-compact-status span {
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 0 9px !important;
+  font-size: 12px !important;
+  line-height: 24px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .knowledge-page--compact .knowledge-compact-status span:last-child {
+  max-width: 190px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .knowledge-page--compact .knowledge-compact-summary {
+  height: 88px !important;
+  min-height: 88px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .knowledge-page--compact .knowledge-compact-stat,
+html body #root#root#root .content.is-subpage-compact .knowledge-page--compact .knowledge-compact-toolbar {
+  height: 88px !important;
+  min-height: 88px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .knowledge-page--compact .knowledge-compact-toolbar {
+  display: grid !important;
+  align-items: center !important;
+  padding: 8px 10px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .knowledge-page--compact .knowledge-toolbar-actions {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  gap: 8px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .knowledge-page--compact .knowledge-toolbar-field {
+  display: inline-flex !important;
+  align-items: center !important;
+  flex: 0 0 auto !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .knowledge-page--compact .knowledge-toolbar-field span {
+  height: 32px !important;
+  min-height: 32px !important;
+  line-height: 32px !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .knowledge-page--compact .knowledge-toolbar-field select,
+html body #root#root#root .content.is-subpage-compact .knowledge-page--compact .knowledge-toolbar-actions .knowledge-button {
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 11px !important;
+  font-size: 12px !important;
+  line-height: 32px !important;
+}
+
+/* Full-site visual acceptance pass 21: keep meter-reading KPI cards readable. */
+html body #root#root#root .content.is-subpage-compact > .meter-reading-compact-page-v2,
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 {
+  grid-template-rows: 80px 78px minmax(0, 1fr) 24px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-metrics,
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-metric {
+  height: 78px !important;
+  min-height: 78px !important;
+  max-height: 78px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-metric {
+  display: grid !important;
+  grid-template-rows: 14px 30px 16px !important;
+  align-content: center !important;
+  gap: 2px !important;
+  padding: 7px 9px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-metric span,
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-metric strong,
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-metric small {
+  min-height: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-metric span {
+  height: 14px !important;
+  font-size: 12px !important;
+  line-height: 14px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-metric strong {
+  height: 30px !important;
+  font-size: 22px !important;
+  line-height: 30px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-metric small {
+  height: 16px !important;
+  font-size: 11.5px !important;
+  line-height: 16px !important;
+}
+
+/* Full-site visual acceptance pass 22: improve scene-control runtime bar readability. */
+html body #root#root#root .content.is-scene-embed-content .scene-embed-runtimebar {
+  padding: 7px 10px !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-runtime-card {
+  display: grid !important;
+  grid-template-rows: 16px 30px 18px !important;
+  align-content: center !important;
+  gap: 2px !important;
+  height: 76px !important;
+  min-height: 76px !important;
+  padding: 7px 10px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-runtime-card-head {
+  align-items: center !important;
+  height: 16px !important;
+  min-height: 16px !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-runtime-card-head span,
+html body #root#root#root .content.is-scene-embed-content .scene-embed-runtime-card-head em {
+  height: 16px !important;
+  min-height: 16px !important;
+  color: rgba(214, 235, 248, 0.86) !important;
+  font-size: 12px !important;
+  font-weight: 740 !important;
+  line-height: 16px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-runtime-card-head em {
+  color: rgba(236, 248, 255, 0.92) !important;
+  font-size: 11.5px !important;
+  font-style: normal !important;
+  font-weight: 780 !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-runtime-card strong,
+html body #root#root#root .content.is-scene-embed-content .scene-embed-runtime-card.is-primary strong {
+  height: 30px !important;
+  min-height: 30px !important;
+  margin-top: 0 !important;
+  font-size: 22px !important;
+  line-height: 30px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-runtime-card.is-primary strong {
+  font-size: 24px !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-runtime-card p {
+  height: 18px !important;
+  min-height: 18px !important;
+  margin: 0 !important;
+  color: rgba(218, 235, 247, 0.86) !important;
+  font-size: 12px !important;
+  line-height: 18px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-runtime-side {
+  min-width: 136px !important;
+  gap: 5px !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-runtime-source,
+html body #root#root#root .content.is-scene-embed-content .scene-embed-runtime-alarm {
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 11px !important;
+  font-size: 12px !important;
+  font-weight: 760 !important;
+  line-height: 30px !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-runtime-toggle {
+  height: 32px !important;
+  min-height: 32px !important;
+  font-size: 12.5px !important;
+  line-height: 32px !important;
+}
+
+/* Full-site visual acceptance pass 23: compact scene-control switchbar tools. */
+html body #root#root#root .content.is-scene-embed-content .scene-embed-switchbar {
+  grid-template-columns: minmax(126px, 0.72fr) minmax(220px, 1fr) minmax(420px, auto) !important;
+  align-items: center !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  gap: 8px !important;
+  padding: 4px 10px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  min-width: 0 !important;
+  height: 36px !important;
+  gap: 8px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-actions,
+html body #root#root#root .content.is-scene-embed-content .scene-embed-fit-actions {
+  display: flex !important;
+  align-items: center !important;
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+  height: 34px !important;
+  gap: 6px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-actions button,
+html body #root#root#root .content.is-scene-embed-content .scene-embed-fit-actions button {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  min-width: 76px !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  font-weight: 760 !important;
+  line-height: 32px !important;
+  letter-spacing: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-fit-actions button {
+  min-width: 84px !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-actions button.active,
+html body #root#root#root .content.is-scene-embed-content .scene-embed-fit-actions button.active {
+  border-color: rgba(132, 244, 202, 0.68) !important;
+  color: #f8fffc !important;
+  background: linear-gradient(135deg, rgba(18, 119, 88, 0.96), rgba(19, 84, 122, 0.96)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 0 0 1px rgba(109, 231, 186, 0.08) !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-fullscreen-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 34px !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  line-height: 34px !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-fullscreen-button svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* Full-site visual acceptance pass 24: remove cold-log header date/input clipping artifacts. */
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-summary-grid,
+html body #root#root#root .cold-log-cop-page .cold-log-command-summary-grid {
+  align-items: stretch !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-stat,
+html body #root#root#root .cold-log-cop-page .cold-log-command-stat {
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-rows: 15px 20px !important;
+  align-content: center !important;
+  gap: 1px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-stat:not(.cold-log-command-filter-card) small,
+html body #root#root#root .cold-log-cop-page .cold-log-command-stat:not(.cold-log-command-filter-card) small {
+  display: none !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-stat span,
+html body #root#root#root .cold-log-cop-page .cold-log-command-stat span {
+  height: 15px !important;
+  min-height: 15px !important;
+  color: rgba(190, 217, 235, 0.9) !important;
+  font-size: 12px !important;
+  line-height: 15px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-stat strong,
+html body #root#root#root .cold-log-cop-page .cold-log-command-stat strong {
+  height: 20px !important;
+  min-height: 20px !important;
+  margin-top: 0 !important;
+  font-size: 15px !important;
+  line-height: 20px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-filter-card,
+html body #root#root#root .cold-log-cop-page .cold-log-command-filter-card {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-filter-card .cold-log-filter-actions,
+html body #root#root#root .cold-log-cop-page .cold-log-command-filter-card .cold-log-filter-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  min-width: 0 !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  gap: 6px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-date-field,
+html body #root#root#root .cold-log-cop-page .cold-log-date-field {
+  isolation: isolate !important;
+  flex: 0 0 148px !important;
+  width: 148px !important;
+  min-width: 148px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  border-radius: 7px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-date-value,
+html body #root#root#root .cold-log-cop-page .cold-log-date-value {
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 34px 0 10px !important;
+  color: rgba(235, 248, 255, 0.96) !important;
+  font-size: 12.5px !important;
+  font-weight: 760 !important;
+  line-height: 30px !important;
+  overflow: hidden !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+  pointer-events: none !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-filter-card .cold-log-date-field .cold-log-date-value,
+html body #root#root#root .cold-log-cop-page .cold-log-command-filter-card .cold-log-date-field .cold-log-date-value {
+  grid-column: 1 !important;
+  width: 100% !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 6px 0 10px !important;
+  font-size: 12.5px !important;
+  line-height: 30px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-date-field::before,
+html body #root#root#root .cold-log-cop-page .cold-log-date-field::before {
+  top: 7px !important;
+  right: 31px !important;
+  bottom: 7px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-date-field::after,
+html body #root#root#root .cold-log-cop-page .cold-log-date-field::after {
+  top: 9px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-date-field input[type="date"],
+html body #root#root#root .cold-log-cop-page .cold-log-date-field input[type="date"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  inset: 0 !important;
+  z-index: 3 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  caret-color: transparent !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  opacity: 0 !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-date-field input[type="date"]::-webkit-calendar-picker-indicator,
+html body #root#root#root .cold-log-cop-page .cold-log-date-field input[type="date"]::-webkit-calendar-picker-indicator,
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-date-field input[type="date"]::-webkit-inner-spin-button,
+html body #root#root#root .cold-log-cop-page .cold-log-date-field input[type="date"]::-webkit-inner-spin-button,
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-date-field input[type="date"]::-webkit-clear-button,
+html body #root#root#root .cold-log-cop-page .cold-log-date-field input[type="date"]::-webkit-clear-button {
+  display: none !important;
+  opacity: 0 !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-filter-card button,
+html body #root#root#root .cold-log-cop-page .cold-log-command-filter-card button {
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  min-width: 58px !important;
+  padding: 0 10px !important;
+  border-radius: 7px !important;
+  font-size: 12.5px !important;
+  font-weight: 760 !important;
+  line-height: 30px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 1480px) {
+  html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-summary-grid,
+  html body #root#root#root .cold-log-cop-page .cold-log-command-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-auto-rows: 42px !important;
+    height: 90px !important;
+    gap: 5px !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-stat,
+  html body #root#root#root .cold-log-cop-page .cold-log-command-stat {
+    height: 42px !important;
+    min-height: 42px !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-filter-card,
+  html body #root#root#root .cold-log-cop-page .cold-log-command-filter-card {
+    grid-column: span 2 !important;
+  }
+}
+
+/* Final cold-log grid guard: keep the section below the actual header height. */
+html body #root#root#root .content.is-subpage-compact.has-secondary-nav > .cold-station-log-page.cold-log-cop-page,
+html body #root#root#root .content.is-subpage-compact > .cold-station-log-page.cold-log-cop-page,
+html body #root#root#root .cold-station-log-page.cold-log-cop-page {
+  grid-template-rows: 176px minmax(0, 1fr) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact.has-secondary-nav > .cold-station-log-page.cold-log-cop-page > .cold-log-header,
+html body #root#root#root .content.is-subpage-compact > .cold-station-log-page.cold-log-cop-page > .cold-log-header,
+html body #root#root#root .cold-station-log-page.cold-log-cop-page > .cold-log-header {
+  height: 176px !important;
+  min-height: 176px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-energy-split span,
+html body #root#root#root .cold-log-cop-page .cold-log-energy-split span {
+  height: 34px !important;
+  min-height: 34px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-energy-split :is(small, strong),
+html body #root#root#root .cold-log-cop-page .cold-log-energy-split :is(small, strong) {
+  height: 14px !important;
+  min-height: 14px !important;
+  line-height: 14px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-command-side,
+html body #root#root#root .cold-log-cop-page .cold-log-command-side {
+  grid-template-rows: 13px 20px 20px 72px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .cold-log-cop-page .cold-log-energy-split,
+html body #root#root#root .cold-log-cop-page .cold-log-energy-split {
+  min-height: 72px !important;
+}
+
+/* Full-site visual acceptance pass 25: center scene-control mode buttons in the switchbar. */
+html body #root#root#root .content.is-scene-embed-content .scene-embed-toolbar {
+  transform: none !important;
+}
+
+/* System overview topology pass 26: keep vertical loop pipes continuous on tall viewports. */
+html body #root#root#root .system-overview-one-screen .system-overview-pipe.is-chilled-supply-drop {
+  height: max(96px, calc(100% - 214px)) !important;
+}
+
+html body #root#root#root .system-overview-one-screen .system-overview-pipe.is-cooling-supply-drop {
+  height: max(96px, calc(100% - 218px)) !important;
+}
+
+/* Optimize generated advice pass 27: unify the result strip with the diagnostic card language. */
+html body #root#root#root .content.is-subpage-compact:has(> .optimize-page) > .optimize-page {
+  grid-template-rows: 66px 96px 158px 96px 456px auto auto !important;
+  gap: 6px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .optimize-workspace-stage {
+  grid-template-columns: 132px minmax(0, 1fr) !important;
+  height: 96px !important;
+  min-height: 96px !important;
+  padding: 7px 9px !important;
+  gap: 7px !important;
+  border-color: rgba(92, 130, 163, 0.42) !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, rgba(13, 29, 43, 0.98), rgba(8, 20, 31, 0.99)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .optimize-workspace-stage.tone-good {
+  border-color: rgba(95, 216, 172, 0.44) !important;
+  background: linear-gradient(135deg, rgba(13, 33, 42, 0.98), rgba(8, 22, 31, 0.99)) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .optimize-workspace-stage.tone-warn {
+  border-color: rgba(255, 190, 97, 0.44) !important;
+  background: linear-gradient(135deg, rgba(34, 31, 25, 0.98), rgba(9, 21, 31, 0.99)) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-workspace-stage-copy {
+  display: grid !important;
+  grid-template-rows: 15px 27px 16px !important;
+  align-content: center !important;
+  gap: 4px !important;
+  min-width: 0 !important;
+  padding: 8px 9px !important;
+  border: 1px solid rgba(99, 140, 172, 0.34) !important;
+  border-radius: 8px !important;
+  background: rgba(6, 20, 32, 0.76) !important;
+  box-shadow: inset 3px 0 0 rgba(126, 196, 255, 0.48) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-workspace-stage.tone-good .optimize-workspace-stage-copy {
+  border-color: rgba(95, 216, 172, 0.38) !important;
+  box-shadow: inset 3px 0 0 rgba(95, 216, 172, 0.72) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-workspace-stage.tone-warn .optimize-workspace-stage-copy {
+  border-color: rgba(255, 190, 97, 0.38) !important;
+  box-shadow: inset 3px 0 0 rgba(255, 190, 97, 0.72) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-workspace-stage-copy span {
+  min-width: 0 !important;
+  color: rgba(183, 205, 223, 0.88) !important;
+  font-size: 11px !important;
+  font-weight: 820 !important;
+  line-height: 15px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-workspace-stage-copy strong {
+  min-width: 0 !important;
+  color: #f6fbff !important;
+  font-size: 21px !important;
+  font-weight: 900 !important;
+  line-height: 27px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-workspace-stage.tone-good .optimize-workspace-stage-copy strong {
+  color: #7ef8bb !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-workspace-stage.tone-warn .optimize-workspace-stage-copy strong {
+  color: #ffd68f !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-workspace-stage-copy p {
+  display: block !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  color: rgba(190, 210, 225, 0.82) !important;
+  font-size: 10.5px !important;
+  line-height: 16px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid {
+  grid-template-columns:
+    minmax(184px, 1.1fr)
+    minmax(148px, 0.9fr)
+    minmax(148px, 0.9fr)
+    minmax(150px, 0.9fr)
+    minmax(132px, 0.8fr) !important;
+  gap: 6px !important;
+  align-items: stretch !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article {
+  position: relative !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-rows: 15px 30px 16px !important;
+  align-content: center !important;
+  gap: 2px !important;
+  padding: 7px 9px 7px 11px !important;
+  border: 1px solid rgba(90, 132, 166, 0.36) !important;
+  border-radius: 8px !important;
+  background: rgba(7, 22, 35, 0.88) !important;
+  box-shadow:
+    inset 3px 0 0 rgba(126, 196, 255, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.is-primary,
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.is-primary.tone-good,
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.is-primary.tone-warn {
+  grid-template-rows: 15px 32px 16px !important;
+  padding: 7px 10px 7px 12px !important;
+  border-width: 1px !important;
+  background: rgba(7, 24, 36, 0.9) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.is-primary::before {
+  display: none !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.tone-good,
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.tone-good:not(.is-primary),
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.is-primary.tone-good {
+  border-color: rgba(95, 216, 172, 0.44) !important;
+  box-shadow:
+    inset 3px 0 0 rgba(95, 216, 172, 0.74),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.tone-warn,
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.tone-warn:not(.is-primary),
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.is-primary.tone-warn {
+  border-color: rgba(255, 190, 97, 0.44) !important;
+  box-shadow:
+    inset 3px 0 0 rgba(255, 190, 97, 0.74),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.tone-danger,
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.tone-danger:not(.is-primary) {
+  border-color: rgba(255, 123, 123, 0.48) !important;
+  box-shadow:
+    inset 3px 0 0 rgba(255, 123, 123, 0.76),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid :is(span, strong, small) {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid span {
+  color: rgba(183, 205, 223, 0.88) !important;
+  font-size: 11px !important;
+  font-weight: 820 !important;
+  line-height: 15px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid strong,
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.is-primary strong,
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.is-benefit strong {
+  color: #f6fbff !important;
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  line-height: 30px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.is-primary.tone-good strong {
+  color: #7ef8bb !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.tone-warn strong,
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.is-primary.tone-warn strong {
+  color: #ffd68f !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-result-card-grid small {
+  color: rgba(190, 210, 225, 0.82) !important;
+  font-size: 10.5px !important;
+  line-height: 16px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .optimize-input-status-grid {
+  height: 158px !important;
+  min-height: 158px !important;
+  max-height: 158px !important;
+  gap: 8px !important;
+  overflow: visible !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .optimize-input-status-grid > .section-card {
+  height: 158px !important;
+  min-height: 158px !important;
+  max-height: 158px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .section-card:nth-of-type(2) {
+  height: 96px !important;
+  min-height: 96px !important;
+  max-height: 96px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .optimize-diagnostic-showcase {
+  height: 456px !important;
+  min-height: 456px !important;
+  max-height: 456px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-diagnostic-spotlight-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-auto-rows: minmax(0, 1fr) !important;
+}
+
+/* Optimize diagnostic basis pass 28: keep evidence complete but tighten card density. */
+html body #root#root#root .content.is-subpage-compact:has(> .optimize-page) > .optimize-page {
+  grid-template-rows: 66px 96px 158px 96px 350px auto auto !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .optimize-diagnostic-showcase {
+  grid-template-rows: 38px minmax(0, 1fr) !important;
+  height: 350px !important;
+  min-height: 350px !important;
+  max-height: 350px !important;
+  gap: 8px !important;
+  padding: 10px 12px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .optimize-diagnostic-showcase .optimize-response-header {
+  min-height: 38px !important;
+  height: 38px !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .optimize-diagnostic-showcase .optimize-response-header strong {
+  font-size: 14px !important;
+  line-height: 18px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .optimize-diagnostic-showcase .optimize-response-header p {
+  margin: 1px 0 0 !important;
+  font-size: 10.5px !important;
+  line-height: 14px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-diagnostic-summary-actions a {
+  height: 26px !important;
+  min-width: 112px !important;
+  padding: 0 10px !important;
+  font-size: 11.5px !important;
+  line-height: 26px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-diagnostic-spotlight-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-template-rows: repeat(2, minmax(0, 1fr)) !important;
+  grid-auto-rows: minmax(0, 1fr) !important;
+  gap: 8px !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-diagnostic-spotlight-card {
+  grid-template-rows: 20px 28px 30px 16px !important;
+  gap: 4px !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 8px 10px 8px 12px !important;
+  background: rgba(7, 22, 35, 0.88) !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-diagnostic-spotlight-card > p {
+  display: none !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-diagnostic-spotlight-head > span {
+  font-size: 11.2px !important;
+  line-height: 18px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-diagnostic-spotlight-card > strong {
+  font-size: 19px !important;
+  line-height: 28px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-diagnostic-spotlight-card > small {
+  -webkit-line-clamp: 2 !important;
+  line-clamp: 2 !important;
+  font-size: 10.8px !important;
+  line-height: 15px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page .optimize-diagnostic-spotlight-card > em {
+  font-size: 10.3px !important;
+  line-height: 16px !important;
+}
+
+/* Optimize generated page pass 29: make data readiness a real compact summary, not a clipped detail panel. */
+html body #root#root#root .content.is-subpage-compact:has(> .optimize-page) > .optimize-page {
+  grid-template-rows: 66px 96px 162px 94px 350px auto auto !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .optimize-input-status-grid,
+html body #root#root#root .content.is-subpage-compact .optimize-page > .optimize-input-status-grid > .section-card {
+  height: 162px !important;
+  min-height: 162px !important;
+  max-height: 162px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .section-card:nth-of-type(2) {
+  display: grid !important;
+  grid-template-rows: 30px minmax(0, 1fr) !important;
+  height: 94px !important;
+  min-height: 94px !important;
+  max-height: 94px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .section-card:nth-of-type(2) > .section-card-header {
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 0 10px !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .section-card:nth-of-type(2) > .section-card-body {
+  min-height: 0 !important;
+  height: 64px !important;
+  padding: 0 10px 8px !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .section-card:nth-of-type(2) .optimize-response {
+  height: 100% !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .section-card:nth-of-type(2) .optimize-response > :not(.optimize-response-header) {
+  display: none !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .section-card:nth-of-type(2) .optimize-response-header {
+  height: 48px !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .section-card:nth-of-type(2) .optimize-response-header > .status-pill {
+  display: none !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .section-card:nth-of-type(2) .optimize-response-header strong {
+  min-width: 0 !important;
+  font-size: 12.5px !important;
+  line-height: 17px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .content.is-subpage-compact .optimize-page > .section-card:nth-of-type(2) .optimize-response-header p {
+  display: -webkit-box !important;
+  margin: 1px 0 0 !important;
+  color: rgba(190, 210, 225, 0.82) !important;
+  font-size: 10.5px !important;
+  line-height: 14px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  line-clamp: 2 !important;
+}
+
+/* AI overview board: executable concept version for owner-facing demo review. */
+.content.is-subpage-compact:has(> .ai-overview-page) {
+  --content-pad-y: 12px;
+  --content-pad-x: 12px;
+  padding-bottom: 12px;
+  background:
+    linear-gradient(90deg, rgba(90, 215, 255, 0.04) 1px, transparent 1px) 0 0 / 72px 72px,
+    linear-gradient(0deg, rgba(90, 215, 255, 0.035) 1px, transparent 1px) 0 0 / 72px 72px,
+    radial-gradient(circle at 70% 18%, rgba(112, 246, 174, 0.1), transparent 28%),
+    linear-gradient(145deg, #06131d 0%, #071a28 52%, #06111b 100%);
+}
+
+.ai-overview-page {
+  --ai-bg: #06131d;
+  --ai-panel: rgba(12, 32, 47, 0.93);
+  --ai-panel-strong: rgba(10, 40, 56, 0.8);
+  --ai-line: rgba(90, 169, 211, 0.32);
+  --ai-text: #edf8ff;
+  --ai-muted: #9eb4c6;
+  --ai-subtle: #6f879b;
+  --ai-cyan: #5ad7ff;
+  --ai-green: #70f6ae;
+  --ai-amber: #ffca6b;
+  --ai-red: #ff6b74;
+  display: grid;
+  grid-template-rows: 56px 88px minmax(0, 1fr) 124px;
+  gap: 8px;
+  height: calc(100dvh - 150px);
+  min-height: 704px;
+  overflow: hidden;
+  color: var(--ai-text);
+  font-family: var(--font-ui);
+}
+
+.ai-overview-page * {
+  box-sizing: border-box;
+}
+
+.ai-overview-header,
+.ai-kpi-card,
+.ai-plant-panel,
+.ai-rec-panel,
+.ai-chart-card,
+.ai-safety-panel {
+  border: 1px solid var(--ai-line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(14, 38, 56, 0.94), rgba(9, 29, 43, 0.9));
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
+}
+
+.ai-overview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-width: 0;
+  padding: 10px 14px;
+}
+
+.ai-overview-kicker {
+  display: block;
+  color: var(--ai-cyan);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 16px;
+}
+
+.ai-overview-header h2 {
+  margin: 3px 0 0;
+  color: var(--ai-text);
+  font-size: clamp(24px, 2.2vw, 32px);
+  line-height: 1.08;
+  font-weight: 900;
+}
+
+.ai-overview-mode-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 390px;
+}
+
+.ai-mode-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(7, 24, 36, 0.82);
+  color: var(--ai-muted);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.ai-mode-chip.good {
+  border-color: rgba(112, 246, 174, 0.32);
+  background: rgba(28, 88, 65, 0.22);
+  color: var(--ai-green);
+}
+
+.ai-mode-chip.warn {
+  border-color: rgba(255, 202, 107, 0.34);
+  background: rgba(120, 80, 28, 0.22);
+  color: var(--ai-amber);
+}
+
+.ai-mode-chip.info {
+  border-color: rgba(90, 215, 255, 0.32);
+  background: rgba(34, 90, 110, 0.22);
+  color: var(--ai-cyan);
+}
+
+.ai-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.ai-kpi-card {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  padding: 9px 16px;
+}
+
+.ai-kpi-card::after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 16px;
+  right: 16px;
+  bottom: 4px;
+  height: 3px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--ai-green), rgba(90, 215, 255, 0.72), rgba(255, 202, 107, 0.26));
+}
+
+.ai-card-label,
+.ai-equipment-head,
+.ai-panel-title,
+.ai-rec-main span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ai-card-label span,
+.ai-panel-title span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ai-muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-card-label em,
+.ai-equipment-head em {
+  color: var(--ai-green);
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.ai-kpi-card.tone-warn .ai-card-label em,
+.ai-equipment-card.tone-warn .ai-equipment-head em {
+  color: var(--ai-amber);
+}
+
+.ai-kpi-card.tone-info .ai-card-label em {
+  color: var(--ai-cyan);
+}
+
+.ai-kpi-card strong {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 5px;
+  color: var(--ai-green);
+  font-family: var(--font-display);
+  font-size: clamp(26px, 2.4vw, 29px);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.ai-kpi-card.tone-info strong {
+  color: var(--ai-cyan);
+}
+
+.ai-kpi-card.tone-warn strong {
+  color: var(--ai-amber);
+}
+
+.ai-kpi-card strong small {
+  color: var(--ai-muted);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.ai-equipment-card small {
+  color: var(--ai-muted);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.ai-kpi-card p {
+  margin: 3px 0 0;
+  color: var(--ai-subtle);
+  font-size: 11px;
+  line-height: 1.15;
+}
+
+.ai-overview-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(318px, 0.36fr);
+  gap: 8px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.ai-plant-panel,
+.ai-rec-panel {
+  min-width: 0;
+  min-height: 0;
+  padding: 12px;
+  overflow: hidden;
+}
+
+.ai-panel-title {
+  min-height: 26px;
+  margin-bottom: 8px;
+}
+
+.ai-panel-title h3 {
+  margin: 0;
+  color: var(--ai-text);
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 900;
+}
+
+.ai-plant-network {
+  position: relative;
+  height: calc(100% - 38px);
+  min-height: 0;
+}
+
+.ai-flow {
+  position: absolute;
+  z-index: 0;
+  height: 4px;
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.ai-flow-chilled {
+  left: 18%;
+  right: 13%;
+  top: 28%;
+  background: linear-gradient(90deg, rgba(90, 215, 255, 0.14), rgba(90, 215, 255, 0.62), rgba(90, 215, 255, 0.14));
+}
+
+.ai-flow-cooling {
+  left: 18%;
+  right: 13%;
+  bottom: 30%;
+  background: linear-gradient(90deg, rgba(255, 202, 107, 0.14), rgba(255, 202, 107, 0.66), rgba(255, 202, 107, 0.14));
+}
+
+.ai-flow-data {
+  left: 48%;
+  top: 36%;
+  width: 4px;
+  height: 48%;
+  background: linear-gradient(180deg, rgba(112, 246, 174, 0.14), rgba(112, 246, 174, 0.62), rgba(112, 246, 174, 0.14));
+}
+
+.ai-water-pill {
+  position: absolute;
+  z-index: 3;
+  top: 44%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 36px;
+  border: 1px solid rgba(90, 215, 255, 0.28);
+  border-radius: 6px;
+  background: rgba(6, 22, 34, 0.92);
+  color: #c3d7e6;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ai-water-pill strong {
+  color: var(--ai-text);
+  font-weight: 900;
+}
+
+.ai-water-pill-left {
+  left: 0;
+  width: calc(50% - 8px);
+}
+
+.ai-water-pill-right {
+  right: 0;
+  width: calc(50% - 8px);
+}
+
+.ai-equipment-card {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  grid-template-rows: 20px 34px 5px 17px;
+  align-content: center;
+  gap: 5px;
+  width: 25%;
+  min-width: 174px;
+  height: 116px;
+  padding: 11px 12px 10px;
+  border: 1px solid var(--ai-line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(14, 38, 56, 0.98), rgba(9, 29, 43, 0.96));
+  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.26);
+  overflow: hidden;
+}
+
+.equipment-0,
+.equipment-3 {
+  left: 0;
+}
+
+.equipment-1,
+.equipment-4 {
+  left: 32%;
+}
+
+.equipment-2,
+.equipment-5 {
+  right: 0;
+}
+
+.equipment-0,
+.equipment-1,
+.equipment-2 {
+  top: 7%;
+}
+
+.equipment-3,
+.equipment-4,
+.equipment-5 {
+  bottom: 3%;
+}
+
+.ai-equipment-head span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ai-text);
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-equipment-card strong {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  color: var(--ai-green);
+  font-family: var(--font-display);
+  font-size: clamp(25px, 2.55vw, 34px);
+  font-weight: 900;
+  line-height: 34px;
+}
+
+.ai-equipment-card.tone-warn strong {
+  color: var(--ai-green);
+}
+
+.ai-progress {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(90, 215, 255, 0.08);
+  overflow: hidden;
+}
+
+.ai-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--ai-green), rgba(90, 215, 255, 0.84));
+}
+
+.ai-equipment-card p {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--ai-muted);
+  font-size: 10px;
+  line-height: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-equipment-card b {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  min-width: 0;
+  max-width: 100%;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 4px;
+  background: rgba(112, 246, 174, 0.1);
+  color: var(--ai-green);
+  font-size: 9.5px;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-equipment-card.tone-warn b {
+  background: rgba(255, 202, 107, 0.14);
+  color: var(--ai-amber);
+}
+
+.ai-shadow-card {
+  display: block;
+  padding: 8px;
+  border: 1px solid rgba(255, 202, 107, 0.3);
+  border-radius: 8px;
+  background: rgba(95, 67, 24, 0.18);
+}
+
+.ai-shadow-card strong {
+  color: var(--ai-amber);
+  font-size: 13px;
+  line-height: 17px;
+}
+
+.ai-shadow-card p {
+  margin: 4px 0 0;
+  color: var(--ai-muted);
+  font-size: 10px;
+  line-height: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-rec-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.ai-rec-row {
+  display: grid;
+  gap: 5px;
+  padding: 7px;
+  border: 1px solid rgba(90, 215, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(6, 20, 30, 0.58);
+}
+
+.ai-rec-row.is-approved {
+  border-color: rgba(112, 246, 174, 0.28);
+  background: rgba(23, 84, 58, 0.16);
+}
+
+.ai-rec-main {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ai-rec-main strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ai-text);
+  font-size: 12px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-rec-main small {
+  color: var(--ai-amber);
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.ai-rec-row.is-approved .ai-rec-main small {
+  color: var(--ai-green);
+}
+
+.ai-rec-main p,
+.ai-rec-detail {
+  margin: 0;
+  color: var(--ai-muted);
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.ai-rec-main p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.ai-rec-metrics {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 52px 72px;
+  gap: 6px;
+}
+
+.ai-rec-metrics span,
+.ai-rec-metrics button,
+.ai-safety-grid span {
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.ai-rec-metrics span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  height: 32px;
+  padding: 4px 6px;
+}
+
+.ai-rec-metrics small {
+  color: var(--ai-subtle);
+  font-size: 9px;
+  line-height: 10px;
+}
+
+.ai-rec-metrics b {
+  color: var(--ai-green);
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.ai-rec-metrics button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  height: 32px;
+  color: var(--ai-amber);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ai-rec-row.is-approved .ai-rec-metrics button {
+  color: var(--ai-green);
+}
+
+.ai-rec-detail {
+  padding-top: 2px;
+  color: rgba(195, 215, 230, 0.82);
+}
+
+.ai-bottom-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr minmax(318px, 0.36fr);
+  gap: 8px;
+  min-height: 0;
+}
+
+.ai-chart-card,
+.ai-constraint-panel,
+.ai-audit-panel,
+.ai-safety-panel {
+  min-width: 0;
+  min-height: 0;
+  padding: 10px 12px;
+  overflow: hidden;
+}
+
+.ai-line-chart {
+  width: 100%;
+  height: calc(100% - 38px);
+  min-height: 58px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ai-line-chart path {
+  fill: none;
+  stroke: var(--ai-green);
+  stroke-width: 4;
+}
+
+.ai-line-chart path.baseline {
+  stroke: var(--ai-cyan);
+  stroke-width: 2;
+  stroke-dasharray: 8 7;
+}
+
+.ai-line-chart circle {
+  fill: var(--ai-green);
+}
+
+.ai-bar-chart {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  align-items: end;
+  gap: 10px;
+  height: calc(100% - 42px);
+  min-height: 92px;
+  padding-top: 6px;
+}
+
+.ai-bar-chart span {
+  position: relative;
+  min-height: 16px;
+  border-radius: 4px 4px 2px 2px;
+  background: linear-gradient(180deg, var(--ai-cyan), rgba(90, 215, 255, 0.18));
+}
+
+.ai-bar-chart em {
+  position: absolute;
+  left: 50%;
+  bottom: -20px;
+  transform: translateX(-50%);
+  color: var(--ai-subtle);
+  font-style: normal;
+  font-size: 9px;
+  line-height: 12px;
+  white-space: nowrap;
+}
+
+.ai-safety-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  height: calc(100% - 34px);
+  min-height: 0;
+}
+
+.ai-constraint-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  height: calc(100% - 34px);
+  min-height: 0;
+}
+
+.ai-constraint-grid span {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid rgba(112, 246, 174, 0.2);
+  border-radius: 5px;
+  background: rgba(112, 246, 174, 0.07);
+  color: var(--ai-green);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.ai-constraint-grid svg {
+  color: var(--ai-green);
+}
+
+.ai-constraint-grid b {
+  min-width: 0;
+  overflow: hidden;
+  color: #c7f8dc;
+  font-size: 12px;
+  line-height: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-audit-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 7px;
+}
+
+.ai-audit-copy {
+  display: flex;
+  align-items: center;
+  min-height: 0;
+  padding: 8px 10px;
+  border: 1px dashed rgba(158, 167, 255, 0.34);
+  border-radius: 7px;
+  background: rgba(39, 42, 80, 0.24);
+  color: #aebdda;
+  font-size: 11px;
+  line-height: 1.35;
+  overflow: hidden;
+}
+
+.ai-safety-grid span {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  align-content: center;
+  gap: 1px 7px;
+  min-width: 0;
+  min-height: 0;
+  padding: 5px 8px;
+  background: rgba(112, 246, 174, 0.07);
+  border-color: rgba(112, 246, 174, 0.2);
+}
+
+.ai-safety-grid svg {
+  grid-row: 1 / 3;
+  align-self: center;
+  color: var(--ai-green);
+}
+
+.ai-safety-grid b {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ai-green);
+  font-size: 10.5px;
+  line-height: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-safety-grid small {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ai-muted);
+  font-size: 9px;
+  line-height: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+  .ai-overview-page {
+    grid-template-rows: auto auto auto auto;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .ai-overview-header,
+  .ai-overview-main,
+  .ai-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-overview-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ai-overview-mode-row {
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .ai-kpi-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ai-plant-network {
+    height: 520px;
+  }
+
+  .ai-rec-panel,
+  .ai-chart-card,
+  .ai-safety-panel {
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 760px) {
+  .content.is-subpage-compact:has(> .ai-overview-page) {
+    --content-pad-y: 8px;
+    --content-pad-x: 8px;
+  }
+
+  .ai-kpi-strip,
+  .ai-rec-metrics,
+  .ai-safety-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-plant-network {
+    display: grid;
+    height: auto;
+    min-height: 0;
+    gap: 8px;
+  }
+
+  .ai-flow,
+  .ai-water-pill {
+    display: none;
+  }
+
+  .ai-equipment-card {
+    position: static;
+    width: 100%;
+  }
+}
+
+/* Secondary navigation active state: keep the current card entry visually unambiguous after click. */
+html body #root .secondary-nav-link {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+html body #root .secondary-nav-link.active,
+html body #root .secondary-nav-link.is-current,
+html body #root .secondary-nav-link[aria-current="page"] {
+  border-color: rgba(103, 185, 238, 0.56) !important;
+  background:
+    linear-gradient(180deg, rgba(54, 105, 145, 0.74), rgba(31, 70, 103, 0.72)),
+    rgba(18, 60, 92, 0.72) !important;
+  color: rgba(245, 251, 255, 0.98) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 0 1px rgba(103, 185, 238, 0.12),
+    0 8px 20px rgba(0, 12, 26, 0.22),
+    0 0 18px rgba(103, 185, 238, 0.12) !important;
+}
+
+html body #root .secondary-nav-link.active::before,
+html body #root .secondary-nav-link.is-current::before,
+html body #root .secondary-nav-link[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  inset: 5px auto 5px 5px;
+  width: 2px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(124, 210, 255, 0.96), rgba(104, 218, 163, 0.72));
+  box-shadow: 0 0 10px rgba(124, 210, 255, 0.58);
+}
+
+html body #root .secondary-nav-link.active svg,
+html body #root .secondary-nav-link.active span,
+html body #root .secondary-nav-link.is-current svg,
+html body #root .secondary-nav-link.is-current span,
+html body #root .secondary-nav-link[aria-current="page"] svg,
+html body #root .secondary-nav-link[aria-current="page"] span {
+  position: relative;
+  z-index: 1;
+  color: rgba(245, 251, 255, 0.98) !important;
+  text-shadow: 0 1px 10px rgba(0, 17, 22, 0.42);
+}
+
+html body #root .secondary-nav-link.active svg,
+html body #root .secondary-nav-link.is-current svg,
+html body #root .secondary-nav-link[aria-current="page"] svg {
+  color: rgba(220, 242, 255, 0.98) !important;
+}
+
+/* Project switch page: keep only operational fields and remove explanatory copy space. */
+html body #root .content.is-subpage-compact > .project-switch-page {
+  grid-template-rows: 84px 50px minmax(0, 1fr) !important;
+  gap: 6px !important;
+}
+
+html body #root .project-switch-page .project-switch-header.subpage-command-board {
+  height: 84px !important;
+  min-height: 84px !important;
+  grid-template-columns: minmax(660px, 1fr) minmax(260px, 300px) !important;
+  align-items: stretch !important;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+
+html body #root .project-switch-page .project-switch-command-copy {
+  grid-template-rows: 12px 24px 24px !important;
+  gap: 3px !important;
+}
+
+html body #root .project-switch-page .project-switch-command-copy > p:not(.project-switch-command-eyebrow),
+html body #root .project-switch-page .project-switch-command-note p,
+html body #root .project-switch-page .project-switch-command-lines,
+html body #root .project-switch-page .project-switch-queue-head p,
+html body #root .project-switch-page .project-switch-workspace-stage-copy p,
+html body #root .project-switch-page .project-switch-card-hint {
+  display: none !important;
+}
+
+html body #root .project-switch-page .project-switch-command-copy h2 {
+  min-height: 24px !important;
+  font-size: 22px !important;
+  line-height: 24px !important;
+}
+
+html body #root .project-switch-page .project-switch-command-tags {
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 6px !important;
+  overflow: hidden !important;
+}
+
+html body #root .project-switch-page .project-switch-command-tags > span {
+  flex: 0 0 auto !important;
+  min-height: 22px !important;
+  padding: 0 10px !important;
+}
+
+html body #root .project-switch-page .project-switch-command-summary-grid {
+  display: none !important;
+}
+
+html body #root .project-switch-page .project-switch-command-side {
+  align-content: center !important;
+  gap: 5px !important;
+}
+
+html body #root .project-switch-page .project-switch-command-note {
+  min-height: 32px !important;
+  align-items: center !important;
+}
+
+html body #root .project-switch-page .project-switch-command-note strong {
+  font-size: 16px !important;
+  line-height: 20px !important;
+}
+
+html body #root .project-switch-page .project-switch-workspace-stage {
+  height: 50px !important;
+  min-height: 50px !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  padding: 7px 10px !important;
+}
+
+html body #root .project-switch-page .project-switch-workspace-stage-copy strong {
+  font-size: 16px !important;
+  line-height: 20px !important;
+}
+
+html body #root .project-switch-page .project-switch-workspace-stage-meta {
+  justify-content: flex-end !important;
+}
+
+html body #root .project-switch-page .project-switch-search {
+  flex: 0 1 190px !important;
+  min-width: 150px !important;
+  width: 190px !important;
+  height: 24px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 0 8px !important;
+  border: 1px solid rgba(109, 188, 241, 0.34) !important;
+  border-radius: 999px !important;
+  background: rgba(6, 23, 38, 0.72) !important;
+  color: rgba(220, 240, 252, 0.92) !important;
+}
+
+html body #root .project-switch-page .project-switch-search svg {
+  flex: 0 0 auto !important;
+  color: rgba(127, 209, 255, 0.9) !important;
+}
+
+html body #root .project-switch-page .project-switch-search input {
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 22px !important;
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  color: #eef8ff !important;
+  font-size: 12px !important;
+  font-weight: 760 !important;
+  line-height: 22px !important;
+}
+
+html body #root .project-switch-page .project-switch-search input::placeholder {
+  color: rgba(181, 211, 230, 0.74) !important;
+}
+
+html body #root .project-switch-page .project-switch-search input::-webkit-search-cancel-button {
+  display: none !important;
+}
+
+html body #root .project-switch-page .project-switch-search button {
+  width: 18px !important;
+  height: 18px !important;
+  min-height: 18px !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: rgba(103, 185, 238, 0.16) !important;
+  color: rgba(226, 246, 255, 0.9) !important;
+}
+
+html body #root .project-switch-page .project-switch-empty-search {
+  grid-column: 1 / -1 !important;
+  min-height: 180px !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 1px solid rgba(109, 188, 241, 0.22) !important;
+  border-radius: 12px !important;
+  background: rgba(8, 26, 42, 0.58) !important;
+  color: rgba(226, 242, 252, 0.9) !important;
+}
+
+html body #root .project-switch-page .project-switch-empty-search strong {
+  font-size: 18px !important;
+  line-height: 24px !important;
+}
+
+/* Scene control viewport pass: let the model consume the bottom slack, keep the tool strip compact. */
+html body #root#root#root .content.is-scene-embed-content {
+  height: calc(100vh - 58px) !important;
+  height: calc(100dvh - 58px) !important;
+  min-height: 0 !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-page,
+html body #root#root#root .content.is-scene-embed-content .scene-embed-shell {
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-shell {
+  grid-template-rows: 104px minmax(0, 1fr) 40px !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-switchbar {
+  grid-template-columns: minmax(116px, 0.62fr) minmax(220px, 1fr) minmax(392px, auto) !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 3px 10px !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-current {
+  gap: 0 !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-current strong {
+  height: 16px !important;
+  min-height: 16px !important;
+  font-size: 13px !important;
+  line-height: 16px !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-current span {
+  height: 14px !important;
+  min-height: 14px !important;
+  font-size: 11px !important;
+  line-height: 14px !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-environment-pill {
+  height: 30px !important;
+  min-width: 126px !important;
+  padding: 0 10px !important;
+  border-radius: 10px !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-toolbar {
+  height: 32px !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-actions,
+html body #root#root#root .content.is-scene-embed-content .scene-embed-fit-actions {
+  height: 30px !important;
+  gap: 5px !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-actions button,
+html body #root#root#root .content.is-scene-embed-content .scene-embed-fit-actions button {
+  height: 30px !important;
+  min-height: 30px !important;
+  min-width: 72px !important;
+  padding: 0 11px !important;
+  font-size: 12.5px !important;
+  line-height: 30px !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-fit-actions button {
+  min-width: 80px !important;
+}
+
+html body #root#root#root .content.is-scene-embed-content .scene-embed-fullscreen-button {
+  flex-basis: 30px !important;
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  line-height: 30px !important;
+}
+
+/* Project switch cards: denser operational list cards without dropping fields. */
+html body #root#root#root .project-switch-page .project-switch-queue-shell {
+  grid-template-rows: 22px minmax(0, 1fr) !important;
+  gap: 5px !important;
+  padding: 6px 8px 8px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-queue-head {
+  min-height: 22px !important;
+  height: 22px !important;
+  align-items: center !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-queue-head span {
+  margin: 0 !important;
+  font-size: 10px !important;
+  line-height: 14px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-grid {
+  gap: 6px !important;
+  grid-auto-rows: minmax(146px, auto) !important;
+  padding-right: 3px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-card {
+  align-content: start !important;
+  min-height: 146px !important;
+  gap: 5px !important;
+  padding: 8px !important;
+  border-radius: 14px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-card::after {
+  left: 12px !important;
+  right: 12px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-card-top {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-card-head {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 4px 7px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-rank {
+  min-height: 20px !important;
+  padding: 0 8px !important;
+  font-size: 10px !important;
+  line-height: 20px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-card-head strong {
+  display: block !important;
+  min-width: 0 !important;
+  max-height: 22px !important;
+  overflow: hidden !important;
+  font-size: 17px !important;
+  line-height: 22px !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  -webkit-line-clamp: unset !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-card-pills {
+  flex-wrap: nowrap !important;
+  gap: 4px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-state-pill {
+  min-height: 20px !important;
+  padding: 0 7px !important;
+  font-size: 10px !important;
+  line-height: 20px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-card-band {
+  gap: 4px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-card-band article {
+  min-height: 36px !important;
+  gap: 1px !important;
+  padding: 5px 7px !important;
+  border-radius: 10px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-card-band span {
+  font-size: 10px !important;
+  line-height: 12px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-card-band strong {
+  font-size: 14px !important;
+  line-height: 18px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-card-meta {
+  display: grid !important;
+  grid-template-columns: 0.75fr 0.9fr 1.18fr 1.35fr !important;
+  gap: 4px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-card-meta span {
+  min-width: 0 !important;
+  min-height: 20px !important;
+  gap: 4px !important;
+  padding: 0 6px !important;
+  overflow: hidden !important;
+  font-size: 10px !important;
+  line-height: 20px !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-card-meta svg {
+  flex: 0 0 auto !important;
+  width: 12px !important;
+  height: 12px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-cta {
+  min-height: 27px !important;
+  flex-basis: 27px !important;
+  padding: 0 9px !important;
+  border-radius: 9px !important;
+  font-size: 11px !important;
+  line-height: 27px !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-cta svg {
+  width: 13px !important;
+  height: 13px !important;
+}
+
+/* Project switch page: remove duplicated current-project status strip. */
+html body #root#root#root .content.is-subpage-compact > .project-switch-page {
+  grid-template-rows: 84px minmax(0, 1fr) !important;
+}
+
+html body #root#root#root .project-switch-page .project-switch-workspace-stage {
+  display: none !important;
 }

@@ -226,6 +226,12 @@ function assertIncludes(source, needle, label, errors) {
   }
 }
 
+function assertNotIncludes(source, needle, label, errors) {
+  if (source.includes(needle)) {
+    errors.push(`${label}: unexpected \`${needle}\``);
+  }
+}
+
 function assertOrder(source, before, after, label, errors) {
   const beforeIndex = source.lastIndexOf(before);
   const afterIndex = source.lastIndexOf(after);
@@ -683,16 +689,26 @@ function main() {
 
   assertIncludes(optimizeSource, 'label: "本次优化结论"', "optimize result primary label", errors);
   assertIncludes(optimizeSource, "const benefitPowerDeltaLabel =", "optimize result benefit label", errors);
-  assertIncludes(optimizeSource, "? \"预计节电功率\"", "optimize result saving label", errors);
-  assertIncludes(optimizeSource, "? \"预计增耗功率\"", "optimize result increase label", errors);
+  assertIncludes(optimizeSource, "? \"对标节电空间\"", "optimize result benchmark saving label", errors);
+  assertIncludes(optimizeSource, "? \"对标增耗风险\"", "optimize result benchmark increase label", errors);
   assertIncludes(
     optimizeSource,
     "Math.abs(benefitPowerDeltaKw)",
-    "optimize result saving value shown as positive magnitude",
+    "optimize result benchmark saving value shown as positive magnitude",
     errors
   );
-  assertIncludes(optimizeSource, "`节电率 ${benefitRateMagnitudeSummary}", "optimize result saving rate wording", errors);
-  assertIncludes(optimizeSource, "`增耗率 ${benefitRateSummary}", "optimize result increase rate wording", errors);
+  assertIncludes(optimizeSource, "`对标节电率 ${benefitRateMagnitudeSummary}", "optimize result benchmark saving rate wording", errors);
+  assertIncludes(optimizeSource, "`对标增耗率 ${benefitRateSummary}", "optimize result benchmark increase rate wording", errors);
+  assertIncludes(optimizeSource, 'title="历史对标依据"', "optimize compact benchmark basis section avoids duplicate savings", errors);
+  assertIncludes(optimizeSource, "<span>匹配口径</span>", "optimize compact benchmark basis shows matching tier", errors);
+  assertIncludes(optimizeSource, "<span>置信度</span>", "optimize compact benchmark basis shows confidence", errors);
+  assertIncludes(optimizeSource, "localizeHistoryBenchmarkMatchingTier", "optimize compact benchmark basis localizes matching tier", errors);
+  assertNotIncludes(optimizeSource, "<span>对标功率差</span>", "optimize compact basis must not repeat benchmark power delta", errors);
+  assertNotIncludes(optimizeSource, "<span>对标变化率</span>", "optimize compact basis must not repeat benchmark rate", errors);
+  assertNotIncludes(optimizeSource, "<span>节能率</span>", "optimize compact benefit must not label signed delta as saving rate", errors);
+  assertIncludes(optimizeSource, "function getShadowVerificationMetricConsistencyIssue", "shadow verification record metric consistency guard", errors);
+  assertIncludes(optimizeSource, "normalizeShadowVerificationRecordForDisplay", "shadow verification display normalizes impossible records", errors);
+  assertIncludes(optimizeSource, "指标待复核", "shadow verification inconsistent metrics must be visibly flagged", errors);
   assertIncludes(optimizeSource, 'emphasis: "primary" as const', "optimize result primary card flag", errors);
   assertIncludes(optimizeSource, 'emphasis: "benefit" as const', "optimize result benefit card flag", errors);
   assertIncludes(
@@ -872,8 +888,8 @@ function main() {
   );
   assertIncludes(
     optimizeSource,
-    "benefitPowerDeltaCompactSummary",
-    "optimize compact benefit missing value avoids clipping",
+    "benefitMatchingTierSummary",
+    "optimize compact benchmark basis missing value avoids clipping",
     errors
   );
 

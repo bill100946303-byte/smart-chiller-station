@@ -102,7 +102,7 @@ function buildDateList(range, endDateText) {
       ? 7
       : range === "30d"
         ? 30
-        : 1;
+        : 2;
   return Array.from({ length: days }, (_, index) => addDays(endDateText, index - (days - 1)));
 }
 

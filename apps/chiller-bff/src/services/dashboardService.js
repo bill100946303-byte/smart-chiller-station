@@ -10,6 +10,7 @@ import { annotateSourceEntry, buildSourceStatus } from "./sourceStatusService.js
 const DASHBOARD_TRENDS_CACHE_TTL_MS = 5 * 1000;
 const dashboardTrendsCache = new Map();
 const TEN_MINUTE_TREND_STEP_MS = 10 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 const TREND_RANGE_SPECS = {
   "24h": { count: 24, stepMs: 60 * 60 * 1000, unit: "hour" },
   "7d": { count: 7 * 24, stepMs: 60 * 60 * 1000, unit: "hour" },
@@ -56,7 +57,7 @@ function resolveTrendRangeSpec(range, options = {}) {
   if (range === "24h" && preferredStepMs !== null && preferredStepMs < baseSpec.stepMs) {
     return {
       ...baseSpec,
-      count: Math.floor((24 * 60 * 60 * 1000) / preferredStepMs),
+      count: Math.floor(DAY_MS / preferredStepMs) + 1,
       stepMs: preferredStepMs,
       unit: "interval"
     };
@@ -88,7 +89,7 @@ function pickTrendAnchorTimestamp(series, fallbackTimestamp) {
   return fallbackMs ?? Date.now();
 }
 
-function buildTrendBuckets(range, anchorMs, options = {}) {
+export function buildTrendBuckets(range, anchorMs, options = {}) {
   const spec = resolveTrendRangeSpec(range, options);
   const end = floorTrendBucket(anchorMs, range, spec);
   const start = end - (spec.count - 1) * spec.stepMs;
@@ -103,7 +104,7 @@ function averageTrendValues(values) {
   return Number((valid.reduce((sum, value) => sum + value, 0) / valid.length).toFixed(3));
 }
 
-function normalizeTrendSeriesForRange(series, range, latestTimestamp, options = {}) {
+export function normalizeTrendSeriesForRange(series, range, latestTimestamp, options = {}) {
   const normalizedRange = TREND_RANGE_SPECS[range] ? range : "24h";
   const anchorMs = pickTrendAnchorTimestamp(series, latestTimestamp);
   const spec = resolveTrendRangeSpec(normalizedRange, options);
@@ -775,7 +776,9 @@ async function computeDashboardTrends(config, siteId, range = "24h", requestCont
     : [];
   const rawSeries = shouldUseRealtimeFallback && realtimeSeries.length > 0 ? realtimeSeries : trend.series || [];
   const latestTrendTimestamp = pickLaterTimestamp(trend.latestTimestamp, realtimeSnapshot?.trends?.latestTimestamp);
-  const series = normalizeTrendSeriesForRange(rawSeries, range, latestTrendTimestamp);
+  const series = normalizeTrendSeriesForRange(rawSeries, range, latestTrendTimestamp, {
+    stepMs: TEN_MINUTE_TREND_STEP_MS
+  });
   const realtimeSource = buildRealtimeSource(realtimeSnapshot?.sourceStatus, config.legacyBaseUrl);
   const realtimeCoversTrends =
     shouldUseRealtimeFallback &&

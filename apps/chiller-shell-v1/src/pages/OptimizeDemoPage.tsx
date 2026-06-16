@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import SectionCard from "../components/common/SectionCard";
 import StatusPill from "../components/common/StatusPill";
 import { runtimeConfig } from "../config/runtimeConfig";
@@ -1799,6 +1800,22 @@ function localizeChillerStagingMatchTier(value: string | undefined): string {
   return preferLocaleValue(value, zhCN.optimizeDemo.pendingValue);
 }
 
+function localizeHistoryBenchmarkMatchingTier(value: string | undefined): string {
+  if (value === "load-wetbulb-strict") {
+    return "负荷+湿球严格匹配";
+  }
+  if (value === "load-wetbulb-relaxed") {
+    return "负荷+湿球放宽匹配";
+  }
+  if (value === "load-only-fallback") {
+    return "仅负荷匹配";
+  }
+  if (value === "unavailable") {
+    return "暂无可用样本";
+  }
+  return preferLocaleValue(value, zhCN.optimizeDemo.pendingValue);
+}
+
 function localizeChillerStagingSampleRole(value: string | undefined): string {
   if (value === "single_chiller_learning_window") {
     return "单机学习窗口";
@@ -2691,6 +2708,73 @@ function getShadowVerificationSourceRecordId(record: ShadowVerificationRecordDto
   return typeof raw === "string" && raw.trim() ? raw.trim() : null;
 }
 
+const SHADOW_VERIFICATION_RT_TO_KW = 3.5168525;
+const SHADOW_VERIFICATION_RELATIVE_TOLERANCE = 0.25;
+
+function getShadowMetricNumber(value: number | null | undefined): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function isRelativeMismatch(observed: number, expected: number, tolerance = SHADOW_VERIFICATION_RELATIVE_TOLERANCE): boolean {
+  if (!Number.isFinite(observed) || !Number.isFinite(expected) || expected <= 0) {
+    return false;
+  }
+  return Math.abs(observed - expected) / expected > tolerance;
+}
+
+function getShadowVerificationMetricConsistencyIssue(record: ShadowVerificationRecordDto | null | undefined): string | null {
+  const metrics = record?.metrics;
+  if (!metrics) {
+    return null;
+  }
+  const loadKw = getShadowMetricNumber(metrics.loadKw);
+  const stationPowerKw = getShadowMetricNumber(metrics.stationPowerKw);
+  const stationCop = getShadowMetricNumber(metrics.stationCop);
+  const kwPerRt = getShadowMetricNumber(metrics.kwPerRt);
+
+  if (stationCop !== null && kwPerRt !== null) {
+    const expectedKwPerRt = SHADOW_VERIFICATION_RT_TO_KW / stationCop;
+    if (isRelativeMismatch(kwPerRt, expectedKwPerRt)) {
+      return "COP 与 kW/RT 不一致，需复核记录口径。";
+    }
+  }
+  if (loadKw !== null && stationPowerKw !== null && stationCop !== null) {
+    const expectedCop = loadKw / stationPowerKw;
+    if (isRelativeMismatch(stationCop, expectedCop)) {
+      return "负荷、总功率与 COP 不一致，需复核记录口径。";
+    }
+  }
+  if (loadKw !== null && stationPowerKw !== null && kwPerRt !== null) {
+    const expectedKwPerRt = stationPowerKw / (loadKw / SHADOW_VERIFICATION_RT_TO_KW);
+    if (isRelativeMismatch(kwPerRt, expectedKwPerRt)) {
+      return "负荷、总功率与 kW/RT 不一致，需复核记录口径。";
+    }
+  }
+  return null;
+}
+
+function normalizeShadowVerificationRecordForDisplay(record: ShadowVerificationRecordDto): ShadowVerificationRecordDto {
+  const issue = getShadowVerificationMetricConsistencyIssue(record);
+  if (!issue) {
+    return record;
+  }
+  return {
+    ...record,
+    outcome: record.outcome && record.outcome !== "pending" ? "invalid" : record.outcome,
+    invalidReason: record.invalidReason || issue
+  };
+}
+
+function formatShadowVerificationKeyMetrics(record: ShadowVerificationRecordDto | null | undefined): string {
+  if (!record) {
+    return zhCN.optimizeDemo.pendingValue;
+  }
+  if (getShadowVerificationMetricConsistencyIssue(record)) {
+    return "指标待复核";
+  }
+  return `COP ${formatNumber(record.metrics?.stationCop, 2)} / kWRT ${formatNumber(record.metrics?.kwPerRt, 3)}`;
+}
+
 function buildShadowVerificationReviewNote(outcome: ShadowVerificationReviewOutcome, sourceRecordId: string): string {
   return `人工复核：${localizeShadowVerificationOutcome(outcome)}；sourceRecordId=${sourceRecordId}；append-only 新增记录，不修改原记录。`;
 }
@@ -2896,6 +2980,8 @@ export default function OptimizeDemoPage() {
   ensureOptimizeDemoLocaleText();
   const currentProject = getCurrentProject(getAuthSession());
   const activeSiteId = resolveOptimizeActiveSiteId(currentProject);
+  const operationalDiagnosticsHref = `/operational-diagnostics?siteId=${encodeURIComponent(activeSiteId)}`;
+  const showInlineOperationalDiagnosticsDetails = false;
   const activeProjectContextKey = [
     currentProject?.siteId,
     currentProject?.modelKey,
@@ -4247,8 +4333,19 @@ export default function OptimizeDemoPage() {
                   body: `结论：${nextAction.label}。目标值仅进入影子审批，真实PLC仍锁定。`,
                   tone: nextAction.tone
                 };
-  const optimizeWorkspaceHeadline = responseReady ? optimizeDecisionResult.value : "待生成建议";
-  const optimizeWorkspaceBody = optimizeDecisionResult.body;
+  const optimizeWorkspaceLabel = responseReady ? "控制边界" : "生成状态";
+  const optimizeWorkspaceHeadline = responseReady
+    ? optimizeDecisionResult.value === "暂不执行"
+      ? "边界锁定"
+      : readOnlyMode
+        ? "只读审阅"
+        : "影子待审批"
+    : "待生成建议";
+  const optimizeWorkspaceBody = responseReady
+    ? optimizeDecisionResult.value === "暂不执行"
+      ? "保留诊断结论，不进入执行队列。"
+      : "建议值进入影子流程，真实PLC保持锁定。"
+    : optimizeDecisionResult.body;
   const optimizeWorkspaceMeta = [
     `${localeText(responseReady ? "本次生成" : "待生成", responseReady ? "Generated" : "Pending", responseReady ? "Da tao" : "Cho tao")} ${requestDelta}`,
     `${localeText("数据", "Signals", "Tín hiệu")} ${signalQualityLabel}`,
@@ -4268,25 +4365,15 @@ export default function OptimizeDemoPage() {
       : responseReady
         ? zhCN.optimizeDemo.pendingValue
         : "待生成";
-  const benefitPowerDeltaCompactSummary =
-    typeof benefitPowerDeltaKw === "number"
-      ? `${formatNumber(benefitPowerDeltaIsSaving ? Math.abs(benefitPowerDeltaKw) : benefitPowerDeltaKw)} kW`
-      : responseReady
-        ? OPTIMIZE_COMPACT_PENDING_VALUE
-        : "待生成";
   const benefitPowerDeltaLabel =
     benefitPowerDeltaIsSaving
-      ? "预计节电功率"
+      ? "对标节电空间"
       : benefitPowerDeltaIsIncrease
-        ? "预计增耗功率"
-        : "预计功率变化";
+        ? "对标增耗风险"
+        : "对标功率变化";
   const benefitRateSummary = responseReady
     ? formatFlexiblePercent(benefitEstimate?.expectedPowerDeltaPct)
     : zhCN.optimizeDemo.pendingValue;
-  const benefitRateCompactSummary =
-    responseReady && typeof benefitEstimate?.expectedPowerDeltaPct === "number"
-      ? formatFlexiblePercent(benefitEstimate.expectedPowerDeltaPct)
-      : OPTIMIZE_COMPACT_PENDING_VALUE;
   const benefitRateMagnitudeSummary =
     responseReady && typeof benefitEstimate?.expectedPowerDeltaPct === "number"
       ? formatFlexiblePercent(Math.abs(benefitEstimate.expectedPowerDeltaPct)).replace(/^\+/, "")
@@ -4305,9 +4392,9 @@ export default function OptimizeDemoPage() {
   const benefitResultNote = responseReady
     ? typeof benefitEstimate?.expectedPowerDeltaPct === "number"
       ? benefitPowerDeltaIsSaving
-        ? `节电率 ${benefitRateMagnitudeSummary} · ${benefitResultConfidenceLabel}`
+        ? `对标节电率 ${benefitRateMagnitudeSummary} · ${benefitResultConfidenceLabel}`
         : benefitPowerDeltaIsIncrease
-          ? `增耗率 ${benefitRateSummary} · ${benefitResultConfidenceLabel}`
+          ? `对标增耗率 ${benefitRateSummary} · ${benefitResultConfidenceLabel}`
           : `${benefitRateSummary} · ${benefitResultConfidenceLabel}`
       : benefitResultConfidenceLabel
     : "待计算收益";
@@ -4367,6 +4454,12 @@ export default function OptimizeDemoPage() {
   const benefitVerificationWindowSummary = responseReady
     ? formatMinuteRange(chillerVerification?.durationMinutes)
     : zhCN.optimizeDemo.pendingValue;
+  const benefitMatchingTierSummary = responseReady
+    ? localizeHistoryBenchmarkMatchingTier(benefitEstimate?.basis?.matchingTier || historyBenchmark?.matchingTier)
+    : zhCN.optimizeDemo.pendingValue;
+  const benefitConfidenceCompactSummary = responseReady
+    ? benefitResultConfidenceLabel
+    : OPTIMIZE_COMPACT_PENDING_VALUE;
   const chillerSampleTotalSummary = responseReady
     ? `${formatNumber(chillerSampleSummary?.sampleTotal, 0)} / 需30`
     : zhCN.optimizeDemo.pendingValue;
@@ -4448,9 +4541,13 @@ export default function OptimizeDemoPage() {
       note: "真实收益以人工记录和审计报表为准"
     }
   ];
-  const recentShadowVerificationRecords = shadowVerificationRecords.slice(0, 3);
+  const displayShadowVerificationRecords = shadowVerificationRecords.map(normalizeShadowVerificationRecordForDisplay);
+  const shadowVerificationHasMetricIssues = displayShadowVerificationRecords.some((record) => record.invalidReason);
+  const recentShadowVerificationRecords = displayShadowVerificationRecords.slice(0, 3);
   const effectiveShadowVerificationSummary =
-    shadowVerificationSummary || buildFallbackShadowVerificationSummary(shadowVerificationRecords);
+    shadowVerificationHasMetricIssues
+      ? buildFallbackShadowVerificationSummary(displayShadowVerificationRecords)
+      : shadowVerificationSummary || buildFallbackShadowVerificationSummary(displayShadowVerificationRecords);
   const shadowReviewArchive =
     shadowVerificationExecutionFilter !== "all" ? effectiveShadowVerificationSummary.archive : null;
   const shadowReviewChecksumLabel = shadowReviewArchive?.checksumShort
@@ -4486,7 +4583,7 @@ export default function OptimizeDemoPage() {
     for (const execution of executions) {
       addOption(execution.executionId, execution.execution?.type, "执行单");
     }
-    for (const record of shadowVerificationRecords) {
+    for (const record of displayShadowVerificationRecords) {
       addOption(record.executionId, record.verificationType, "验证记录");
     }
     if (shadowVerificationExecutionFilter !== "all" && !options.has(shadowVerificationExecutionFilter)) {
@@ -4501,7 +4598,7 @@ export default function OptimizeDemoPage() {
   const selectedShadowVerificationRecords =
     shadowVerificationExecutionFilter === "all"
       ? []
-      : shadowVerificationRecords.filter((record) => record.executionId === shadowVerificationExecutionFilter);
+      : displayShadowVerificationRecords.filter((record) => record.executionId === shadowVerificationExecutionFilter);
   const selectedShadowVerificationLatestReview =
     selectedShadowVerificationRecords.find((record) => record.outcome && record.outcome !== "pending") || null;
   const selectedShadowVerificationLatestRecord =
@@ -4563,12 +4660,7 @@ export default function OptimizeDemoPage() {
     },
     {
       label: "关键指标",
-      value: selectedShadowVerificationLatestRecord
-        ? `COP ${formatNumber(selectedShadowVerificationLatestRecord.metrics?.stationCop, 2)} / kWRT ${formatNumber(
-            selectedShadowVerificationLatestRecord.metrics?.kwPerRt,
-            3
-          )}`
-        : zhCN.optimizeDemo.pendingValue,
+      value: formatShadowVerificationKeyMetrics(selectedShadowVerificationLatestRecord),
       note: selectedShadowVerificationLatestRecord
         ? `负荷 ${formatNumber(selectedShadowVerificationLatestRecord.metrics?.loadKw, 0)}kW / 湿球 ${formatNumber(
             selectedShadowVerificationLatestRecord.metrics?.wetBulbC,
@@ -5002,18 +5094,21 @@ export default function OptimizeDemoPage() {
             <div className="optimize-response-grid optimize-response-grid-execution">
               {recentShadowVerificationRecords.map((record) => {
                 const sourceRecordId = getShadowVerificationSourceRecordId(record);
+                const metricIssue = getShadowVerificationMetricConsistencyIssue(record);
                 const canReviewRecord = Boolean(record.recordId && record.outcome === "pending" && !sourceRecordId);
                 return (
                   <article className="optimize-response-card" key={record.recordId || `${record.recordedAt}-${record.targetLabel}`}>
                     <span>{localizeShadowVerificationOutcome(record.outcome)}</span>
                     <strong>{record.targetLabel || record.verificationType || "shadow 验证"}</strong>
                     <small>
-                      {[
-                        formatPrefillTimestamp(record.recordedAt),
-                        `冷站COP ${formatNumber(record.metrics?.stationCop, 2)}`,
-                        `kW/RT ${formatNumber(record.metrics?.kwPerRt, 3)}`,
-                        `告警 ${formatNumber(record.metrics?.alarmCount, 0)}`
-                      ].join(" / ")}
+                      {metricIssue
+                        ? [formatPrefillTimestamp(record.recordedAt), "指标待复核", metricIssue].join(" / ")
+                        : [
+                            formatPrefillTimestamp(record.recordedAt),
+                            `冷站COP ${formatNumber(record.metrics?.stationCop, 2)}`,
+                            `kW/RT ${formatNumber(record.metrics?.kwPerRt, 3)}`,
+                            `告警 ${formatNumber(record.metrics?.alarmCount, 0)}`
+                          ].join(" / ")}
                     </small>
                     {sourceRecordId ? <small>{`复核源记录 ${sourceRecordId}`}</small> : null}
                     {canReviewRecord ? (
@@ -5086,7 +5181,7 @@ export default function OptimizeDemoPage() {
 
       <div className={`optimize-workspace-stage tone-${nextAction.tone}${responseReady ? " is-ready" : " is-pending"}`}>
         <div className="optimize-workspace-stage-copy">
-          <span>优化结果</span>
+          <span>{optimizeWorkspaceLabel}</span>
           <strong>{optimizeWorkspaceHeadline}</strong>
           <p>{optimizeWorkspaceBody}</p>
         </div>
@@ -5203,17 +5298,17 @@ export default function OptimizeDemoPage() {
         </SectionCard>
 
         <SectionCard
-          title="节能估算"
+          title="历史对标依据"
           action={<StatusPill label={benefitEstimateConfidenceLabel} tone={mapConfidenceTone(benefitEstimate?.confidence)} />}
         >
           <div className="optimize-compact-metric-grid">
             <article className="optimize-response-card">
-              <span>功率差</span>
-              <strong>{benefitPowerDeltaCompactSummary}</strong>
+              <span>匹配口径</span>
+              <strong>{benefitMatchingTierSummary}</strong>
             </article>
             <article className="optimize-response-card">
-              <span>节能率</span>
-              <strong>{benefitRateCompactSummary}</strong>
+              <span>置信度</span>
+              <strong>{benefitConfidenceCompactSummary}</strong>
             </article>
             <article className="optimize-response-card">
               <span>样本</span>
@@ -5692,13 +5787,16 @@ export default function OptimizeDemoPage() {
         </div>
       </SectionCard>
 
-      <div className="optimize-diagnostic-showcase" aria-label="诊断内容总览">
+      <div className="optimize-diagnostic-showcase" aria-label="本次建议诊断依据">
         <div className="optimize-response-header">
           <div>
-            <strong>诊断内容总览</strong>
-            <p>6 类运行诊断直接露出结论、证据和边界；下方 Advisor 保留明细审阅，不新增真实下发能力。</p>
+            <strong>本次建议诊断依据</strong>
+            <p>关键结论、证据摘要、控制边界；完整诊断在运行诊断页审阅。</p>
           </div>
-          <StatusPill label={operationalDiagnosticReadySummary} tone={mapBenchmarkTone(operationalDiagnosticsAdvisor?.status)} />
+          <div className="optimize-diagnostic-summary-actions">
+            <StatusPill label={operationalDiagnosticReadySummary} tone={mapBenchmarkTone(operationalDiagnosticsAdvisor?.status)} />
+            <Link to={operationalDiagnosticsHref}>查看完整运行诊断</Link>
+          </div>
         </div>
 
         <div className="optimize-diagnostic-spotlight-grid">
@@ -5717,6 +5815,7 @@ export default function OptimizeDemoPage() {
         </div>
       </div>
 
+      {showInlineOperationalDiagnosticsDetails ? (
       <SectionCard
         title="运行诊断 Advisor"
         action={
@@ -6164,6 +6263,7 @@ export default function OptimizeDemoPage() {
           </details>
         </div>
       </SectionCard>
+      ) : null}
 
       <div className="optimize-governance-grid">
         <SectionCard

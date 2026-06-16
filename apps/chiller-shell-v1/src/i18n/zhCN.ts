@@ -51,6 +51,7 @@ const zhBase = {
     navEnvironment: "\u73af\u5883\u5de5\u51b5",
     navAlarms: "\u544a\u8b66\u9875",
     navDevices: "\u8bbe\u5907\u603b\u89c8",
+    navAiOverview: "AI总览大屏",
     navOptimizeDemo: "AI优化建议",
     navSceneControl: "\u573a\u666f\u63a7\u5236",
     navVideoMonitor: "视频监控",

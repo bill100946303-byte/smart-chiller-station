@@ -72,7 +72,7 @@ function addDays(dateText, days) {
 }
 
 function buildTrendRangeDates(range, endDateText) {
-  const days = range === "30d" ? 30 : range === "7d" ? 7 : 1;
+  const days = range === "30d" ? 30 : range === "7d" ? 7 : 2;
   const endDate = normalizeDateText(endDateText);
   return Array.from({ length: days }, (_item, index) => addDays(endDate, index - (days - 1)));
 }

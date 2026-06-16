@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "check": "npm run check:source-status-dict && npm run check:route-scope && npm run check:ui-visible-copy && npm run check:energy-efficiency-ui && npm run check:visual-readability",
+    "check": "npm run check:source-status-dict && npm run check:route-scope && npm run check:ui-visible-copy && npm run check:energy-efficiency-ui && npm run check:ai-overview-ui && npm run check:visual-readability",
     "verify": "npm run check && npm run build",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
@@ -13,6 +13,7 @@
     "check:route-scope": "node scripts/check-route-scope.js",
     "check:ui-visible-copy": "node scripts/check-ui-visible-copy.js",
     "check:energy-efficiency-ui": "node scripts/check-energy-efficiency-ui-contract.js",
+    "check:ai-overview-ui": "node scripts/check-ai-overview-ui-contract.js",
     "check:visual-readability": "node scripts/check-visual-readability-contract.js",
     "check:energy-efficiency-delivery-scope": "node scripts/check-energy-efficiency-delivery-scope.js"
   },

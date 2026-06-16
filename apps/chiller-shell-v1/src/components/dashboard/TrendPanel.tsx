@@ -35,6 +35,7 @@ const METRIC_LABELS: Record<string, string> = {
 };
 const SERIES_COLORS = ["#63e6ff", "#8ff7d7", "#6fa7ff", "#ffd28b"];
 const MIN_CONTINUOUS_POINTS = 3;
+const TEN_MINUTE_POINTS_PER_24H = 24 * 6 + 1;
 const CHILLED_LOW_DELTA_T = 3;
 const CHILLED_READY_DELTA_T = 4;
 const COOLING_LOW_DELTA_T = 2.5;
@@ -104,9 +105,9 @@ function getMaxTrendPoints(range: Range, keepFullResolution: boolean): number {
     if (range === "30d") {
       return 30 * 24;
     }
-    return 24;
+    return TEN_MINUTE_POINTS_PER_24H;
   }
-  return range === "24h" ? 24 : range === "7d" ? 21 : 30;
+  return range === "24h" ? TEN_MINUTE_POINTS_PER_24H : range === "7d" ? 21 : 30;
 }
 
 function buildAxisTicks(points: Point[], range: Range, dense = false): AxisTick[] {
@@ -124,7 +125,7 @@ function buildAxisTicks(points: Point[], range: Range, dense = false): AxisTick[
     }));
   }
 
-  const step = range === "24h" ? 1 : range === "7d" ? 24 : 72;
+  const step = range === "24h" ? 6 : range === "7d" ? 24 : 72;
   const indexes = points
     .map((_, index) => index)
     .filter((index) => index % step === 0);

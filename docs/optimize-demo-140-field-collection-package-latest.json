@@ -1,6 +1,6 @@
 {
   "siteId": "140",
-  "generatedAt": "2026-06-13T01:35:06.852Z",
+  "generatedAt": "2026-06-16T05:15:25.278Z",
   "finalDecision": "FIELD_COLLECTION_PACKAGE_READY_TO_COLLECT",
   "scope": "optimize-demo-140-field-collection-package",
   "documents": [
@@ -231,7 +231,7 @@
               "当前运行组合",
               "主机总功率",
               "冷站功率/COP",
-              "组合样本 133 条"
+              "组合样本 112 条"
             ],
             "missingData": [
               "组合历史样本",

@@ -21,6 +21,7 @@ Current scope:
 - `/environment-conditions`
 - `/alarms`
 - `/devices`
+- `/ai-overview`
 - `/optimize-demo`
 - `/scene-control`
 - `/video-monitor`
@@ -64,10 +65,14 @@ npm run verify
 This runs:
 
 - `npm run check:source-status-dict`
-- `npm run check:ui-copy`
+- `npm run check:route-scope`
+- `npm run check:ui-visible-copy`
+- `npm run check:energy-efficiency-ui`
+- `npm run check:ai-overview-ui`
+- `npm run check:visual-readability`
 - `npm run build`
 
-`check:ui-copy` prevents visible UI copy from leaking implementation terms such as internal endpoints, legacy labels, raw paths, video URLs, mojibake, and old English control terms.
+`check:ui-visible-copy` prevents visible UI copy from leaking implementation terms such as internal endpoints, legacy labels, raw paths, video URLs, mojibake, and old English control terms.
 
 ## Notes
 

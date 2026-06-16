@@ -1,4 +1,4 @@
-import { ChevronRight, Layers3, MapPinned } from "lucide-react";
+import { ChevronRight, Layers3, MapPinned, Search, X } from "lucide-react";
 import { startTransition, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { runtimeConfig } from "../config/runtimeConfig";
@@ -127,6 +127,30 @@ function formatVisitTime(value: string | null | undefined): string {
   return date.toLocaleString();
 }
 
+function formatCompactVisitTime(value: string | null | undefined): string {
+  if (!value) {
+    return zhCN.common.timeUnknown;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return zhCN.common.timeUnknown;
+  }
+  return date.toLocaleString(undefined, {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function resolveVisitTimestamp(value: string | null | undefined): number {
+  if (!value) {
+    return 0;
+  }
+  const timestamp = new Date(value).getTime();
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
 function formatMetricValue(
   value: number | null | undefined,
   options: {
@@ -228,6 +252,10 @@ function resolveProjectConfigLabel(project: AuthProject): string {
   return `${zhCN.projectSwitcher.modelLabel} ${zhCN.projectSwitcher.modelMissing}`;
 }
 
+function normalizeProjectSearchValue(value: string | null | undefined): string {
+  return String(value || "").trim().toLowerCase();
+}
+
 export default function ProjectSelectionPage() {
   const session = getAuthSession();
   const [searchParams] = useSearchParams();
@@ -251,6 +279,7 @@ export default function ProjectSelectionPage() {
     .map((project) => resolveProjectOptionId(project))
     .join("|");
   const [switchingProjectId, setSwitchingProjectId] = useState<string | null>(null);
+  const [projectSearchQuery, setProjectSearchQuery] = useState("");
   const autoEnterTriggeredRef = useRef(false);
   const [projectOverviewMap, setProjectOverviewMap] = useState<Record<string, ProjectOverviewState>>({});
   const projectVisitStats = getProjectVisitStats();
@@ -342,22 +371,6 @@ export default function ProjectSelectionPage() {
     window.location.assign(nextPath);
   }
 
-  const summaryCurrentText = resolveQueueDisplayName(currentProject);
-  const sortedProjects = [...queueProjects].sort((left, right) => {
-    const leftName = resolveQueueDisplayName(left);
-    const rightName = resolveQueueDisplayName(right);
-    const nameDiff = leftName.localeCompare(rightName, "zh-CN", {
-      numeric: true,
-      sensitivity: "base"
-    });
-    if (nameDiff !== 0) {
-      return nameDiff;
-    }
-    return resolveProjectOptionId(left).localeCompare(resolveProjectOptionId(right), "zh-CN", {
-      numeric: true,
-      sensitivity: "base"
-    });
-  });
   const siteProjectCountMap = queueProjects.reduce<Record<string, number>>((acc, project) => {
     acc[project.siteId] = (acc[project.siteId] || 0) + 1;
     return acc;
@@ -372,33 +385,94 @@ export default function ProjectSelectionPage() {
   const activeModelKey = String(currentProject?.modelKey || session?.defaultProjectKey || "").trim();
   const activeProjectName = String(storedProjectSelection?.siteName || "").trim();
   const activeProjectIdHint = String(session?.currentProjectId || "").trim();
-  const queueHeadProject = sortedProjects[0] || null;
-  const selectedProjectOptionId = (() => {
-    if (currentProjectOptionId && queueProjects.some((project) => resolveProjectOptionId(project) === currentProjectOptionId)) {
-      return currentProjectOptionId;
+
+  function isProjectCurrentInQueue(project: AuthProject): boolean {
+    const projectOptionId = resolveProjectOptionId(project);
+    if (currentProjectOptionId && projectOptionId === currentProjectOptionId) {
+      return true;
     }
 
-    const matchedProject = queueProjects.find((project) => {
-      const projectOptionId = resolveProjectOptionId(project);
-      const projectModelKey = String(project.modelKey || "").trim();
-      const isCurrentBySite = Boolean(activeSiteId && activeSiteId === project.siteId);
-      const isCurrentByModel = isCurrentBySite && Boolean(activeModelKey) && activeModelKey === projectModelKey;
-      const isCurrentByStoredName =
-        isCurrentBySite &&
-        Boolean(activeProjectName) &&
-        [
-          resolveQueueDisplayName(project),
-          String(project.appExplain || "").trim(),
-          String(project.siteName || "").trim(),
-          String(project.siteCode || "").trim()
-        ].includes(activeProjectName);
-      const isCurrentBySessionId =
-        Boolean(activeProjectIdHint) &&
-        (activeProjectIdHint === projectOptionId || activeProjectIdHint === project.siteId);
-      const isCurrentBySingleSiteCard = isCurrentBySite && (siteProjectCountMap[project.siteId] || 0) === 1;
-      return isCurrentBySessionId || isCurrentByModel || isCurrentByStoredName || isCurrentBySingleSiteCard;
-    });
+    const projectModelKey = String(project.modelKey || "").trim();
+    const isCurrentBySite = Boolean(activeSiteId && activeSiteId === project.siteId);
+    const isCurrentByModel = isCurrentBySite && Boolean(activeModelKey) && activeModelKey === projectModelKey;
+    const isCurrentByStoredName =
+      isCurrentBySite &&
+      Boolean(activeProjectName) &&
+      [
+        resolveQueueDisplayName(project),
+        String(project.appExplain || "").trim(),
+        String(project.siteName || "").trim(),
+        String(project.siteCode || "").trim()
+      ].includes(activeProjectName);
+    const isCurrentBySessionId =
+      Boolean(activeProjectIdHint) &&
+      (activeProjectIdHint === projectOptionId || activeProjectIdHint === project.siteId);
+    const isCurrentBySingleSiteCard = isCurrentBySite && (siteProjectCountMap[project.siteId] || 0) === 1;
+    return isCurrentBySessionId || isCurrentByModel || isCurrentByStoredName || isCurrentBySingleSiteCard;
+  }
 
+  const summaryCurrentText = resolveQueueDisplayName(currentProject);
+  const sortedProjects = [...queueProjects].sort((left, right) => {
+    const leftOptionId = resolveProjectOptionId(left);
+    const rightOptionId = resolveProjectOptionId(right);
+    const leftIsCurrent = isProjectCurrentInQueue(left);
+    const rightIsCurrent = isProjectCurrentInQueue(right);
+    if (leftIsCurrent !== rightIsCurrent) {
+      return leftIsCurrent ? -1 : 1;
+    }
+
+    const leftVisitStat = projectVisitStats[left.siteId];
+    const rightVisitStat = projectVisitStats[right.siteId];
+    const visitCountDiff = (rightVisitStat?.visitCount || 0) - (leftVisitStat?.visitCount || 0);
+    if (visitCountDiff !== 0) {
+      return visitCountDiff;
+    }
+
+    const lastVisitedDiff =
+      resolveVisitTimestamp(rightVisitStat?.lastVisitedAt) -
+      resolveVisitTimestamp(leftVisitStat?.lastVisitedAt);
+    if (lastVisitedDiff !== 0) {
+      return lastVisitedDiff;
+    }
+
+    const leftName = resolveQueueDisplayName(left);
+    const rightName = resolveQueueDisplayName(right);
+    const nameDiff = leftName.localeCompare(rightName, "zh-CN", {
+      numeric: true,
+      sensitivity: "base"
+    });
+    if (nameDiff !== 0) {
+      return nameDiff;
+    }
+    return leftOptionId.localeCompare(rightOptionId, "zh-CN", {
+      numeric: true,
+      sensitivity: "base"
+    });
+  });
+  const normalizedProjectSearchQuery = normalizeProjectSearchValue(projectSearchQuery);
+  const visibleProjects = normalizedProjectSearchQuery
+    ? sortedProjects.filter((project) => {
+        const optionId = resolveProjectOptionId(project);
+        const searchText = [
+          resolveQueueDisplayName(project),
+          project.siteId,
+          project.siteName,
+          project.siteCode,
+          project.appExplain,
+          project.city,
+          project.modelKey,
+          project.template,
+          optionId
+        ]
+          .map((item) => normalizeProjectSearchValue(item))
+          .filter(Boolean)
+          .join(" ");
+        return searchText.includes(normalizedProjectSearchQuery);
+      })
+    : sortedProjects;
+  const queueHeadProject = visibleProjects[0] || sortedProjects[0] || null;
+  const selectedProjectOptionId = (() => {
+    const matchedProject = queueProjects.find((project) => isProjectCurrentInQueue(project));
     if (matchedProject) {
       return resolveProjectOptionId(matchedProject);
     }
@@ -422,47 +496,29 @@ export default function ProjectSelectionPage() {
     { label: zhCN.projectSwitcher.summaryMode, value: zhCN.projectSwitcher.modeLive }
   ];
   const commandHeadline = currentProject
-    ? `当前工作位已挂在 ${summaryCurrentText}`
+    ? `当前项目 ${summaryCurrentText}`
     : queueHeadProject
-      ? `优先从 ${focusProjectName} 进入`
+      ? `优先进入 ${focusProjectName}`
       : zhCN.projectSwitcher.pendingHint;
-  const commandSummary = currentProject
-    ? `${focusLiveState.hint} 当前项目继续保持置顶，进入后默认落到 ${landingPath}，其他项目仍按实时 COP 和最近访问排序。`
-    : queueHeadProject
-      ? `${focusLiveState.hint} 当前还没有挂载项目，队列头部会优先暴露可判断的实时态，进入后默认落到 ${landingPath}。`
-      : zhCN.projectSwitcher.pendingHint;
-  const commandLines = [
-    "排序：当前项目 > 实时 COP > 最近访问",
-    `默认落点：${landingPath}`,
-    queueHeadProject ? `队列第一位：${resolveQueueDisplayName(queueHeadProject)}` : null,
-    focusVisitCount > 0 ? `最近访问：${focusVisitCount} 次` : null
-  ].filter((item): item is string => Boolean(item));
   const commandStats = [
     {
       title: zhCN.projectSwitcher.summaryProjects,
-      value: `${queueProjects.length} 项`,
-      detail: "实时队列"
+      value: `${queueProjects.length} 项`
     },
     {
       title: zhCN.projectSwitcher.summaryCurrent,
-      value: summaryCurrentText,
-      detail: currentProject ? "当前工作位" : "尚未挂载"
+      value: summaryCurrentText
     },
     {
       title: "默认落点",
-      value: landingPath,
-      detail: queueHeadProject ? `队列头部 ${resolveQueueDisplayName(queueHeadProject)}` : zhCN.projectSwitcher.pendingHint
+      value: landingPath
     },
     {
       title: "最近进入",
-      value: focusVisitCount > 0 ? `${focusVisitCount} 次` : "无记录",
-      detail: focusProject ? `上次 ${focusLastVisited}` : zhCN.projectSwitcher.pendingHint
+      value: focusVisitCount > 0 ? `${focusVisitCount} 次` : "无记录"
     }
   ];
   const workspaceTitle = focusProject ? focusProjectName : zhCN.projectSwitcher.title;
-  const workspaceBody = focusProject
-    ? `${focusLiveState.hint} 先看当前工作位的实时态、功率和告警，再决定是否直接进入该项目。`
-    : zhCN.projectSwitcher.pendingHint;
   const workspaceMeta = [
     focusProject ? focusLiveState.label : zhCN.projectSwitcher.latestPending,
     `${zhCN.projectSwitcher.metricCop} ${resolveCopValue(focusOverviewState)}`,
@@ -495,21 +551,34 @@ export default function ProjectSelectionPage() {
         <div className="project-switch-command-copy subpage-command-copy">
           <p className="project-switch-command-eyebrow">{runtimeConfig.appModeLabel}</p>
           <h2>{zhCN.projectSwitcher.title}</h2>
-          <p>{zhCN.projectSwitcher.subtitle}</p>
-          <div className="project-switch-command-tags" role="status" aria-live="polite">
+          <div className="project-switch-command-tags">
             {commandTags.map((item) => (
               <span key={item.label}>
                 <strong>{item.label}</strong>
                 <em>{item.value}</em>
               </span>
             ))}
+            <label className="project-switch-search">
+              <Search size={14} />
+              <input
+                type="search"
+                value={projectSearchQuery}
+                onChange={(event) => setProjectSearchQuery(event.target.value)}
+                placeholder="搜索项目"
+                aria-label="搜索项目"
+              />
+              {projectSearchQuery ? (
+                <button type="button" onClick={() => setProjectSearchQuery("")} aria-label="清空项目搜索">
+                  <X size={13} />
+                </button>
+              ) : null}
+            </label>
           </div>
           <div className="project-switch-command-summary-grid">
             {commandStats.map((item) => (
               <article key={`${item.title}-${item.value}`} className="project-switch-command-stat">
                 <span>{item.title}</span>
                 <strong>{item.value}</strong>
-                <small>{item.detail}</small>
               </article>
             ))}
           </div>
@@ -518,12 +587,6 @@ export default function ProjectSelectionPage() {
           <span className="project-switch-command-side-label">当前判断</span>
           <div className="project-switch-command-note">
             <strong>{commandHeadline}</strong>
-            <p>{commandSummary}</p>
-          </div>
-          <div className="project-switch-command-lines">
-            {commandLines.map((item) => (
-              <span key={item}>{item}</span>
-            ))}
           </div>
         </div>
       </section>
@@ -533,7 +596,6 @@ export default function ProjectSelectionPage() {
           <div className="project-switch-workspace-stage">
             <div className="project-switch-workspace-stage-copy">
               <strong>{workspaceTitle}</strong>
-              <p>{workspaceBody}</p>
             </div>
             <div className="project-switch-workspace-stage-meta">
               {workspaceMeta.map((item) => (
@@ -546,113 +608,115 @@ export default function ProjectSelectionPage() {
             <div className="project-switch-queue-head">
               <div>
                 <span>项目队列</span>
-                <strong>先看当前工作位，再看实时概览和访问热度</strong>
               </div>
-              <p>卡片点击逻辑保持不变，首屏只把判断顺序前置到进入动作之前。</p>
             </div>
 
             <section className="project-switch-grid">
-              {sortedProjects.map((project, index) => {
-                const projectOptionId = resolveProjectOptionId(project);
-                const isCurrent = selectedProjectOptionId === projectOptionId;
-                const isSwitching = switchingProjectId === projectOptionId;
-                const overviewState = projectOverviewMap[projectOptionId];
-                const liveState = resolveProjectLiveState(overviewState);
-                const copValue = resolveCopValue(overviewState);
-                const copTone = resolveCopTone(overviewState);
-                const powerValue = resolvePowerValue(overviewState);
-                const alarmValue = resolveAlarmValue(overviewState);
-                const displayName = resolveQueueDisplayName(project);
-                const visitStat = projectVisitStats[project.siteId];
-                const visitCount = visitStat?.visitCount || 0;
-                const lastVisitedAt = formatVisitTime(visitStat?.lastVisitedAt || null);
-                const cardMetaItems = [
-                  `${zhCN.projectSwitcher.siteIdLabel} ${project.siteId}`,
-                  resolveProjectConfigLabel(project),
-                  `上次进入 ${lastVisitedAt}`
-                ];
+              {visibleProjects.length > 0 ? (
+                visibleProjects.map((project, index) => {
+                  const projectOptionId = resolveProjectOptionId(project);
+                  const isCurrent = selectedProjectOptionId === projectOptionId;
+                  const isSwitching = switchingProjectId === projectOptionId;
+                  const overviewState = projectOverviewMap[projectOptionId];
+                  const liveState = resolveProjectLiveState(overviewState);
+                  const copValue = resolveCopValue(overviewState);
+                  const copTone = resolveCopTone(overviewState);
+                  const powerValue = resolvePowerValue(overviewState);
+                  const alarmValue = resolveAlarmValue(overviewState);
+                  const displayName = resolveQueueDisplayName(project);
+                  const visitStat = projectVisitStats[project.siteId];
+                  const visitCount = visitStat?.visitCount || 0;
+                  const lastVisitedAt = formatCompactVisitTime(visitStat?.lastVisitedAt || null);
+                  const cardMetaItems = [
+                    `${zhCN.projectSwitcher.siteIdLabel} ${project.siteId}`,
+                    resolveProjectConfigLabel(project),
+                    `上次 ${lastVisitedAt}`
+                  ];
 
-                return (
-                  <article
-                    key={projectOptionId}
-                    data-project-id={projectOptionId}
-                    data-site-id={project.siteId}
-                    data-site-name={displayName}
-                    className={`project-switch-card${isCurrent ? " is-current project-switch-card--selected" : ""} tone-${liveState.tone}`}
-                  >
-                    <div className="project-switch-card-top">
-                      <div className="project-switch-card-head">
-                        <span className="project-switch-rank">{`队列 ${String(index + 1).padStart(2, "0")}`}</span>
-                        <strong>{displayName}</strong>
-                        <small>
-                          {isCurrent
-                            ? "当前使用中，继续进入会保持当前项目上下文。"
-                            : visitCount > 0
-                              ? `最近访问 ${visitCount} 次，最近一次在 ${lastVisitedAt}。`
-                              : "尚未进入过，可直接作为新的工作站点。"}
-                        </small>
-                      </div>
-                      <div className="project-switch-card-pills">
-                        {isCurrent ? <span className="project-switch-state-pill is-current">{zhCN.projectSwitcher.currentTag}</span> : null}
-                        <span className={`project-switch-state-pill tone-${liveState.tone}`}>{liveState.label}</span>
-                      </div>
-                    </div>
-
-                    <div className="project-switch-card-band">
-                      <article>
-                        <span>{zhCN.projectSwitcher.metricCop}</span>
-                        <strong
-                          className={
-                            copValue === zhCN.projectSwitcher.metricPending
-                              ? "is-pending"
-                              : copTone
-                                ? `tone-${copTone}`
-                                : undefined
-                          }
-                        >
-                          {copValue}
-                        </strong>
-                      </article>
-                      <article>
-                        <span>{zhCN.projectSwitcher.metricPower}</span>
-                        <strong className={powerValue === zhCN.projectSwitcher.metricPending ? "is-pending" : undefined}>{powerValue}</strong>
-                      </article>
-                      <article>
-                        <span>{zhCN.projectSwitcher.metricAlarms}</span>
-                        <strong className={alarmValue === zhCN.projectSwitcher.metricPending ? "is-pending" : undefined}>{alarmValue}</strong>
-                      </article>
-                    </div>
-
-                    <div className="project-switch-card-meta">
-                      <span className="project-switch-location">
-                        <MapPinned size={14} />
-                        {project.city || zhCN.common.unknown}
-                      </span>
-                      {cardMetaItems.map((item) => (
-                        <span key={item}>{item}</span>
-                      ))}
-                    </div>
-
-                    <p className="project-switch-card-hint">{liveState.hint}</p>
-
-                    <button
-                      className="project-switch-cta"
-                      type="button"
+                  return (
+                    <article
+                      key={projectOptionId}
+                      data-project-id={projectOptionId}
                       data-site-id={project.siteId}
-                      onClick={() => handleProjectEnter(projectOptionId)}
-                      disabled={Boolean(switchingProjectId)}
+                      data-site-name={displayName}
+                      className={`project-switch-card${isCurrent ? " is-current project-switch-card--selected" : ""} tone-${liveState.tone}`}
                     >
-                      <Layers3 size={15} />
-                      {isSwitching
-                        ? zhCN.projectSwitcher.switching
-                        : isCurrent
-                          ? zhCN.projectSwitcher.enterAction
-                          : zhCN.projectSwitcher.switchAction}
-                      <ChevronRight size={15} />
-                    </button>
-                  </article>
-                );
-              })}
+                      <div className="project-switch-card-top">
+                        <div className="project-switch-card-head">
+                          <span className="project-switch-rank">{`队列 ${String(index + 1).padStart(2, "0")}`}</span>
+                          <strong title={displayName}>{displayName}</strong>
+                          <small>
+                            {isCurrent
+                              ? "当前项目"
+                              : visitCount > 0
+                                ? `访问 ${visitCount} 次 / ${lastVisitedAt}`
+                                : "未访问"}
+                          </small>
+                        </div>
+                        <div className="project-switch-card-pills">
+                          {isCurrent ? <span className="project-switch-state-pill is-current">{zhCN.projectSwitcher.currentTag}</span> : null}
+                          <span className={`project-switch-state-pill tone-${liveState.tone}`}>{liveState.label}</span>
+                        </div>
+                      </div>
+
+                      <div className="project-switch-card-band">
+                        <article>
+                          <span>{zhCN.projectSwitcher.metricCop}</span>
+                          <strong
+                            className={
+                              copValue === zhCN.projectSwitcher.metricPending
+                                ? "is-pending"
+                                : copTone
+                                  ? `tone-${copTone}`
+                                  : undefined
+                            }
+                          >
+                            {copValue}
+                          </strong>
+                        </article>
+                        <article>
+                          <span>{zhCN.projectSwitcher.metricPower}</span>
+                          <strong className={powerValue === zhCN.projectSwitcher.metricPending ? "is-pending" : undefined}>{powerValue}</strong>
+                        </article>
+                        <article>
+                          <span>{zhCN.projectSwitcher.metricAlarms}</span>
+                          <strong className={alarmValue === zhCN.projectSwitcher.metricPending ? "is-pending" : undefined}>{alarmValue}</strong>
+                        </article>
+                      </div>
+
+                      <div className="project-switch-card-meta">
+                        <span className="project-switch-location" title={project.city || zhCN.common.unknown}>
+                          <MapPinned size={14} />
+                          {project.city || zhCN.common.unknown}
+                        </span>
+                        {cardMetaItems.map((item) => (
+                          <span key={item} title={item}>{item}</span>
+                        ))}
+                      </div>
+
+                      <button
+                        className="project-switch-cta"
+                        type="button"
+                        data-site-id={project.siteId}
+                        onClick={() => handleProjectEnter(projectOptionId)}
+                        disabled={Boolean(switchingProjectId)}
+                      >
+                        <Layers3 size={15} />
+                        {isSwitching
+                          ? zhCN.projectSwitcher.switching
+                          : isCurrent
+                            ? zhCN.projectSwitcher.enterAction
+                            : zhCN.projectSwitcher.switchAction}
+                        <ChevronRight size={15} />
+                      </button>
+                    </article>
+                  );
+                })
+              ) : (
+                <div className="project-switch-empty-search" role="status">
+                  <strong>无匹配项目</strong>
+                </div>
+              )}
             </section>
           </section>
         </>

@@ -220,8 +220,8 @@ const TOWER_APPROACH_MAX_PLAUSIBLE_C = 20;
 const DASHBOARD_AUTO_REFRESH_MS = 10_000;
 const DASHBOARD_RECOVERY_RETRY_MS = 5_000;
 const DASHBOARD_OVERVIEW_SNAPSHOT_KEY_PREFIX = "chiller-dashboard-overview-snapshot-v1";
-const DASHBOARD_TRENDS_SNAPSHOT_KEY_PREFIX = "chiller-dashboard-trends-snapshot-v2";
-const DASHBOARD_TRENDS_HISTORY_KEY_PREFIX = "chiller-dashboard-trends-history-v2";
+const DASHBOARD_TRENDS_SNAPSHOT_KEY_PREFIX = "chiller-dashboard-trends-snapshot-v4";
+const DASHBOARD_TRENDS_HISTORY_KEY_PREFIX = "chiller-dashboard-trends-history-v4";
 const TREND_WINDOW_24H_MS = 24 * 60 * 60 * 1000;
 const TREND_NEAR_FULL_24H_COVERAGE_MS = 23 * 60 * 60 * 1000;
 const DASHBOARD_PENDING_REVIEW_LABEL = "待复核";
@@ -631,10 +631,46 @@ function shouldPersistLocalTrendHistory(range: TrendRange): boolean {
   return range === "24h";
 }
 
-function hasUsableTrendsMetrics(trends: DashboardTrendsDto | null | undefined): boolean {
-  return Boolean(
+function resolveTrendSeriesValidBounds(
+  points: NonNullable<DashboardTrendSeriesDto["points"]> | undefined
+): { startTs: number; endTs: number; coveredSpan: number; validCount: number } | null {
+  const timestamps = (points || [])
+    .filter((point) => typeof point?.v === "number" && Number.isFinite(point.v))
+    .map((point) => parseTrendTimestamp(point.t))
+    .filter((value): value is number => typeof value === "number");
+  if (!timestamps.length) {
+    return null;
+  }
+  const startTs = Math.min(...timestamps);
+  const endTs = Math.max(...timestamps);
+  return {
+    startTs,
+    endTs,
+    coveredSpan: Math.max(endTs - startTs, 0),
+    validCount: timestamps.length
+  };
+}
+
+function hasNearFull24hDtoTrendCoverage(trends: DashboardTrendsDto | null | undefined): boolean {
+  const series = trends?.series || [];
+  const copSeries = series.find((item) => item.metric === "currentCop");
+  const targetSeries = copSeries || series.find((item) => Array.isArray(item.points) && item.points.length > 0);
+  const bounds = resolveTrendSeriesValidBounds(targetSeries?.points);
+  return Boolean(bounds && bounds.coveredSpan >= TREND_NEAR_FULL_24H_COVERAGE_MS);
+}
+
+function hasUsableTrendsMetrics(trends: DashboardTrendsDto | null | undefined, range?: TrendRange): boolean {
+  const hasAnyPoints = Boolean(
     trends?.series?.some((item) => Array.isArray(item.points) && item.points.length > 0)
   );
+  if (!hasAnyPoints) {
+    return false;
+  }
+  const normalizedRange = range || trends?.range;
+  if (normalizedRange === "24h") {
+    return hasNearFull24hDtoTrendCoverage(trends);
+  }
+  return true;
 }
 
 function mergeTrendSeriesPoints(
@@ -755,7 +791,7 @@ function buildTrendsFromHistory(siteId: string, history: DashboardTrendsHistoryP
   };
 }
 
-function readTrendsSnapshot(siteId: string, contextKey = ""): { siteId: string; capturedAt: string; trends: DashboardTrendsDto } | null {
+function readTrendsSnapshot(siteId: string, range: TrendRange, contextKey = ""): { siteId: string; capturedAt: string; trends: DashboardTrendsDto } | null {
   if (typeof window === "undefined") {
     return null;
   }
@@ -771,7 +807,7 @@ function readTrendsSnapshot(siteId: string, contextKey = ""): { siteId: string; 
       parsed.siteId !== siteId ||
       !parsed?.capturedAt ||
       !parsed?.trends ||
-      !hasUsableTrendsMetrics(parsed.trends)
+      !hasUsableTrendsMetrics(parsed.trends, range)
     ) {
       return null;
     }
@@ -785,8 +821,8 @@ function readTrendsSnapshot(siteId: string, contextKey = ""): { siteId: string; 
   }
 }
 
-function writeTrendsSnapshot(siteId: string, trends: DashboardTrendsDto, capturedAt: string, contextKey = ""): void {
-  if (typeof window === "undefined" || !hasUsableTrendsMetrics(trends)) {
+function writeTrendsSnapshot(siteId: string, trends: DashboardTrendsDto, capturedAt: string, range: TrendRange, contextKey = ""): void {
+  if (typeof window === "undefined" || !hasUsableTrendsMetrics(trends, range)) {
     return;
   }
   const payload: DashboardTrendsSnapshotPayload = {
@@ -821,13 +857,17 @@ function readTrendsHistory(siteId: string, range: TrendRange, contextKey = ""): 
     ) {
       return null;
     }
-    return {
+    const normalized: DashboardTrendsHistoryPayload = {
       version: 1,
       siteId: parsed.siteId,
       range: "24h",
       capturedAt: parsed.capturedAt,
       series: mergeTrendSeriesPoints(undefined, parsed.series, range)
     };
+    if (!hasUsableTrendsMetrics({ site: { siteId: parsed.siteId }, range: "24h", series: normalized.series }, range)) {
+      return null;
+    }
+    return normalized;
   } catch (_error) {
     return null;
   }
@@ -840,7 +880,7 @@ function writeTrendsHistory(
   range: TrendRange,
   contextKey = ""
 ): DashboardTrendsHistoryPayload | null {
-  if (typeof window === "undefined" || !hasUsableTrendsMetrics(trends) || !shouldPersistLocalTrendHistory(range)) {
+  if (typeof window === "undefined" || !hasUsableTrendsMetrics(trends, range) || !shouldPersistLocalTrendHistory(range)) {
     return null;
   }
   const previous = readTrendsHistory(siteId, range, contextKey);
@@ -851,6 +891,9 @@ function writeTrendsHistory(
     capturedAt,
     series: mergeTrendSeriesPoints(previous?.series, trends.series, range)
   };
+  if (!hasUsableTrendsMetrics({ site: { siteId }, range: "24h", series: payload.series }, range)) {
+    return null;
+  }
   try {
     safeLocalStorageSet(buildTrendsHistoryStorageKey(siteId, contextKey), JSON.stringify(payload));
   } catch (_error) {
@@ -2263,7 +2306,7 @@ export default function DashboardPage() {
       });
     }
     const cachedTrendsHistory = readTrendsHistory(activeSiteId, runtimeConfig.trendRange, dashboardProjectScopeKey);
-    const cachedTrendsSnapshot = readTrendsSnapshot(activeSiteId, dashboardProjectScopeKey);
+    const cachedTrendsSnapshot = readTrendsSnapshot(activeSiteId, runtimeConfig.trendRange, dashboardProjectScopeKey);
     if (cachedTrendsSnapshot) {
       const mergedCachedTrends = mergeTrendsWithLocalHistory(
         cachedTrendsSnapshot.trends,
@@ -2405,7 +2448,7 @@ export default function DashboardPage() {
         const workOrdersData = workOrdersResult.status === "fulfilled" ? workOrdersResult.value : null;
         const deviceListData = deviceListResult.status === "fulfilled" ? deviceListResult.value : null;
         const liveOverviewAvailable = hasUsableOverviewMetrics(overviewData);
-        const liveTrendsAvailable = hasUsableTrendsMetrics(trendsData);
+        const liveTrendsAvailable = hasUsableTrendsMetrics(trendsData, runtimeConfig.trendRange);
         let mergedTrendsData: DashboardTrendsDto | null = null;
         if (liveOverviewAvailable && overviewData) {
           const snapshotAt = overviewData.generatedAt || new Date().toISOString();
@@ -2429,7 +2472,7 @@ export default function DashboardPage() {
           );
           latestUsableTrendsRef.current = mergedTrendsData;
           latestUsableTrendsAtRef.current = snapshotAt;
-          writeTrendsSnapshot(activeSiteId, trendsData, snapshotAt, dashboardProjectScopeKey);
+          writeTrendsSnapshot(activeSiteId, trendsData, snapshotAt, runtimeConfig.trendRange, dashboardProjectScopeKey);
         }
         const fallbackOverview =
           !liveOverviewAvailable && hasUsableOverviewMetrics(latestUsableOverviewRef.current)
@@ -2438,7 +2481,7 @@ export default function DashboardPage() {
         const fallbackOverviewAt = fallbackOverview ? latestUsableOverviewAtRef.current : null;
         const usingSnapshotOverview = Boolean(fallbackOverview && !liveOverviewAvailable);
         const fallbackTrends =
-          !liveTrendsAvailable && hasUsableTrendsMetrics(latestUsableTrendsRef.current)
+          !liveTrendsAvailable && hasUsableTrendsMetrics(latestUsableTrendsRef.current, runtimeConfig.trendRange)
             ? latestUsableTrendsRef.current
             : null;
         const fallbackTrendsAt = fallbackTrends ? latestUsableTrendsAtRef.current : null;

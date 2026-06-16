@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-06-13T06:52:06.717Z",
+  "generatedAt": "2026-06-16T05:16:10.616Z",
   "siteId": "140",
   "bffBaseUrl": "http://127.0.0.1:8787",
-  "finalDecision": "GO_SHADOW_PENDING",
+  "finalDecision": "NO_GO",
   "components": {
     "advisors": {
       "ok": true,
@@ -30,8 +30,8 @@
           "CH7"
         ],
         "runningCount": 3,
-        "sampleTotal": 89,
-        "sampleCaptureStatus": "skipped_recent"
+        "sampleTotal": 111,
+        "sampleCaptureStatus": "recorded"
       },
       "operationalDiagnostics": {
         "status": "partial",
@@ -176,336 +176,336 @@
           "label": "真实 PLC 下发锁定",
           "ok": true,
           "matchedText": "真实 PLC 下发锁定",
-          "lineNumber": 4099
+          "lineNumber": 4185
         },
         {
           "key": "shadow_only_execution",
           "label": "只生成影子记录",
           "ok": true,
           "matchedText": "审批后只生成影子记录",
-          "lineNumber": 4091
+          "lineNumber": 4177
         },
         {
           "key": "no_multi_chiller_single_cop",
           "label": "多机不计算单台 COP",
           "ok": true,
           "matchedText": "不计算多机单台 COP",
-          "lineNumber": 4058
+          "lineNumber": 4144
         },
         {
           "key": "no_new_plc_dispatch",
           "label": "不新增 PLC 下发能力",
           "ok": true,
           "matchedText": "不新增 PLC 下发能力",
-          "lineNumber": 5733
+          "lineNumber": 5832
         },
         {
           "key": "read_only_diagnostics",
           "label": "只读诊断",
           "ok": true,
           "matchedText": "只读诊断",
-          "lineNumber": 1907
+          "lineNumber": 1924
         },
         {
           "key": "advisor_operational_scope",
           "label": "运行诊断覆盖口径",
           "ok": true,
           "matchedText": "仪表、水力、控制震荡、低温差、冷却塔和主机样本只读诊断",
-          "lineNumber": 5732
+          "lineNumber": 5831
         },
         {
           "key": "instrument_drift_v1",
           "label": "仪表偏移 V1",
           "ok": true,
           "matchedText": "仪表偏移 V1",
-          "lineNumber": 5788
+          "lineNumber": 5887
         },
         {
           "key": "instrument_no_auto_correction",
           "label": "不自动修正测点",
           "ok": true,
           "matchedText": "不自动修正测点",
-          "lineNumber": 3970
+          "lineNumber": 4056
         },
         {
           "key": "hydraulic_balance_v1",
           "label": "水力平衡 V1",
           "ok": true,
           "matchedText": "水力平衡 V1",
-          "lineNumber": 5900
+          "lineNumber": 5999
         },
         {
           "key": "hydraulic_no_auto_pump_down",
           "label": "不自动降泵",
           "ok": true,
           "matchedText": "不自动降泵",
-          "lineNumber": 3987
+          "lineNumber": 4073
         },
         {
           "key": "hydraulic_no_terminal_fault",
           "label": "不直接判定末端阀门故障",
           "ok": true,
           "matchedText": "不直接判定末端阀门故障",
-          "lineNumber": 3987
+          "lineNumber": 4073
         },
         {
           "key": "control_oscillation_v1",
           "label": "控制震荡 V1",
           "ok": true,
           "matchedText": "控制震荡 V1",
-          "lineNumber": 5994
+          "lineNumber": 6093
         },
         {
           "key": "control_no_auto_pid",
           "label": "不自动改 PID",
           "ok": true,
           "matchedText": "不自动改 PID",
-          "lineNumber": 4004
+          "lineNumber": 4090
         },
         {
           "key": "control_no_auto_start_stop",
           "label": "不自动启停设备",
           "ok": true,
           "matchedText": "不自动启停设备",
-          "lineNumber": 4004
+          "lineNumber": 4090
         },
         {
           "key": "manual_review_gate",
           "label": "人工审阅门禁",
           "ok": true,
           "matchedText": "人工审阅门禁",
-          "lineNumber": 5486
+          "lineNumber": 5581
         },
         {
           "key": "shadow_suite_gate",
           "label": "140 shadow suite",
           "ok": true,
           "matchedText": "140 shadow suite",
-          "lineNumber": 5493
+          "lineNumber": 5588
         },
         {
           "key": "no_control_mutation_gate",
           "label": "控制副作用防护",
           "ok": true,
           "matchedText": "NO_CONTROL_MUTATION",
-          "lineNumber": 3914
+          "lineNumber": 4000
         },
         {
           "key": "one_vote_stop_gate",
           "label": "一票否决",
           "ok": true,
           "matchedText": "一票否决",
-          "lineNumber": 5520
+          "lineNumber": 5615
         },
         {
           "key": "shadow_verification_record",
           "label": "影子验证记录",
           "ok": true,
           "matchedText": "影子验证记录",
-          "lineNumber": 5528
+          "lineNumber": 5623
         },
         {
           "key": "shadow_verification_window",
           "label": "30-60min 同工况验证",
           "ok": true,
           "matchedText": "30-60min 同负荷/湿球 band 对比",
-          "lineNumber": 1843
+          "lineNumber": 1860
         },
         {
           "key": "manual_recording_boundary",
           "label": "人工记录边界",
           "ok": true,
           "matchedText": "人工记录",
-          "lineNumber": 4406
+          "lineNumber": 4499
         },
         {
           "key": "no_fixed_savings_commitment",
           "label": "不承诺固定节能",
           "ok": true,
           "matchedText": "不作为固定节能承诺",
-          "lineNumber": 1232
+          "lineNumber": 1233
         },
         {
           "key": "append_only_shadow_record",
           "label": "append-only 验证记录",
           "ok": true,
           "matchedText": "append-only 记录",
-          "lineNumber": 4821
+          "lineNumber": 4913
         },
         {
           "key": "manual_shadow_record_save",
           "label": "保存人工验证记录",
           "ok": true,
           "matchedText": "保存人工验证记录",
-          "lineNumber": 4836
+          "lineNumber": 4928
         },
         {
           "key": "shadow_review_append_only",
           "label": "补录复核结果",
           "ok": true,
           "matchedText": "补录复核结果",
-          "lineNumber": 4821
+          "lineNumber": 4913
         },
         {
           "key": "shadow_review_summary",
           "label": "影子复核统计",
           "ok": true,
           "matchedText": "影子复核统计",
-          "lineNumber": 4914
+          "lineNumber": 5006
         },
         {
           "key": "readonly_shadow_summary",
           "label": "只读统计摘要",
           "ok": true,
           "matchedText": "只读统计摘要",
-          "lineNumber": 4915
+          "lineNumber": 5007
         },
         {
           "key": "advisor_type_filter",
           "label": "Advisor 类型筛选",
           "ok": true,
           "matchedText": "Advisor 类型筛选",
-          "lineNumber": 4865
+          "lineNumber": 4957
         },
         {
           "key": "advisor_type_summary",
           "label": "按 Advisor 类型统计",
           "ok": true,
           "matchedText": "按 Advisor 类型统计",
-          "lineNumber": 4974
+          "lineNumber": 5066
         },
         {
           "key": "execution_drilldown_filter",
           "label": "执行单 ID 下钻",
           "ok": true,
           "matchedText": "执行单 ID 下钻",
-          "lineNumber": 4888
+          "lineNumber": 4980
         },
         {
           "key": "execution_drilldown_boundary",
           "label": "执行单下钻只读边界",
           "ok": true,
           "matchedText": "按单个 shadow 执行单查看",
-          "lineNumber": 4889
+          "lineNumber": 4981
         },
         {
           "key": "single_shadow_review_summary",
           "label": "单次 shadow 复盘摘要",
           "ok": true,
           "matchedText": "单次 shadow 复盘摘要",
-          "lineNumber": 4928
+          "lineNumber": 5020
         },
         {
           "key": "single_shadow_review_boundary",
           "label": "单次复盘只读边界",
           "ok": true,
           "matchedText": "只做审计复盘",
-          "lineNumber": 4930
+          "lineNumber": 5022
         },
         {
           "key": "shadow_review_archive_checksum",
           "label": "报告ID/校验码",
           "ok": true,
           "matchedText": "报告ID/校验码",
-          "lineNumber": 4930
+          "lineNumber": 5022
         },
         {
           "key": "shadow_review_not_e_signature",
           "label": "不是电子签名",
           "ok": true,
           "matchedText": "不是电子签名",
-          "lineNumber": 4930
+          "lineNumber": 5022
         },
         {
           "key": "single_shadow_review_report_export",
           "label": "导出复盘报告",
           "ok": true,
           "matchedText": "导出复盘报告",
-          "lineNumber": 4945
+          "lineNumber": 5037
         },
         {
           "key": "shadow_review_print_style",
           "label": "A4 打印样式",
           "ok": true,
           "matchedText": "A4 打印样式",
-          "lineNumber": 4930
+          "lineNumber": 5022
         },
         {
           "key": "shadow_review_print_page",
           "label": "打开打印版",
           "ok": true,
           "matchedText": "打开打印版",
-          "lineNumber": 4959
+          "lineNumber": 5051
         },
         {
           "key": "shadow_review_signature_area",
           "label": "甲方/值班员签字确认区",
           "ok": true,
           "matchedText": "甲方/值班员签字确认区",
-          "lineNumber": 4930
+          "lineNumber": 5022
         },
         {
           "key": "advisor_type_split",
           "label": "主机组合 / 冷却塔 / 泵 Delta-T",
           "ok": true,
           "matchedText": "主机组合 / 冷却塔 / 泵 Delta-T",
-          "lineNumber": 4975
+          "lineNumber": 5067
         },
         {
           "key": "shadow_record_audit_export",
           "label": "导出审计 CSV",
           "ok": true,
           "matchedText": "导出审计 CSV",
-          "lineNumber": 4821
+          "lineNumber": 4913
         },
         {
           "key": "diagnostic_readiness_matrix",
           "label": "数据资源与诊断可行性",
           "ok": true,
           "matchedText": "数据资源与诊断可行性",
-          "lineNumber": 5573
+          "lineNumber": 5668
         },
         {
           "key": "directional_diagnostics_boundary",
           "label": "只能疑似判断",
           "ok": true,
           "matchedText": "只能疑似判断",
-          "lineNumber": 2112
+          "lineNumber": 2129
         },
         {
           "key": "point_gap_plan",
           "label": "暂不能做",
           "ok": true,
           "matchedText": "暂不能做",
-          "lineNumber": 2115
+          "lineNumber": 2132
         },
         {
           "key": "field_verification_checklist",
           "label": "现场复核清单",
           "ok": true,
           "matchedText": "现场复核清单",
-          "lineNumber": 5642
+          "lineNumber": 5737
         },
         {
           "key": "field_verification_readonly_boundary",
           "label": "只读点位/资料补齐",
           "ok": true,
           "matchedText": "只读点位/资料补齐",
-          "lineNumber": 5643
+          "lineNumber": 5738
         },
         {
           "key": "no_fault_diagnosis_commitment",
           "label": "不判定设备故障",
           "ok": true,
           "matchedText": "不判定设备故障",
-          "lineNumber": 5580
+          "lineNumber": 5675
         },
         {
           "key": "client_demo_readiness_gate",
           "label": "甲方演示 readiness",
           "ok": true,
           "matchedText": "甲方演示 readiness",
-          "lineNumber": 5456
+          "lineNumber": 5551
         }
       ],
       "forbidden": [
@@ -555,7 +555,7 @@
       "expected": "NO_CONTROL_MUTATION",
       "finalDecision": "NO_CONTROL_MUTATION",
       "before": {
-        "generatedAt": "2026-06-13T06:51:34.828Z",
+        "generatedAt": "2026-06-16T05:14:36.489Z",
         "tower": {
           "ok": true,
           "status": 200,
@@ -563,24 +563,56 @@
           "error": null,
           "items": [
             {
-              "executionId": "opx-140-1781266624535-ju3qeb",
-              "status": "pending_approval",
-              "approvalStatus": "pending",
-              "dispatchPresent": false,
-              "timelineActions": [
-                "created"
-              ]
-            },
-            {
-              "executionId": "opx-140-1780911209517-23t8ch",
+              "executionId": "opx-140-1781576068903-ag7ns3",
               "status": "approved",
               "approvalStatus": "approved",
               "dispatchPresent": true,
               "timelineActions": [
                 "created",
                 "approved",
-                "dispatched",
                 "dispatched"
+              ]
+            },
+            {
+              "executionId": "opx-140-1781493919710-zwt0ak",
+              "status": "approved",
+              "approvalStatus": "approved",
+              "dispatchPresent": true,
+              "timelineActions": [
+                "created",
+                "approved",
+                "dispatched"
+              ]
+            },
+            {
+              "executionId": "opx-140-1781414924964-x4pj8u",
+              "status": "approved",
+              "approvalStatus": "approved",
+              "dispatchPresent": true,
+              "timelineActions": [
+                "created",
+                "approved",
+                "dispatched"
+              ]
+            },
+            {
+              "executionId": "opx-140-1781411280639-ztkgtl",
+              "status": "approved",
+              "approvalStatus": "approved",
+              "dispatchPresent": true,
+              "timelineActions": [
+                "created",
+                "approved",
+                "dispatched"
+              ]
+            },
+            {
+              "executionId": "opx-140-1781266624535-ju3qeb",
+              "status": "pending_approval",
+              "approvalStatus": "pending",
+              "dispatchPresent": false,
+              "timelineActions": [
+                "created"
               ]
             }
           ]
@@ -592,19 +624,59 @@
           "error": null,
           "items": [
             {
-              "executionId": "opx-140-1781265213665-wso34v",
+              "executionId": "opx-140-1781576075710-ny5tog",
+              "status": "approved",
+              "approvalStatus": "approved",
+              "dispatchPresent": true,
+              "timelineActions": [
+                "created",
+                "approved"
+              ]
+            },
+            {
+              "executionId": "opx-140-1781576074690-b2l38j",
               "status": "pending_approval",
               "approvalStatus": "pending",
               "dispatchPresent": false,
               "timelineActions": [
                 "created"
               ]
+            },
+            {
+              "executionId": "opx-140-1781411291186-79ujq9",
+              "status": "approved",
+              "approvalStatus": "approved",
+              "dispatchPresent": true,
+              "timelineActions": [
+                "created",
+                "approved"
+              ]
+            },
+            {
+              "executionId": "opx-140-1781414920788-6uk0tm",
+              "status": "approved",
+              "approvalStatus": "approved",
+              "dispatchPresent": true,
+              "timelineActions": [
+                "created",
+                "approved"
+              ]
+            },
+            {
+              "executionId": "opx-140-1781411292468-hcs1x7",
+              "status": "approved",
+              "approvalStatus": "approved",
+              "dispatchPresent": true,
+              "timelineActions": [
+                "created",
+                "approved"
+              ]
             }
           ]
         }
       },
       "after": {
-        "generatedAt": "2026-06-13T06:52:06.708Z",
+        "generatedAt": "2026-06-16T05:16:10.613Z",
         "tower": {
           "ok": true,
           "status": 200,
@@ -612,24 +684,56 @@
           "error": null,
           "items": [
             {
-              "executionId": "opx-140-1781266624535-ju3qeb",
-              "status": "pending_approval",
-              "approvalStatus": "pending",
-              "dispatchPresent": false,
-              "timelineActions": [
-                "created"
-              ]
-            },
-            {
-              "executionId": "opx-140-1780911209517-23t8ch",
+              "executionId": "opx-140-1781576068903-ag7ns3",
               "status": "approved",
               "approvalStatus": "approved",
               "dispatchPresent": true,
               "timelineActions": [
                 "created",
                 "approved",
-                "dispatched",
                 "dispatched"
+              ]
+            },
+            {
+              "executionId": "opx-140-1781493919710-zwt0ak",
+              "status": "approved",
+              "approvalStatus": "approved",
+              "dispatchPresent": true,
+              "timelineActions": [
+                "created",
+                "approved",
+                "dispatched"
+              ]
+            },
+            {
+              "executionId": "opx-140-1781414924964-x4pj8u",
+              "status": "approved",
+              "approvalStatus": "approved",
+              "dispatchPresent": true,
+              "timelineActions": [
+                "created",
+                "approved",
+                "dispatched"
+              ]
+            },
+            {
+              "executionId": "opx-140-1781411280639-ztkgtl",
+              "status": "approved",
+              "approvalStatus": "approved",
+              "dispatchPresent": true,
+              "timelineActions": [
+                "created",
+                "approved",
+                "dispatched"
+              ]
+            },
+            {
+              "executionId": "opx-140-1781266624535-ju3qeb",
+              "status": "pending_approval",
+              "approvalStatus": "pending",
+              "dispatchPresent": false,
+              "timelineActions": [
+                "created"
               ]
             }
           ]
@@ -641,19 +745,59 @@
           "error": null,
           "items": [
             {
-              "executionId": "opx-140-1781265213665-wso34v",
+              "executionId": "opx-140-1781576075710-ny5tog",
+              "status": "approved",
+              "approvalStatus": "approved",
+              "dispatchPresent": true,
+              "timelineActions": [
+                "created",
+                "approved"
+              ]
+            },
+            {
+              "executionId": "opx-140-1781576074690-b2l38j",
               "status": "pending_approval",
               "approvalStatus": "pending",
               "dispatchPresent": false,
               "timelineActions": [
                 "created"
               ]
+            },
+            {
+              "executionId": "opx-140-1781411291186-79ujq9",
+              "status": "approved",
+              "approvalStatus": "approved",
+              "dispatchPresent": true,
+              "timelineActions": [
+                "created",
+                "approved"
+              ]
+            },
+            {
+              "executionId": "opx-140-1781414920788-6uk0tm",
+              "status": "approved",
+              "approvalStatus": "approved",
+              "dispatchPresent": true,
+              "timelineActions": [
+                "created",
+                "approved"
+              ]
+            },
+            {
+              "executionId": "opx-140-1781411292468-hcs1x7",
+              "status": "approved",
+              "approvalStatus": "approved",
+              "dispatchPresent": true,
+              "timelineActions": [
+                "created",
+                "approved"
+              ]
             }
           ]
         }
       },
-      "towerExecutionCount": 2,
-      "pumpExecutionCount": 1,
+      "towerExecutionCount": 5,
+      "pumpExecutionCount": 5,
       "blockers": [],
       "warnings": []
     },
@@ -665,22 +809,22 @@
       "readOnlyAdviceStatus": "READY",
       "telemetry": {
         "systemCop": 6.6,
-        "totalPowerKw": 1885.2,
-        "totalCoolingCapacity": 12424.5,
-        "currentLoadRate": 49.1,
-        "coolingReturnTemp": 28.1,
-        "coolingDeltaT": 4.7,
-        "calculatedTcwsC": 28.1,
-        "outdoorWetBulbC": 25.2,
-        "calculatedApproachC": 2.9,
-        "advisorApproachC": 2.9,
-        "advisorTargetApproachC": 3.4,
-        "advisorTargetTcwsC": 28.6,
-        "coolingTowerPowerKw": 54.3,
-        "chillerPowerKw": 1578.5,
-        "thermalUnbalanceRateRaw": 9.5,
-        "thermalUnbalancePct": 9.5,
-        "activeAlarmCount": 0
+        "totalPowerKw": 1941.1,
+        "totalCoolingCapacity": 12898.2,
+        "currentLoadRate": 50.9,
+        "coolingReturnTemp": 28.5,
+        "coolingDeltaT": 4.8,
+        "calculatedTcwsC": 28.5,
+        "outdoorWetBulbC": 25.5,
+        "calculatedApproachC": 3,
+        "advisorApproachC": 3,
+        "advisorTargetApproachC": 3.5,
+        "advisorTargetTcwsC": 29,
+        "coolingTowerPowerKw": 59.5,
+        "chillerPowerKw": 1630.4,
+        "thermalUnbalanceRateRaw": 10.6,
+        "thermalUnbalancePct": 10.6,
+        "activeAlarmCount": 8
       },
       "dataReadinessGate": {
         "finalDecision": "READY",
@@ -698,28 +842,28 @@
             "key": "system_power",
             "label": "系统总功率",
             "status": "ready",
-            "evidence": "totalPowerKw=1885.2 kW",
+            "evidence": "totalPowerKw=1941.1 kW",
             "recoveryAction": "核对冷站总电表、主机/泵/塔功率汇总点和 Dashboard 能源卡片映射。"
           },
           {
             "key": "cooling_load",
             "label": "系统总冷量",
             "status": "ready",
-            "evidence": "totalCoolingCapacity=12424.5 kW",
+            "evidence": "totalCoolingCapacity=12898.2 kW",
             "recoveryAction": "核对冷冻水总流量、供回水温差、冷量计算和额定冷量配置。"
           },
           {
             "key": "tcws",
             "label": "冷却水出水/Tcws",
             "status": "ready",
-            "evidence": "coolingReturnTemp=28.1℃ / signal=ok",
+            "evidence": "coolingReturnTemp=28.5℃ / signal=ok",
             "recoveryAction": "核对冷却塔出水、冷机冷凝器进水或冷却回水点位；确认物理位置和单位。"
           },
           {
             "key": "wet_bulb_live",
             "label": "实时湿球",
             "status": "ready",
-            "evidence": "outdoorWetBulbC=25.2℃ / signal=ok",
+            "evidence": "outdoorWetBulbC=25.5℃ / signal=ok",
             "recoveryAction": "核对室外湿球点位、气象站通讯和湿球计算来源；缺失时 Approach 只能只读。"
           },
           {
@@ -733,7 +877,7 @@
             "key": "tower_fan_feedback",
             "label": "冷却塔风机功率/反馈",
             "status": "ready",
-            "evidence": "coolingTowerPowerKw=54.3 kW",
+            "evidence": "coolingTowerPowerKw=59.5 kW",
             "recoveryAction": "核对塔风机运行反馈、频率反馈、功率或分组运行状态；无反馈时不做闭环目标。"
           },
           {
@@ -745,11 +889,12 @@
           }
         ]
       },
-      "latestExecutionId": "opx-140-1781266624535-ju3qeb",
+      "latestExecutionId": "opx-140-1781576068903-ag7ns3",
       "blockers": [],
       "warnings": [
         "历史样本置信度低，节能评估需 shadow 对比验证。",
-        "最终冷却水出水温目标 30℃ 需分 4 步 shadow 验证，本次仅提交 28.6℃。"
+        "最终冷却水出水温目标 30℃ 需分 3 步 shadow 验证，本次仅提交 29℃。",
+        "当前活动告警 8 条，shadow 前需确认无严重告警、传感器冻结或塔风机反馈异常。"
       ],
       "reportJson": "docs/b25-tower-approach-readiness-latest.json",
       "reportMarkdown": "docs/b25-tower-approach-readiness-latest.md"
@@ -784,12 +929,12 @@
           "rollbackLockoutMinutes": 15
         },
         "current": {
-          "chilledDeltaT": 4.4,
-          "coolingDeltaT": 4.7,
-          "chilledPumpPowerKw": 149.8,
-          "coolingPumpPowerKw": 102.6,
-          "chillerPowerKw": 1578.5,
-          "totalPowerKw": 1885.2,
+          "chilledDeltaT": 4.3,
+          "coolingDeltaT": 4.8,
+          "chilledPumpPowerKw": 148.9,
+          "coolingPumpPowerKw": 102.3,
+          "chillerPowerKw": 1630.4,
+          "totalPowerKw": 1941.1,
           "systemCop": 6.6,
           "chilledSupplyTemp": null,
           "coolingReturnTemp": null,
@@ -822,12 +967,12 @@
         }
       },
       "latestExecution": {
-        "executionId": "opx-140-1781265213665-wso34v",
-        "status": "pending_approval",
-        "createdAt": "2026-06-12T11:53:33.665Z",
-        "updatedAt": "2026-06-12T11:53:33.665Z",
-        "approvedAt": null,
-        "approvedBy": null,
+        "executionId": "opx-140-1781576075710-ny5tog",
+        "status": "approved",
+        "createdAt": "2026-06-16T02:14:35.710Z",
+        "updatedAt": "2026-06-16T02:14:37.638Z",
+        "approvedAt": "2026-06-16T02:14:37.638Z",
+        "approvedBy": "3",
         "type": "pump-delta-t",
         "targetChwpFreqTrimHz": -1,
         "targetCwpFreqTrimHz": 0,
@@ -835,23 +980,28 @@
         "holdMinutes": 5,
         "rollbackLockoutMinutes": 15,
         "targetPoints": {
-          "chilledPump": "B25_AI_ChwpFreqTrim_Hz",
-          "coolingPump": "B25_AI_CwpFreqTrim_Hz"
+          "chilledPump": "AI_ChwpFreqTrim_Hz",
+          "coolingPump": "AI_CwpFreqTrim_Hz"
         },
         "rollbackTarget": {
           "mode": "zero-trim",
           "targetTcwsC": null,
           "targetApproachC": null,
-          "reason": "shadow 验证回退到 0Hz 修正量",
+          "reason": "回退到 0Hz 修正量",
           "targetChwpFreqTrimHz": 0,
           "targetCwpFreqTrimHz": 0
         },
         "actions": [
-          "B25_AI_ChwpFreqTrim_Hz -1.0 Hz",
-          "B25_AI_CwpFreqTrim_Hz 0.0 Hz"
+          "冷冻泵频率修正 -1.0 Hz",
+          "冷却泵频率修正 0.0 Hz",
+          "单步限幅 +1.0 Hz/周期",
+          "控制周期 5 分钟",
+          "回退后闭锁 15 分钟",
+          "低温差条件成立，已生成运行泵频率小步长降频建议。"
         ],
         "timeline": [
-          "created"
+          "created",
+          "approved"
         ]
       },
       "blockers": [],
@@ -866,17 +1016,17 @@
       "reportMarkdown": "docs/pump-delta-t-readiness-latest.md"
     },
     "governance": {
-      "ok": true,
+      "ok": false,
       "expected": "GO_SHADOW_PENDING",
-      "finalDecision": "GO_SHADOW_PENDING",
+      "finalDecision": "NO_GO",
       "towerLatestExecution": {
-        "executionId": "opx-140-1781266624535-ju3qeb",
-        "status": "pending_approval",
-        "approvalStatus": "pending",
-        "title": "140/B25 冷却塔多步 shadow 第1步（Tcws 28.0 °C）",
+        "executionId": "opx-140-1781576068903-ag7ns3",
+        "status": "approved",
+        "approvalStatus": "approved",
+        "title": "冷却塔接近度执行建议（Tcws 28.9 °C）",
         "type": "tower-approach",
-        "targetTcwsC": 28,
-        "targetApproachC": 3.4,
+        "targetTcwsC": 28.9,
+        "targetApproachC": 3.5,
         "targetChwpFreqTrimHz": null,
         "targetCwpFreqTrimHz": null,
         "guardrailSnapshot": {
@@ -888,26 +1038,93 @@
           "matchedKeys": []
         },
         "rollbackTarget": {
-          "mode": "shadow-baseline",
-          "targetTcwsC": 27.5,
-          "targetApproachC": 2.9,
-          "reason": "shadow 回退到提交前 Tcws/Approach，仅记录不下发 PLC"
+          "mode": "manual",
+          "targetTcwsC": 28.4,
+          "targetApproachC": 3,
+          "reason": "回退到提交前现态"
         },
-        "dispatch": null,
+        "dispatch": {
+          "updatedAt": "2026-06-16T02:14:33.629Z",
+          "lastApprove": {
+            "operation": "approve",
+            "mode": "shadow",
+            "status": "succeeded",
+            "code": "DISPATCH_SHADOW_RECORDED",
+            "message": "tower approach shadow dispatch recorded; no PLC command sent",
+            "endpoint": null,
+            "submittedAt": "2026-06-16T02:14:30.585Z",
+            "completedAt": "2026-06-16T02:14:30.585Z",
+            "httpStatus": null,
+            "response": {
+              "shadow": true,
+              "command": {
+                "executionType": "tower-approach",
+                "targetApproachC": 3.5,
+                "targetTcwsC": 28.9,
+                "rollbackTarget": {
+                  "mode": "manual",
+                  "targetApproachC": 3,
+                  "targetTcwsC": 28.4,
+                  "reason": "回退到提交前现态"
+                },
+                "operationCommand": "apply_tower_approach"
+              }
+            }
+          },
+          "latestStatus": "applied",
+          "lastDispatch": {
+            "operation": "dispatch",
+            "mode": "shadow",
+            "status": "succeeded",
+            "code": "DISPATCH_SHADOW_RECORDED",
+            "message": "tower approach shadow dispatch recorded; no PLC command sent",
+            "endpoint": null,
+            "submittedAt": "2026-06-16T02:14:32.813Z",
+            "completedAt": "2026-06-16T02:14:32.813Z",
+            "httpStatus": null,
+            "response": {
+              "shadow": true,
+              "command": {
+                "executionType": "tower-approach",
+                "targetApproachC": 3.5,
+                "targetTcwsC": 28.9,
+                "rollbackTarget": {
+                  "mode": "manual",
+                  "targetApproachC": 3,
+                  "targetTcwsC": 28.4,
+                  "reason": "回退到提交前现态"
+                },
+                "operationCommand": "apply_tower_approach"
+              }
+            }
+          }
+        },
         "timeline": [
           {
-            "at": "2026-06-12T12:17:04.535Z",
-            "actorUserId": "operator",
+            "at": "2026-06-16T02:14:28.903Z",
+            "actorUserId": "3",
             "action": "created",
             "note": null
+          },
+          {
+            "at": "2026-06-16T02:14:31.591Z",
+            "actorUserId": "3",
+            "action": "approved",
+            "note": "值班人员已审批"
+          },
+          {
+            "at": "2026-06-16T02:14:33.629Z",
+            "actorUserId": "3",
+            "action": "dispatched",
+            "note": "tower approach shadow dispatch recorded; no PLC command sent"
           }
         ]
       },
       "pumpLatestExecution": {
-        "executionId": "opx-140-1781265213665-wso34v",
-        "status": "pending_approval",
-        "approvalStatus": "pending",
-        "title": "140/B25 冷冻泵温差导向 shadow 降频验证",
+        "executionId": "opx-140-1781576075710-ny5tog",
+        "status": "approved",
+        "approvalStatus": "approved",
+        "title": "冷冻泵/冷却泵温差导向降频（冷冻泵修正 -1.0 Hz / 冷却泵修正 0.0 Hz）",
         "type": "pump-delta-t",
         "targetTcwsC": null,
         "targetApproachC": null,
@@ -918,23 +1135,77 @@
           "mode": "zero-trim",
           "targetTcwsC": null,
           "targetApproachC": null,
-          "reason": "shadow 验证回退到 0Hz 修正量",
+          "reason": "回退到 0Hz 修正量",
           "targetChwpFreqTrimHz": 0,
           "targetCwpFreqTrimHz": 0
         },
-        "dispatch": null,
+        "dispatch": {
+          "updatedAt": "2026-06-16T02:14:37.638Z",
+          "lastApprove": {
+            "operation": "approve",
+            "mode": "shadow",
+            "status": "succeeded",
+            "code": "DISPATCH_SHADOW_RECORDED",
+            "message": "pump delta-t shadow dispatch recorded; no PLC command sent",
+            "endpoint": null,
+            "submittedAt": "2026-06-16T02:14:36.876Z",
+            "completedAt": "2026-06-16T02:14:36.876Z",
+            "httpStatus": null,
+            "response": {
+              "shadow": true,
+              "command": {
+                "executionType": "pump-delta-t",
+                "targetPoints": {
+                  "chilledPump": "AI_ChwpFreqTrim_Hz",
+                  "coolingPump": "AI_CwpFreqTrim_Hz"
+                },
+                "targetChwpFreqTrimHz": -1,
+                "targetCwpFreqTrimHz": 0,
+                "ttlSeconds": 300,
+                "holdMinutes": 5,
+                "rollbackLockoutMinutes": 15,
+                "rollbackTarget": {
+                  "mode": "zero-trim",
+                  "targetChwpFreqTrimHz": 0,
+                  "targetCwpFreqTrimHz": 0,
+                  "reason": "回退到 0Hz 修正量"
+                },
+                "operationCommand": "apply_pump_delta_t_trim"
+              }
+            }
+          },
+          "latestStatus": "applied"
+        },
         "timeline": [
           {
-            "at": "2026-06-12T11:53:33.665Z",
-            "actorUserId": "operator",
+            "at": "2026-06-16T02:14:35.710Z",
+            "actorUserId": "3",
             "action": "created",
             "note": null
+          },
+          {
+            "at": "2026-06-16T02:14:37.638Z",
+            "actorUserId": "3",
+            "action": "approved",
+            "note": "值班人员已审批"
           }
         ]
       },
-      "blockers": [],
+      "blockers": [
+        "tower 执行单状态不是 pending_approval：approved",
+        "tower 审批状态不是 pending：approved",
+        "tower 执行单已出现 dispatch 字段，不能作为未下发待审证据。",
+        "tower timeline 已出现 approved，不再是纯待审单。",
+        "tower timeline 已出现 dispatched，不再是纯待审单。",
+        "tower 本次目标 Tcws 不是 28℃。",
+        "pump 执行单状态不是 pending_approval：approved",
+        "pump 审批状态不是 pending：approved",
+        "pump 执行单已出现 dispatch 字段，不能作为未下发待审证据。",
+        "pump timeline 已出现 approved，不再是纯待审单。"
+      ],
       "warnings": [
-        "存在历史已批准 tower shadow 旧记录：opx-140-1780911209517-23t8ch"
+        "tower actions 未显式写明“不写 PLC”。",
+        "存在历史已批准 tower shadow 旧记录：opx-140-1781493919710-zwt0ak"
       ],
       "reportJson": "docs/optimize-shadow-governance-latest.json",
       "reportMarkdown": "docs/optimize-shadow-governance-latest.md"
@@ -947,8 +1218,8 @@
       "script": "check-optimize-demo-ui-boundary-copy.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-13T06:51:42.750Z",
-      "endedAt": "2026-06-13T06:51:42.841Z",
+      "startedAt": "2026-06-16T05:15:00.299Z",
+      "endedAt": "2026-06-16T05:15:00.390Z",
       "stdout": "optimize-demo UI boundary copy: UI_BOUNDARY_COPY_READY\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-ui-boundary-copy-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-ui-boundary-copy-latest.md",
       "stderr": "",
       "error": null
@@ -959,8 +1230,8 @@
       "script": "check-optimize-demo-diagnostic-readiness.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-13T06:51:42.841Z",
-      "endedAt": "2026-06-13T06:51:50.883Z",
+      "startedAt": "2026-06-16T05:15:00.390Z",
+      "endedAt": "2026-06-16T05:15:25.210Z",
       "stdout": "optimize-demo diagnostic readiness: DIAGNOSTIC_READINESS_READY\nmatrix=4 ready / 5 directional / 1 point-gap\nfieldChecklist=4 P0 / 3 P1\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-diagnostic-readiness-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-diagnostic-readiness-latest.md",
       "stderr": "",
       "error": null
@@ -971,8 +1242,8 @@
       "script": "check-optimize-demo-140-field-collection-package.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-13T06:51:50.883Z",
-      "endedAt": "2026-06-13T06:51:50.961Z",
+      "startedAt": "2026-06-16T05:15:25.210Z",
+      "endedAt": "2026-06-16T05:15:25.288Z",
       "stdout": "optimize-demo 140 field collection package: FIELD_COLLECTION_PACKAGE_READY_TO_COLLECT\ndocuments=4 templates=5 formalInputs=4\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-collection-package-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-collection-package-latest.md\nwarnings=4\n- 传感器校准/安装位置台账 尚未投放：docs/field-data/optimize-demo-140/sensor-calibration-installation.csv\n- 控制命令/反馈高频趋势 尚未投放：docs/field-data/optimize-demo-140/control-command-feedback.csv\n- 设备启停事件台账 尚未投放：docs/field-data/optimize-demo-140/start-stop-event.csv\n- PID/死区/延时参数台账 尚未投放：docs/field-data/optimize-demo-140/control-parameter.csv",
       "stderr": "",
       "error": null
@@ -983,8 +1254,8 @@
       "script": "check-optimize-demo-140-field-data-preflight.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-13T06:51:50.961Z",
-      "endedAt": "2026-06-13T06:51:51.134Z",
+      "startedAt": "2026-06-16T05:15:25.288Z",
+      "endedAt": "2026-06-16T05:15:25.524Z",
       "stdout": "optimize-demo 140 field data preflight: FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS\nsensorStatus=SENSOR_LEDGER_PREFLIGHT_WAITING_FOR_INPUTS sensorAccepted=0\nimportStatus=CONTROL_LEDGER_IMPORT_BLOCKED accepted=0 warnings=0 blockers=3\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-preflight-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-preflight-latest.md\nblockers=4\n- 传感器校准/安装位置台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/sensor-calibration-installation.csv\n- 控制命令/反馈高频趋势 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-command-feedback.csv\n- 设备启停事件台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv\n- PID/死区/延时参数台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv",
       "stderr": "",
       "error": null
@@ -995,8 +1266,8 @@
       "script": "promote-optimize-demo-140-field-data-ledgers.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-13T06:51:51.134Z",
-      "endedAt": "2026-06-13T06:51:51.193Z",
+      "startedAt": "2026-06-16T05:15:25.524Z",
+      "endedAt": "2026-06-16T05:15:25.598Z",
       "stdout": "optimize-demo 140 field data promote: FIELD_DATA_PROMOTE_WAITING_FOR_PREFLIGHT\npreflight=FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS importStatus=CONTROL_LEDGER_IMPORT_NOT_RUN accepted=0\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-promote-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-promote-latest.md\nblockers=5\n- 现场 CSV 预检未 READY：FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS\n- 传感器校准/安装位置台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/sensor-calibration-installation.csv\n- 控制命令/反馈高频趋势 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-command-feedback.csv\n- 设备启停事件台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv\n- PID/死区/延时参数台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv",
       "stderr": "",
       "error": null
@@ -1007,8 +1278,8 @@
       "script": "check-b25-tower-approach-readiness.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-13T06:51:51.193Z",
-      "endedAt": "2026-06-13T06:52:01.923Z",
+      "startedAt": "2026-06-16T05:15:25.598Z",
+      "endedAt": "2026-06-16T05:16:06.013Z",
       "stdout": "B25 tower approach readiness: GO_SHADOW\nreadOnlyAdvice=READY shadow=GO\njson=/Users/billchow/Documents/智慧冷冻站/docs/b25-tower-approach-readiness-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/b25-tower-approach-readiness-latest.md",
       "stderr": "",
       "error": null
@@ -1019,8 +1290,8 @@
       "script": "check-pump-delta-t-readiness.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-13T06:52:01.924Z",
-      "endedAt": "2026-06-13T06:52:06.289Z",
+      "startedAt": "2026-06-16T05:16:06.013Z",
+      "endedAt": "2026-06-16T05:16:10.196Z",
       "stdout": "pump delta-t readiness: GO_SHADOW_ONLY\nshadow=GO assisted=BLOCKED\njson=/Users/billchow/Documents/智慧冷冻站/docs/pump-delta-t-readiness-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/pump-delta-t-readiness-latest.md\nblockers=1\n- assisted 前缺 approve/rollback 点位映射或 dispatchMode 未配置为 assisted。",
       "stderr": "",
       "error": null
@@ -1031,14 +1302,26 @@
       "script": "check-optimize-shadow-governance.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-13T06:52:06.289Z",
-      "endedAt": "2026-06-13T06:52:06.401Z",
-      "stdout": "optimize shadow governance: GO_SHADOW_PENDING\ntower=go_shadow_pending pump=go_shadow_pending\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-shadow-governance-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-shadow-governance-latest.md\nwarnings=1\n- 存在历史已批准 tower shadow 旧记录：opx-140-1780911209517-23t8ch",
+      "startedAt": "2026-06-16T05:16:10.196Z",
+      "endedAt": "2026-06-16T05:16:10.306Z",
+      "stdout": "optimize shadow governance: NO_GO\ntower=blocked pump=blocked\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-shadow-governance-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-shadow-governance-latest.md\nblockers=10\n- tower 执行单状态不是 pending_approval：approved\n- tower 审批状态不是 pending：approved\n- tower 执行单已出现 dispatch 字段，不能作为未下发待审证据。\n- tower timeline 已出现 approved，不再是纯待审单。\n- tower timeline 已出现 dispatched，不再是纯待审单。\n- tower 本次目标 Tcws 不是 28℃。\n- pump 执行单状态不是 pending_approval：approved\n- pump 审批状态不是 pending：approved\n- pump 执行单已出现 dispatch 字段，不能作为未下发待审证据。\n- pump timeline 已出现 approved，不再是纯待审单。\nwarnings=2\n- tower actions 未显式写明“不写 PLC”。\n- 存在历史已批准 tower shadow 旧记录：opx-140-1781493919710-zwt0ak",
       "stderr": "",
       "error": null
     }
   },
-  "blockers": [],
+  "blockers": [
+    "tower 执行单状态不是 pending_approval：approved",
+    "tower 审批状态不是 pending：approved",
+    "tower 执行单已出现 dispatch 字段，不能作为未下发待审证据。",
+    "tower timeline 已出现 approved，不再是纯待审单。",
+    "tower timeline 已出现 dispatched，不再是纯待审单。",
+    "tower 本次目标 Tcws 不是 28℃。",
+    "pump 执行单状态不是 pending_approval：approved",
+    "pump 审批状态不是 pending：approved",
+    "pump 执行单已出现 dispatch 字段，不能作为未下发待审证据。",
+    "pump timeline 已出现 approved，不再是纯待审单。",
+    "shadow governance 未达到 GO_SHADOW_PENDING，不能进入人工审阅。"
+  ],
   "warnings": [
     "传感器校准/安装位置台账 尚未投放：docs/field-data/optimize-demo-140/sensor-calibration-installation.csv",
     "控制命令/反馈高频趋势 尚未投放：docs/field-data/optimize-demo-140/control-command-feedback.csv",
@@ -1054,13 +1337,15 @@
     "设备启停事件台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv",
     "PID/死区/延时参数台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv",
     "历史样本置信度低，节能评估需 shadow 对比验证。",
-    "最终冷却水出水温目标 30℃ 需分 4 步 shadow 验证，本次仅提交 28.6℃。",
+    "最终冷却水出水温目标 30℃ 需分 3 步 shadow 验证，本次仅提交 29℃。",
+    "当前活动告警 8 条，shadow 前需确认无严重告警、传感器冻结或塔风机反馈异常。",
     "assisted 前缺 approve/rollback 点位映射或 dispatchMode 未配置为 assisted。",
     "当前草案仍存在部分降级或缺测信号，建议先稳住风险后再评审优化空间。",
     "当前 BFF 未接入末端阀位、关键压差或室温；shadow 可评审，assisted 前必须由 PLC 提供等效保护状态。",
     "当前 BFF 未接入泵实际频率；执行前必须由 PLC 完成频率上下限、斜率和最小流量保护。",
     "assisted 前必须确认 PLC 本地限幅、斜率、最小流量和联锁保护。",
-    "存在历史已批准 tower shadow 旧记录：opx-140-1780911209517-23t8ch"
+    "tower actions 未显式写明“不写 PLC”。",
+    "存在历史已批准 tower shadow 旧记录：opx-140-1781493919710-zwt0ak"
   ],
   "reportFiles": {
     "json": "docs/optimize-demo-140-shadow-suite-latest.json",

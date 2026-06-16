@@ -10,7 +10,8 @@ import {
   getDeviceDetail,
   getDeviceDetails,
   getDeviceList,
-  getDeviceTree
+  getDeviceTree,
+  getRuntimePointSummary
 } from "../services/deviceService.js";
 import {
   buildAssistantQueryResponse,
@@ -2918,6 +2919,25 @@ export function buildV1Router(config, dependencies = {}) {
     const floor = typeof req.query.floor === "string" ? req.query.floor : "";
     const mock = typeof req.query.mock === "string" ? req.query.mock : "";
     const data = await getDeviceTree(siteConfig, siteId, {
+      build,
+      floor,
+      mock,
+      databaseKey: requestContext.databaseKey,
+      databaseKeyCandidates: requestContext.databaseKeyCandidates,
+      projectKey: requestContext.projectKey,
+      projectKeyCandidates: requestContext.projectKeyCandidates
+    });
+    res.json(data);
+  });
+
+  router.get("/sites/:siteId/runtime/summary", async (req, res) => {
+    const siteId = resolveSiteId(req, config.defaultSiteId);
+    const siteConfig = getRequestSiteConfig(req, config);
+    const requestContext = readProjectDataRequestContext(req);
+    const build = typeof req.query.build === "string" ? req.query.build : "";
+    const floor = typeof req.query.floor === "string" ? req.query.floor : "";
+    const mock = typeof req.query.mock === "string" ? req.query.mock : "";
+    const data = await getRuntimePointSummary(siteConfig, siteId, {
       build,
       floor,
       mock,

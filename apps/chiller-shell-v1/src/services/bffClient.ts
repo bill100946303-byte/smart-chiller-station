@@ -1288,6 +1288,138 @@ export type DeviceTreeDto = {
   sourceStatus?: SourceStatusDto;
 };
 
+export type RuntimePointSummaryCountsDto = {
+  deviceRows?: number | null;
+  registerPoints?: number | null;
+  chillerCount?: number | null;
+  runningChillerCount?: number | null;
+  chilledPumpCount?: number | null;
+  runningChilledPumpCount?: number | null;
+  coolingPumpCount?: number | null;
+  runningCoolingPumpCount?: number | null;
+  coolingTowerCount?: number | null;
+  runningCoolingTowerCount?: number | null;
+  coolingTowerFanCount?: number | null;
+  runningCoolingTowerFanCount?: number | null;
+  branchCount?: number | null;
+  coolingTowerCellCount?: number | null;
+  keywordCounts?: Record<string, number>;
+};
+
+export type RuntimePointSummaryDto = {
+  site?: {
+    siteId?: string;
+    siteName?: string;
+  };
+  generatedAt?: string;
+  status?: string;
+  basis?: string;
+  pointDictionary?: {
+    applied?: boolean;
+    source?: string | null;
+  };
+  counts?: RuntimePointSummaryCountsDto;
+  keySignals?: {
+    chilledWater?: {
+      supplyTempC?: number | null;
+      returnTempC?: number | null;
+      deltaTC?: number | null;
+      supplyPressureKpa?: number | null;
+      returnPressureKpa?: number | null;
+      differentialPressureKpa?: number | null;
+      bypassValveOpenPct?: number | null;
+    };
+    coolingWater?: {
+      supplyTempC?: number | null;
+      returnTempC?: number | null;
+      deltaTC?: number | null;
+      supplyPressureKpa?: number | null;
+      returnPressureKpa?: number | null;
+      differentialPressureKpa?: number | null;
+    };
+    weather?: {
+      wetBulbC?: number | null;
+      outdoorTempC?: number | null;
+      humidityPct?: number | null;
+    };
+    power?: {
+      runningChillerPowerKw?: number | null;
+      runningChilledPumpPowerKw?: number | null;
+      runningCoolingPumpPowerKw?: number | null;
+      runningCoolingTowerPowerKw?: number | null;
+    };
+    pumpFrequency?: {
+      chilledAvgHz?: number | null;
+      coolingAvgHz?: number | null;
+    };
+    towerFrequency?: {
+      avgHz?: number | null;
+    };
+  };
+  groups?: {
+    chillers?: Array<{
+      id?: string;
+      label?: string;
+      running?: boolean;
+      available?: boolean;
+      faultActive?: boolean | null;
+      remoteEnabled?: boolean | null;
+      powerKw?: number | null;
+      currentPercent?: number | null;
+      unitStatus?: number | null;
+    }>;
+    chilledPumps?: Array<{
+      id?: string;
+      label?: string;
+      type?: string;
+      running?: boolean;
+      faultActive?: boolean | null;
+      remoteEnabled?: boolean | null;
+      powerKw?: number | null;
+      frequencyHz?: number | null;
+      flowM3h?: number | null;
+    }>;
+    coolingPumps?: Array<{
+      id?: string;
+      label?: string;
+      type?: string;
+      running?: boolean;
+      faultActive?: boolean | null;
+      remoteEnabled?: boolean | null;
+      powerKw?: number | null;
+      frequencyHz?: number | null;
+      flowM3h?: number | null;
+    }>;
+    coolingTowers?: Array<{
+      id?: string;
+      label?: string;
+      running?: boolean;
+      faultActive?: boolean | null;
+      powerKw?: number | null;
+      frequencyHz?: number | null;
+      flowM3h?: number | null;
+    }>;
+    coolingTowerCells?: Array<{
+      label?: string;
+      running?: boolean;
+      powerKw?: number | null;
+      frequencyHz?: number | null;
+      flowM3h?: number | null;
+      pressureKpa?: number | null;
+    }>;
+  };
+  summary?: {
+    chillerCount?: number | null;
+    runningCount?: number | null;
+    runningCombination?: string[];
+    activeChillerIds?: string[];
+    activeChillerModels?: string[];
+    chillerPowerFromRuntimeKw?: number | null;
+  };
+  disclaimers?: string[];
+  sourceStatus?: SourceStatusDto;
+};
+
 export type DeviceDetailDto = {
   site?: {
     siteId?: string;
@@ -3262,6 +3394,10 @@ export async function fetchDeviceTree(
   return fetchJson<DeviceTreeDto>(
     `/bff/v1/sites/${siteId}/devices/tree${search.toString() ? `?${search.toString()}` : ""}`
   );
+}
+
+export async function fetchRuntimePointSummary(siteId: string): Promise<RuntimePointSummaryDto> {
+  return fetchJson<RuntimePointSummaryDto>(`/bff/v1/sites/${siteId}/runtime/summary`);
 }
 
 export async function fetchDeviceDetail(

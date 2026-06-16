@@ -1,7 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { deriveLoadRatePct, normalizeEfficiencyMetric, shouldUseRequestedB25CloudHistory } from "./dashboardService.js";
+import {
+  buildTrendBuckets,
+  deriveLoadRatePct,
+  normalizeEfficiencyMetric,
+  normalizeTrendSeriesForRange,
+  shouldUseRequestedB25CloudHistory
+} from "./dashboardService.js";
 
 test("deriveLoadRatePct returns percentage when cooling capacities are available", () => {
   assert.equal(deriveLoadRatePct(1200, 2400), 50);
@@ -44,4 +50,42 @@ test("shouldUseRequestedB25CloudHistory only enables B25 cloud history when requ
     }),
     true
   );
+});
+
+test("24h trend buckets preserve a full day at ten-minute resolution", () => {
+  const end = Date.parse("2026-06-15T10:20:00.000Z");
+  const buckets = buildTrendBuckets("24h", end, { stepMs: 10 * 60 * 1000 });
+
+  assert.equal(buckets.length, 145);
+  assert.equal(new Date(buckets[0]).toISOString(), "2026-06-14T10:20:00.000Z");
+  assert.equal(new Date(buckets.at(-1)).toISOString(), "2026-06-15T10:20:00.000Z");
+  assert.equal(buckets[1] - buckets[0], 10 * 60 * 1000);
+});
+
+test("24h trend normalization keeps ten-minute points across the whole window", () => {
+  const normalized = normalizeTrendSeriesForRange(
+    [
+      {
+        metric: "currentCop",
+        label: "冷站COP",
+        points: [
+          { t: "2026-06-14T10:20:00.000Z", v: 5.8 },
+          { t: "2026-06-14T10:30:00.000Z", v: 5.9 },
+          { t: "2026-06-15T10:20:00.000Z", v: 6.2 }
+        ]
+      }
+    ],
+    "24h",
+    "2026-06-15T10:20:00.000Z",
+    { stepMs: 10 * 60 * 1000 }
+  );
+
+  const points = normalized[0].points;
+  assert.equal(points.length, 145);
+  assert.deepEqual(points.slice(0, 3), [
+    { t: "2026-06-14T10:20:00.000Z", v: 5.8 },
+    { t: "2026-06-14T10:30:00.000Z", v: 5.9 },
+    { t: "2026-06-14T10:40:00.000Z", v: null }
+  ]);
+  assert.deepEqual(points.at(-1), { t: "2026-06-15T10:20:00.000Z", v: 6.2 });
 });

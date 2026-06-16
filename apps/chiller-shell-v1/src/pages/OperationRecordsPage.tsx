@@ -12,6 +12,8 @@ import {
   type OperationRecordDeviceTypeNodeDto,
   type OperationRecordListDto,
   type OperationRecordListItemDto,
+  type SourceEndpointStatusDto,
+  type SourceStatusDto,
   fetchOperationRecordDeviceTypes,
   fetchOperationRecordDevices,
   fetchOperationRecords
@@ -136,6 +138,52 @@ function normalizeAuditText(value: string | null | undefined): string {
   return String(value || "")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function collectSourceEntries(sourceStatuses: Array<SourceStatusDto | null | undefined>): SourceEndpointStatusDto[] {
+  return sourceStatuses.flatMap((sourceStatus) => sourceStatus?.sources || []);
+}
+
+function sourceFingerprint(source: SourceEndpointStatusDto | null | undefined): string {
+  return [
+    source?.key,
+    source?.endpoint,
+    source?.interfaceKind,
+    source?.originLabel,
+    source?.message,
+    source?.reasonCode,
+    source?.error
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function isGovernanceExecutionSource(source: SourceEndpointStatusDto | null | undefined): boolean {
+  const fingerprint = sourceFingerprint(source);
+  return fingerprint.includes("optimize-execution-history") || fingerprint.includes("治理态执行记录");
+}
+
+function isLegacyOperationRecordSource(source: SourceEndpointStatusDto | null | undefined): boolean {
+  const fingerprint = sourceFingerprint(source);
+  return fingerprint.includes("/zsqy/runrecords/") || fingerprint.includes("legacy operation records");
+}
+
+function isRuntimeDeviceFallbackSource(source: SourceEndpointStatusDto | null | undefined): boolean {
+  const fingerprint = sourceFingerprint(source);
+  return fingerprint.includes("runtime-device-collection-fallback") || fingerprint.includes("findallbydrtypeid");
+}
+
+function hasOkSource(sources: SourceEndpointStatusDto[], predicate: (source: SourceEndpointStatusDto) => boolean): boolean {
+  return sources.some((source) => predicate(source) && source.ok === true);
+}
+
+function hasFailedSource(sources: SourceEndpointStatusDto[], predicate: (source: SourceEndpointStatusDto) => boolean): boolean {
+  return sources.some((source) => predicate(source) && source.ok !== true);
+}
+
+function formatOperationSourceSummary(value: string): string {
+  return value.replace(/^数据状态[:：]\s*/, "").trim();
 }
 
 function normalizeAuditIdentity(value: string | null | undefined): string {
@@ -557,12 +605,42 @@ export default function OperationRecordsPage() {
   const editingDeviceLabel = findDeviceLabel(deviceOptions, filters.drId);
   const latestFetchText = formatDateTime(records?.generatedAt || records?.freshness?.latestTimestamp);
   const latestShortTime = formatShortTime(records?.generatedAt || records?.freshness?.latestTimestamp);
-  const statusDigestLines = Array.from(new Set(sourceStatusLinesCompact.filter(Boolean))).slice(0, 1);
+  const sourceEntries = collectSourceEntries([records?.sourceStatus, types?.sourceStatus, devices?.sourceStatus]);
+  const governanceAuditAvailable = hasOkSource(sourceEntries, isGovernanceExecutionSource);
+  const legacyOperationRecordsFailed = hasFailedSource(sourceEntries, isLegacyOperationRecordSource);
+  const runtimeDeviceFallbackAvailable = hasOkSource(sourceEntries, isRuntimeDeviceFallbackSource);
+  const compactSourceSummary = formatOperationSourceSummary(sourceSummary.text);
+  const fallbackStatusDigestLines = Array.from(new Set(sourceStatusLinesCompact.filter(Boolean))).slice(0, 2);
+  const statusDigestLines = Array.from(
+    new Set(
+      [
+        governanceAuditAvailable ? "治理留痕可用" : null,
+        legacyOperationRecordsFailed ? "旧系统记录异常" : null,
+        runtimeDeviceFallbackAvailable ? "设备目录回退可用" : null,
+        total >= 0 ? `记录${total}条` : null,
+        ...fallbackStatusDigestLines
+      ].filter(Boolean) as string[]
+    )
+  ).slice(0, 4);
   const emptyText = loading
     ? zhCN.operationRecordPage.loading
     : recordsError || typeError || deviceError || zhCN.operationRecordPage.empty;
-  const bannerText = recordsError || typeError || deviceError || (loading ? zhCN.operationRecordPage.loading : sourceSummary.text);
-  const auditStatusLabel = recordsError || typeError || deviceError ? "需检查" : sourceSummary.warn ? "部分回退" : "可追溯";
+  const bannerText = recordsError || typeError || deviceError || (loading
+    ? zhCN.operationRecordPage.loading
+    : governanceAuditAvailable && legacyOperationRecordsFailed
+      ? "治理留痕可审阅，旧系统记录源异常"
+      : sourceSummary.warn
+        ? `来源回退可用，${compactSourceSummary}`
+        : "来源正常，可追溯");
+  const auditStatusLabel = recordsError || typeError || deviceError
+    ? "需检查"
+    : loading
+      ? "加载中"
+      : governanceAuditAvailable && legacyOperationRecordsFailed
+        ? "回退可用"
+        : sourceSummary.warn
+          ? "来源回退"
+          : "可追溯";
   const auditStatusTone = recordsError || typeError || deviceError || sourceSummary.warn ? "warn" : "good";
   const auditMetrics: AuditMetric[] = [
     {

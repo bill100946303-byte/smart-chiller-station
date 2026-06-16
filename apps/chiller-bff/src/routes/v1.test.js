@@ -29,6 +29,15 @@ function buildRequest(options = {}) {
   };
 }
 
+function createJsonResponse(payload, status = 200) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      "content-type": "application/json"
+    }
+  });
+}
+
 test("readRealtimeRequestContext keeps explicit header project key and ignores runtime remap keys", () => {
   const request = buildRequest({
     headers: {
@@ -268,6 +277,145 @@ test("energy-efficiency imbalance route uses B25 data key for table endpoint", a
     assert.deepEqual(requests, [
       "http://127.0.0.1:8098/zsqy/energyanalysis/getEnergyAnalysisCurve?appId=140&date=2026-06-11&dateType=0&energyType=4&startTime=2026-06-10&endTime=2026-06-11",
       "http://127.0.0.1:8098/zsqy/energyanalysis/140btwentyfive/getEnergyAnalysisDeviceList?appId=140&date=2026-06-11&dateType=0&energyType=4&startTime=2026-06-10&endTime=2026-06-11"
+    ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+});
+
+test("runtime summary route exposes B25 realtime point counts and frequency feedback", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+
+  globalThis.fetch = async (input) => {
+    const target = String(input);
+    requests.push(target);
+
+    if (target.endsWith("/zsqy/drinfo/140btwentyfive/findObject?pageCurrent=1&pageSize=200")) {
+      return createJsonResponse({
+        data: [
+          { drid: "1", drname: "1#冷水机组", drtypename: "主机", drcode: "CH1" },
+          { drid: "2", drname: "2#冷水机组", drtypename: "主机", drcode: "CH2" },
+          { drid: "47", drname: "1#冷却泵", drtypename: "冷却泵", drcode: "CWP1" },
+          { drid: "48", drname: "2#冷却泵", drtypename: "冷却泵", drcode: "CWP2" }
+        ]
+      });
+    }
+
+    if (target.endsWith("/zsqy/reg/140btwentyfive/findAllByDrTypeId?build=1&floor=0")) {
+      return createJsonResponse({
+        data: [
+          {
+            drid: "1",
+            drname: "1#冷水机组",
+            drtypename: "主机",
+            drcode: "CH1",
+            reglist: [
+              { regName: "运行", tagValue: "0" },
+              { regName: "功率", tagValue: "0" }
+            ]
+          },
+          {
+            drid: "2",
+            drname: "2#冷水机组",
+            drtypename: "主机",
+            drcode: "CH2",
+            reglist: [
+              { regName: "运行", tagValue: "1" },
+              { regName: "功率", tagValue: "456" }
+            ]
+          },
+          {
+            drid: "47",
+            drname: "1#冷却泵",
+            drtypename: "冷却泵",
+            drcode: "CWP1",
+            reglist: [
+              { regName: "运行", tagValue: "0" },
+              { regName: "频率反馈", tagValue: "0" }
+            ]
+          },
+          {
+            drid: "48",
+            drname: "2#冷却泵",
+            drtypename: "冷却泵",
+            drcode: "CWP2",
+            reglist: [
+              { regName: "运行", tagValue: "1" },
+              { regName: "频率反馈", tagValue: "33.2" }
+            ]
+          },
+          {
+            drid: "53",
+            drname: "1#冷却塔",
+            drtypename: "冷却塔组",
+            drcode: "CT1",
+            reglist: [
+              { regName: "功率", tagValue: "5.1" },
+              { regName: "运行", tagValue: "1" },
+              { regName: "频率反馈", tagValue: "31.4" }
+            ]
+          },
+          {
+            drid: "900",
+            drname: "室外环境",
+            drtypename: "环境",
+            drcode: "RHT",
+            reglist: [
+              { regName: "湿球温度", tagValue: "25.4" }
+            ]
+          }
+        ]
+      });
+    }
+
+    throw new Error(`Unexpected URL: ${target}`);
+  };
+
+  const app = express();
+  app.use("/bff/v1", buildV1Router({
+    defaultSiteId: "140",
+    legacyBaseUrl: "http://127.0.0.1:8098",
+    staleThresholdHours: 6
+  }));
+  const server = app.listen(0);
+
+  try {
+    await new Promise((resolve) => server.once("listening", resolve));
+    const { port } = server.address();
+    const response = await originalFetch(
+      `http://127.0.0.1:${port}/bff/v1/sites/140/runtime/summary`,
+      {
+        headers: {
+          "x-chiller-site-id": "140",
+          "x-chiller-site-code": "B25",
+          "x-chiller-project-key": "140-B25"
+        }
+      }
+    );
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.status, "ready");
+    assert.equal(payload.sourceStatus.overall, "ok");
+    assert.equal(payload.counts.chillerCount, 2);
+    assert.equal(payload.counts.runningChillerCount, 1);
+    assert.equal(payload.counts.coolingPumpCount, 2);
+    assert.equal(payload.counts.runningCoolingPumpCount, 1);
+    assert.equal(payload.keySignals.pumpFrequency.coolingAvgHz, 33.2);
+    assert.equal(payload.keySignals.weather.wetBulbC, 25.4);
+    assert.deepEqual(requests, [
+      "http://127.0.0.1:8098/zsqy/drinfo/140btwentyfive/findObject?pageCurrent=1&pageSize=200",
+      "http://127.0.0.1:8098/zsqy/reg/140btwentyfive/findAllByDrTypeId?build=1&floor=0"
     ]);
   } finally {
     globalThis.fetch = originalFetch;
