@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-16T05:16:10.190Z",
+  "generatedAt": "2026-06-16T05:25:05.526Z",
   "siteId": "140",
   "bffBaseUrl": "http://127.0.0.1:8787",
   "dbFile": "/Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/.local/admin.sqlite",
@@ -36,12 +36,12 @@
       "rollbackLockoutMinutes": 15
     },
     "current": {
-      "chilledDeltaT": 4.3,
-      "coolingDeltaT": 4.8,
-      "chilledPumpPowerKw": 148.9,
-      "coolingPumpPowerKw": 102.3,
-      "chillerPowerKw": 1630.4,
-      "totalPowerKw": 1941.1,
+      "chilledDeltaT": 4.4,
+      "coolingDeltaT": 4.7,
+      "chilledPumpPowerKw": 148.2,
+      "coolingPumpPowerKw": 102.4,
+      "chillerPowerKw": 1630.2,
+      "totalPowerKw": 1940.3,
       "systemCop": 6.6,
       "chilledSupplyTemp": null,
       "coolingReturnTemp": null,
@@ -74,46 +74,49 @@
     }
   },
   "executions": {
-    "total": 6,
+    "total": 7,
     "latest": {
-      "executionId": "opx-140-1781576075710-ny5tog",
-      "status": "approved",
-      "createdAt": "2026-06-16T02:14:35.710Z",
-      "updatedAt": "2026-06-16T02:14:37.638Z",
-      "approvedAt": "2026-06-16T02:14:37.638Z",
-      "approvedBy": "3",
+      "executionId": "opx-140-1781587399499-51v72r",
+      "status": "pending_approval",
+      "createdAt": "2026-06-16T05:23:19.499Z",
+      "updatedAt": "2026-06-16T05:23:19.499Z",
+      "approvedAt": null,
+      "approvedBy": null,
       "type": "pump-delta-t",
       "targetChwpFreqTrimHz": -1,
       "targetCwpFreqTrimHz": 0,
-      "ttlSeconds": 300,
+      "ttlSeconds": 900,
       "holdMinutes": 5,
       "rollbackLockoutMinutes": 15,
       "targetPoints": {
-        "chilledPump": "AI_ChwpFreqTrim_Hz",
-        "coolingPump": "AI_CwpFreqTrim_Hz"
+        "chilledPump": "B25_AI_ChwpFreqTrim_Hz",
+        "coolingPump": "B25_AI_CwpFreqTrim_Hz"
       },
       "rollbackTarget": {
         "mode": "zero-trim",
         "targetTcwsC": null,
         "targetApproachC": null,
-        "reason": "回退到 0Hz 修正量",
+        "reason": "取消 shadow 建议时回退到 0Hz 修正量。",
         "targetChwpFreqTrimHz": 0,
         "targetCwpFreqTrimHz": 0
       },
       "actions": [
-        "冷冻泵频率修正 -1.0 Hz",
-        "冷却泵频率修正 0.0 Hz",
-        "单步限幅 +1.0 Hz/周期",
-        "控制周期 5 分钟",
-        "回退后闭锁 15 分钟",
-        "低温差条件成立，已生成运行泵频率小步长降频建议。"
+        "只生成 shadow 待审单，不写 PLC",
+        "冷冻泵频率建议 -1Hz，冷却泵保持 0Hz",
+        "人工复核末端压差、旁通阀和最不利末端后再审批"
       ],
       "timeline": [
-        "created",
-        "approved"
+        "created"
       ]
     },
     "items": [
+      {
+        "executionId": "opx-140-1781587399499-51v72r",
+        "status": "pending_approval",
+        "updatedAt": "2026-06-16T05:23:19.499Z",
+        "targetChwpFreqTrimHz": -1,
+        "targetCwpFreqTrimHz": 0
+      },
       {
         "executionId": "opx-140-1781576075710-ny5tog",
         "status": "approved",
@@ -139,13 +142,6 @@
         "executionId": "opx-140-1781414920788-6uk0tm",
         "status": "approved",
         "updatedAt": "2026-06-14T05:28:42.900Z",
-        "targetChwpFreqTrimHz": -1,
-        "targetCwpFreqTrimHz": 0
-      },
-      {
-        "executionId": "opx-140-1781411292468-hcs1x7",
-        "status": "approved",
-        "updatedAt": "2026-06-14T04:28:14.716Z",
         "targetChwpFreqTrimHz": -1,
         "targetCwpFreqTrimHz": 0
       }

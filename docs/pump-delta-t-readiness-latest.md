@@ -5,7 +5,7 @@
 - shadow 就绪：GO
 - assisted 就绪：BLOCKED
 - dispatchMode：shadow
-- 生成时间：2026-06-16T05:16:10.190Z
+- 生成时间：2026-06-16T05:25:05.526Z
 
 ## 当前 Advisor
 
@@ -17,12 +17,12 @@
 
 ## 最近 pump-delta-t 执行单
 
-- executionId：opx-140-1781576075710-ny5tog
-- status：approved
+- executionId：opx-140-1781587399499-51v72r
+- status：pending_approval
 - target：CHWP -1 Hz / CWP 0 Hz
-- TTL / hold / lockout：300s / 5min / 15min
+- TTL / hold / lockout：900s / 5min / 15min
 - rollback：zero-trim，CHWP 0 Hz / CWP 0 Hz
-- timeline：created -> approved
+- timeline：created
 
 ## 点位映射
 

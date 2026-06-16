@@ -2,7 +2,7 @@
   "ok": false,
   "status": "CONTROL_LEDGER_IMPORT_BLOCKED",
   "siteId": "140",
-  "generatedAt": "2026-06-16T05:15:25.503Z",
+  "generatedAt": "2026-06-16T05:24:25.222Z",
   "scope": "optimize_demo_140_control_oscillation_field_ledgers",
   "executionMode": "read_only",
   "controlBoundary": "导入器只做现场台账回填、字段规范化和证据校验，不自动改 PID，不自动启停设备，不写真实 PLC。",

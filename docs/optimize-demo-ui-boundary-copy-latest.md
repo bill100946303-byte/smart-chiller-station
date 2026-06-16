@@ -2,7 +2,7 @@
 
 - 结论：UI_BOUNDARY_COPY_READY
 - 源文件：apps/chiller-shell-v1/src/pages/OptimizeDemoPage.tsx
-- 生成时间：2026-06-16T05:15:00.381Z
+- 生成时间：2026-06-16T05:23:59.870Z
 
 ## 必须出现的边界文案
 

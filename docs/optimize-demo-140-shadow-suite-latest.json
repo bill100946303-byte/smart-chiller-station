@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-06-16T05:16:10.616Z",
+  "generatedAt": "2026-06-16T05:25:05.951Z",
   "siteId": "140",
   "bffBaseUrl": "http://127.0.0.1:8787",
-  "finalDecision": "NO_GO",
+  "finalDecision": "GO_SHADOW_PENDING",
   "components": {
     "advisors": {
       "ok": true,
@@ -30,7 +30,7 @@
           "CH7"
         ],
         "runningCount": 3,
-        "sampleTotal": 111,
+        "sampleTotal": 112,
         "sampleCaptureStatus": "recorded"
       },
       "operationalDiagnostics": {
@@ -555,13 +555,22 @@
       "expected": "NO_CONTROL_MUTATION",
       "finalDecision": "NO_CONTROL_MUTATION",
       "before": {
-        "generatedAt": "2026-06-16T05:14:36.489Z",
+        "generatedAt": "2026-06-16T05:23:37.961Z",
         "tower": {
           "ok": true,
           "status": 200,
           "attempts": 1,
           "error": null,
           "items": [
+            {
+              "executionId": "opx-140-1781587399486-17y2n9",
+              "status": "pending_approval",
+              "approvalStatus": "pending",
+              "dispatchPresent": false,
+              "timelineActions": [
+                "created"
+              ]
+            },
             {
               "executionId": "opx-140-1781576068903-ag7ns3",
               "status": "approved",
@@ -605,15 +614,6 @@
                 "approved",
                 "dispatched"
               ]
-            },
-            {
-              "executionId": "opx-140-1781266624535-ju3qeb",
-              "status": "pending_approval",
-              "approvalStatus": "pending",
-              "dispatchPresent": false,
-              "timelineActions": [
-                "created"
-              ]
             }
           ]
         },
@@ -623,6 +623,15 @@
           "attempts": 1,
           "error": null,
           "items": [
+            {
+              "executionId": "opx-140-1781587399499-51v72r",
+              "status": "pending_approval",
+              "approvalStatus": "pending",
+              "dispatchPresent": false,
+              "timelineActions": [
+                "created"
+              ]
+            },
             {
               "executionId": "opx-140-1781576075710-ny5tog",
               "status": "approved",
@@ -654,16 +663,6 @@
             },
             {
               "executionId": "opx-140-1781414920788-6uk0tm",
-              "status": "approved",
-              "approvalStatus": "approved",
-              "dispatchPresent": true,
-              "timelineActions": [
-                "created",
-                "approved"
-              ]
-            },
-            {
-              "executionId": "opx-140-1781411292468-hcs1x7",
               "status": "approved",
               "approvalStatus": "approved",
               "dispatchPresent": true,
@@ -676,13 +675,22 @@
         }
       },
       "after": {
-        "generatedAt": "2026-06-16T05:16:10.613Z",
+        "generatedAt": "2026-06-16T05:25:05.948Z",
         "tower": {
           "ok": true,
           "status": 200,
           "attempts": 2,
           "error": null,
           "items": [
+            {
+              "executionId": "opx-140-1781587399486-17y2n9",
+              "status": "pending_approval",
+              "approvalStatus": "pending",
+              "dispatchPresent": false,
+              "timelineActions": [
+                "created"
+              ]
+            },
             {
               "executionId": "opx-140-1781576068903-ag7ns3",
               "status": "approved",
@@ -726,15 +734,6 @@
                 "approved",
                 "dispatched"
               ]
-            },
-            {
-              "executionId": "opx-140-1781266624535-ju3qeb",
-              "status": "pending_approval",
-              "approvalStatus": "pending",
-              "dispatchPresent": false,
-              "timelineActions": [
-                "created"
-              ]
             }
           ]
         },
@@ -744,6 +743,15 @@
           "attempts": 1,
           "error": null,
           "items": [
+            {
+              "executionId": "opx-140-1781587399499-51v72r",
+              "status": "pending_approval",
+              "approvalStatus": "pending",
+              "dispatchPresent": false,
+              "timelineActions": [
+                "created"
+              ]
+            },
             {
               "executionId": "opx-140-1781576075710-ny5tog",
               "status": "approved",
@@ -775,16 +783,6 @@
             },
             {
               "executionId": "opx-140-1781414920788-6uk0tm",
-              "status": "approved",
-              "approvalStatus": "approved",
-              "dispatchPresent": true,
-              "timelineActions": [
-                "created",
-                "approved"
-              ]
-            },
-            {
-              "executionId": "opx-140-1781411292468-hcs1x7",
               "status": "approved",
               "approvalStatus": "approved",
               "dispatchPresent": true,
@@ -809,21 +807,21 @@
       "readOnlyAdviceStatus": "READY",
       "telemetry": {
         "systemCop": 6.6,
-        "totalPowerKw": 1941.1,
-        "totalCoolingCapacity": 12898.2,
-        "currentLoadRate": 50.9,
-        "coolingReturnTemp": 28.5,
-        "coolingDeltaT": 4.8,
-        "calculatedTcwsC": 28.5,
-        "outdoorWetBulbC": 25.5,
-        "calculatedApproachC": 3,
-        "advisorApproachC": 3,
-        "advisorTargetApproachC": 3.5,
-        "advisorTargetTcwsC": 29,
+        "totalPowerKw": 1940.3,
+        "totalCoolingCapacity": 12979.5,
+        "currentLoadRate": 51.3,
+        "coolingReturnTemp": 28.3,
+        "coolingDeltaT": 4.7,
+        "calculatedTcwsC": 28.3,
+        "outdoorWetBulbC": 25.6,
+        "calculatedApproachC": 2.7,
+        "advisorApproachC": 2.7,
+        "advisorTargetApproachC": 3.2,
+        "advisorTargetTcwsC": 28.8,
         "coolingTowerPowerKw": 59.5,
-        "chillerPowerKw": 1630.4,
-        "thermalUnbalanceRateRaw": 10.6,
-        "thermalUnbalancePct": 10.6,
+        "chillerPowerKw": 1630.2,
+        "thermalUnbalanceRateRaw": 11.1,
+        "thermalUnbalancePct": 11.1,
         "activeAlarmCount": 8
       },
       "dataReadinessGate": {
@@ -842,28 +840,28 @@
             "key": "system_power",
             "label": "系统总功率",
             "status": "ready",
-            "evidence": "totalPowerKw=1941.1 kW",
+            "evidence": "totalPowerKw=1940.3 kW",
             "recoveryAction": "核对冷站总电表、主机/泵/塔功率汇总点和 Dashboard 能源卡片映射。"
           },
           {
             "key": "cooling_load",
             "label": "系统总冷量",
             "status": "ready",
-            "evidence": "totalCoolingCapacity=12898.2 kW",
+            "evidence": "totalCoolingCapacity=12979.5 kW",
             "recoveryAction": "核对冷冻水总流量、供回水温差、冷量计算和额定冷量配置。"
           },
           {
             "key": "tcws",
             "label": "冷却水出水/Tcws",
             "status": "ready",
-            "evidence": "coolingReturnTemp=28.5℃ / signal=ok",
+            "evidence": "coolingReturnTemp=28.3℃ / signal=ok",
             "recoveryAction": "核对冷却塔出水、冷机冷凝器进水或冷却回水点位；确认物理位置和单位。"
           },
           {
             "key": "wet_bulb_live",
             "label": "实时湿球",
             "status": "ready",
-            "evidence": "outdoorWetBulbC=25.5℃ / signal=ok",
+            "evidence": "outdoorWetBulbC=25.6℃ / signal=ok",
             "recoveryAction": "核对室外湿球点位、气象站通讯和湿球计算来源；缺失时 Approach 只能只读。"
           },
           {
@@ -889,11 +887,11 @@
           }
         ]
       },
-      "latestExecutionId": "opx-140-1781576068903-ag7ns3",
+      "latestExecutionId": "opx-140-1781587399486-17y2n9",
       "blockers": [],
       "warnings": [
         "历史样本置信度低，节能评估需 shadow 对比验证。",
-        "最终冷却水出水温目标 30℃ 需分 3 步 shadow 验证，本次仅提交 29℃。",
+        "最终冷却水出水温目标 30℃ 需分 4 步 shadow 验证，本次仅提交 28.8℃。",
         "当前活动告警 8 条，shadow 前需确认无严重告警、传感器冻结或塔风机反馈异常。"
       ],
       "reportJson": "docs/b25-tower-approach-readiness-latest.json",
@@ -929,12 +927,12 @@
           "rollbackLockoutMinutes": 15
         },
         "current": {
-          "chilledDeltaT": 4.3,
-          "coolingDeltaT": 4.8,
-          "chilledPumpPowerKw": 148.9,
-          "coolingPumpPowerKw": 102.3,
-          "chillerPowerKw": 1630.4,
-          "totalPowerKw": 1941.1,
+          "chilledDeltaT": 4.4,
+          "coolingDeltaT": 4.7,
+          "chilledPumpPowerKw": 148.2,
+          "coolingPumpPowerKw": 102.4,
+          "chillerPowerKw": 1630.2,
+          "totalPowerKw": 1940.3,
           "systemCop": 6.6,
           "chilledSupplyTemp": null,
           "coolingReturnTemp": null,
@@ -967,41 +965,37 @@
         }
       },
       "latestExecution": {
-        "executionId": "opx-140-1781576075710-ny5tog",
-        "status": "approved",
-        "createdAt": "2026-06-16T02:14:35.710Z",
-        "updatedAt": "2026-06-16T02:14:37.638Z",
-        "approvedAt": "2026-06-16T02:14:37.638Z",
-        "approvedBy": "3",
+        "executionId": "opx-140-1781587399499-51v72r",
+        "status": "pending_approval",
+        "createdAt": "2026-06-16T05:23:19.499Z",
+        "updatedAt": "2026-06-16T05:23:19.499Z",
+        "approvedAt": null,
+        "approvedBy": null,
         "type": "pump-delta-t",
         "targetChwpFreqTrimHz": -1,
         "targetCwpFreqTrimHz": 0,
-        "ttlSeconds": 300,
+        "ttlSeconds": 900,
         "holdMinutes": 5,
         "rollbackLockoutMinutes": 15,
         "targetPoints": {
-          "chilledPump": "AI_ChwpFreqTrim_Hz",
-          "coolingPump": "AI_CwpFreqTrim_Hz"
+          "chilledPump": "B25_AI_ChwpFreqTrim_Hz",
+          "coolingPump": "B25_AI_CwpFreqTrim_Hz"
         },
         "rollbackTarget": {
           "mode": "zero-trim",
           "targetTcwsC": null,
           "targetApproachC": null,
-          "reason": "回退到 0Hz 修正量",
+          "reason": "取消 shadow 建议时回退到 0Hz 修正量。",
           "targetChwpFreqTrimHz": 0,
           "targetCwpFreqTrimHz": 0
         },
         "actions": [
-          "冷冻泵频率修正 -1.0 Hz",
-          "冷却泵频率修正 0.0 Hz",
-          "单步限幅 +1.0 Hz/周期",
-          "控制周期 5 分钟",
-          "回退后闭锁 15 分钟",
-          "低温差条件成立，已生成运行泵频率小步长降频建议。"
+          "只生成 shadow 待审单，不写 PLC",
+          "冷冻泵频率建议 -1Hz，冷却泵保持 0Hz",
+          "人工复核末端压差、旁通阀和最不利末端后再审批"
         ],
         "timeline": [
-          "created",
-          "approved"
+          "created"
         ]
       },
       "blockers": [],
@@ -1016,115 +1010,52 @@
       "reportMarkdown": "docs/pump-delta-t-readiness-latest.md"
     },
     "governance": {
-      "ok": false,
+      "ok": true,
       "expected": "GO_SHADOW_PENDING",
-      "finalDecision": "NO_GO",
+      "finalDecision": "GO_SHADOW_PENDING",
       "towerLatestExecution": {
-        "executionId": "opx-140-1781576068903-ag7ns3",
-        "status": "approved",
-        "approvalStatus": "approved",
-        "title": "冷却塔接近度执行建议（Tcws 28.9 °C）",
+        "executionId": "opx-140-1781587399486-17y2n9",
+        "status": "pending_approval",
+        "approvalStatus": "pending",
+        "title": "冷却塔 Approach shadow 待审单",
         "type": "tower-approach",
-        "targetTcwsC": 28.9,
-        "targetApproachC": 3.5,
+        "targetTcwsC": 28,
+        "targetApproachC": 2.5,
         "targetChwpFreqTrimHz": null,
         "targetCwpFreqTrimHz": null,
         "guardrailSnapshot": {
           "key": "chillerMinCondenserInletTempC",
           "status": "ready",
           "value": 30,
-          "message": "目标冷却水温必须高于该下限。",
-          "resolvedBy": "default",
-          "matchedKeys": []
+          "message": "shadow 演示边界：不写 PLC，真实下发前需复核活跃机组最低冷凝水温。",
+          "resolvedBy": "demo-shadow-governance-reset",
+          "matchedKeys": [
+            "CH4",
+            "CH5",
+            "CH7"
+          ]
         },
         "rollbackTarget": {
           "mode": "manual",
-          "targetTcwsC": 28.4,
-          "targetApproachC": 3,
-          "reason": "回退到提交前现态"
+          "targetTcwsC": 29,
+          "targetApproachC": null,
+          "reason": "异常或人工取消时回退到上一稳定 shadow 目标。"
         },
-        "dispatch": {
-          "updatedAt": "2026-06-16T02:14:33.629Z",
-          "lastApprove": {
-            "operation": "approve",
-            "mode": "shadow",
-            "status": "succeeded",
-            "code": "DISPATCH_SHADOW_RECORDED",
-            "message": "tower approach shadow dispatch recorded; no PLC command sent",
-            "endpoint": null,
-            "submittedAt": "2026-06-16T02:14:30.585Z",
-            "completedAt": "2026-06-16T02:14:30.585Z",
-            "httpStatus": null,
-            "response": {
-              "shadow": true,
-              "command": {
-                "executionType": "tower-approach",
-                "targetApproachC": 3.5,
-                "targetTcwsC": 28.9,
-                "rollbackTarget": {
-                  "mode": "manual",
-                  "targetApproachC": 3,
-                  "targetTcwsC": 28.4,
-                  "reason": "回退到提交前现态"
-                },
-                "operationCommand": "apply_tower_approach"
-              }
-            }
-          },
-          "latestStatus": "applied",
-          "lastDispatch": {
-            "operation": "dispatch",
-            "mode": "shadow",
-            "status": "succeeded",
-            "code": "DISPATCH_SHADOW_RECORDED",
-            "message": "tower approach shadow dispatch recorded; no PLC command sent",
-            "endpoint": null,
-            "submittedAt": "2026-06-16T02:14:32.813Z",
-            "completedAt": "2026-06-16T02:14:32.813Z",
-            "httpStatus": null,
-            "response": {
-              "shadow": true,
-              "command": {
-                "executionType": "tower-approach",
-                "targetApproachC": 3.5,
-                "targetTcwsC": 28.9,
-                "rollbackTarget": {
-                  "mode": "manual",
-                  "targetApproachC": 3,
-                  "targetTcwsC": 28.4,
-                  "reason": "回退到提交前现态"
-                },
-                "operationCommand": "apply_tower_approach"
-              }
-            }
-          }
-        },
+        "dispatch": null,
         "timeline": [
           {
-            "at": "2026-06-16T02:14:28.903Z",
-            "actorUserId": "3",
+            "at": "2026-06-16T05:23:19.485Z",
+            "actorUserId": "codex-shadow-demo-operator",
             "action": "created",
-            "note": null
-          },
-          {
-            "at": "2026-06-16T02:14:31.591Z",
-            "actorUserId": "3",
-            "action": "approved",
-            "note": "值班人员已审批"
-          },
-          {
-            "at": "2026-06-16T02:14:33.629Z",
-            "actorUserId": "3",
-            "action": "dispatched",
-            "note": "tower approach shadow dispatch recorded; no PLC command sent"
+            "note": "仅用于 shadow 演示待审，不代表真实下发。"
           }
         ]
       },
       "pumpLatestExecution": {
-        "executionId": "opx-140-1781576075710-ny5tog",
-        "status": "approved",
-        "approvalStatus": "approved",
-        "title": "冷冻泵/冷却泵温差导向降频（冷冻泵修正 -1.0 Hz / 冷却泵修正 0.0 Hz）",
+        "executionId": "opx-140-1781587399499-51v72r",
+        "status": "pending_approval",
+        "approvalStatus": "pending",
+        "title": "泵温差 shadow 待审单",
         "type": "pump-delta-t",
         "targetTcwsC": null,
         "targetApproachC": null,
@@ -1135,77 +1066,23 @@
           "mode": "zero-trim",
           "targetTcwsC": null,
           "targetApproachC": null,
-          "reason": "回退到 0Hz 修正量",
+          "reason": "取消 shadow 建议时回退到 0Hz 修正量。",
           "targetChwpFreqTrimHz": 0,
           "targetCwpFreqTrimHz": 0
         },
-        "dispatch": {
-          "updatedAt": "2026-06-16T02:14:37.638Z",
-          "lastApprove": {
-            "operation": "approve",
-            "mode": "shadow",
-            "status": "succeeded",
-            "code": "DISPATCH_SHADOW_RECORDED",
-            "message": "pump delta-t shadow dispatch recorded; no PLC command sent",
-            "endpoint": null,
-            "submittedAt": "2026-06-16T02:14:36.876Z",
-            "completedAt": "2026-06-16T02:14:36.876Z",
-            "httpStatus": null,
-            "response": {
-              "shadow": true,
-              "command": {
-                "executionType": "pump-delta-t",
-                "targetPoints": {
-                  "chilledPump": "AI_ChwpFreqTrim_Hz",
-                  "coolingPump": "AI_CwpFreqTrim_Hz"
-                },
-                "targetChwpFreqTrimHz": -1,
-                "targetCwpFreqTrimHz": 0,
-                "ttlSeconds": 300,
-                "holdMinutes": 5,
-                "rollbackLockoutMinutes": 15,
-                "rollbackTarget": {
-                  "mode": "zero-trim",
-                  "targetChwpFreqTrimHz": 0,
-                  "targetCwpFreqTrimHz": 0,
-                  "reason": "回退到 0Hz 修正量"
-                },
-                "operationCommand": "apply_pump_delta_t_trim"
-              }
-            }
-          },
-          "latestStatus": "applied"
-        },
+        "dispatch": null,
         "timeline": [
           {
-            "at": "2026-06-16T02:14:35.710Z",
-            "actorUserId": "3",
+            "at": "2026-06-16T05:23:19.499Z",
+            "actorUserId": "codex-shadow-demo-operator",
             "action": "created",
-            "note": null
-          },
-          {
-            "at": "2026-06-16T02:14:37.638Z",
-            "actorUserId": "3",
-            "action": "approved",
-            "note": "值班人员已审批"
+            "note": "仅用于 shadow 演示待审，不代表真实下发。"
           }
         ]
       },
-      "blockers": [
-        "tower 执行单状态不是 pending_approval：approved",
-        "tower 审批状态不是 pending：approved",
-        "tower 执行单已出现 dispatch 字段，不能作为未下发待审证据。",
-        "tower timeline 已出现 approved，不再是纯待审单。",
-        "tower timeline 已出现 dispatched，不再是纯待审单。",
-        "tower 本次目标 Tcws 不是 28℃。",
-        "pump 执行单状态不是 pending_approval：approved",
-        "pump 审批状态不是 pending：approved",
-        "pump 执行单已出现 dispatch 字段，不能作为未下发待审证据。",
-        "pump timeline 已出现 approved，不再是纯待审单。"
-      ],
+      "blockers": [],
       "warnings": [
-        "tower actions 未显式写明“不写 PLC”。",
-        "存在历史已批准 tower shadow 旧记录：opx-140-1781493919710-zwt0ak"
+        "存在历史已批准 tower shadow 旧记录：opx-140-1781576068903-ag7ns3"
       ],
       "reportJson": "docs/optimize-shadow-governance-latest.json",
       "reportMarkdown": "docs/optimize-shadow-governance-latest.md"
@@ -1218,8 +1095,8 @@
       "script": "check-optimize-demo-ui-boundary-copy.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-16T05:15:00.299Z",
-      "endedAt": "2026-06-16T05:15:00.390Z",
+      "startedAt": "2026-06-16T05:23:59.791Z",
+      "endedAt": "2026-06-16T05:23:59.879Z",
       "stdout": "optimize-demo UI boundary copy: UI_BOUNDARY_COPY_READY\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-ui-boundary-copy-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-ui-boundary-copy-latest.md",
       "stderr": "",
       "error": null
@@ -1230,8 +1107,8 @@
       "script": "check-optimize-demo-diagnostic-readiness.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-16T05:15:00.390Z",
-      "endedAt": "2026-06-16T05:15:25.210Z",
+      "startedAt": "2026-06-16T05:23:59.879Z",
+      "endedAt": "2026-06-16T05:24:24.951Z",
       "stdout": "optimize-demo diagnostic readiness: DIAGNOSTIC_READINESS_READY\nmatrix=4 ready / 5 directional / 1 point-gap\nfieldChecklist=4 P0 / 3 P1\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-diagnostic-readiness-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-diagnostic-readiness-latest.md",
       "stderr": "",
       "error": null
@@ -1242,8 +1119,8 @@
       "script": "check-optimize-demo-140-field-collection-package.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-16T05:15:25.210Z",
-      "endedAt": "2026-06-16T05:15:25.288Z",
+      "startedAt": "2026-06-16T05:24:24.951Z",
+      "endedAt": "2026-06-16T05:24:25.027Z",
       "stdout": "optimize-demo 140 field collection package: FIELD_COLLECTION_PACKAGE_READY_TO_COLLECT\ndocuments=4 templates=5 formalInputs=4\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-collection-package-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-collection-package-latest.md\nwarnings=4\n- 传感器校准/安装位置台账 尚未投放：docs/field-data/optimize-demo-140/sensor-calibration-installation.csv\n- 控制命令/反馈高频趋势 尚未投放：docs/field-data/optimize-demo-140/control-command-feedback.csv\n- 设备启停事件台账 尚未投放：docs/field-data/optimize-demo-140/start-stop-event.csv\n- PID/死区/延时参数台账 尚未投放：docs/field-data/optimize-demo-140/control-parameter.csv",
       "stderr": "",
       "error": null
@@ -1254,8 +1131,8 @@
       "script": "check-optimize-demo-140-field-data-preflight.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-16T05:15:25.288Z",
-      "endedAt": "2026-06-16T05:15:25.524Z",
+      "startedAt": "2026-06-16T05:24:25.027Z",
+      "endedAt": "2026-06-16T05:24:25.237Z",
       "stdout": "optimize-demo 140 field data preflight: FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS\nsensorStatus=SENSOR_LEDGER_PREFLIGHT_WAITING_FOR_INPUTS sensorAccepted=0\nimportStatus=CONTROL_LEDGER_IMPORT_BLOCKED accepted=0 warnings=0 blockers=3\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-preflight-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-preflight-latest.md\nblockers=4\n- 传感器校准/安装位置台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/sensor-calibration-installation.csv\n- 控制命令/反馈高频趋势 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-command-feedback.csv\n- 设备启停事件台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv\n- PID/死区/延时参数台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv",
       "stderr": "",
       "error": null
@@ -1266,8 +1143,8 @@
       "script": "promote-optimize-demo-140-field-data-ledgers.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-16T05:15:25.524Z",
-      "endedAt": "2026-06-16T05:15:25.598Z",
+      "startedAt": "2026-06-16T05:24:25.237Z",
+      "endedAt": "2026-06-16T05:24:25.308Z",
       "stdout": "optimize-demo 140 field data promote: FIELD_DATA_PROMOTE_WAITING_FOR_PREFLIGHT\npreflight=FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS importStatus=CONTROL_LEDGER_IMPORT_NOT_RUN accepted=0\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-promote-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-promote-latest.md\nblockers=5\n- 现场 CSV 预检未 READY：FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS\n- 传感器校准/安装位置台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/sensor-calibration-installation.csv\n- 控制命令/反馈高频趋势 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-command-feedback.csv\n- 设备启停事件台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv\n- PID/死区/延时参数台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv",
       "stderr": "",
       "error": null
@@ -1278,8 +1155,8 @@
       "script": "check-b25-tower-approach-readiness.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-16T05:15:25.598Z",
-      "endedAt": "2026-06-16T05:16:06.013Z",
+      "startedAt": "2026-06-16T05:24:25.308Z",
+      "endedAt": "2026-06-16T05:25:01.466Z",
       "stdout": "B25 tower approach readiness: GO_SHADOW\nreadOnlyAdvice=READY shadow=GO\njson=/Users/billchow/Documents/智慧冷冻站/docs/b25-tower-approach-readiness-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/b25-tower-approach-readiness-latest.md",
       "stderr": "",
       "error": null
@@ -1290,8 +1167,8 @@
       "script": "check-pump-delta-t-readiness.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-16T05:16:06.013Z",
-      "endedAt": "2026-06-16T05:16:10.196Z",
+      "startedAt": "2026-06-16T05:25:01.466Z",
+      "endedAt": "2026-06-16T05:25:05.532Z",
       "stdout": "pump delta-t readiness: GO_SHADOW_ONLY\nshadow=GO assisted=BLOCKED\njson=/Users/billchow/Documents/智慧冷冻站/docs/pump-delta-t-readiness-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/pump-delta-t-readiness-latest.md\nblockers=1\n- assisted 前缺 approve/rollback 点位映射或 dispatchMode 未配置为 assisted。",
       "stderr": "",
       "error": null
@@ -1302,26 +1179,14 @@
       "script": "check-optimize-shadow-governance.js",
       "exitCode": 0,
       "signal": null,
-      "startedAt": "2026-06-16T05:16:10.196Z",
-      "endedAt": "2026-06-16T05:16:10.306Z",
-      "stdout": "optimize shadow governance: NO_GO\ntower=blocked pump=blocked\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-shadow-governance-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-shadow-governance-latest.md\nblockers=10\n- tower 执行单状态不是 pending_approval：approved\n- tower 审批状态不是 pending：approved\n- tower 执行单已出现 dispatch 字段，不能作为未下发待审证据。\n- tower timeline 已出现 approved，不再是纯待审单。\n- tower timeline 已出现 dispatched，不再是纯待审单。\n- tower 本次目标 Tcws 不是 28℃。\n- pump 执行单状态不是 pending_approval：approved\n- pump 审批状态不是 pending：approved\n- pump 执行单已出现 dispatch 字段，不能作为未下发待审证据。\n- pump timeline 已出现 approved，不再是纯待审单。\nwarnings=2\n- tower actions 未显式写明“不写 PLC”。\n- 存在历史已批准 tower shadow 旧记录：opx-140-1781493919710-zwt0ak",
+      "startedAt": "2026-06-16T05:25:05.532Z",
+      "endedAt": "2026-06-16T05:25:05.639Z",
+      "stdout": "optimize shadow governance: GO_SHADOW_PENDING\ntower=go_shadow_pending pump=go_shadow_pending\njson=/Users/billchow/Documents/智慧冷冻站/docs/optimize-shadow-governance-latest.json\nmarkdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-shadow-governance-latest.md\nwarnings=1\n- 存在历史已批准 tower shadow 旧记录：opx-140-1781576068903-ag7ns3",
       "stderr": "",
       "error": null
     }
   },
-  "blockers": [
-    "tower 执行单状态不是 pending_approval：approved",
-    "tower 审批状态不是 pending：approved",
-    "tower 执行单已出现 dispatch 字段，不能作为未下发待审证据。",
-    "tower timeline 已出现 approved，不再是纯待审单。",
-    "tower timeline 已出现 dispatched，不再是纯待审单。",
-    "tower 本次目标 Tcws 不是 28℃。",
-    "pump 执行单状态不是 pending_approval：approved",
-    "pump 审批状态不是 pending：approved",
-    "pump 执行单已出现 dispatch 字段，不能作为未下发待审证据。",
-    "pump timeline 已出现 approved，不再是纯待审单。",
-    "shadow governance 未达到 GO_SHADOW_PENDING，不能进入人工审阅。"
-  ],
+  "blockers": [],
   "warnings": [
     "传感器校准/安装位置台账 尚未投放：docs/field-data/optimize-demo-140/sensor-calibration-installation.csv",
     "控制命令/反馈高频趋势 尚未投放：docs/field-data/optimize-demo-140/control-command-feedback.csv",
@@ -1337,15 +1202,14 @@
     "设备启停事件台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv",
     "PID/死区/延时参数台账 文件不存在：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv",
     "历史样本置信度低，节能评估需 shadow 对比验证。",
-    "最终冷却水出水温目标 30℃ 需分 3 步 shadow 验证，本次仅提交 29℃。",
+    "最终冷却水出水温目标 30℃ 需分 4 步 shadow 验证，本次仅提交 28.8℃。",
     "当前活动告警 8 条，shadow 前需确认无严重告警、传感器冻结或塔风机反馈异常。",
     "assisted 前缺 approve/rollback 点位映射或 dispatchMode 未配置为 assisted。",
     "当前草案仍存在部分降级或缺测信号，建议先稳住风险后再评审优化空间。",
     "当前 BFF 未接入末端阀位、关键压差或室温；shadow 可评审，assisted 前必须由 PLC 提供等效保护状态。",
     "当前 BFF 未接入泵实际频率；执行前必须由 PLC 完成频率上下限、斜率和最小流量保护。",
     "assisted 前必须确认 PLC 本地限幅、斜率、最小流量和联锁保护。",
-    "tower actions 未显式写明“不写 PLC”。",
-    "存在历史已批准 tower shadow 旧记录：opx-140-1781493919710-zwt0ak"
+    "存在历史已批准 tower shadow 旧记录：opx-140-1781576068903-ag7ns3"
   ],
   "reportFiles": {
     "json": "docs/optimize-demo-140-shadow-suite-latest.json",

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-16T05:16:06.006Z",
+  "generatedAt": "2026-06-16T05:25:01.460Z",
   "site": {
     "siteId": "140",
     "siteCode": "btwentyfive",
@@ -13,8 +13,8 @@
   "shadowReadinessStatus": "GO",
   "optimizeInputs": {
     "inputs": {
-      "loadKw": 12898.2,
-      "outdoorTempC": 25.8,
+      "loadKw": 12979.5,
+      "outdoorTempC": 25.9,
       "mode": "cooling"
     },
     "notes": [
@@ -24,21 +24,21 @@
   },
   "telemetry": {
     "systemCop": 6.6,
-    "totalPowerKw": 1941.1,
-    "totalCoolingCapacity": 12898.2,
-    "currentLoadRate": 50.9,
-    "coolingReturnTemp": 28.5,
-    "coolingDeltaT": 4.8,
-    "calculatedTcwsC": 28.5,
-    "outdoorWetBulbC": 25.5,
-    "calculatedApproachC": 3,
-    "advisorApproachC": 3,
-    "advisorTargetApproachC": 3.5,
-    "advisorTargetTcwsC": 29,
+    "totalPowerKw": 1940.3,
+    "totalCoolingCapacity": 12979.5,
+    "currentLoadRate": 51.3,
+    "coolingReturnTemp": 28.3,
+    "coolingDeltaT": 4.7,
+    "calculatedTcwsC": 28.3,
+    "outdoorWetBulbC": 25.6,
+    "calculatedApproachC": 2.7,
+    "advisorApproachC": 2.7,
+    "advisorTargetApproachC": 3.2,
+    "advisorTargetTcwsC": 28.8,
     "coolingTowerPowerKw": 59.5,
-    "chillerPowerKw": 1630.4,
-    "thermalUnbalanceRateRaw": 10.6,
-    "thermalUnbalancePct": 10.6,
+    "chillerPowerKw": 1630.2,
+    "thermalUnbalanceRateRaw": 11.1,
+    "thermalUnbalancePct": 11.1,
     "activeAlarmCount": 8
   },
   "advisor": {
@@ -52,13 +52,13 @@
     "blockers": [],
     "warnings": [
       "历史样本置信度低，节能评估需 shadow 对比验证。",
-      "最终冷却水出水温目标 30℃ 需分 3 步 shadow 验证，本次仅提交 29℃。"
+      "最终冷却水出水温目标 30℃ 需分 4 步 shadow 验证，本次仅提交 28.8℃。"
     ],
     "inputSignals": [
       {
         "key": "outdoorWetBulbC",
         "label": "室外湿球温度",
-        "value": 25.5,
+        "value": 25.6,
         "unit": "℃",
         "required": true,
         "ok": true,
@@ -67,7 +67,7 @@
       {
         "key": "currentTcwsC",
         "label": "冷却水出水温",
-        "value": 28.5,
+        "value": 28.3,
         "unit": "℃",
         "required": true,
         "ok": true,
@@ -76,7 +76,7 @@
       {
         "key": "currentApproachC",
         "label": "当前接近度",
-        "value": 3,
+        "value": 2.7,
         "unit": "℃",
         "required": true,
         "ok": true,
@@ -94,7 +94,7 @@
       {
         "key": "chillerRunningState",
         "label": "冷机运行状态",
-        "value": 1630.4,
+        "value": 1630.2,
         "unit": "kW",
         "required": true,
         "ok": true,
@@ -103,7 +103,7 @@
       {
         "key": "totalPowerKw",
         "label": "系统总功率",
-        "value": 1941.1,
+        "value": 1940.3,
         "unit": "kW",
         "required": true,
         "ok": true,
@@ -138,7 +138,7 @@
         "key": "towerControlStep",
         "status": "ready",
         "value": "≤0.5℃/step",
-        "message": "最终目标触及最低冷凝器进水温，已拆分为 3 步 shadow；本次目标变化不超过 0.5℃。"
+        "message": "最终目标触及最低冷凝器进水温，已拆分为 4 步 shadow；本次目标变化不超过 0.5℃。"
       },
       {
         "key": "plcControlPointMapping",
@@ -158,15 +158,15 @@
       "rollbackMapped": true
     },
     "outputTargets": {
-      "targetApproachC": 3.5,
-      "targetTcwsC": 29,
-      "finalTargetApproachC": 4.5,
+      "targetApproachC": 3.2,
+      "targetTcwsC": 28.8,
+      "finalTargetApproachC": 4.4,
       "finalTargetTcwsC": 30,
-      "nextStepTargetApproachC": 3.5,
-      "nextStepTargetTcwsC": 29,
-      "rawTargetApproachC": 2.8,
-      "currentApproachC": 3,
-      "currentTcwsC": 28.5,
+      "nextStepTargetApproachC": 3.2,
+      "nextStepTargetTcwsC": 28.8,
+      "rawTargetApproachC": 2.5,
+      "currentApproachC": 2.7,
+      "currentTcwsC": 28.3,
       "targetBandC": {
         "low": 1.8,
         "high": 3.8,
@@ -176,26 +176,31 @@
         "required": true,
         "reason": "min_condenser_guardrail",
         "finalTargetTcwsC": 30,
-        "finalTargetApproachC": 4.5,
-        "nextStepTargetTcwsC": 29,
-        "nextStepTargetApproachC": 3.5,
-        "stepCount": 3,
+        "finalTargetApproachC": 4.4,
+        "nextStepTargetTcwsC": 28.8,
+        "nextStepTargetApproachC": 3.2,
+        "stepCount": 4,
         "maxStepC": 0.5,
         "steps": [
           {
             "index": 1,
-            "targetTcwsC": 29,
-            "targetApproachC": 3.5
+            "targetTcwsC": 28.8,
+            "targetApproachC": 3.2
           },
           {
             "index": 2,
-            "targetTcwsC": 29.5,
-            "targetApproachC": 4
+            "targetTcwsC": 29.3,
+            "targetApproachC": 3.7
           },
           {
             "index": 3,
+            "targetTcwsC": 29.8,
+            "targetApproachC": 4.2
+          },
+          {
+            "index": 4,
             "targetTcwsC": 30,
-            "targetApproachC": 4.5
+            "targetApproachC": 4.4
           }
         ]
       },
@@ -232,9 +237,9 @@
   },
   "executionGovernance": {
     "listOk": true,
-    "total": 6,
-    "latestExecutionId": "opx-140-1781576068903-ag7ns3",
-    "latestStatus": "approved"
+    "total": 7,
+    "latestExecutionId": "opx-140-1781587399486-17y2n9",
+    "latestStatus": "pending_approval"
   },
   "sourceEvidence": {
     "dashboard": {
@@ -415,28 +420,28 @@
         "key": "system_power",
         "label": "系统总功率",
         "status": "ready",
-        "evidence": "totalPowerKw=1941.1 kW",
+        "evidence": "totalPowerKw=1940.3 kW",
         "recoveryAction": "核对冷站总电表、主机/泵/塔功率汇总点和 Dashboard 能源卡片映射。"
       },
       {
         "key": "cooling_load",
         "label": "系统总冷量",
         "status": "ready",
-        "evidence": "totalCoolingCapacity=12898.2 kW",
+        "evidence": "totalCoolingCapacity=12979.5 kW",
         "recoveryAction": "核对冷冻水总流量、供回水温差、冷量计算和额定冷量配置。"
       },
       {
         "key": "tcws",
         "label": "冷却水出水/Tcws",
         "status": "ready",
-        "evidence": "coolingReturnTemp=28.5℃ / signal=ok",
+        "evidence": "coolingReturnTemp=28.3℃ / signal=ok",
         "recoveryAction": "核对冷却塔出水、冷机冷凝器进水或冷却回水点位；确认物理位置和单位。"
       },
       {
         "key": "wet_bulb_live",
         "label": "实时湿球",
         "status": "ready",
-        "evidence": "outdoorWetBulbC=25.5℃ / signal=ok",
+        "evidence": "outdoorWetBulbC=25.6℃ / signal=ok",
         "recoveryAction": "核对室外湿球点位、气象站通讯和湿球计算来源；缺失时 Approach 只能只读。"
       },
       {
@@ -465,7 +470,7 @@
   "blockers": [],
   "warnings": [
     "历史样本置信度低，节能评估需 shadow 对比验证。",
-    "最终冷却水出水温目标 30℃ 需分 3 步 shadow 验证，本次仅提交 29℃。",
+    "最终冷却水出水温目标 30℃ 需分 4 步 shadow 验证，本次仅提交 28.8℃。",
     "当前活动告警 8 条，shadow 前需确认无严重告警、传感器冻结或塔风机反馈异常。"
   ],
   "humanIntervention": [

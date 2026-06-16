@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-16T05:15:25.590Z",
+  "generatedAt": "2026-06-16T05:24:25.302Z",
   "siteId": "140",
   "finalDecision": "FIELD_DATA_PROMOTE_WAITING_FOR_PREFLIGHT",
   "scope": "optimize_demo_140_field_data_promote_to_formal_ledger",
@@ -8,7 +8,7 @@
   "preflight": {
     "reportPath": "docs/optimize-demo-140-field-data-preflight-latest.json",
     "finalDecision": "FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS",
-    "generatedAt": "2026-06-16T05:15:25.517Z"
+    "generatedAt": "2026-06-16T05:24:25.231Z"
   },
   "inputs": [
     {
