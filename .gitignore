@@ -24,6 +24,7 @@ outputs/
 dashboard-current-page-text.json
 optimize-demo-diagnostic-showcase.png
 docs/field-data/optimize-demo-140-field-collection-package-*/
+docs/fcu-field-remediation-signoff-input-latest-backup-*.csv
 
 # local ad-hoc backup copies
 apps/*备份/
