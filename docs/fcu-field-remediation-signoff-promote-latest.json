@@ -1,0 +1,29 @@
+{
+  "ok": true,
+  "generatedAt": "2026-06-18T11:06:25.186Z",
+  "scope": "fcu_field_remediation_signoff_input_promote",
+  "mode": "dry_run",
+  "controlMutation": false,
+  "fileMutation": false,
+  "confirmMatched": false,
+  "confirmRequired": "I_APPROVE_REPLACE_FCU_SIGNOFF_INPUT",
+  "issues": [],
+  "summary": {
+    "currentRows": 8,
+    "staleRows": 1,
+    "generatedMissingRows": 0
+  },
+  "source": {
+    "cleanJson": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-clean-input-latest.json",
+    "currentCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-current-only-latest.csv",
+    "staleCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-stale-rows-latest.csv"
+  },
+  "target": {
+    "signoffInputCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-input-latest.csv",
+    "backupCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-input-latest-backup-20260618110625.csv"
+  },
+  "outputs": {
+    "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-promote-latest.json",
+    "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-promote-latest.md"
+  }
+}

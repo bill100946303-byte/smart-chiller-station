@@ -1,0 +1,267 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-18T01:41:38.183Z",
+  "siteId": "126lnoffice",
+  "scope": "fcu_canary_execution_package",
+  "controlMutation": false,
+  "verdict": "canary_package_ready_with_open_gates",
+  "canary": {
+    "deviceCode": "BGS01",
+    "deviceName": "办公室01",
+    "zoneTemperatureC": 26,
+    "setpointC": 24,
+    "running": false,
+    "primaryCommand": {
+      "kind": "setpoint",
+      "commandType": "setpoint",
+      "pointKey": "setpoint",
+      "pointName": "设置温度",
+      "tagName": "BGS01-508-40133",
+      "value": 25.5,
+      "unit": "°C"
+    },
+    "secondaryCommand": {
+      "kind": "fan_speed",
+      "commandType": "fan_speed",
+      "pointKey": "fanSpeedMode",
+      "pointName": "风速模式",
+      "tagName": "BGS01-508-40131",
+      "value": "auto",
+      "unit": null
+    },
+    "executionCommand": "FCU_CANARY_DEVICE_CODE=BGS01 FCU_CANARY_COMMAND_KIND=setpoint FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE npm --prefix apps/chiller-bff run execute:fcu-canary-dispatch",
+    "rollbackCommand": "如执行报告生成 recordId：npm --prefix apps/chiller-bff run rollback:fcu-small-batch-dispatch -- --record-id=<recordId>"
+  },
+  "requiredEnv": {
+    "FCU_CANARY_DEVICE_CODE": "BGS01",
+    "FCU_CANARY_COMMAND_KIND": "setpoint",
+    "FCU_SMALL_BATCH_CONFIRM": "I_UNDERSTAND_REAL_BA_WRITE",
+    "READ_ONLY_MODE": "false",
+    "CHILLER_READ_ONLY_MODE": "false"
+  },
+  "preconditions": [
+    {
+      "key": "go_live_preflight",
+      "label": "上线前预检",
+      "passed": false,
+      "evidence": "go_live_blocked",
+      "action": "npm --prefix apps/chiller-bff run check:fcu-go-live-preflight"
+    },
+    {
+      "key": "field_arm",
+      "label": "现场 Arm-Check",
+      "passed": false,
+      "evidence": "field_arm_blocked",
+      "action": "npm --prefix apps/chiller-bff run check:fcu-field-arm"
+    },
+    {
+      "key": "canary_queue",
+      "label": "Canary 队列",
+      "passed": true,
+      "evidence": "target=BGS01, first=BGS01 devices=2",
+      "action": "npm --prefix apps/chiller-bff run build:fcu-canary-queue"
+    },
+    {
+      "key": "canary_quality",
+      "label": "首台数据质量",
+      "passed": true,
+      "evidence": "not_in_p0_quality_list",
+      "action": "如为 P0，先按 docs/fcu-quality-remediation-latest.csv 完成现场整改。"
+    },
+    {
+      "key": "ba_write_confirm",
+      "label": "BA 写入二次确认",
+      "passed": false,
+      "evidence": "requires FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE",
+      "action": "export FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE"
+    },
+    {
+      "key": "backend_write_gate",
+      "label": "BFF 写入总闸",
+      "passed": false,
+      "evidence": "requires /healthz readOnlyMode=false",
+      "action": "READ_ONLY_MODE=false CHILLER_READ_ONLY_MODE=false npm --prefix apps/chiller-bff run dev"
+    }
+  ],
+  "blockers": [
+    {
+      "key": "go_live_preflight",
+      "label": "上线前预检",
+      "message": "go_live_blocked",
+      "action": "npm --prefix apps/chiller-bff run check:fcu-go-live-preflight"
+    },
+    {
+      "key": "field_arm",
+      "label": "现场 Arm-Check",
+      "message": "field_arm_blocked",
+      "action": "npm --prefix apps/chiller-bff run check:fcu-field-arm"
+    },
+    {
+      "key": "ba_write_confirm",
+      "label": "BA 写入二次确认",
+      "message": "requires FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE",
+      "action": "export FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE"
+    },
+    {
+      "key": "backend_write_gate",
+      "label": "BFF 写入总闸",
+      "message": "requires /healthz readOnlyMode=false",
+      "action": "READ_ONLY_MODE=false CHILLER_READ_ONLY_MODE=false npm --prefix apps/chiller-bff run dev"
+    },
+    {
+      "key": "execution_gate_open",
+      "label": "全局真实下发闸门打开",
+      "severity": "P0"
+    },
+    {
+      "key": "confirm_phrase_present",
+      "label": "真实写入确认短语",
+      "severity": "P0"
+    }
+  ],
+  "feedbackChecks": [
+    {
+      "key": "record_status",
+      "check": "执行报告 verification.recordStatus",
+      "expected": "feedback_confirmed"
+    },
+    {
+      "key": "completion_milestone",
+      "check": "docs/fcu-final-control-completion-latest.json milestones.canary.ok",
+      "expected": "true"
+    },
+    {
+      "key": "control_mutation",
+      "check": "Canary 执行报告 controlMutation",
+      "expected": "true，仅在授权真实写入窗口内允许"
+    },
+    {
+      "key": "no_rollback",
+      "check": "执行报告 rollback / blockers",
+      "expected": "无 rollback，阻断项为空"
+    }
+  ],
+  "rollbackTriggers": [
+    "60-120 秒内反馈未变更为 feedback_confirmed",
+    "反馈值与执行单目标不一致或 verify-feedback 返回 mismatch/failed",
+    "通讯报警、0°C/越界温度、就地/手动模式、本地锁定任一出现",
+    "现场人员报告投诉、禁控或面板抢控制",
+    "回退失败时进入 rollback_watch，禁止继续 Canary 或扩批"
+  ],
+  "acceptance": [
+    "BGS01 单台真实写入执行报告 mode=confirmed_canary_dispatch",
+    "verification.recordStatus=feedback_confirmed",
+    "最终完成度检查 canary.ok=true 且 canary.feedbackStatus=feedback_confirmed",
+    "无通讯报警、无 0°C/越界温度、无本地手动抢控制",
+    "审计记录包含 actor、recordId、deviceCode、command、dispatchReceipt、feedback verification"
+  ],
+  "evidence": {
+    "queue": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-queue-latest.json",
+      "summary": {
+        "plannedDevices": 2,
+        "readyPrimaryCommands": 2,
+        "readySecondaryCommands": 2,
+        "firstCanary": "BGS01",
+        "requiresPreflightGo": true,
+        "requiresFeedbackBeforeNext": true
+      },
+      "error": null
+    },
+    "smallBatchPlan": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-small-batch-dispatch-plan-latest.json",
+      "summary": {
+        "total": 29,
+        "ready": 0,
+        "environmentBlocked": 20,
+        "deviceBlocked": 9,
+        "notFound": 0,
+        "deviceReady": 20,
+        "canDispatch": 0,
+        "plannedDevices": 2,
+        "previewReadyDevices": 2
+      },
+      "error": null
+    },
+    "preflight": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-go-live-preflight-latest.json",
+      "verdict": "go_live_blocked",
+      "error": null
+    },
+    "fieldArm": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-arm-check-latest.json",
+      "verdict": "field_arm_blocked",
+      "error": null
+    },
+    "runbook": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-runbook-latest.json",
+      "scope": {
+        "whitelist": [
+          "BGS01",
+          "BGS02",
+          "BGS03",
+          "BGS04",
+          "BGS05",
+          "BGS06",
+          "CWS",
+          "DHYS",
+          "DTT",
+          "GCBGQ01",
+          "GCBGQ02",
+          "GCBGQ03",
+          "JDS",
+          "LZBGS",
+          "QT01",
+          "QT02",
+          "QTS",
+          "SYS",
+          "TNFBQ01",
+          "TNFBQ02",
+          "WSJ01",
+          "WSJ02",
+          "XZBGS",
+          "YFBGQ01",
+          "YFBGQ02",
+          "YFBGQ03",
+          "YFBGQ04",
+          "ZHYS",
+          "ZZBGS"
+        ],
+        "plannedDevices": [
+          "BGS01",
+          "LZBGS"
+        ],
+        "canaryDevice": "BGS01",
+        "canaryCommandKind": "setpoint",
+        "canaryCommand": {
+          "setpointC": 25.5
+        }
+      },
+      "error": null
+    },
+    "quality": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-quality-remediation-latest.json",
+      "summary": {
+        "total": 29,
+        "remediationCount": 9,
+        "p0Count": 9,
+        "canCompleteFinalControl": false,
+        "communicationAlarmCount": 9,
+        "zeroTemperatureCount": 4,
+        "invalidTemperatureCount": 4
+      },
+      "error": null
+    }
+  },
+  "outputs": {
+    "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-bgs01.json",
+    "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-bgs01.md",
+    "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-bgs01.csv"
+  }
+}

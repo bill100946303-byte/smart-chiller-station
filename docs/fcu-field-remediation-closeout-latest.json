@@ -1,0 +1,294 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-20T04:31:47.528Z",
+  "scope": "fcu_field_remediation_closeout",
+  "siteId": "126lnoffice",
+  "build": "1",
+  "floor": "1",
+  "verdict": "field_remediation_open",
+  "controlMutation": false,
+  "dispatch": false,
+  "summary": {
+    "qualityClosed": false,
+    "planReady": false,
+    "readyForCanary": false,
+    "evidenceIncomplete": false,
+    "remainingDeviceCount": 8,
+    "qualityP0Count": 8,
+    "planBlockedCount": 8,
+    "plannedDeviceCount": 21,
+    "firstCanary": "BGS01"
+  },
+  "remainingDevices": [
+    {
+      "priority": "P0",
+      "deviceCode": "BGS03",
+      "deviceName": "办公室03",
+      "status": "blocked",
+      "zoneTemperatureC": 0,
+      "setpointC": 0,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "reasons": [
+        "communication_alarm",
+        "zero_temperature",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 BGS03-502-40078 是否仍为 1。",
+        "核对内置温度点 BGS03-506-40219，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 BGS03-506-40219，缺温度时禁止进入闭环。",
+        "复核设定反馈点 BGS03-506-40223，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ]
+    },
+    {
+      "priority": "P0",
+      "deviceCode": "BGS04",
+      "deviceName": "办公室04",
+      "status": "blocked",
+      "zoneTemperatureC": 0,
+      "setpointC": 0,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "reasons": [
+        "communication_alarm",
+        "zero_temperature",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 BGS04-502-40158 是否仍为 1。",
+        "核对内置温度点 BGS04-506-40539，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 BGS04-506-40539，缺温度时禁止进入闭环。",
+        "复核设定反馈点 BGS04-506-40543，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ]
+    },
+    {
+      "priority": "P0",
+      "deviceCode": "BGS06",
+      "deviceName": "办公室06",
+      "status": "blocked",
+      "zoneTemperatureC": 22,
+      "setpointC": 24,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "reasons": [
+        "communication_alarm"
+      ],
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 BGS06-502-40166 是否仍为 1。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "priority": "P0",
+      "deviceCode": "GCBGQ03",
+      "deviceName": "工程办公区03",
+      "status": "blocked",
+      "zoneTemperatureC": 31,
+      "setpointC": 19,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "reasons": [
+        "communication_alarm",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 GCBGQ03-502-40150 是否仍为 1。",
+        "复核设定反馈点 GCBGQ03-506-40511，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "priority": "P0",
+      "deviceCode": "QT02",
+      "deviceName": "前厅02",
+      "status": "blocked",
+      "zoneTemperatureC": 26,
+      "setpointC": 26,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "reasons": [
+        "communication_alarm"
+      ],
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 QT02-502-40122 是否仍为 1。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "priority": "P0",
+      "deviceCode": "WSJ02",
+      "deviceName": "卫生间02",
+      "status": "blocked",
+      "zoneTemperatureC": 0,
+      "setpointC": 0,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "reasons": [
+        "communication_alarm",
+        "zero_temperature",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 WSJ02-502-40130 是否仍为 1。",
+        "核对内置温度点 WSJ02-506-40427，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 WSJ02-506-40427，缺温度时禁止进入闭环。",
+        "复核设定反馈点 WSJ02-506-40431，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ]
+    },
+    {
+      "priority": "P0",
+      "deviceCode": "ZHYS",
+      "deviceName": "中会议室",
+      "status": "blocked",
+      "zoneTemperatureC": 0,
+      "setpointC": 0,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "reasons": [
+        "communication_alarm",
+        "zero_temperature",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 ZHYS-502-40170 是否仍为 1。",
+        "核对内置温度点 ZHYS-506-40587，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 ZHYS-506-40587，缺温度时禁止进入闭环。",
+        "复核设定反馈点 ZHYS-506-40591，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ]
+    },
+    {
+      "priority": "P0",
+      "deviceCode": "ZZBGS",
+      "deviceName": "周总",
+      "status": "blocked",
+      "zoneTemperatureC": 24,
+      "setpointC": 35,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "reasons": [
+        "communication_alarm",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 ZZBGS-502-40082 是否仍为 1。",
+        "复核设定反馈点 ZZBGS-506-40239，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    }
+  ],
+  "releaseGate": {
+    "canProceedToCanary": false,
+    "requiredBeforeCanary": [
+      "关闭所有 P0 现场消缺项",
+      "全量分批计划 blocked=0 且存在 plannedDeviceCount"
+    ]
+  },
+  "evidence": {
+    "qualityRemediation": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-quality-remediation-latest.json",
+      "reportOk": true,
+      "error": null
+    },
+    "allDevicePlan": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-all-device-dispatch-plan-latest.json",
+      "reportOk": true,
+      "error": null
+    }
+  },
+  "outputs": {
+    "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-closeout-latest.json",
+    "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-closeout-latest.md",
+    "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-closeout-latest.csv"
+  }
+}

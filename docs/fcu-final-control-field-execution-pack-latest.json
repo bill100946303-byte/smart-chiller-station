@@ -1,0 +1,486 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-18T11:06:25.521Z",
+  "scope": "fcu_final_control_field_execution_pack",
+  "siteId": "126lnoffice",
+  "controlMutation": false,
+  "dispatch": false,
+  "summary": {
+    "totalDevices": 8,
+    "openDevices": 8,
+    "onsiteCanaryCandidateDevices": 0,
+    "canaryReadyDevices": 0,
+    "signoffCompleteRows": 0,
+    "signoffExpectedRows": 8,
+    "finalGatePassed": false,
+    "canaryReady": false,
+    "finalReleaseChecklistReady": 0,
+    "finalReleaseChecklistTotal": 4,
+    "firstBlocker": "现场签核",
+    "nextAction": "全部当前工单 release 后重跑 signoff。"
+  },
+  "sourceFiles": {
+    "finalWorklist": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-worklist-latest.json",
+    "runbook": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-runbook-latest.json",
+    "handoff": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-handoff-pack-latest.json",
+    "signoff": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-latest.json",
+    "canaryReadiness": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-readiness-latest.json"
+  },
+  "outputFiles": {
+    "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-field-execution-pack-latest.json",
+    "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-field-execution-pack-latest.md",
+    "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-field-execution-pack-latest.csv"
+  },
+  "finalReleaseChecklist": [
+    {
+      "key": "signoff",
+      "label": "现场签核",
+      "ok": false,
+      "detail": "0/8",
+      "action": "全部当前工单 release 后重跑 signoff。"
+    },
+    {
+      "key": "closeout",
+      "label": "实时 closeout",
+      "ok": false,
+      "detail": "P0 8 台",
+      "action": "关闭 P0 消缺并重跑 closeout。"
+    },
+    {
+      "key": "canary-readiness",
+      "label": "Canary readiness",
+      "ok": false,
+      "detail": "canary_blocked",
+      "action": "填写并复核 fcu-field-remediation-signoff-input-latest.csv 后重跑 check:fcu-field-remediation-signoff"
+    },
+    {
+      "key": "final-gate",
+      "label": "最终总门禁",
+      "ok": false,
+      "detail": "0/8",
+      "action": "最终总门禁未全绿前禁止真实 BA 写入。"
+    }
+  ],
+  "deviceQueue": [
+    {
+      "sequence": 1,
+      "workOrderId": "FCU-P0-BGS03",
+      "deviceCode": "BGS03",
+      "deviceName": "办公室03",
+      "owner": "BA/自控工程师",
+      "canEnterCanary": false,
+      "signoffComplete": false,
+      "onsiteCanaryCandidate": false,
+      "reasons": [
+        "通讯报警",
+        "0°C异常",
+        "温度无效",
+        "温度质量门槛",
+        "设定反馈越界"
+      ],
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ],
+      "requiredReturnFields": {
+        "handledBy": "必填",
+        "handledAt": "必填",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "必填：5-45",
+        "setpointFeedbackAfterC": "必填：10-32",
+        "writePointMappingChecked": "yes",
+        "twoSampleNormal": "yes",
+        "localManualLockout": "none",
+        "releaseDecision": "release",
+        "reviewedBy": "必填",
+        "reviewedAt": "必填"
+      },
+      "canaryBlockReason": "signoff_incomplete"
+    },
+    {
+      "sequence": 2,
+      "workOrderId": "FCU-P0-BGS04",
+      "deviceCode": "BGS04",
+      "deviceName": "办公室04",
+      "owner": "BA/自控工程师",
+      "canEnterCanary": false,
+      "signoffComplete": false,
+      "onsiteCanaryCandidate": false,
+      "reasons": [
+        "通讯报警",
+        "0°C异常",
+        "温度无效",
+        "温度质量门槛",
+        "设定反馈越界"
+      ],
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ],
+      "requiredReturnFields": {
+        "handledBy": "必填",
+        "handledAt": "必填",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "必填：5-45",
+        "setpointFeedbackAfterC": "必填：10-32",
+        "writePointMappingChecked": "yes",
+        "twoSampleNormal": "yes",
+        "localManualLockout": "none",
+        "releaseDecision": "release",
+        "reviewedBy": "必填",
+        "reviewedAt": "必填"
+      },
+      "canaryBlockReason": "signoff_incomplete"
+    },
+    {
+      "sequence": 3,
+      "workOrderId": "FCU-P0-BGS06",
+      "deviceCode": "BGS06",
+      "deviceName": "办公室06",
+      "owner": "BA/自控工程师",
+      "canEnterCanary": false,
+      "signoffComplete": false,
+      "onsiteCanaryCandidate": false,
+      "reasons": [
+        "通讯报警"
+      ],
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ],
+      "requiredReturnFields": {
+        "handledBy": "必填",
+        "handledAt": "必填",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "可选",
+        "setpointFeedbackAfterC": "可选",
+        "writePointMappingChecked": "yes",
+        "twoSampleNormal": "yes",
+        "localManualLockout": "none",
+        "releaseDecision": "release",
+        "reviewedBy": "必填",
+        "reviewedAt": "必填"
+      },
+      "canaryBlockReason": "signoff_incomplete"
+    },
+    {
+      "sequence": 4,
+      "workOrderId": "FCU-P0-GCBGQ03",
+      "deviceCode": "GCBGQ03",
+      "deviceName": "工程办公区03",
+      "owner": "BA/自控工程师",
+      "canEnterCanary": false,
+      "signoffComplete": false,
+      "onsiteCanaryCandidate": false,
+      "reasons": [
+        "通讯报警",
+        "设定反馈越界"
+      ],
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ],
+      "requiredReturnFields": {
+        "handledBy": "必填",
+        "handledAt": "必填",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "可选",
+        "setpointFeedbackAfterC": "可选",
+        "writePointMappingChecked": "yes",
+        "twoSampleNormal": "yes",
+        "localManualLockout": "none",
+        "releaseDecision": "release",
+        "reviewedBy": "必填",
+        "reviewedAt": "必填"
+      },
+      "canaryBlockReason": "signoff_incomplete"
+    },
+    {
+      "sequence": 5,
+      "workOrderId": "FCU-P0-QT02",
+      "deviceCode": "QT02",
+      "deviceName": "前厅02",
+      "owner": "BA/自控工程师",
+      "canEnterCanary": false,
+      "signoffComplete": false,
+      "onsiteCanaryCandidate": false,
+      "reasons": [
+        "通讯报警"
+      ],
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ],
+      "requiredReturnFields": {
+        "handledBy": "必填",
+        "handledAt": "必填",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "可选",
+        "setpointFeedbackAfterC": "可选",
+        "writePointMappingChecked": "yes",
+        "twoSampleNormal": "yes",
+        "localManualLockout": "none",
+        "releaseDecision": "release",
+        "reviewedBy": "必填",
+        "reviewedAt": "必填"
+      },
+      "canaryBlockReason": "signoff_incomplete"
+    },
+    {
+      "sequence": 6,
+      "workOrderId": "FCU-P0-WSJ02",
+      "deviceCode": "WSJ02",
+      "deviceName": "卫生间02",
+      "owner": "BA/自控工程师",
+      "canEnterCanary": false,
+      "signoffComplete": false,
+      "onsiteCanaryCandidate": false,
+      "reasons": [
+        "通讯报警",
+        "0°C异常",
+        "温度无效",
+        "温度质量门槛",
+        "设定反馈越界"
+      ],
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ],
+      "requiredReturnFields": {
+        "handledBy": "必填",
+        "handledAt": "必填",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "必填：5-45",
+        "setpointFeedbackAfterC": "必填：10-32",
+        "writePointMappingChecked": "yes",
+        "twoSampleNormal": "yes",
+        "localManualLockout": "none",
+        "releaseDecision": "release",
+        "reviewedBy": "必填",
+        "reviewedAt": "必填"
+      },
+      "canaryBlockReason": "signoff_incomplete"
+    },
+    {
+      "sequence": 7,
+      "workOrderId": "FCU-P0-ZHYS",
+      "deviceCode": "ZHYS",
+      "deviceName": "中会议室",
+      "owner": "BA/自控工程师",
+      "canEnterCanary": false,
+      "signoffComplete": false,
+      "onsiteCanaryCandidate": false,
+      "reasons": [
+        "通讯报警",
+        "0°C异常",
+        "温度无效",
+        "温度质量门槛",
+        "设定反馈越界"
+      ],
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ],
+      "requiredReturnFields": {
+        "handledBy": "必填",
+        "handledAt": "必填",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "必填：5-45",
+        "setpointFeedbackAfterC": "必填：10-32",
+        "writePointMappingChecked": "yes",
+        "twoSampleNormal": "yes",
+        "localManualLockout": "none",
+        "releaseDecision": "release",
+        "reviewedBy": "必填",
+        "reviewedAt": "必填"
+      },
+      "canaryBlockReason": "signoff_incomplete"
+    },
+    {
+      "sequence": 8,
+      "workOrderId": "FCU-P0-ZZBGS",
+      "deviceCode": "ZZBGS",
+      "deviceName": "周总",
+      "owner": "BA/自控工程师",
+      "canEnterCanary": false,
+      "signoffComplete": false,
+      "onsiteCanaryCandidate": false,
+      "reasons": [
+        "通讯报警",
+        "设定反馈越界"
+      ],
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ],
+      "requiredReturnFields": {
+        "handledBy": "必填",
+        "handledAt": "必填",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "可选",
+        "setpointFeedbackAfterC": "必填：10-32",
+        "writePointMappingChecked": "yes",
+        "twoSampleNormal": "yes",
+        "localManualLockout": "none",
+        "releaseDecision": "release",
+        "reviewedBy": "必填",
+        "reviewedAt": "必填"
+      },
+      "canaryBlockReason": "signoff_incomplete"
+    }
+  ],
+  "safetyBoundary": [
+    "本现场执行包只用于最终控制投运前的现场签核和证据核对。",
+    "本脚本不调用 control-cycle、control-command、Canary dispatch 或任何 BA/PLC 写入接口。",
+    "deviceQueue 中 canEnterCanary=true 也不等于允许真实下发。",
+    "必须由 3001 单台确认、后端总闸、审计和反馈回退共同放行。"
+  ]
+}

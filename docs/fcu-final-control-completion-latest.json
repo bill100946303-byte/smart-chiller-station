@@ -1,0 +1,321 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-20T04:31:52.303Z",
+  "siteId": "126lnoffice",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "scope": "fcu_all_device_final_control",
+  "verdict": "final_control_incomplete",
+  "controlMutation": false,
+  "milestones": {
+    "canary": {
+      "ok": false,
+      "deviceCode": "BGS01",
+      "feedbackStatus": null
+    },
+    "smallBatch": {
+      "ok": false,
+      "devices": 0,
+      "feedbackConfirmed": false
+    },
+    "allDevice": {
+      "ok": false,
+      "targetDevices": 29,
+      "confirmedDevices": 0,
+      "confirmedDeviceCodes": []
+    }
+  },
+  "rolloutPlan": {
+    "ok": true,
+    "total": 29,
+    "deviceReady": 9,
+    "immediateReady": 9,
+    "stagedSetpoint": 12,
+    "blocked": 8,
+    "canCompleteAllNow": false,
+    "firstCanary": "BGS01",
+    "waveCount": 4,
+    "blockingByReason": [
+      {
+        "reason": "communication_alarm",
+        "count": 8
+      },
+      {
+        "reason": "invalid_temperature",
+        "count": 8
+      },
+      {
+        "reason": "temperature_quality_guard",
+        "count": 8
+      },
+      {
+        "reason": "setpoint_feedback_out_of_bounds",
+        "count": 6
+      },
+      {
+        "reason": "setpoint_feedback_valid",
+        "count": 6
+      }
+    ]
+  },
+  "qualityRemediation": {
+    "ok": true,
+    "remediationCount": 20,
+    "p0Count": 8,
+    "canCompleteFinalControl": false,
+    "reasonCounts": [
+      {
+        "reason": "setpoint_feedback_out_of_bounds",
+        "count": 18
+      },
+      {
+        "reason": "communication_alarm",
+        "count": 8
+      },
+      {
+        "reason": "zero_temperature",
+        "count": 4
+      },
+      {
+        "reason": "invalid_temperature",
+        "count": 4
+      },
+      {
+        "reason": "temperature_quality_guard",
+        "count": 4
+      }
+    ],
+    "deviceCodes": [
+      "BGS02",
+      "BGS03",
+      "BGS04",
+      "BGS06",
+      "CWS",
+      "DHYS",
+      "GCBGQ01",
+      "GCBGQ02",
+      "GCBGQ03",
+      "JDS",
+      "QT01",
+      "QT02",
+      "QTS",
+      "SYS",
+      "TNFBQ01",
+      "TNFBQ02",
+      "WSJ02",
+      "XZBGS",
+      "ZHYS",
+      "ZZBGS"
+    ]
+  },
+  "firstCanary": "WSJ01",
+  "canaryDevice": "BGS01",
+  "canaryRecordId": null,
+  "canaryVerificationStatus": null,
+  "smallBatchStatus": {
+    "present": true,
+    "ok": false,
+    "mode": "blocked_before_dispatch",
+    "controlMutation": false
+  },
+  "checks": [
+    {
+      "key": "bff_health",
+      "label": "BFF 服务在线",
+      "ok": true,
+      "severity": "P0",
+      "message": "BFF /healthz 可读取。",
+      "evidence": {
+        "status": 200,
+        "url": "http://127.0.0.1:8787/healthz"
+      }
+    },
+    {
+      "key": "backend_write_gate",
+      "label": "后端写入总闸",
+      "ok": false,
+      "severity": "P0",
+      "message": "readOnlyMode=true 或无法确认。",
+      "readOnlyMode": true
+    },
+    {
+      "key": "field_arm_report_present",
+      "label": "Arm-Check 报告存在",
+      "ok": true,
+      "severity": "P0",
+      "message": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-arm-check-latest.json"
+    },
+    {
+      "key": "field_arm_ready",
+      "label": "现场 Arm-Check ready",
+      "ok": false,
+      "severity": "P0",
+      "message": "ok=false, verdict=field_arm_blocked"
+    },
+    {
+      "key": "canary_report_present",
+      "label": "Canary 报告存在",
+      "ok": true,
+      "severity": "P0",
+      "message": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-dispatch-latest.json"
+    },
+    {
+      "key": "canary_device_matches",
+      "label": "首台 Canary 设备一致",
+      "ok": false,
+      "severity": "P0",
+      "message": "firstCanary=WSJ01, canaryDevice=BGS01"
+    },
+    {
+      "key": "canary_dispatch_confirmed",
+      "label": "首台真实下发完成",
+      "ok": false,
+      "severity": "P0",
+      "message": "ok=false, mode=blocked_before_canary_dispatch, controlMutation=false"
+    },
+    {
+      "key": "canary_feedback_confirmed",
+      "label": "首台反馈确认",
+      "ok": false,
+      "severity": "P0",
+      "message": "verification.recordStatus=--"
+    },
+    {
+      "key": "canary_no_rollback",
+      "label": "首台未触发回退",
+      "ok": true,
+      "severity": "P0",
+      "message": "未发现 rollback 记录。"
+    },
+    {
+      "key": "small_batch_confirmed",
+      "label": "小批量反馈确认",
+      "ok": false,
+      "severity": "P0",
+      "message": "ok=false, mode=blocked_before_dispatch, devices=0, feedbackConfirmed=false"
+    },
+    {
+      "key": "all_device_policy_present",
+      "label": "全量白名单策略存在",
+      "ok": true,
+      "severity": "P0",
+      "message": "ok=true, targetCount=29"
+    },
+    {
+      "key": "all_device_feedback_confirmed",
+      "label": "全量 FCU 反馈确认",
+      "ok": false,
+      "severity": "P0",
+      "message": "confirmedDevices=0, targetDevices=29"
+    }
+  ],
+  "blockingItems": [
+    {
+      "key": "backend_write_gate",
+      "label": "后端写入总闸",
+      "ok": false,
+      "severity": "P0",
+      "message": "readOnlyMode=true 或无法确认。",
+      "readOnlyMode": true
+    },
+    {
+      "key": "field_arm_ready",
+      "label": "现场 Arm-Check ready",
+      "ok": false,
+      "severity": "P0",
+      "message": "ok=false, verdict=field_arm_blocked"
+    },
+    {
+      "key": "canary_device_matches",
+      "label": "首台 Canary 设备一致",
+      "ok": false,
+      "severity": "P0",
+      "message": "firstCanary=WSJ01, canaryDevice=BGS01"
+    },
+    {
+      "key": "canary_dispatch_confirmed",
+      "label": "首台真实下发完成",
+      "ok": false,
+      "severity": "P0",
+      "message": "ok=false, mode=blocked_before_canary_dispatch, controlMutation=false"
+    },
+    {
+      "key": "canary_feedback_confirmed",
+      "label": "首台反馈确认",
+      "ok": false,
+      "severity": "P0",
+      "message": "verification.recordStatus=--"
+    },
+    {
+      "key": "small_batch_confirmed",
+      "label": "小批量反馈确认",
+      "ok": false,
+      "severity": "P0",
+      "message": "ok=false, mode=blocked_before_dispatch, devices=0, feedbackConfirmed=false"
+    },
+    {
+      "key": "all_device_feedback_confirmed",
+      "label": "全量 FCU 反馈确认",
+      "ok": false,
+      "severity": "P0",
+      "message": "confirmedDevices=0, targetDevices=29"
+    }
+  ],
+  "nextActions": [
+    {
+      "priority": "P0",
+      "action": "关闭 BFF 只读总闸并重启",
+      "command": "READ_ONLY_MODE=false CHILLER_READ_ONLY_MODE=false npm --prefix apps/chiller-bff run dev",
+      "reason": "当前 /healthz readOnlyMode=true 时禁止真实写 BA。"
+    },
+    {
+      "priority": "P0",
+      "action": "重跑现场 Arm-Check",
+      "command": "npm --prefix apps/chiller-bff run check:fcu-field-arm",
+      "reason": "只有 field_arm_ready 才允许进入 Canary。"
+    },
+    {
+      "priority": "P0",
+      "action": "执行首台 Canary 并等待反馈确认",
+      "command": "FCU_CANARY_DEVICE_CODE=WSJ01 FCU_CANARY_COMMAND_KIND=setpoint FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE npm --prefix apps/chiller-bff run execute:fcu-canary-dispatch",
+      "reason": "最终控制最小完成口径要求首台真实下发并反馈确认。"
+    }
+  ],
+  "evidence": {
+    "health": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/healthz",
+      "readOnlyMode": true
+    },
+    "files": {
+      "fieldArm": {
+        "ok": true,
+        "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-arm-check-latest.json"
+      },
+      "canary": {
+        "ok": true,
+        "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-dispatch-latest.json"
+      },
+      "smallBatch": {
+        "ok": true,
+        "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-small-batch-dispatch-execution-latest.json"
+      },
+      "allDeviceExecution": {
+        "ok": false,
+        "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-all-device-dispatch-execution-latest.json"
+      },
+      "allDevicePolicy": {
+        "ok": true,
+        "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-all-device-policy-latest.json"
+      },
+      "allDevicePlan": {
+        "ok": true,
+        "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-all-device-dispatch-plan-latest.json"
+      },
+      "qualityRemediation": {
+        "ok": true,
+        "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-quality-remediation-latest.json"
+      }
+    }
+  }
+}

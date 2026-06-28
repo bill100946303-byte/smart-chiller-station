@@ -1,0 +1,182 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-17T22:32:53.491Z",
+  "siteId": "126lnoffice",
+  "scope": "fcu_canary_window",
+  "mode": "blocked_before_dispatch",
+  "verdict": "canary_window_blocked",
+  "controlMutation": false,
+  "canary": {
+    "deviceCode": "BGS01",
+    "dispatchConfirmed": false,
+    "feedbackStatus": null,
+    "feedbackConfirmed": false,
+    "rollbackTriggered": false
+  },
+  "phases": [
+    {
+      "key": "canaryPackage",
+      "label": "生成单台执行包",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-bgs01.json",
+      "stdout": "FCU_CANARY_EXECUTION_PACKAGE ok=false verdict=canary_package_ready_with_open_gates canary=BGS01 blockers=6 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-bgs01.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-bgs01.md\ncsv=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-bgs01.csv",
+      "stderr": ""
+    },
+    {
+      "key": "baReadiness",
+      "label": "BA 写适配器就绪自检",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-bgs01.json",
+      "stdout": "FCU_BA_WRITE_ADAPTER_READINESS ok=false verdict=ba_write_adapter_blocked canary=BGS01 blockers=3 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-bgs01.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-bgs01.md\ncsv=/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-bgs01.csv",
+      "stderr": ""
+    },
+    {
+      "key": "feedbackMonitor",
+      "label": "单台反馈监视",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-feedback-monitor-bgs01.json",
+      "stdout": "FCU_CANARY_FEEDBACK_MONITOR ok=false verdict=waiting_for_canary_dispatch canary=BGS01 feedback=-- mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-feedback-monitor-bgs01.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-feedback-monitor-bgs01.md\ncsv=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-feedback-monitor-bgs01.csv",
+      "stderr": ""
+    },
+    {
+      "key": "finalCompletion",
+      "label": "最终完成度检查",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-completion-latest.json",
+      "stdout": "FCU_FINAL_CONTROL_COMPLETION ok=false verdict=final_control_incomplete scope=fcu_all_device_final_control first=BGS01 blockers=6 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-completion-latest.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-completion-latest.md",
+      "stderr": ""
+    },
+    {
+      "key": "finalWorklist",
+      "label": "刷新最终投运清单",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-worklist-latest.json",
+      "stdout": "FCU_FINAL_CONTROL_WORKLIST ok=false verdict=worklist_open p0=7 actions=7 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-worklist-latest.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-worklist-latest.md",
+      "stderr": ""
+    }
+  ],
+  "skipped": [
+    {
+      "key": "canaryDispatch",
+      "label": "执行 BGS01 单台真实下发",
+      "reason": "BA readiness is not ok"
+    }
+  ],
+  "evidence": {
+    "readiness": {
+      "ok": false,
+      "verdict": "ba_write_adapter_blocked",
+      "blockers": [
+        {
+          "key": "backend_write_gate",
+          "label": "后端写入总闸",
+          "ok": false,
+          "severity": "P0",
+          "evidence": "readOnlyMode=true",
+          "action": "以 READ_ONLY_MODE=false CHILLER_READ_ONLY_MODE=false 重启 BFF"
+        },
+        {
+          "key": "execution_gate_open",
+          "label": "全局执行闸门",
+          "ok": false,
+          "severity": "P0",
+          "evidence": "dispatchAllowed=false, blocked=backend_not_readonly",
+          "action": ""
+        },
+        {
+          "key": "ba_write_confirm",
+          "label": "BA 写入确认短语",
+          "ok": false,
+          "severity": "P0",
+          "evidence": "FCU_SMALL_BATCH_CONFIRM=missing",
+          "action": "export FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE"
+        }
+      ]
+    },
+    "dispatch": {
+      "ok": false,
+      "mode": null,
+      "controlMutation": false
+    },
+    "feedback": {
+      "ok": false,
+      "verdict": "waiting_for_canary_dispatch",
+      "canary": {
+        "deviceCode": "BGS01",
+        "recordId": null,
+        "dispatchConfirmed": false,
+        "feedbackStatus": null,
+        "feedbackConfirmed": false,
+        "rollbackTriggered": false
+      }
+    },
+    "finalCompletion": {
+      "ok": false,
+      "verdict": "final_control_incomplete",
+      "milestones": {
+        "canary": {
+          "ok": false,
+          "deviceCode": "BGS01",
+          "feedbackStatus": null
+        },
+        "smallBatch": {
+          "ok": false,
+          "devices": 0,
+          "feedbackConfirmed": false
+        },
+        "allDevice": {
+          "ok": false,
+          "targetDevices": 29,
+          "confirmedDevices": 0,
+          "confirmedDeviceCodes": []
+        }
+      }
+    },
+    "worklist": {
+      "ok": false,
+      "verdict": "worklist_open",
+      "summary": {
+        "openActions": 7,
+        "p0OpenActions": 7,
+        "qualityP0Devices": 8,
+        "plannedDeviceCount": 21,
+        "blockedDeviceCount": 8
+      }
+    }
+  },
+  "nextActions": [
+    {
+      "priority": "P0",
+      "action": "后端写入总闸",
+      "reason": "readOnlyMode=true",
+      "command": "以 READ_ONLY_MODE=false CHILLER_READ_ONLY_MODE=false 重启 BFF"
+    },
+    {
+      "priority": "P0",
+      "action": "全局执行闸门",
+      "reason": "dispatchAllowed=false, blocked=backend_not_readonly",
+      "command": ""
+    },
+    {
+      "priority": "P0",
+      "action": "BA 写入确认短语",
+      "reason": "FCU_SMALL_BATCH_CONFIRM=missing",
+      "command": "export FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE"
+    },
+    {
+      "priority": "P0",
+      "action": "执行 BGS01 单台真实下发",
+      "reason": "反馈监视仍在等待 canary dispatch。",
+      "command": "FCU_CANARY_DEVICE_CODE=BGS01 FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE npm --prefix apps/chiller-bff run execute:fcu-canary-window"
+    }
+  ],
+  "outputs": {
+    "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-window-bgs01.json",
+    "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-window-bgs01.md"
+  }
+}

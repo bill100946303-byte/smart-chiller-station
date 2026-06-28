@@ -1,0 +1,428 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-18T11:06:25.453Z",
+  "siteId": "126lnoffice",
+  "verdict": "final_dispatch_blocked",
+  "conclusion": "最终总门禁未通过，禁止真实 BA/PLC 写入。",
+  "controlMutation": false,
+  "dispatch": false,
+  "summary": {
+    "finalGatePassed": false,
+    "gateCount": 8,
+    "passedGates": 0,
+    "blockedGates": 8,
+    "canaryReady": false,
+    "finalComplete": false,
+    "worklistOpenActions": 12,
+    "p0OpenActions": 11,
+    "signoffCompleteRows": 0,
+    "signoffExpectedRows": 8,
+    "signoffOpenRows": 8,
+    "signoffSourceRows": 9,
+    "signoffCurrentRows": 8,
+    "signoffStaleRows": 1,
+    "fieldCloseoutReady": false,
+    "plannedDeviceCount": 21,
+    "blockedDeviceCount": 8,
+    "stagedSetpointDevices": 12
+  },
+  "evidence": {
+    "finalGates": {
+      "ok": false,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-gates-latest.json"
+    },
+    "finalWorklist": {
+      "ok": false,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-worklist-latest.json"
+    },
+    "signoff": {
+      "ok": false,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-latest.json"
+    },
+    "signoffClean": {
+      "ok": false,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-clean-input-latest.json"
+    },
+    "closeout": {
+      "ok": false,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-closeout-latest.json"
+    },
+    "canaryReadiness": {
+      "ok": false,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-readiness-latest.json"
+    },
+    "allDevicePlan": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-all-device-dispatch-plan-latest.json"
+    },
+    "finalCompletion": {
+      "ok": false,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-completion-latest.json"
+    }
+  },
+  "blockers": [
+    {
+      "label": "数据质量 P0",
+      "value": "8 台 P0",
+      "blocker": "仍有通讯/温度/反馈硬阻断设备",
+      "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-quality-remediation-latest.json"
+    },
+    {
+      "label": "全量分批计划",
+      "value": "immediate=9, staged=12, blocked=8",
+      "blocker": "仍有 blocked 或 staged 设备",
+      "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-all-device-dispatch-plan-latest.json"
+    },
+    {
+      "label": "现场执行包",
+      "value": "8 台待处理",
+      "blocker": "现场执行包仍有 P0 设备",
+      "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-execution-pack-latest.json"
+    },
+    {
+      "label": "现场 closeout",
+      "value": "field_remediation_open",
+      "blocker": "现场消缺未关闭",
+      "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-closeout-latest.json"
+    },
+    {
+      "label": "现场签字",
+      "value": "0/8",
+      "blocker": "现场签字未完成",
+      "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-latest.json"
+    },
+    {
+      "label": "Canary readiness",
+      "value": "canary_blocked",
+      "blocker": "Canary 总门禁阻断",
+      "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-readiness-latest.json"
+    },
+    {
+      "label": "最终完成",
+      "value": "final_control_incomplete",
+      "blocker": "首台/小批量/全量反馈未全部闭环",
+      "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-completion-latest.json"
+    },
+    {
+      "label": "最终 worklist",
+      "value": "worklist_open",
+      "blocker": "最终投运清单仍有未完成动作",
+      "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-worklist-latest.json"
+    }
+  ],
+  "openSignoffRows": [
+    {
+      "workOrderId": "FCU-P0-BGS03",
+      "deviceCode": "BGS03",
+      "deviceName": "办公室03",
+      "canaryBlockReason": "signoff_incomplete",
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "nextActions": [
+        "填写实际处理人，不能用空值或系统默认值。",
+        "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。",
+        "填写复核人，建议由非处理人或现场负责人复核。",
+        "填写复核完成时间。",
+        "只有现场确认可放行时填写 release；仍需观察则填写 hold/recheck 并保持阻断。"
+      ]
+    },
+    {
+      "workOrderId": "FCU-P0-BGS04",
+      "deviceCode": "BGS04",
+      "deviceName": "办公室04",
+      "canaryBlockReason": "signoff_incomplete",
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "nextActions": [
+        "填写实际处理人，不能用空值或系统默认值。",
+        "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。",
+        "填写复核人，建议由非处理人或现场负责人复核。",
+        "填写复核完成时间。",
+        "只有现场确认可放行时填写 release；仍需观察则填写 hold/recheck 并保持阻断。"
+      ]
+    },
+    {
+      "workOrderId": "FCU-P0-BGS06",
+      "deviceCode": "BGS06",
+      "deviceName": "办公室06",
+      "canaryBlockReason": "signoff_incomplete",
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "nextActions": [
+        "填写实际处理人，不能用空值或系统默认值。",
+        "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。",
+        "填写复核人，建议由非处理人或现场负责人复核。",
+        "填写复核完成时间。",
+        "只有现场确认可放行时填写 release；仍需观察则填写 hold/recheck 并保持阻断。"
+      ]
+    },
+    {
+      "workOrderId": "FCU-P0-GCBGQ03",
+      "deviceCode": "GCBGQ03",
+      "deviceName": "工程办公区03",
+      "canaryBlockReason": "signoff_incomplete",
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "nextActions": [
+        "填写实际处理人，不能用空值或系统默认值。",
+        "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。",
+        "填写复核人，建议由非处理人或现场负责人复核。",
+        "填写复核完成时间。",
+        "只有现场确认可放行时填写 release；仍需观察则填写 hold/recheck 并保持阻断。"
+      ]
+    },
+    {
+      "workOrderId": "FCU-P0-QT02",
+      "deviceCode": "QT02",
+      "deviceName": "前厅02",
+      "canaryBlockReason": "signoff_incomplete",
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "nextActions": [
+        "填写实际处理人，不能用空值或系统默认值。",
+        "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。",
+        "填写复核人，建议由非处理人或现场负责人复核。",
+        "填写复核完成时间。",
+        "只有现场确认可放行时填写 release；仍需观察则填写 hold/recheck 并保持阻断。"
+      ]
+    },
+    {
+      "workOrderId": "FCU-P0-WSJ02",
+      "deviceCode": "WSJ02",
+      "deviceName": "卫生间02",
+      "canaryBlockReason": "signoff_incomplete",
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "nextActions": [
+        "填写实际处理人，不能用空值或系统默认值。",
+        "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。",
+        "填写复核人，建议由非处理人或现场负责人复核。",
+        "填写复核完成时间。",
+        "只有现场确认可放行时填写 release；仍需观察则填写 hold/recheck 并保持阻断。"
+      ]
+    },
+    {
+      "workOrderId": "FCU-P0-ZHYS",
+      "deviceCode": "ZHYS",
+      "deviceName": "中会议室",
+      "canaryBlockReason": "signoff_incomplete",
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "nextActions": [
+        "填写实际处理人，不能用空值或系统默认值。",
+        "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。",
+        "填写复核人，建议由非处理人或现场负责人复核。",
+        "填写复核完成时间。",
+        "只有现场确认可放行时填写 release；仍需观察则填写 hold/recheck 并保持阻断。"
+      ]
+    },
+    {
+      "workOrderId": "FCU-P0-ZZBGS",
+      "deviceCode": "ZZBGS",
+      "deviceName": "周总",
+      "canaryBlockReason": "signoff_incomplete",
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "nextActions": [
+        "填写实际处理人，不能用空值或系统默认值。",
+        "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。",
+        "填写复核人，建议由非处理人或现场负责人复核。",
+        "填写复核完成时间。",
+        "只有现场确认可放行时填写 release；仍需观察则填写 hold/recheck 并保持阻断。"
+      ]
+    }
+  ],
+  "staleSignoffRows": [
+    {
+      "workOrderId": "FCU-P0-CWS",
+      "deviceCode": "CWS",
+      "deviceName": "财务室",
+      "reason": "not_in_current_work_orders"
+    }
+  ],
+  "nextActions": [
+    {
+      "key": "remediate-p0-quality-devices",
+      "priority": "P0",
+      "phase": "quality",
+      "action": "整改通讯报警、0°C/无效温度和写点缺失设备",
+      "target": "8 台 P0 FCU",
+      "command": "npm --prefix apps/chiller-bff run check:fcu-quality-remediation",
+      "acceptance": "communicationAlarm=0，zoneTemperatureC 在 5-45°C，启停/设定/风速写点映射通过，quality.status=ok，连续两次采样正常",
+      "reason": "P0 质量设备不能进入全量闭环。"
+    },
+    {
+      "key": "normalize-staged-setpoint-devices",
+      "priority": "P1",
+      "phase": "setpoint_normalization",
+      "action": "分步拉回设定反馈越界 FCU",
+      "target": "12 台 FCU",
+      "command": "npm --prefix apps/chiller-bff run plan:fcu-all-device-dispatch",
+      "acceptance": "全量分批计划 stagedSetpoint=0，或每台设备形成已审批的分步执行记录和反馈确认。",
+      "reason": "设定反馈越界设备不能一次性拉到目标值；需按 0.5-2.0°C 分步恢复后再进入全量闭环。"
+    },
+    {
+      "key": "execute-canary",
+      "priority": "P0",
+      "phase": "canary",
+      "action": "执行首台 Canary 并确认反馈",
+      "target": "BGS01",
+      "command": "FCU_CANARY_DEVICE_CODE=BGS01 FCU_CANARY_COMMAND_KIND=setpoint FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE npm --prefix apps/chiller-bff run execute:fcu-canary-dispatch",
+      "acceptance": "canary mode=confirmed_canary_dispatch 且 verification.recordStatus=feedback_confirmed",
+      "reason": "最终控制必须先完成首台真实下发和反馈确认。"
+    },
+    {
+      "key": "set-final-rollout-confirm",
+      "priority": "P0",
+      "phase": "authorization",
+      "action": "设置最终控制总确认短语",
+      "target": "FCU_FINAL_CONTROL_ROLLOUT_CONFIRM",
+      "command": "export FCU_FINAL_CONTROL_ROLLOUT_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE",
+      "acceptance": "最终编排报告 confirm.finalRolloutConfirmPresent=true",
+      "reason": "没有总确认时编排器不会调用 Canary/小批量/全量真实执行脚本。"
+    },
+    {
+      "key": "rerun-field-arm",
+      "priority": "P0",
+      "phase": "field_arm",
+      "action": "重跑现场 Arm-Check",
+      "target": "BGS01",
+      "command": "npm --prefix apps/chiller-bff run check:fcu-field-arm",
+      "acceptance": "docs/fcu-field-arm-check-latest.json verdict=field_arm_ready",
+      "reason": "现场 Arm-Check 必须 ready，才能执行首台 Canary。"
+    },
+    {
+      "key": "open-backend-write-gate",
+      "priority": "P0",
+      "phase": "environment",
+      "action": "关闭 BFF 只读总闸并重启",
+      "target": "READ_ONLY_MODE / CHILLER_READ_ONLY_MODE",
+      "command": "READ_ONLY_MODE=false CHILLER_READ_ONLY_MODE=false npm --prefix apps/chiller-bff run dev",
+      "acceptance": "/healthz readOnlyMode=false，且 Arm-Check backend_write_gate 通过",
+      "reason": "当前 readOnlyMode=true，后端禁止真实 BA 写入。"
+    },
+    {
+      "key": "rerun-go-live-preflight",
+      "priority": "P0",
+      "phase": "preflight",
+      "action": "重跑上线前预检",
+      "target": "FCU go-live preflight",
+      "command": "npm --prefix apps/chiller-bff run check:fcu-go-live-preflight",
+      "acceptance": "docs/fcu-go-live-preflight-latest.json verdict=go_live_ready",
+      "reason": "预检必须为 go_live_ready 才允许真实下发。"
+    },
+    {
+      "key": "set-ba-write-confirm",
+      "priority": "P0",
+      "phase": "authorization",
+      "action": "设置 BA 写入确认短语",
+      "target": "FCU_SMALL_BATCH_CONFIRM",
+      "command": "export FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE",
+      "acceptance": "最终编排报告 confirm.smallBatchConfirmPresent=true",
+      "reason": "真实 BA 写入需要二次确认，防止误触发。"
+    }
+  ],
+  "safeExecutionOrder": [
+    {
+      "step": "刷新数据质量与现场消缺证据",
+      "command": "npm --prefix apps/chiller-bff run check:fcu-quality-remediation && npm --prefix apps/chiller-bff run check:fcu-field-remediation-closeout",
+      "dispatchesControl": false
+    },
+    {
+      "step": "清理过期签核行并复核",
+      "command": "npm --prefix apps/chiller-bff run build:fcu-field-remediation-signoff-clean-input && FCU_SIGNOFF_INPUT_PROMOTE_CONFIRM=I_APPROVE_REPLACE_FCU_SIGNOFF_INPUT npm --prefix apps/chiller-bff run promote:fcu-field-remediation-signoff-input && npm --prefix apps/chiller-bff run check:fcu-field-remediation-signoff",
+      "dispatchesControl": false
+    },
+    {
+      "step": "刷新 Canary readiness 与最终总门禁",
+      "command": "npm --prefix apps/chiller-bff run check:fcu-canary-readiness && FCU_FINAL_CONTROL_GATES_REFRESH=false npm --prefix apps/chiller-bff run check:fcu-final-control-gates",
+      "dispatchesControl": false
+    },
+    {
+      "step": "最终总门禁全部通过后，才允许执行真实写入编排",
+      "command": "FCU_FINAL_CONTROL_ROLLOUT_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE npm --prefix apps/chiller-bff run execute:fcu-final-control-rollout",
+      "dispatchesControl": true,
+      "requiresFinalGatePassed": true
+    }
+  ]
+}

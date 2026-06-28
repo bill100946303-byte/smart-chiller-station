@@ -1,0 +1,1741 @@
+{
+  "ok": true,
+  "generatedAt": "2026-06-20T04:31:47.179Z",
+  "siteId": "126lnoffice",
+  "build": "1",
+  "floor": "1",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "controlMutation": false,
+  "dispatch": false,
+  "summary": {
+    "total": 29,
+    "remediationCount": 20,
+    "p0Count": 8,
+    "canCompleteFinalControl": false,
+    "evidenceIncomplete": false,
+    "communicationAlarmCount": 8,
+    "zeroTemperatureCount": 4,
+    "invalidTemperatureCount": 4
+  },
+  "fieldPackage": {
+    "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-quality-remediation-latest.csv",
+    "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-quality-remediation-latest.md",
+    "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-quality-remediation-latest.json"
+  },
+  "reasonCounts": [
+    {
+      "reason": "setpoint_feedback_out_of_bounds",
+      "count": 18
+    },
+    {
+      "reason": "communication_alarm",
+      "count": 8
+    },
+    {
+      "reason": "zero_temperature",
+      "count": 4
+    },
+    {
+      "reason": "invalid_temperature",
+      "count": 4
+    },
+    {
+      "reason": "temperature_quality_guard",
+      "count": 4
+    }
+  ],
+  "devices": [
+    {
+      "deviceCode": "BGS02",
+      "deviceName": "办公室02",
+      "severity": "P1",
+      "status": "blocked",
+      "zoneTemperatureC": 28,
+      "setpointC": 16,
+      "running": false,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "BGS02-502-40074",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "BGS02-506-40203",
+          "value": "28.0",
+          "numericValue": 28,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "BGS02-506-40207",
+          "value": "16.0",
+          "numericValue": 16,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "BGS02-502-40073",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "复核设定反馈点 BGS02-506-40207，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "BGS03",
+      "deviceName": "办公室03",
+      "severity": "P0",
+      "status": "blocked",
+      "zoneTemperatureC": 0,
+      "setpointC": 0,
+      "running": false,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "reasons": [
+        "communication_alarm",
+        "zero_temperature",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "communication_alarm",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "communication_ok",
+        "temperature_valid",
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "BGS03-502-40078",
+          "value": "1",
+          "numericValue": 1,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": true,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "BGS03-506-40219",
+          "value": "0.0",
+          "numericValue": 0,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "BGS03-506-40223",
+          "value": "0.0",
+          "numericValue": 0,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "BGS03-502-40077",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 BGS03-502-40078 是否仍为 1。",
+        "核对内置温度点 BGS03-506-40219，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 BGS03-506-40219，缺温度时禁止进入闭环。",
+        "复核设定反馈点 BGS03-506-40223，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ]
+    },
+    {
+      "deviceCode": "BGS04",
+      "deviceName": "办公室04",
+      "severity": "P0",
+      "status": "blocked",
+      "zoneTemperatureC": 0,
+      "setpointC": 0,
+      "running": false,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "reasons": [
+        "communication_alarm",
+        "zero_temperature",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "communication_alarm",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "communication_ok",
+        "temperature_valid",
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "BGS04-502-40158",
+          "value": "1",
+          "numericValue": 1,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": true,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "BGS04-506-40539",
+          "value": "0.0",
+          "numericValue": 0,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "BGS04-506-40543",
+          "value": "0.0",
+          "numericValue": 0,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "BGS04-502-40157",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 BGS04-502-40158 是否仍为 1。",
+        "核对内置温度点 BGS04-506-40539，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 BGS04-506-40539，缺温度时禁止进入闭环。",
+        "复核设定反馈点 BGS04-506-40543，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ]
+    },
+    {
+      "deviceCode": "BGS06",
+      "deviceName": "办公室06",
+      "severity": "P0",
+      "status": "blocked",
+      "zoneTemperatureC": 22,
+      "setpointC": 24,
+      "running": false,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "reasons": [
+        "communication_alarm"
+      ],
+      "controlBlockReasons": [
+        "communication_alarm",
+        "invalid_temperature"
+      ],
+      "blockedReasons": [
+        "communication_ok",
+        "temperature_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "BGS06-502-40166",
+          "value": "1",
+          "numericValue": 1,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": true,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "BGS06-506-40571",
+          "value": "22.0",
+          "numericValue": 22,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "BGS06-506-40575",
+          "value": "24.0",
+          "numericValue": 24,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "BGS06-502-40165",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 BGS06-502-40166 是否仍为 1。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "CWS",
+      "deviceName": "财务室",
+      "severity": "P1",
+      "status": "blocked",
+      "zoneTemperatureC": 28,
+      "setpointC": 16,
+      "running": false,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "CWS-502-40086",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "CWS-506-40251",
+          "value": "28.0",
+          "numericValue": 28,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "CWS-506-40255",
+          "value": "16.0",
+          "numericValue": 16,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "CWS-502-40085",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "复核设定反馈点 CWS-506-40255，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "DHYS",
+      "deviceName": "大会议室",
+      "severity": "P1",
+      "status": "blocked",
+      "zoneTemperatureC": 29,
+      "setpointC": 19,
+      "running": false,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "DHYS-502-40174",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "DHYS-506-40603",
+          "value": "29.0",
+          "numericValue": 29,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "DHYS-506-40607",
+          "value": "19.0",
+          "numericValue": 19,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "DHYS-502-40173",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "复核设定反馈点 DHYS-506-40607，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "GCBGQ01",
+      "deviceName": "工程办公区01",
+      "severity": "P1",
+      "status": "blocked",
+      "zoneTemperatureC": 28,
+      "setpointC": 10,
+      "running": false,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "GCBGQ01-502-40142",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "GCBGQ01-506-40475",
+          "value": "28.0",
+          "numericValue": 28,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "GCBGQ01-506-40479",
+          "value": "10.0",
+          "numericValue": 10,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "GCBGQ01-502-40141",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "复核设定反馈点 GCBGQ01-506-40479，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "GCBGQ02",
+      "deviceName": "工程办公区02",
+      "severity": "P1",
+      "status": "blocked",
+      "zoneTemperatureC": 28,
+      "setpointC": 10,
+      "running": false,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "GCBGQ02-502-40146",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "GCBGQ02-506-40491",
+          "value": "28.0",
+          "numericValue": 28,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "GCBGQ02-506-40495",
+          "value": "10.0",
+          "numericValue": 10,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "GCBGQ02-502-40145",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "复核设定反馈点 GCBGQ02-506-40495，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "GCBGQ03",
+      "deviceName": "工程办公区03",
+      "severity": "P0",
+      "status": "blocked",
+      "zoneTemperatureC": 31,
+      "setpointC": 19,
+      "running": false,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "reasons": [
+        "communication_alarm",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "communication_alarm",
+        "invalid_temperature",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "communication_ok",
+        "temperature_valid",
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "GCBGQ03-502-40150",
+          "value": "1",
+          "numericValue": 1,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": true,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "GCBGQ03-506-40507",
+          "value": "31.0",
+          "numericValue": 31,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "GCBGQ03-506-40511",
+          "value": "19.0",
+          "numericValue": 19,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "GCBGQ03-502-40149",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 GCBGQ03-502-40150 是否仍为 1。",
+        "复核设定反馈点 GCBGQ03-506-40511，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "JDS",
+      "deviceName": "接待室",
+      "severity": "P1",
+      "status": "blocked",
+      "zoneTemperatureC": 28,
+      "setpointC": 15,
+      "running": false,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "JDS-502-40178",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "JDS-506-40619",
+          "value": "28.0",
+          "numericValue": 28,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "JDS-506-40623",
+          "value": "15.0",
+          "numericValue": 15,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "JDS-502-40177",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "复核设定反馈点 JDS-506-40623，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "QT01",
+      "deviceName": "前厅01",
+      "severity": "P1",
+      "status": "blocked",
+      "zoneTemperatureC": 28,
+      "setpointC": 16,
+      "running": false,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "QT01-502-40118",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "QT01-506-40379",
+          "value": "28.0",
+          "numericValue": 28,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "QT01-506-40383",
+          "value": "16.0",
+          "numericValue": 16,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "QT01-502-40117",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "复核设定反馈点 QT01-506-40383，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "QT02",
+      "deviceName": "前厅02",
+      "severity": "P0",
+      "status": "blocked",
+      "zoneTemperatureC": 26,
+      "setpointC": 26,
+      "running": false,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "reasons": [
+        "communication_alarm"
+      ],
+      "controlBlockReasons": [
+        "communication_alarm",
+        "invalid_temperature"
+      ],
+      "blockedReasons": [
+        "communication_ok",
+        "temperature_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "QT02-502-40122",
+          "value": "1",
+          "numericValue": 1,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": true,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "QT02-506-40395",
+          "value": "26.0",
+          "numericValue": 26,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "QT02-506-40399",
+          "value": "26.0",
+          "numericValue": 26,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "QT02-502-40121",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 QT02-502-40122 是否仍为 1。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "QTS",
+      "deviceName": "洽谈室",
+      "severity": "P1",
+      "status": "blocked",
+      "zoneTemperatureC": 27,
+      "setpointC": 21,
+      "running": false,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "QTS-502-40138",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "QTS-506-40459",
+          "value": "27.0",
+          "numericValue": 27,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "QTS-506-40463",
+          "value": "21.0",
+          "numericValue": 21,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "QTS-502-40137",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "复核设定反馈点 QTS-506-40463，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "SYS",
+      "deviceName": "实验室",
+      "severity": "P1",
+      "status": "blocked",
+      "zoneTemperatureC": 28,
+      "setpointC": 19,
+      "running": false,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "SYS-502-40090",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "SYS-506-40267",
+          "value": "28.0",
+          "numericValue": 28,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "SYS-506-40271",
+          "value": "19.0",
+          "numericValue": 19,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "SYS-502-40089",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "复核设定反馈点 SYS-506-40271，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "TNFBQ01",
+      "deviceName": "头脑风暴区01",
+      "severity": "P1",
+      "status": "blocked",
+      "zoneTemperatureC": 29,
+      "setpointC": 21,
+      "running": false,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "TNFBQ01-502-40110",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "TNFBQ01-506-40347",
+          "value": "29.0",
+          "numericValue": 29,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "TNFBQ01-506-40351",
+          "value": "21.0",
+          "numericValue": 21,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "TNFBQ01-502-40109",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "复核设定反馈点 TNFBQ01-506-40351，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "TNFBQ02",
+      "deviceName": "头脑风暴区02",
+      "severity": "P1",
+      "status": "blocked",
+      "zoneTemperatureC": 29,
+      "setpointC": 10,
+      "running": true,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "TNFBQ02-502-40114",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "TNFBQ02-506-40363",
+          "value": "29.0",
+          "numericValue": 29,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "TNFBQ02-506-40367",
+          "value": "10.0",
+          "numericValue": 10,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "TNFBQ02-502-40113",
+          "value": "1",
+          "numericValue": 1,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "复核设定反馈点 TNFBQ02-506-40367，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "WSJ02",
+      "deviceName": "卫生间02",
+      "severity": "P0",
+      "status": "blocked",
+      "zoneTemperatureC": 0,
+      "setpointC": 0,
+      "running": false,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "reasons": [
+        "communication_alarm",
+        "zero_temperature",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "communication_alarm",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "communication_ok",
+        "temperature_valid",
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "WSJ02-502-40130",
+          "value": "1",
+          "numericValue": 1,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": true,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "WSJ02-506-40427",
+          "value": "0.0",
+          "numericValue": 0,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "WSJ02-506-40431",
+          "value": "0.0",
+          "numericValue": 0,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "WSJ02-502-40129",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 WSJ02-502-40130 是否仍为 1。",
+        "核对内置温度点 WSJ02-506-40427，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 WSJ02-506-40427，缺温度时禁止进入闭环。",
+        "复核设定反馈点 WSJ02-506-40431，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ]
+    },
+    {
+      "deviceCode": "XZBGS",
+      "deviceName": "行政办公室",
+      "severity": "P1",
+      "status": "blocked",
+      "zoneTemperatureC": 27,
+      "setpointC": 18,
+      "running": true,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "XZBGS-502-40066",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "XZBGS-506-40171",
+          "value": "27.0",
+          "numericValue": 27,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "XZBGS-506-40175",
+          "value": "18.0",
+          "numericValue": 18,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "XZBGS-502-40065",
+          "value": "1",
+          "numericValue": 1,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "复核设定反馈点 XZBGS-506-40175，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "ZHYS",
+      "deviceName": "中会议室",
+      "severity": "P0",
+      "status": "blocked",
+      "zoneTemperatureC": 0,
+      "setpointC": 0,
+      "running": false,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "reasons": [
+        "communication_alarm",
+        "zero_temperature",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "communication_alarm",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "communication_ok",
+        "temperature_valid",
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "ZHYS-502-40170",
+          "value": "1",
+          "numericValue": 1,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": true,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "ZHYS-506-40587",
+          "value": "0.0",
+          "numericValue": 0,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "ZHYS-506-40591",
+          "value": "0.0",
+          "numericValue": 0,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "ZHYS-502-40169",
+          "value": "0",
+          "numericValue": 0,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 ZHYS-502-40170 是否仍为 1。",
+        "核对内置温度点 ZHYS-506-40587，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 ZHYS-506-40587，缺温度时禁止进入闭环。",
+        "复核设定反馈点 ZHYS-506-40591，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ]
+    },
+    {
+      "deviceCode": "ZZBGS",
+      "deviceName": "周总",
+      "severity": "P0",
+      "status": "blocked",
+      "zoneTemperatureC": 24,
+      "setpointC": 35,
+      "running": true,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "reasons": [
+        "communication_alarm",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "controlBlockReasons": [
+        "communication_alarm",
+        "invalid_temperature",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "blockedReasons": [
+        "communication_ok",
+        "temperature_valid",
+        "setpoint_feedback_valid",
+        "global_execution_gate"
+      ],
+      "points": {
+        "communicationAlarm": {
+          "pointName": "通讯报警",
+          "tagName": "ZZBGS-502-40082",
+          "value": "1",
+          "numericValue": 1,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": true,
+          "rawTagTime": "5"
+        },
+        "zoneTemperature": {
+          "pointName": "内置温度",
+          "tagName": "ZZBGS-506-40235",
+          "value": "24.0",
+          "numericValue": 24,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "setpointFeedback": {
+          "pointName": "设置温度反馈",
+          "tagName": "ZZBGS-506-40239",
+          "value": "35.0",
+          "numericValue": 35,
+          "unit": "℃",
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        },
+        "run": {
+          "pointName": "运行",
+          "tagName": "ZZBGS-502-40081",
+          "value": "1",
+          "numericValue": 1,
+          "unit": null,
+          "writable": false,
+          "writeAllowed": false,
+          "alarmActive": false,
+          "rawTagTime": "5"
+        }
+      },
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 ZZBGS-502-40082 是否仍为 1。",
+        "复核设定反馈点 ZZBGS-506-40239，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    }
+  ],
+  "nextActions": [
+    {
+      "priority": "P0",
+      "action": "逐台处理通讯报警、0°C/无效温度和写点映射",
+      "target": "8 台",
+      "reason": "未恢复前禁止进入全量自动闭环。"
+    },
+    {
+      "priority": "P0",
+      "action": "整改后重跑全量分批计划",
+      "target": "plan:fcu-all-device-dispatch",
+      "reason": "确认阻断设备进入 deviceReady 后再扩大投运。"
+    }
+  ],
+  "evidence": {
+    "snapshot": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/hvac-terminal/fan-coils?build=1&floor=1",
+      "dataStatus": "ok"
+    },
+    "commissioning": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/hvac-terminal/fan-coils/commissioning-status?build=1&floor=1",
+      "summary": {
+        "total": 29,
+        "ready": 0,
+        "environmentBlocked": 9,
+        "deviceBlocked": 20,
+        "notFound": 0,
+        "deviceReady": 9,
+        "canDispatch": 0
+      }
+    }
+  }
+}

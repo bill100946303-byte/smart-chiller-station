@@ -1,0 +1,243 @@
+{
+  "ok": true,
+  "generatedAt": "2026-06-20T04:31:49.265Z",
+  "siteId": "126lnoffice",
+  "build": "1",
+  "floor": "1",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "dispatch": false,
+  "requestedLimit": 2,
+  "targetSetpointC": 25.5,
+  "maxSetpointShiftC": 2,
+  "targetFanSpeed": "auto",
+  "summary": {
+    "total": 29,
+    "ready": 0,
+    "environmentBlocked": 9,
+    "deviceBlocked": 20,
+    "notFound": 0,
+    "deviceReady": 9,
+    "canDispatch": 0,
+    "plannedDevices": 2,
+    "previewReadyDevices": 2
+  },
+  "executionGate": {
+    "ready": false,
+    "dispatchAllowed": false,
+    "readOnlyMode": true,
+    "subsystemWriteEnabled": true,
+    "boundaryMode": "enforced",
+    "policyMode": "enforced",
+    "adapterConfigured": true,
+    "whitelistCount": 29,
+    "authorizationStatus": "approved",
+    "authorizationOwnerReady": true,
+    "authorizationWindowConfigured": true,
+    "authorizationWindowActive": false,
+    "authorizationWindowStart": "2026-06-18T04:00:15.498Z",
+    "authorizationWindowEnd": "2026-06-18T05:00:15.498Z",
+    "authorizationWindowNow": "2026-06-20T04:31:48.396Z",
+    "baWriteConfirmArmed": true,
+    "finalRolloutConfirmArmed": true,
+    "sourceStatus": "demo_data",
+    "conditions": [
+      {
+        "key": "policy_enabled",
+        "label": "FCU策略启用",
+        "ok": true
+      },
+      {
+        "key": "mode_enforced",
+        "label": "控制模式为自动闭环",
+        "ok": true
+      },
+      {
+        "key": "subsystem_write_enabled",
+        "label": "空调末端子系统写总闸",
+        "ok": true
+      },
+      {
+        "key": "dispatch_adapter_configured",
+        "label": "BA写适配器已配置",
+        "ok": true
+      },
+      {
+        "key": "whitelist_not_empty",
+        "label": "单台白名单非空",
+        "ok": true
+      },
+      {
+        "key": "site_authorization_approved",
+        "label": "现场授权已批准",
+        "ok": true
+      },
+      {
+        "key": "site_authorization_owner_recorded",
+        "label": "现场授权责任人已记录",
+        "ok": true
+      },
+      {
+        "key": "site_authorization_window_configured",
+        "label": "现场授权窗口已配置",
+        "ok": true
+      },
+      {
+        "key": "site_authorization_window_active",
+        "label": "现场授权窗口当前有效",
+        "ok": false
+      },
+      {
+        "key": "ba_write_confirm_armed",
+        "label": "BA写入确认已装载",
+        "ok": true
+      },
+      {
+        "key": "final_rollout_confirm_armed",
+        "label": "最终控制总确认已装载",
+        "ok": true
+      },
+      {
+        "key": "backend_not_readonly",
+        "label": "后端环境允许真实写入",
+        "ok": false
+      }
+    ],
+    "blockedReasons": [
+      "site_authorization_window_active",
+      "backend_not_readonly"
+    ]
+  },
+  "commissioningVerdict": "environment_blocked",
+  "commissioningSummaryText": "9台 FCU 设备侧就绪，但全局投运闸门仍阻断真实写入。",
+  "devices": [
+    {
+      "deviceCode": "WSJ01",
+      "deviceName": "卫生间01",
+      "zoneTemperatureC": 27,
+      "setpointC": 26,
+      "running": false,
+      "previews": {
+        "setpoint": {
+          "ok": true,
+          "status": 201,
+          "dispatchRequested": false,
+          "dispatchAllowed": false,
+          "controlMutation": false,
+          "recordId": "fcu-126lnoffice-1781929908746-7hj2g4",
+          "decisionStatus": "ready",
+          "reason": "operator_manual_command",
+          "blockReasons": [],
+          "commandCount": 1,
+          "commands": [
+            {
+              "commandType": "setpoint",
+              "pointKey": "setpoint",
+              "pointName": "设置温度",
+              "tagName": "WSJ01-508-40357",
+              "value": 25.5,
+              "unit": "°C"
+            }
+          ]
+        },
+        "fanSpeed": {
+          "ok": true,
+          "status": 201,
+          "dispatchRequested": false,
+          "dispatchAllowed": false,
+          "controlMutation": false,
+          "recordId": "fcu-126lnoffice-1781929908971-soojuy",
+          "decisionStatus": "ready",
+          "reason": "operator_manual_command",
+          "blockReasons": [],
+          "commandCount": 1,
+          "commands": [
+            {
+              "commandType": "fan_speed",
+              "pointKey": "fanSpeedMode",
+              "pointName": "风速模式",
+              "tagName": "WSJ01-508-40355",
+              "value": "auto",
+              "unit": null
+            }
+          ]
+        }
+      },
+      "evidence": {
+        "setpointUrl": "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/hvac-terminal/fan-coils/control-command?build=1&floor=1&deviceCode=WSJ01",
+        "fanSpeedUrl": "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/hvac-terminal/fan-coils/control-command?build=1&floor=1&deviceCode=WSJ01"
+      }
+    },
+    {
+      "deviceCode": "BGS01",
+      "deviceName": "办公室01",
+      "zoneTemperatureC": 28,
+      "setpointC": 24,
+      "running": false,
+      "previews": {
+        "setpoint": {
+          "ok": true,
+          "status": 201,
+          "dispatchRequested": false,
+          "dispatchAllowed": false,
+          "controlMutation": false,
+          "recordId": "fcu-126lnoffice-1781929909125-i5pxkc",
+          "decisionStatus": "ready",
+          "reason": "operator_manual_command",
+          "blockReasons": [],
+          "commandCount": 1,
+          "commands": [
+            {
+              "commandType": "setpoint",
+              "pointKey": "setpoint",
+              "pointName": "设置温度",
+              "tagName": "BGS01-508-40133",
+              "value": 25.5,
+              "unit": "°C"
+            }
+          ]
+        },
+        "fanSpeed": {
+          "ok": true,
+          "status": 201,
+          "dispatchRequested": false,
+          "dispatchAllowed": false,
+          "controlMutation": false,
+          "recordId": "fcu-126lnoffice-1781929909261-7x4yss",
+          "decisionStatus": "ready",
+          "reason": "operator_manual_command",
+          "blockReasons": [],
+          "commandCount": 1,
+          "commands": [
+            {
+              "commandType": "fan_speed",
+              "pointKey": "fanSpeedMode",
+              "pointName": "风速模式",
+              "tagName": "BGS01-508-40131",
+              "value": "auto",
+              "unit": null
+            }
+          ]
+        }
+      },
+      "evidence": {
+        "setpointUrl": "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/hvac-terminal/fan-coils/control-command?build=1&floor=1&deviceCode=BGS01",
+        "fanSpeedUrl": "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/hvac-terminal/fan-coils/control-command?build=1&floor=1&deviceCode=BGS01"
+      }
+    }
+  ],
+  "nextStep": "当前仅生成只读预演执行单；打开全局投运闸门后重新运行本脚本，再执行确认下发。",
+  "evidence": {
+    "health": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/healthz",
+      "readOnlyMode": true
+    },
+    "commissioning": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/hvac-terminal/fan-coils/commissioning-status?build=1&floor=1",
+      "requestId": "req-1781929908358-a5wyjv"
+    }
+  }
+}

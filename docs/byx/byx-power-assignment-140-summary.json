@@ -1,0 +1,42 @@
+{
+  "ok": true,
+  "siteId": "140",
+  "generatedAt": "2026-06-22T13:16:27.972Z",
+  "mode": "read_only_assignment_handoff",
+  "controlMutation": false,
+  "boundary": "read_only_no_open_close_no_scene_execute",
+  "files": {
+    "csv": "/Users/billchow/Documents/智慧冷冻站/docs/byx/byx-power-assignment-140-latest.csv",
+    "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/byx/byx-power-assignment-140-handoff.md",
+    "summaryJson": "/Users/billchow/Documents/智慧冷冻站/docs/byx/byx-power-assignment-140-summary.json"
+  },
+  "summary": {
+    "projectCount": 2,
+    "deviceCount": 34,
+    "onlineDeviceCount": 34,
+    "diagnosticDeviceCount": 3,
+    "confirmedDeviceCount": 0,
+    "unconfirmedDeviceCount": 34,
+    "reviewStatusCounts": {
+      "待业主确认": 31,
+      "需复核诊断": 3
+    },
+    "categoryCounts": {
+      "备用/其他": 1,
+      "插座": 16,
+      "后勤用电": 3,
+      "空调末端": 4,
+      "弱电/IT": 2,
+      "照明": 8
+    },
+    "boundaryCounts": {
+      "read_only_no_open_close_no_scene_execute": 34
+    }
+  },
+  "checks": {
+    "allRowsReadOnly": true,
+    "openCloseConnected": false,
+    "sceneExecuteConnected": false,
+    "plcWriteConnected": false
+  }
+}

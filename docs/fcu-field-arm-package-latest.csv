@@ -1,0 +1,8 @@
+phase,key,label,status,owner,evidence,action,writes_control
+authorization,site_authorization,现场授权真实 BA 写入,manual_required,现场负责人,甲方/运维明确授权单台 BGS01 试写，窗口内有人值守。,人工签字确认后再设置确认短语。,no
+environment,backend_write_gate,关闭 BFF 只读总闸,ready,平台工程师,readOnlyMode=false,READ_ONLY_MODE=false CHILLER_READ_ONLY_MODE=false npm --prefix apps/chiller-bff run dev,no
+authorization,ba_confirm_phrase,设置 BA 写入确认短语,ready,平台工程师,FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE,export FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE,no
+mapping,canary_command_mapping,核对 Canary 写点映射,ready,自控工程师,BGS01-508-40133,确认 BA 点表写点、反馈点和单位一致。,no
+dispatch,canary_dispatch,执行 BGS01 单台 Canary,pending,平台工程师 + 现场值班,waiting_for_canary_dispatch,FCU_CANARY_DEVICE_CODE=BGS01 FCU_CANARY_COMMAND_KIND=setpoint FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE npm --prefix apps/chiller-bff run execute:fcu-canary-dispatch,yes
+feedback,feedback_verification,60-120 秒内反馈校验,pending,平台工程师,feedback missing,执行 verify-feedback，确认 feedback_confirmed 后才允许扩批。,no
+rollback,rollback_ready,回退和锁定准备,manual_required,平台工程师 + 现场值班,反馈不一致、通讯报警、温度异常、投诉或本地抢控制即回退。,如执行报告生成 recordId：npm --prefix apps/chiller-bff run rollback:fcu-small-batch-dispatch -- --record-id=<recordId>,no

@@ -1,0 +1,55 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-18T08:37:45.560Z",
+  "siteId": "126lnoffice",
+  "build": "1",
+  "floor": "1",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "mode": "blocked_before_canary_dispatch",
+  "commandKind": "setpoint",
+  "controlMutation": false,
+  "planFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-small-batch-dispatch-plan-latest.json",
+  "preflightFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-go-live-preflight-latest.json",
+  "fieldArmFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-arm-check-latest.json",
+  "canary": {
+    "deviceCode": "BGS01",
+    "deviceName": "办公室01",
+    "zoneTemperatureC": 25,
+    "setpointC": 24
+  },
+  "blockingItems": [
+    {
+      "key": "confirm_phrase_missing",
+      "message": "必须设置 FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE 才允许真实 BA 写入。"
+    }
+  ],
+  "evidence": {
+    "health": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/healthz",
+      "readOnlyMode": true
+    },
+    "preflight": {
+      "ok": true,
+      "verdict": "go_live_ready",
+      "blockingItems": []
+    },
+    "fieldArm": {
+      "ok": true,
+      "verdict": "field_arm_ready",
+      "blockingItems": []
+    },
+    "planSummary": {
+      "total": 29,
+      "ready": 20,
+      "environmentBlocked": 0,
+      "deviceBlocked": 9,
+      "notFound": 0,
+      "deviceReady": 20,
+      "canDispatch": 20,
+      "plannedDevices": 2,
+      "previewReadyDevices": 2
+    }
+  }
+}

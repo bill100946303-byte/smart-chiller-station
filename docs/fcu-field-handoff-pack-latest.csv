@@ -1,0 +1,9 @@
+workOrderId,deviceCode,deviceName,priority,owner,reasons,currentZoneTemperatureC,currentSetpointC,currentCommunicationAlarm,todayAction,communicationAlarmAfter,zoneTemperatureAfterC,setpointFeedbackAfterC,writePointMappingChecked,twoSampleNormal,localManualLockout,releaseDecision,reviewedBy
+FCU-P0-BGS03,BGS03,办公室03,P0,BA/自控工程师,通讯报警；0°C异常；温度无效；温度质量门槛；设定反馈越界,0,0,true,先恢复通讯报警，再做温度和设定反馈复核。,必填：0,必填：5-45,必填：10-32,yes,yes,none,release,必填
+FCU-P0-BGS04,BGS04,办公室04,P0,BA/自控工程师,通讯报警；0°C异常；温度无效；温度质量门槛；设定反馈越界,0,0,true,先恢复通讯报警，再做温度和设定反馈复核。,必填：0,必填：5-45,必填：10-32,yes,yes,none,release,必填
+FCU-P0-BGS06,BGS06,办公室06,P0,BA/自控工程师,通讯报警,22,24,true,先恢复通讯报警，再做温度和设定反馈复核。,必填：0,可选,可选,yes,yes,none,release,必填
+FCU-P0-GCBGQ03,GCBGQ03,工程办公区03,P0,BA/自控工程师,通讯报警；设定反馈越界,31,19,true,先恢复通讯报警，再做温度和设定反馈复核。,必填：0,可选,可选,yes,yes,none,release,必填
+FCU-P0-QT02,QT02,前厅02,P0,BA/自控工程师,通讯报警,26,26,true,先恢复通讯报警，再做温度和设定反馈复核。,必填：0,可选,可选,yes,yes,none,release,必填
+FCU-P0-WSJ02,WSJ02,卫生间02,P0,BA/自控工程师,通讯报警；0°C异常；温度无效；温度质量门槛；设定反馈越界,0,0,true,先恢复通讯报警，再做温度和设定反馈复核。,必填：0,必填：5-45,必填：10-32,yes,yes,none,release,必填
+FCU-P0-ZHYS,ZHYS,中会议室,P0,BA/自控工程师,通讯报警；0°C异常；温度无效；温度质量门槛；设定反馈越界,0,0,true,先恢复通讯报警，再做温度和设定反馈复核。,必填：0,必填：5-45,必填：10-32,yes,yes,none,release,必填
+FCU-P0-ZZBGS,ZZBGS,周总,P0,BA/自控工程师,通讯报警；设定反馈越界,24,35,true,先恢复通讯报警，再做温度和设定反馈复核。,必填：0,可选,必填：10-32,yes,yes,none,release,必填

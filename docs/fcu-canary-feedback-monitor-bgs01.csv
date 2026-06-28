@@ -1,0 +1,6 @@
+key,label,ok,evidence
+canary_dispatch_report,Canary 执行报告,false,"ENOENT: no such file or directory, open '/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-dispatch-bgs01.json'"
+canary_record_id,执行记录 ID,false,missing
+canary_dispatch_confirmed,真实下发已确认,false,controlMutation=undefined
+feedback_confirmed,反馈已确认,false,missing
+rollback_not_triggered,未触发回退,true,none

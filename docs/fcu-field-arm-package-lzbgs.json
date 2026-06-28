@@ -1,0 +1,402 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-18T03:43:20.262Z",
+  "siteId": "126lnoffice",
+  "scope": "fcu_field_arm_package",
+  "deviceCode": "LZBGS",
+  "verdict": "field_arm_package_blocked",
+  "controlMutation": false,
+  "canary": {
+    "deviceCode": "LZBGS",
+    "deviceName": "刘总办公室",
+    "snapshot": null,
+    "command": {
+      "kind": "setpoint",
+      "commandType": "setpoint",
+      "pointKey": "setpoint",
+      "pointName": "设置温度",
+      "tagName": "LZBGS-508-40469",
+      "value": 25.5,
+      "unit": "°C"
+    },
+    "secondaryCommand": {
+      "kind": "fan_speed",
+      "commandType": "fan_speed",
+      "pointKey": "fanSpeedMode",
+      "pointName": "风速模式",
+      "tagName": "LZBGS-508-40467",
+      "value": "auto",
+      "unit": null
+    },
+    "writeCommand": "FCU_CANARY_DEVICE_CODE=LZBGS FCU_CANARY_COMMAND_KIND=setpoint FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE npm --prefix apps/chiller-bff run execute:fcu-canary-dispatch",
+    "rollbackCommand": "如执行报告生成 recordId：npm --prefix apps/chiller-bff run rollback:fcu-small-batch-dispatch -- --record-id=<recordId>"
+  },
+  "requiredEnv": {
+    "READ_ONLY_MODE": "false",
+    "CHILLER_READ_ONLY_MODE": "false",
+    "FCU_CANARY_DEVICE_CODE": "LZBGS",
+    "FCU_CANARY_COMMAND_KIND": "setpoint",
+    "FCU_SMALL_BATCH_CONFIRM": "I_UNDERSTAND_REAL_BA_WRITE"
+  },
+  "checklist": [
+    {
+      "key": "site_authorization",
+      "phase": "authorization",
+      "label": "现场授权真实 BA 写入",
+      "status": "manual_required",
+      "owner": "现场负责人",
+      "evidence": "甲方/运维明确授权单台 BGS01 试写，窗口内有人值守。",
+      "action": "人工签字确认后再设置确认短语。",
+      "writesControl": false
+    },
+    {
+      "key": "backend_write_gate",
+      "phase": "environment",
+      "label": "关闭 BFF 只读总闸",
+      "status": "blocked",
+      "owner": "平台工程师",
+      "evidence": "readOnlyMode=undefined",
+      "action": "READ_ONLY_MODE=false CHILLER_READ_ONLY_MODE=false npm --prefix apps/chiller-bff run dev",
+      "writesControl": false
+    },
+    {
+      "key": "ba_confirm_phrase",
+      "phase": "authorization",
+      "label": "设置 BA 写入确认短语",
+      "status": "blocked",
+      "owner": "平台工程师",
+      "evidence": "FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE",
+      "action": "export FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE",
+      "writesControl": false
+    },
+    {
+      "key": "canary_command_mapping",
+      "phase": "mapping",
+      "label": "核对 Canary 写点映射",
+      "status": "ready",
+      "owner": "自控工程师",
+      "evidence": "LZBGS-508-40469",
+      "action": "确认 BA 点表写点、反馈点和单位一致。",
+      "writesControl": false
+    },
+    {
+      "key": "canary_dispatch",
+      "phase": "dispatch",
+      "label": "执行 LZBGS 单台 Canary",
+      "status": "pending",
+      "owner": "平台工程师 + 现场值班",
+      "evidence": "waiting_for_canary_dispatch",
+      "action": "FCU_CANARY_DEVICE_CODE=LZBGS FCU_CANARY_COMMAND_KIND=setpoint FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE npm --prefix apps/chiller-bff run execute:fcu-canary-dispatch",
+      "writesControl": true
+    },
+    {
+      "key": "feedback_verification",
+      "phase": "feedback",
+      "label": "60-120 秒内反馈校验",
+      "status": "pending",
+      "owner": "平台工程师",
+      "evidence": "feedback missing",
+      "action": "执行 verify-feedback，确认 feedback_confirmed 后才允许扩批。",
+      "writesControl": false
+    },
+    {
+      "key": "rollback_ready",
+      "phase": "rollback",
+      "label": "回退和锁定准备",
+      "status": "manual_required",
+      "owner": "平台工程师 + 现场值班",
+      "evidence": "反馈不一致、通讯报警、温度异常、投诉或本地抢控制即回退。",
+      "action": "如执行报告生成 recordId：npm --prefix apps/chiller-bff run rollback:fcu-small-batch-dispatch -- --record-id=<recordId>",
+      "writesControl": false
+    }
+  ],
+  "blockers": [
+    {
+      "key": "go_live_preflight",
+      "label": "上线前预检",
+      "severity": "P0",
+      "evidence": "go_live_blocked",
+      "action": "npm --prefix apps/chiller-bff run check:fcu-go-live-preflight"
+    },
+    {
+      "key": "field_arm",
+      "label": "现场 Arm-Check",
+      "severity": "P0",
+      "evidence": "field_arm_blocked",
+      "action": "npm --prefix apps/chiller-bff run check:fcu-field-arm"
+    },
+    {
+      "key": "ba_write_confirm",
+      "label": "BA 写入二次确认",
+      "severity": "P0",
+      "evidence": "requires FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE",
+      "action": "export FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE"
+    },
+    {
+      "key": "backend_write_gate",
+      "label": "BFF 写入总闸",
+      "severity": "P0",
+      "evidence": "requires /healthz readOnlyMode=false",
+      "action": "READ_ONLY_MODE=false CHILLER_READ_ONLY_MODE=false npm --prefix apps/chiller-bff run dev"
+    },
+    {
+      "key": "execution_gate_open",
+      "label": "全局真实下发闸门打开",
+      "severity": "P0",
+      "evidence": "",
+      "action": ""
+    },
+    {
+      "key": "confirm_phrase_present",
+      "label": "真实写入确认短语",
+      "severity": "P0",
+      "evidence": "",
+      "action": ""
+    },
+    {
+      "key": "bff_reachable",
+      "label": "BFF 可访问",
+      "severity": "P0",
+      "evidence": "status=404, ok=undefined",
+      "action": ""
+    },
+    {
+      "key": "policy_enforced",
+      "label": "FCU 策略 enforced",
+      "severity": "P0",
+      "evidence": "enabled=true, mode=shadow",
+      "action": ""
+    },
+    {
+      "key": "subsystem_write_enabled",
+      "label": "子系统写总闸",
+      "severity": "P0",
+      "evidence": "subsystemWriteEnabled=false, boundary=read_only",
+      "action": ""
+    },
+    {
+      "key": "adapter_configured",
+      "label": "BA 写适配器已配置",
+      "severity": "P0",
+      "evidence": "dispatchAdapter=none",
+      "action": ""
+    },
+    {
+      "key": "whitelist_contains_canary",
+      "label": "白名单包含首台 Canary",
+      "severity": "P0",
+      "evidence": "LZBGS in whitelist=false",
+      "action": ""
+    },
+    {
+      "key": "canary_snapshot_quality",
+      "label": "Canary 当前快照质量",
+      "severity": "P0",
+      "evidence": "snapshot missing",
+      "action": ""
+    },
+    {
+      "key": "approve-site-authorization-in-3002",
+      "label": "在 3002 配置中心批准现场授权",
+      "severity": "P0",
+      "evidence": "现场未授权时，3001 只能生成建议和预演，不能进入真实 BA 写入。",
+      "action": "在 3002 配置中心批准现场授权"
+    },
+    {
+      "key": "record-site-authorization-owners-in-3002",
+      "label": "在 3002 补齐授权确认人、投运负责人和 BA 负责人",
+      "severity": "P0",
+      "evidence": "最终控制必须能追溯现场授权、平台执行和 BA 写点责任人。",
+      "action": "在 3002 补齐授权确认人、投运负责人和 BA 负责人"
+    },
+    {
+      "key": "configure-site-authorization-window-in-3002",
+      "label": "在 3002 配置 FCU 真实写入授权窗口",
+      "severity": "P0",
+      "evidence": "真实 BA 写入必须限定现场值守窗口，不能长期裸开。",
+      "action": "在 3002 配置 FCU 真实写入授权窗口"
+    },
+    {
+      "key": "activate-site-authorization-window",
+      "label": "调整或等待 FCU 真实写入授权窗口生效",
+      "severity": "P0",
+      "evidence": "真实 BA 写入只能在现场值守授权窗口内执行。",
+      "action": "调整或等待 FCU 真实写入授权窗口生效"
+    },
+    {
+      "key": "set-final-rollout-confirm",
+      "label": "设置最终控制总确认短语",
+      "severity": "P0",
+      "evidence": "没有总确认时编排器不会调用 Canary/小批量/全量真实执行脚本。",
+      "action": "设置最终控制总确认短语"
+    },
+    {
+      "key": "set-ba-write-confirm",
+      "label": "设置 BA 写入确认短语",
+      "severity": "P0",
+      "evidence": "真实 BA 写入需要二次确认，防止误触发。",
+      "action": "设置 BA 写入确认短语"
+    },
+    {
+      "key": "open-backend-write-gate",
+      "label": "关闭 BFF 只读总闸并重启",
+      "severity": "P0",
+      "evidence": "当前 readOnlyMode=true，后端禁止真实 BA 写入。",
+      "action": "关闭 BFF 只读总闸并重启"
+    },
+    {
+      "key": "rerun-go-live-preflight",
+      "label": "重跑上线前预检",
+      "severity": "P0",
+      "evidence": "预检必须为 go_live_ready 才允许真实下发。",
+      "action": "重跑上线前预检"
+    },
+    {
+      "key": "rerun-field-arm",
+      "label": "重跑现场 Arm-Check",
+      "severity": "P0",
+      "evidence": "现场 Arm-Check 必须 ready，才能执行首台 Canary。",
+      "action": "重跑现场 Arm-Check"
+    },
+    {
+      "key": "execute-canary",
+      "label": "执行首台 Canary 并确认反馈",
+      "severity": "P0",
+      "evidence": "最终控制必须先完成首台真实下发和反馈确认。",
+      "action": "执行首台 Canary 并确认反馈"
+    },
+    {
+      "key": "close-field-remediation-before-canary",
+      "label": "关闭 FCU 现场 P0 消缺后再进入 Canary",
+      "severity": "P0",
+      "evidence": "只有质量整改清零、全量分批计划无设备阻断后，才允许进入首台真实写入 Canary。",
+      "action": "关闭 FCU 现场 P0 消缺后再进入 Canary"
+    },
+    {
+      "key": "promote-current-signoff-input",
+      "label": "确认提升 current-only 现场签字输入并归档旧行",
+      "severity": "P0",
+      "evidence": "现场签字主输入仍包含 10 行旧工单，容易造成签字验收和 Canary 门禁反复跳变。",
+      "action": "确认提升 current-only 现场签字输入并归档旧行"
+    },
+    {
+      "key": "pass-canary-readiness",
+      "label": "通过 FCU Canary 总门禁后再执行首台下发",
+      "severity": "P0",
+      "evidence": "首台 Canary 必须同时满足现场签字、实时 closeout、Arm-Check、BA 写适配器和执行包门禁，不能只看单个执行命令。",
+      "action": "通过 FCU Canary 总门禁后再执行首台下发"
+    }
+  ],
+  "feedbackChecks": [
+    {
+      "key": "record_status",
+      "check": "执行报告 verification.recordStatus",
+      "expected": "feedback_confirmed"
+    },
+    {
+      "key": "completion_milestone",
+      "check": "docs/fcu-final-control-completion-latest.json milestones.canary.ok",
+      "expected": "true"
+    },
+    {
+      "key": "control_mutation",
+      "check": "Canary 执行报告 controlMutation",
+      "expected": "true，仅在授权真实写入窗口内允许"
+    },
+    {
+      "key": "no_rollback",
+      "check": "执行报告 rollback / blockers",
+      "expected": "无 rollback，阻断项为空"
+    }
+  ],
+  "rollbackTriggers": [
+    "60-120 秒内反馈未变更为 feedback_confirmed",
+    "反馈值与执行单目标不一致或 verify-feedback 返回 mismatch/failed",
+    "通讯报警、0°C/越界温度、就地/手动模式、本地锁定任一出现",
+    "现场人员报告投诉、禁控或面板抢控制",
+    "回退失败时进入 rollback_watch，禁止继续 Canary 或扩批"
+  ],
+  "acceptanceRecords": [
+    {
+      "field": "现场授权人",
+      "required": true
+    },
+    {
+      "field": "投运开始时间",
+      "required": true
+    },
+    {
+      "field": "执行 recordId",
+      "required": true
+    },
+    {
+      "field": "BA 写入返回",
+      "required": true
+    },
+    {
+      "field": "设定反馈/运行反馈",
+      "required": true
+    },
+    {
+      "field": "verify-feedback 结果",
+      "required": true
+    },
+    {
+      "field": "是否触发回退",
+      "required": true
+    },
+    {
+      "field": "现场值班确认",
+      "required": true
+    }
+  ],
+  "sourceReports": {
+    "canaryPackage": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-lzbgs.json",
+      "verdict": "canary_package_ready_with_open_gates",
+      "error": null
+    },
+    "adapterReadiness": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-lzbgs.json",
+      "verdict": "ba_write_adapter_blocked",
+      "error": null
+    },
+    "feedbackMonitor": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-feedback-monitor-lzbgs.json",
+      "verdict": "waiting_for_canary_dispatch",
+      "error": null
+    },
+    "canaryWindow": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-window-lzbgs.json",
+      "verdict": "canary_window_blocked",
+      "error": null
+    },
+    "finalWorklist": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-worklist-latest.json",
+      "verdict": "worklist_open",
+      "error": null
+    },
+    "finalCompletion": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-completion-latest.json",
+      "verdict": "final_control_incomplete",
+      "error": null
+    },
+    "qualityRemediation": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-quality-remediation-latest.json",
+      "verdict": null,
+      "error": null
+    }
+  },
+  "outputs": {
+    "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-arm-package-lzbgs.json",
+    "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-arm-package-lzbgs.md",
+    "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-arm-package-lzbgs.csv"
+  }
+}

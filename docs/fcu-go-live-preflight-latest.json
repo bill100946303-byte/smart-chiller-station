@@ -1,0 +1,325 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-20T04:31:49.789Z",
+  "siteId": "126lnoffice",
+  "build": "1",
+  "floor": "1",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "verdict": "go_live_blocked",
+  "controlMutation": false,
+  "plannedDevices": [
+    "WSJ01",
+    "BGS01"
+  ],
+  "whitelist": [
+    "BGS01",
+    "BGS02",
+    "BGS03",
+    "BGS04",
+    "BGS05",
+    "BGS06",
+    "CWS",
+    "DHYS",
+    "DTT",
+    "GCBGQ01",
+    "GCBGQ02",
+    "GCBGQ03",
+    "JDS",
+    "LZBGS",
+    "QT01",
+    "QT02",
+    "QTS",
+    "SYS",
+    "TNFBQ01",
+    "TNFBQ02",
+    "WSJ01",
+    "WSJ02",
+    "XZBGS",
+    "YFBGQ01",
+    "YFBGQ02",
+    "YFBGQ03",
+    "YFBGQ04",
+    "ZHYS",
+    "ZZBGS"
+  ],
+  "previewReadyDevices": [
+    "WSJ01",
+    "BGS01"
+  ],
+  "commandCount": 4,
+  "executionGate": {
+    "ready": false,
+    "dispatchAllowed": false,
+    "readOnlyMode": true,
+    "subsystemWriteEnabled": true,
+    "boundaryMode": "enforced",
+    "policyMode": "enforced",
+    "adapterConfigured": true,
+    "whitelistCount": 29,
+    "authorizationStatus": "approved",
+    "authorizationOwnerReady": true,
+    "authorizationWindowConfigured": true,
+    "authorizationWindowActive": false,
+    "authorizationWindowStart": "2026-06-18T04:00:15.498Z",
+    "authorizationWindowEnd": "2026-06-18T05:00:15.498Z",
+    "authorizationWindowNow": "2026-06-20T04:31:49.374Z",
+    "baWriteConfirmArmed": true,
+    "finalRolloutConfirmArmed": true,
+    "sourceStatus": "demo_data",
+    "conditions": [
+      {
+        "key": "policy_enabled",
+        "label": "FCU策略启用",
+        "ok": true
+      },
+      {
+        "key": "mode_enforced",
+        "label": "控制模式为自动闭环",
+        "ok": true
+      },
+      {
+        "key": "subsystem_write_enabled",
+        "label": "空调末端子系统写总闸",
+        "ok": true
+      },
+      {
+        "key": "dispatch_adapter_configured",
+        "label": "BA写适配器已配置",
+        "ok": true
+      },
+      {
+        "key": "whitelist_not_empty",
+        "label": "单台白名单非空",
+        "ok": true
+      },
+      {
+        "key": "site_authorization_approved",
+        "label": "现场授权已批准",
+        "ok": true
+      },
+      {
+        "key": "site_authorization_owner_recorded",
+        "label": "现场授权责任人已记录",
+        "ok": true
+      },
+      {
+        "key": "site_authorization_window_configured",
+        "label": "现场授权窗口已配置",
+        "ok": true
+      },
+      {
+        "key": "site_authorization_window_active",
+        "label": "现场授权窗口当前有效",
+        "ok": false
+      },
+      {
+        "key": "ba_write_confirm_armed",
+        "label": "BA写入确认已装载",
+        "ok": true
+      },
+      {
+        "key": "final_rollout_confirm_armed",
+        "label": "最终控制总确认已装载",
+        "ok": true
+      },
+      {
+        "key": "backend_not_readonly",
+        "label": "后端环境允许真实写入",
+        "ok": false
+      }
+    ],
+    "blockedReasons": [
+      "site_authorization_window_active",
+      "backend_not_readonly"
+    ]
+  },
+  "checks": [
+    {
+      "key": "bff_health",
+      "label": "BFF 服务可用",
+      "ok": true,
+      "severity": "P0",
+      "message": "BFF healthz 正常。"
+    },
+    {
+      "key": "policy_enforced",
+      "label": "策略进入 enforced",
+      "ok": true,
+      "severity": "P0",
+      "message": "FCU 策略已进入 enforced。"
+    },
+    {
+      "key": "adapter_configured",
+      "label": "BA 写适配器已配置",
+      "ok": true,
+      "severity": "P0",
+      "message": "当前适配器: legacy-scene-command"
+    },
+    {
+      "key": "whitelist_available",
+      "label": "白名单已配置",
+      "ok": true,
+      "severity": "P0",
+      "message": "当前白名单 29 台。",
+      "whitelist": [
+        "BGS01",
+        "BGS02",
+        "BGS03",
+        "BGS04",
+        "BGS05",
+        "BGS06",
+        "CWS",
+        "DHYS",
+        "DTT",
+        "GCBGQ01",
+        "GCBGQ02",
+        "GCBGQ03",
+        "JDS",
+        "LZBGS",
+        "QT01",
+        "QT02",
+        "QTS",
+        "SYS",
+        "TNFBQ01",
+        "TNFBQ02",
+        "WSJ01",
+        "WSJ02",
+        "XZBGS",
+        "YFBGQ01",
+        "YFBGQ02",
+        "YFBGQ03",
+        "YFBGQ04",
+        "ZHYS",
+        "ZZBGS"
+      ]
+    },
+    {
+      "key": "matrix_route_covers_whitelist",
+      "label": "逐台控制页覆盖白名单",
+      "ok": true,
+      "severity": "P1",
+      "message": "逐台控制页 29 台，白名单 29 台，设备侧就绪 9 台。"
+    },
+    {
+      "key": "upstream_duplicate_rows_collapsed",
+      "label": "上游重复设备行已折叠",
+      "ok": true,
+      "severity": "P1",
+      "message": "上游原始行 29，折叠重复 0。"
+    },
+    {
+      "key": "plan_recent",
+      "label": "执行单新鲜",
+      "ok": true,
+      "severity": "P0",
+      "message": "执行单距今 0 min，阈值 30 min。"
+    },
+    {
+      "key": "plan_within_whitelist",
+      "label": "执行单属于白名单子集",
+      "ok": true,
+      "severity": "P0",
+      "message": "计划设备: WSJ01, BGS01。",
+      "unexpectedPlanned": [],
+      "missingWhitelistInPlan": [
+        "BGS02",
+        "BGS03",
+        "BGS04",
+        "BGS05",
+        "BGS06",
+        "CWS",
+        "DHYS",
+        "DTT",
+        "GCBGQ01",
+        "GCBGQ02",
+        "GCBGQ03",
+        "JDS",
+        "LZBGS",
+        "QT01",
+        "QT02",
+        "QTS",
+        "SYS",
+        "TNFBQ01",
+        "TNFBQ02",
+        "WSJ02",
+        "XZBGS",
+        "YFBGQ01",
+        "YFBGQ02",
+        "YFBGQ03",
+        "YFBGQ04",
+        "ZHYS",
+        "ZZBGS"
+      ]
+    },
+    {
+      "key": "preview_ready",
+      "label": "预演命令 ready",
+      "ok": true,
+      "severity": "P0",
+      "message": "预演 ready 设备 2/2，命令 4 条。"
+    },
+    {
+      "key": "execution_gate_open",
+      "label": "全局真实下发闸门打开",
+      "ok": false,
+      "severity": "P0",
+      "message": "全局投运闸门未打开：site_authorization_window_active / backend_not_readonly"
+    },
+    {
+      "key": "confirm_phrase_present",
+      "label": "真实写入确认短语",
+      "ok": false,
+      "severity": "P0",
+      "message": "必须设置 FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE。"
+    }
+  ],
+  "blockingItems": [
+    {
+      "key": "execution_gate_open",
+      "label": "全局真实下发闸门打开",
+      "ok": false,
+      "severity": "P0",
+      "message": "全局投运闸门未打开：site_authorization_window_active / backend_not_readonly"
+    },
+    {
+      "key": "confirm_phrase_present",
+      "label": "真实写入确认短语",
+      "ok": false,
+      "severity": "P0",
+      "message": "必须设置 FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE。"
+    }
+  ],
+  "warningItems": [],
+  "evidence": {
+    "health": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/healthz",
+      "readOnlyMode": true
+    },
+    "policy": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/hvac-terminal/fan-coils/control-policy"
+    },
+    "commissioning": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/hvac-terminal/fan-coils/commissioning-status?build=1&floor=1"
+    },
+    "files": {
+      "policy": {
+        "ok": true,
+        "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-all-device-policy-latest.json"
+      },
+      "matrix": {
+        "ok": true,
+        "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-device-control-matrix-latest.json"
+      },
+      "plan": {
+        "ok": true,
+        "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-small-batch-dispatch-plan-latest.json"
+      }
+    }
+  }
+}
