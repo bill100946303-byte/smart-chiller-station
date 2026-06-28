@@ -5,7 +5,7 @@ import {
   getStoredProjectSiteId,
   setStoredProjectSelection
 } from "./projectSession";
-import { appendSiteIdToPath, readSiteIdFromSearch } from "./siteRouting";
+import { appendSiteIdToPath, readSiteIdFromSearch, siteIdsEquivalent } from "./siteRouting";
 
 export const AUTH_STORAGE_KEY = "chiller-shell-auth-v1";
 const PROJECT_ACCOUNT_MIN_ALLOWED_COUNT = 3;
@@ -183,6 +183,35 @@ export function resolveAuthProjectDisplayName(
     return siteCode;
   }
   return toOptionalString(project.siteId) || fallback;
+}
+
+export function resolveEnergyConfigSiteId(
+  project: Partial<AuthProject> | null | undefined,
+  fallback = runtimeConfig.siteId
+): string {
+  const siteId = toOptionalString(project?.siteId);
+  const candidates = [
+    siteId,
+    toOptionalString(project?.siteCode),
+    toOptionalString(project?.siteName),
+    toOptionalString(project?.appExplain),
+    toOptionalString(project?.databaseKey),
+    toOptionalString(project?.modelKey),
+    toOptionalString(project?.projectId)
+  ];
+  if (siteId === "126") {
+    return "126lnoffice";
+  }
+  if (siteId && !siteId.startsWith("126lnoffice")) {
+    return siteId;
+  }
+  if (candidates.some((item) => item?.startsWith("126lnoffice"))) {
+    return "126lnoffice";
+  }
+  if (candidates.some((item) => item?.includes("盛世绿能") || item?.toLowerCase().includes("lnoffice"))) {
+    return "126lnoffice";
+  }
+  return siteId || fallback;
 }
 
 function deriveSiteCodeFromModelKey(siteId?: string, modelKey?: string): string {
@@ -390,14 +419,14 @@ function resolveRequestedProject(projects: AuthProject[], requestedPath: string 
     if (!requestedSiteId) {
       return null;
     }
-    const siteMatchedProjects = projects.filter((project) => project.siteId === requestedSiteId);
+    const siteMatchedProjects = projects.filter((project) => siteIdsEquivalent(project.siteId, requestedSiteId));
     const requestedProject = pickBestProjectCandidate(siteMatchedProjects) || null;
     if (!requestedProject) {
       return null;
     }
     const switchableProjects = getSwitchableProjects(projects);
     const switchableSiteMatchedProject = pickBestProjectCandidate(
-      switchableProjects.filter((project) => project.siteId === requestedSiteId)
+      switchableProjects.filter((project) => siteIdsEquivalent(project.siteId, requestedSiteId))
     );
     if (switchableSiteMatchedProject) {
       return switchableSiteMatchedProject;
@@ -862,12 +891,12 @@ function resolveCurrentProjectId(
       }
       continue;
     }
-    const siteMatchedProjects = projects.filter((item) => item.siteId === candidate);
+    const siteMatchedProjects = projects.filter((item) => siteIdsEquivalent(item.siteId, candidate));
     if (siteMatchedProjects.length === 0) {
       continue;
     }
     const switchableSiteMatchedProject = pickBestProjectCandidate(
-      switchableProjects.filter((item) => item.siteId === candidate),
+      switchableProjects.filter((item) => siteIdsEquivalent(item.siteId, candidate)),
       preferredModelKey
     );
     if (switchableSiteMatchedProject) {
@@ -900,7 +929,7 @@ function getProjectFromList(projects: AuthProject[], projectId?: string): AuthPr
   if (exactProject) {
     return exactProject;
   }
-  const siteMatchedProjects = projects.filter((item) => item.siteId === projectId);
+  const siteMatchedProjects = projects.filter((item) => siteIdsEquivalent(item.siteId, projectId));
   if (siteMatchedProjects.length === 1) {
     return siteMatchedProjects[0];
   }
@@ -1094,11 +1123,11 @@ export function selectAuthProject(projectId: string): AuthSession | null {
     projects.find((project) => resolveAuthProjectId(project) === projectId) ||
     null;
   const switchableMatchBySiteId = pickBestProjectCandidate(
-    switchableProjects.filter((project) => project.siteId === projectId),
+    switchableProjects.filter((project) => siteIdsEquivalent(project.siteId, projectId)),
     preferredModelKey
   );
   const fullMatchBySiteId = pickBestProjectCandidate(
-    projects.filter((project) => project.siteId === projectId),
+    projects.filter((project) => siteIdsEquivalent(project.siteId, projectId)),
     preferredModelKey
   );
   const currentProject =
@@ -1115,7 +1144,7 @@ export function selectAuthProject(projectId: string): AuthSession | null {
       ? currentProject
       : (
           pickBestProjectCandidate(
-            switchableProjects.filter((project) => project.siteId === currentProject.siteId),
+            switchableProjects.filter((project) => siteIdsEquivalent(project.siteId, currentProject.siteId)),
             preferredModelKey
           ) ||
           currentProject

@@ -407,25 +407,11 @@ const SERIES_COLORS = ["#63e6ff", "#8ff7d7", "#6fa7ff", "#ffd28b", "#ff8cc6", "#
 const CALENDAR_PIE_COLORS: Record<typeof CALENDAR_PIE_FALLBACK_DEVICE_IDS[number], string> = {
   chiller: "#20d6c4",
   chilledWaterPump: "#5ac8ff",
-  condenserWaterPump: "#9dffe9",
+  condenserWaterPump: "#8fa7ff",
   coolingTower: "#ffc24f"
 };
 const CALENDAR_PIE_FALLBACK_COLOR = "#67bfd0";
 const CALENDAR_PIE_START_ANGLE_DEG = 278;
-const CALENDAR_PIE_ANCHOR_RADIUS_X = 25;
-const CALENDAR_PIE_ANCHOR_RADIUS_Y = 38.5;
-const CALENDAR_PIE_CALLOUT_LAYOUTS: Record<typeof CALENDAR_PIE_FALLBACK_DEVICE_IDS[number], {
-  labelX: number;
-  labelY: number;
-  leadX: number;
-  leadY: number;
-  align: "left" | "right" | "center";
-}> = {
-  chiller: { labelX: 64, labelY: 27, leadX: 70, leadY: 35, align: "left" },
-  chilledWaterPump: { labelX: 3, labelY: 77, leadX: 31, leadY: 72, align: "left" },
-  condenserWaterPump: { labelX: 3, labelY: 54, leadX: 31, leadY: 57, align: "left" },
-  coolingTower: { labelX: 3, labelY: 30, leadX: 29, leadY: 45, align: "left" }
-};
 const CALENDAR_WEEKDAY_LABELS = [
   zhCN.energyEfficiencyPage.calendarWeekSun,
   zhCN.energyEfficiencyPage.calendarWeekMon,
@@ -453,6 +439,16 @@ function formatDateInput(date: Date): string {
 
 function formatMonthInput(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
+}
+
+function formatCalendarPieSegmentName(
+  name: string | null | undefined,
+  kind: typeof CALENDAR_PIE_FALLBACK_DEVICE_IDS[number] | null
+): string {
+  if (kind === "coolingTower") {
+    return "冷却塔风机";
+  }
+  return name || zhCN.common.unknown;
 }
 
 function normalizeLoadBandLabel(value: string | null | undefined): string | null {
@@ -2921,7 +2917,6 @@ export default function EnergyEfficiencyPage() {
       ratio: number;
       start: number;
       end: number;
-      mid: number;
     }> = [];
     overviewPieSegments.forEach((item, index) => {
       const value = item.value || 0;
@@ -2940,8 +2935,7 @@ export default function EnergyEfficiencyPage() {
         color: kind ? CALENDAR_PIE_COLORS[kind] : CALENDAR_PIE_FALLBACK_COLOR,
         ratio,
         start,
-        end,
-        mid: (start + end) / 2
+        end
       });
     });
     const overviewPieStops = overviewPieSlices.map((slice) => (
@@ -2950,38 +2944,11 @@ export default function EnergyEfficiencyPage() {
     const overviewDonutBackground = overviewPieStops.length > 0
       ? `conic-gradient(from ${CALENDAR_PIE_START_ANGLE_DEG}deg, ${overviewPieStops.join(", ")})`
       : "linear-gradient(135deg, rgba(99, 230, 255, 0.18), rgba(143, 247, 215, 0.08))";
-    const overviewPieCallouts = overviewPieSlices.map((slice, calloutIndex) => {
-      const layout = slice.kind
-        ? CALENDAR_PIE_CALLOUT_LAYOUTS[slice.kind]
-        : {
-          labelX: calloutIndex % 2 === 0 ? 78 : 22,
-          labelY: 20 + calloutIndex * 15,
-          leadX: calloutIndex % 2 === 0 ? 70 : 32,
-          leadY: 30 + calloutIndex * 12,
-          align: calloutIndex % 2 === 0 ? "left" : "right"
-        } as const;
-      const angle = CALENDAR_PIE_START_ANGLE_DEG + (slice.mid / 100) * 360;
-      const angleRadians = (angle * Math.PI) / 180;
-      const anchorX = 50 + Math.sin(angleRadians) * CALENDAR_PIE_ANCHOR_RADIUS_X;
-      const anchorY = 50 - Math.cos(angleRadians) * CALENDAR_PIE_ANCHOR_RADIUS_Y;
-      const labelAnchorX = layout.align === "left"
-        ? Math.min(layout.labelX + 21, 94)
-        : layout.align === "right"
-          ? Math.max(layout.labelX - 21, 6)
-          : layout.labelX;
-      const leaderPoints = [
-        [anchorX, anchorY],
-        [layout.leadX, layout.leadY],
-        [labelAnchorX, layout.labelY]
-      ].map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
-      return {
-        ...slice,
-        layout,
-        anchorX,
-        anchorY,
-        leaderPoints
-      };
-    });
+    const overviewPieLegendRows = [...overviewPieSlices].sort((left, right) => (right.item.value || 0) - (left.item.value || 0));
+    const overviewPieTopSegment = overviewPieLegendRows[0] || null;
+    const overviewPieNonChillerShare = overviewPieTotal > 0
+      ? Math.max(0, 100 - (chillerSegment?.value ? (chillerSegment.value / overviewPieTotal) * 100 : 0))
+      : null;
     const loadBandRows = buildCompleteLoadBandRows(proportionData?.rows || []);
     const dominantLoadBand = getDominantLoadBand(loadBandRows);
     const dominantLoadBandBadge = dominantLoadBand
@@ -3169,7 +3136,7 @@ export default function EnergyEfficiencyPage() {
             <section className="energy-efficiency-overview-card energy-efficiency-overview-pie-card">
               <header className="energy-efficiency-overview-card-head">
                 <div>
-                  <h3>分项耗电构成</h3>
+                  <h3>分项电耗构成</h3>
                   <p>{overviewPieScopeKindLabel}</p>
                 </div>
                 <span>{overviewPieCopLabel}</span>
@@ -3177,52 +3144,59 @@ export default function EnergyEfficiencyPage() {
               <div className="energy-efficiency-overview-donut-body">
                 <div className="energy-efficiency-overview-donut-field">
                   <div className="energy-efficiency-overview-donut-map">
-                    {overviewPieCallouts.length > 0 ? (
-                      <svg
-                        className="energy-efficiency-overview-donut-leaders"
-                        viewBox="0 0 100 100"
-                        aria-hidden="true"
-                      >
-                        {overviewPieCallouts.map((item) => (
-                          <g key={`overview-pie-line-${item.item.id || item.index + 1}`}>
-                            <polyline
-                              points={item.leaderPoints}
-                              style={{ stroke: item.color }}
-                            />
-                            <circle
-                              cx={item.anchorX}
-                              cy={item.anchorY}
-                              r="1.25"
-                              style={{ fill: item.color }}
-                            />
-                          </g>
-                        ))}
-                      </svg>
-                    ) : null}
-                  <div className="energy-efficiency-overview-donut" style={{ backgroundImage: overviewDonutBackground }}>
-                    <div>
-                      <span>{overviewDonutScopeLabel}</span>
-                      <strong>{isCalendarNumber(overviewDonutTotal) ? formatNumber(overviewDonutTotal, 0) : "--"}</strong>
-                      {isCalendarNumber(overviewDonutTotal) ? <small>kWh</small> : null}
+                    <div className="energy-efficiency-overview-donut" style={{ backgroundImage: overviewDonutBackground }}>
+                      <div>
+                        <span>{overviewDonutScopeLabel}</span>
+                        <strong>{isCalendarNumber(overviewDonutTotal) ? formatNumber(overviewDonutTotal, 0) : "--"}</strong>
+                        {isCalendarNumber(overviewDonutTotal) ? <small>kWh</small> : null}
+                      </div>
                     </div>
                   </div>
-                  {overviewPieCallouts.map((item, index) => {
-                    return (
-                      <div
-                        key={`overview-pie-${item.item.id || index + 1}`}
-                        className={`energy-efficiency-overview-donut-callout position-${index + 1} align-${item.layout.align}`}
-                        style={{
-                          "--callout-color": item.color,
-                          "--label-x": `${item.layout.labelX}%`,
-                          "--label-y": `${item.layout.labelY}%`
-                        } as CSSProperties}
-                      >
-                        <span>{item.item.name || zhCN.common.unknown}</span>
-                        <strong>{`${formatNumber(item.item.value, 0)} kWh`}</strong>
-                        <small>{`${formatNumber(item.ratio, 1)}%`}</small>
-                      </div>
-                    );
-                  })}
+                  <p className="energy-efficiency-overview-donut-note">分项电耗不等于系统能效</p>
+                </div>
+
+                <div className="energy-efficiency-overview-donut-ranking" aria-label="分项耗电排行">
+                  <div className="energy-efficiency-overview-donut-ranking-head">
+                    <strong>分项占比</strong>
+                    <span>按电耗降序</span>
+                  </div>
+                  <div className="energy-efficiency-overview-donut-ranking-list">
+                    {overviewPieLegendRows.length > 0 ? overviewPieLegendRows.map((item) => {
+                      const displayName = formatCalendarPieSegmentName(item.item.name, item.kind);
+                      const segmentShare = Math.max(0, Math.min(100, item.ratio));
+                      return (
+                        <div
+                          key={`overview-pie-row-${item.item.id || item.index + 1}`}
+                          className="energy-efficiency-overview-donut-ranking-row"
+                          style={{
+                            "--segment-color": item.color,
+                            "--segment-share": `${segmentShare}%`
+                          } as CSSProperties}
+                        >
+                          <span className="energy-efficiency-overview-donut-ranking-swatch" aria-hidden="true" />
+                          <div className="energy-efficiency-overview-donut-ranking-name">
+                            <strong>{displayName}</strong>
+                            <small>{`${formatNumber(item.item.value, 0)} kWh`}</small>
+                          </div>
+                          <div className="energy-efficiency-overview-donut-ranking-bar" aria-hidden="true">
+                            <span />
+                          </div>
+                          <strong className="energy-efficiency-overview-donut-ranking-ratio">{`${formatNumber(item.ratio, 1)}%`}</strong>
+                        </div>
+                      );
+                    }) : (
+                      <div className="energy-efficiency-overview-donut-ranking-empty">暂无分项电耗数据</div>
+                    )}
+                  </div>
+                  <div className="energy-efficiency-overview-donut-ranking-summary">
+                    <div>
+                      <span>最大耗电项</span>
+                      <strong>{overviewPieTopSegment ? formatCalendarPieSegmentName(overviewPieTopSegment.item.name, overviewPieTopSegment.kind) : "--"}</strong>
+                    </div>
+                    <div>
+                      <span>辅机电耗占比</span>
+                      <strong>{isCalendarNumber(overviewPieNonChillerShare) ? `${formatNumber(overviewPieNonChillerShare, 1)}%` : "--"}</strong>
+                    </div>
                   </div>
                 </div>
               </div>

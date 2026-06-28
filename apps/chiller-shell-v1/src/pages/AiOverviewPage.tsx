@@ -13,9 +13,13 @@ import { runtimeConfig } from "../config/runtimeConfig";
 import {
   fetchDashboardOverview,
   fetchRuntimePointSummary,
+  fetchSiteCapabilities,
   type DashboardOverviewDto,
+  type RuntimeSubsystemCapabilityDto,
+  type RuntimeSubsystemCapabilityListDto,
   type RuntimePointSummaryDto
 } from "../services/bffClient";
+import { getCurrentProject, resolveEnergyConfigSiteId } from "../services/auth";
 
 type Tone = "good" | "warn" | "info";
 
@@ -29,6 +33,7 @@ type KpiCard = {
 };
 
 type EquipmentCard = {
+  layoutRole: "chiller" | "chilled-pump" | "load" | "telemetry" | "cooling-pump" | "cooling-tower";
   name: string;
   value: string;
   unit?: string;
@@ -46,6 +51,17 @@ type Recommendation = {
   benefit: string;
   risk: "低" | "中";
   actionLabel: string;
+  detail: string;
+};
+
+type SubsystemAdvice = {
+  id: string;
+  name: string;
+  statusLabel: string;
+  statusTone: Tone;
+  adviceLabel: string;
+  boundaryLabel: string;
+  mappingLabel: string;
   detail: string;
 };
 
@@ -201,6 +217,7 @@ function buildEquipmentCards(overview: DashboardOverviewDto | null, summary: Run
 
   return [
     {
+      layoutRole: "chiller",
       name: "冷机",
       value: formatCountRatio(counts.runningChillerCount, counts.chillerCount),
       status: counts.runningChillerCount != null ? "运行" : "待实时",
@@ -209,6 +226,7 @@ function buildEquipmentCards(overview: DashboardOverviewDto | null, summary: Run
       progress: ratioProgress(counts.runningChillerCount, counts.chillerCount)
     },
     {
+      layoutRole: "chilled-pump",
       name: "冷冻泵",
       value: formatCountRatio(counts.runningChilledPumpCount, counts.chilledPumpCount),
       status: counts.runningChilledPumpCount != null ? "运行" : "待实时",
@@ -217,6 +235,7 @@ function buildEquipmentCards(overview: DashboardOverviewDto | null, summary: Run
       progress: ratioProgress(counts.runningChilledPumpCount, counts.chilledPumpCount)
     },
     {
+      layoutRole: "load",
       name: "负荷侧",
       value: formatKw(overview?.energyCards?.totalCoolingCapacity),
       unit: overview?.energyCards?.totalCoolingCapacity != null ? "kW" : undefined,
@@ -230,6 +249,7 @@ function buildEquipmentCards(overview: DashboardOverviewDto | null, summary: Run
         : 35
     },
     {
+      layoutRole: "telemetry",
       name: "数据回传",
       value: runtimeReady(summary) ? "在线" : "待实时",
       status: runtimeReady(summary) ? "已接入" : "异常",
@@ -238,6 +258,7 @@ function buildEquipmentCards(overview: DashboardOverviewDto | null, summary: Run
       progress: runtimeReady(summary) ? 100 : 35
     },
     {
+      layoutRole: "cooling-pump",
       name: "冷却泵",
       value: formatCountRatio(counts.runningCoolingPumpCount, counts.coolingPumpCount),
       status: counts.runningCoolingPumpCount != null ? "运行" : "待实时",
@@ -246,6 +267,7 @@ function buildEquipmentCards(overview: DashboardOverviewDto | null, summary: Run
       progress: ratioProgress(counts.runningCoolingPumpCount, counts.coolingPumpCount)
     },
     {
+      layoutRole: "cooling-tower",
       name: "冷却塔",
       value: formatCountRatio(towerCells.running, towerCells.total),
       unit: towerCells.total != null ? "组" : undefined,
@@ -310,10 +332,100 @@ function buildRecommendations(summary: RuntimePointSummaryDto | null): Recommend
   ];
 }
 
+function isWaitingForRealData(item: RuntimeSubsystemCapabilityDto): boolean {
+  return item.status === "enabled" && item.sourceStatus === "waiting_points";
+}
+
+function isDemoData(item: RuntimeSubsystemCapabilityDto): boolean {
+  return item.status === "enabled" && item.sourceStatus === "demo_data";
+}
+
+function formatSubsystemStatus(item: RuntimeSubsystemCapabilityDto): string {
+  if (isDemoData(item)) {
+    return "演示数据";
+  }
+  if (isWaitingForRealData(item)) {
+    return "待接实时";
+  }
+  if (item.status === "enabled") {
+    return "已接入";
+  }
+  if (item.status === "not_configured") {
+    return "未配置";
+  }
+  if (item.status === "not_applicable") {
+    return "不适用";
+  }
+  return item.status || "未知";
+}
+
+function getSubsystemTone(item: RuntimeSubsystemCapabilityDto): Tone {
+  if (isDemoData(item)) {
+    return "info";
+  }
+  if (isWaitingForRealData(item)) {
+    return "warn";
+  }
+  if (item.status === "enabled") {
+    return "good";
+  }
+  if (item.status === "not_configured") {
+    return "warn";
+  }
+  return "info";
+}
+
+function buildSubsystemAdvice(capabilities: RuntimeSubsystemCapabilityListDto | null): SubsystemAdvice[] {
+  const items = capabilities?.items || [];
+  return items.map((item) => {
+    const configEnabled = item.status === "enabled";
+    const demoData = isDemoData(item);
+    const realDataReady = configEnabled && !isWaitingForRealData(item) && !demoData;
+    const reserved = item.reserved || item.status === "not_applicable";
+    const boundaryMode = item.controlBoundary?.mode || "read_only";
+    const advisorStatus = configEnabled ? item.advisorPluginStatus || "not_configured" : "不参与";
+    return {
+      id: item.subsystemType,
+      name: item.displayName || item.subsystemType,
+      statusLabel: formatSubsystemStatus(item),
+      statusTone: getSubsystemTone(item),
+      adviceLabel: realDataReady
+        ? "可进入跨系统分析"
+        : demoData
+          ? "演示建议，不接入真实控制"
+        : configEnabled
+          ? "配置已发布，待现场数据"
+        : reserved
+          ? "预留，不参与"
+          : "待点位映射",
+      boundaryLabel: `${boundaryMode} / ${item.controlBoundary?.writeEnabled ? "write" : "no PLC write"}`,
+      mappingLabel: configEnabled
+        ? realDataReady
+          ? `映射 ${item.pointMappingProgress || 0}%`
+          : demoData
+            ? `演示模板 ${item.pointMappingProgress || 0}%`
+          : `模板 ${item.pointMappingProgress || 0}%`
+        : "不参与统计",
+      detail: realDataReady
+        ? `Advisor ${advisorStatus}，可作为 AI 建议输入；控制边界仍以配置中心发布版本为准。`
+        : demoData
+          ? `Advisor ${advisorStatus} 只用于盛世绿能办公楼演示；输出为只读建议，不代表真实现场数据，不触发 PLC 写入。`
+        : configEnabled
+          ? "已发布只读点位模板，但真实空压/子系统实时数据未接入；不生成实时 KPI、不参与节能统计，先完成 PLC/网关点位绑定。"
+        : reserved
+          ? "当前项目不适用，仅保留未来扩展入口，不计入运行 KPI 和建议数量。"
+          : "当前未配置，不生成假 KPI、不推送节能建议；先在 3002 完成点位角色映射和发布。"
+    };
+  });
+}
+
 export default function AiOverviewPage() {
-  const siteId = runtimeConfig.siteId;
+  const currentProject = getCurrentProject();
+  const siteId = currentProject?.siteId || runtimeConfig.siteId;
+  const configSiteId = resolveEnergyConfigSiteId(currentProject, runtimeConfig.siteId);
   const [overview, setOverview] = useState<DashboardOverviewDto | null>(null);
   const [runtimeSummary, setRuntimeSummary] = useState<RuntimePointSummaryDto | null>(null);
+  const [capabilities, setCapabilities] = useState<RuntimeSubsystemCapabilityListDto | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [approvedIds, setApprovedIds] = useState<string[]>([]);
   const [expandedId, setExpandedId] = useState<string>("");
@@ -323,6 +435,18 @@ export default function AiOverviewPage() {
     let timer: number | null = null;
 
     async function load() {
+      void fetchSiteCapabilities(configSiteId)
+        .then((capabilityResult) => {
+          if (active) {
+            setCapabilities(capabilityResult);
+          }
+        })
+        .catch(() => {
+          if (active) {
+            setCapabilities(null);
+          }
+        });
+
       const [overviewResult, runtimeResult] = await Promise.allSettled([
         fetchDashboardOverview(siteId),
         fetchRuntimePointSummary(siteId)
@@ -358,9 +482,17 @@ export default function AiOverviewPage() {
         window.clearTimeout(timer);
       }
     };
-  }, [siteId]);
+  }, [configSiteId, siteId]);
 
   const recommendations = useMemo(() => buildRecommendations(runtimeSummary), [runtimeSummary]);
+  const subsystemAdvice = useMemo(() => buildSubsystemAdvice(capabilities), [capabilities]);
+  const enabledSubsystemCount = subsystemAdvice.filter((item) => item.statusLabel === "已接入").length;
+  const demoSubsystemCount = subsystemAdvice.filter((item) => item.statusLabel === "演示数据").length;
+  const waitingSubsystemCount = subsystemAdvice.filter((item) => item.statusLabel === "待接实时").length;
+  const configurableSubsystemCount = subsystemAdvice.filter((item) => item.statusLabel === "未配置").length;
+  const subsystemCapabilitySummary = capabilities
+    ? `${enabledSubsystemCount} 实时接入 / ${demoSubsystemCount} 演示数据 / ${waitingSubsystemCount} 待接实时 / ${configurableSubsystemCount} 待配置`
+    : "配置读取中";
   const pendingCount = recommendations.length - approvedIds.length;
   const primaryKpis = useMemo(
     () => [
@@ -437,14 +569,14 @@ export default function AiOverviewPage() {
             <div className="ai-flow ai-flow-data" />
             <div className="ai-water-pill ai-water-pill-left">
               <Snowflake size={15} />
-              冷冻供/回 <strong>{formatTemp(chilledWater?.supplyTempC)} / {formatTemp(chilledWater?.returnTempC)}</strong> · ΔT {formatTemp(chilledWater?.deltaTC)}
+              冷冻侧 ΔT <strong>{formatTemp(chilledWater?.deltaTC)}</strong> · {formatTemp(chilledWater?.supplyTempC)} / {formatTemp(chilledWater?.returnTempC)}
             </div>
             <div className="ai-water-pill ai-water-pill-right">
               <Waves size={15} />
-              冷却侧温差 <strong>{formatTemp(coolingWater?.deltaTC)}</strong> · 湿球 {formatTemp(weather?.wetBulbC)}
+              冷却侧 ΔT <strong>{formatTemp(coolingWater?.deltaTC)}</strong> · 湿球 {formatTemp(weather?.wetBulbC)}
             </div>
-            {equipmentCards.map((item, index) => (
-              <article className={`ai-equipment-card equipment-${index} tone-${item.tone}`} key={item.name}>
+            {equipmentCards.map((item) => (
+              <article className={`ai-equipment-card equipment-${item.layoutRole} tone-${item.tone}`} key={item.name}>
                 <div className="ai-equipment-head">
                   <span>{item.name}</span>
                   <em>{item.status}</em>
@@ -471,6 +603,27 @@ export default function AiOverviewPage() {
             <div>
               <strong>影子建议模式</strong>
               <p>AI只建议不接管，PLC保留低温、防冻、启停间隔等硬保护。</p>
+            </div>
+          </div>
+          <div className="ai-subsystem-advice-panel" aria-label="跨系统AI建议中心">
+            <div className="ai-subsystem-advice-title">
+              <strong>跨系统 AI 建议中心</strong>
+              <span>{subsystemCapabilitySummary}</span>
+            </div>
+            <div className="ai-subsystem-advice-grid">
+              {subsystemAdvice.map((item) => (
+                <article className={`ai-subsystem-advice-card tone-${item.statusTone}`} key={item.id}>
+                  <div className="ai-subsystem-advice-head">
+                    <strong>{item.name}</strong>
+                    <span>{item.statusLabel}</span>
+                  </div>
+                  <div className="ai-subsystem-advice-meta">
+                    <em>{item.adviceLabel}</em>
+                    <em>{item.mappingLabel}</em>
+                  </div>
+                  <p>{item.boundaryLabel}</p>
+                </article>
+              ))}
             </div>
           </div>
           <div className="ai-rec-list">

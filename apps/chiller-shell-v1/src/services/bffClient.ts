@@ -1,6 +1,10 @@
 import { getCurrentLocale } from "../i18n/zhCN";
 import { getAuthSession, getCurrentProject, type AuthProject } from "./auth";
 
+function isLocalLoopbackHost(hostname: string): boolean {
+  return hostname === "127.0.0.1" || hostname === "localhost";
+}
+
 function resolveDefaultBffBaseUrl(): string {
   const configuredBaseUrl =
     typeof import.meta.env.VITE_BFF_BASE_URL === "string"
@@ -8,6 +12,14 @@ function resolveDefaultBffBaseUrl(): string {
       : "";
   if (configuredBaseUrl) {
     return configuredBaseUrl;
+  }
+  if (
+    import.meta.env.DEV &&
+    typeof window !== "undefined" &&
+    typeof window.location?.hostname === "string" &&
+    isLocalLoopbackHost(window.location.hostname)
+  ) {
+    return "http://127.0.0.1:8787";
   }
   if (typeof window !== "undefined" && typeof window.location?.origin === "string") {
     return window.location.origin;
@@ -23,10 +35,6 @@ function normalizeBaseUrl(value: string): string {
   return value.replace(/\/+$/, "");
 }
 
-function isLocalLoopbackHost(hostname: string): boolean {
-  return hostname === "127.0.0.1" || hostname === "localhost";
-}
-
 function buildBffBaseUrlCandidates(baseUrl: string): string[] {
   const normalized = normalizeBaseUrl(baseUrl);
   try {
@@ -34,8 +42,11 @@ function buildBffBaseUrlCandidates(baseUrl: string): string[] {
     if (!isLocalLoopbackHost(parsed.hostname)) {
       return [normalized];
     }
+    const localDevDefaultBaseUrl = `${parsed.protocol}//${parsed.hostname}:8787`;
+    const localDevBaseUrls = import.meta.env.DEV ? [localDevDefaultBaseUrl] : [];
     return Array.from(
       new Set([
+        ...localDevBaseUrls,
         normalized,
         ...LOCAL_BFF_FALLBACK_PORTS.map((port) => `${parsed.protocol}//${parsed.hostname}:${port}`)
       ])
@@ -68,6 +79,18 @@ function isLikelyTransportError(error: unknown): boolean {
   );
 }
 
+function shouldRetryLocalBffResponse(response: Response, baseUrl: string, hasAlternate: boolean): boolean {
+  if (!hasAlternate || response.status !== 404) {
+    return false;
+  }
+  try {
+    const parsed = new URL(normalizeBaseUrl(baseUrl));
+    return isLocalLoopbackHost(parsed.hostname);
+  } catch (_error) {
+    return false;
+  }
+}
+
 function logLocalBffFallback(fromBaseUrl: string, toBaseUrl: string, error: unknown) {
   const now = Date.now();
   if (now - lastFallbackLoggedAt < 10_000) {
@@ -94,6 +117,13 @@ async function fetchFromBff(path: string, init?: RequestInit): Promise<Response>
     const baseUrl = orderedCandidates[index];
     try {
       const response = await fetch(buildBffUrl(baseUrl, path), init);
+      const hasAlternate = index < orderedCandidates.length - 1;
+      if (shouldRetryLocalBffResponse(response, baseUrl, hasAlternate)) {
+        if (!pendingFallbackLog) {
+          pendingFallbackLog = { fromBaseUrl: baseUrl, error: new Error(`HTTP ${response.status}`) };
+        }
+        continue;
+      }
       if (pendingFallbackLog && baseUrl !== pendingFallbackLog.fromBaseUrl) {
         logLocalBffFallback(pendingFallbackLog.fromBaseUrl, baseUrl, pendingFallbackLog.error);
       }
@@ -153,6 +183,287 @@ export type FreshnessDto = {
   latestTimestamp?: string | null;
   stale?: boolean;
   ageHours?: number | null;
+};
+
+export type RuntimeSubsystemStatus = "enabled" | "not_configured" | "not_applicable" | string;
+
+export type RuntimeControlBoundaryDto = {
+  mode?: "read_only" | "shadow" | "assisted" | "enforced" | string;
+  approvalRequired?: boolean;
+  plcProtectionRequired?: boolean;
+  rollbackRequired?: boolean;
+  writeEnabled?: boolean;
+  notes?: string | null;
+};
+
+export type RuntimeAdvisorBindingDto = {
+  pluginKey?: string;
+  status?: string;
+  mode?: string;
+};
+
+export type RuntimeSubsystemRegistryPointRoleDto = {
+  role: string;
+  label: string;
+  required?: boolean;
+  unit?: string;
+};
+
+export type RuntimeSubsystemCapabilityDto = {
+  siteId?: string;
+  subsystemType: string;
+  displayName: string;
+  category?: string;
+  description?: string | null;
+  status: RuntimeSubsystemStatus;
+  mode?: string;
+  reserved?: boolean;
+  enabled?: boolean;
+  kpis?: unknown[];
+  alarmCount?: number | null;
+  freshnessStatus?: string;
+  sourceStatus?: string;
+  pointMappingProgress?: number;
+  advisorPluginStatus?: string;
+  pageTemplateStatus?: string;
+  published?: boolean;
+  notes?: string | null;
+  requiredPointRoles?: RuntimeSubsystemRegistryPointRoleDto[];
+  advisorBindings?: RuntimeAdvisorBindingDto[];
+  controlBoundary?: RuntimeControlBoundaryDto;
+};
+
+export type RuntimeSubsystemCapabilityListDto = {
+  site?: {
+    siteId?: string;
+    siteName?: string;
+  };
+  generatedAt?: string;
+  kind?: string;
+  items?: RuntimeSubsystemCapabilityDto[];
+  total?: number;
+  freshness?: FreshnessDto;
+  sourceStatus?: SourceStatusDto;
+};
+
+export type ByxPowerDeviceDto = {
+  deviceId?: string;
+  deviceName?: string;
+  deviceTypeName?: string;
+  category?: string;
+  categoryLabel?: string;
+  suggestedCategory?: string;
+  suggestedCategoryLabel?: string;
+  assignmentStatus?: "confirmed" | "unconfirmed" | "draft" | string;
+  ownerConfirmedCategory?: string;
+  ownerConfirmedCategoryLabel?: string;
+  ownerConfirmedSystem?: string;
+  ownerConfirmedLocation?: string;
+  ownerConfirmedPanel?: string;
+  assignmentUpdatedAt?: string;
+  fieldNote?: string;
+  online?: boolean;
+  onlineStatus?: string | null;
+  switchClosed?: boolean;
+  switchState?: string | null;
+  currentA?: number | null;
+  voltageV?: number | null;
+  activePowerKw?: number | null;
+  energyKwh?: number | null;
+  powerFactor?: number | null;
+  leakageCurrentMa?: number | null;
+  temperatureC?: number | null;
+  ratedCurrentA?: number | null;
+  openCloseCount?: number | null;
+  diagnosticFlags?: Array<{
+    code?: string;
+    level?: "warn" | "critical" | string;
+    label?: string;
+  }>;
+  phases?: Record<string, unknown>;
+};
+
+export type ByxPowerProjectDto = {
+  projectId?: string;
+  projectName?: string;
+  devices?: ByxPowerDeviceDto[];
+};
+
+export type ByxPowerMonitoringDto = {
+  ok?: boolean;
+  site?: {
+    siteId?: string;
+    siteName?: string;
+  };
+  generatedAt?: string;
+  provider?: "byx" | string;
+  mode?: "read_only" | string;
+  configured?: boolean;
+  missingConfig?: string[];
+  assignmentMap?: {
+    configured?: boolean;
+    sourceFile?: string | null;
+    entryCount?: number | null;
+    matchedDeviceCount?: number | null;
+    confirmedDeviceCount?: number | null;
+  };
+  summary?: {
+    projectCount?: number | null;
+    deviceCount?: number | null;
+    onlineDeviceCount?: number | null;
+    offlineDeviceCount?: number | null;
+    diagnosticDeviceCount?: number | null;
+    totalActivePowerKw?: number | null;
+    totalEnergyKwh?: number | null;
+    avgPowerFactor?: number | null;
+    categorySummaries?: Array<{
+      category?: string;
+      label?: string;
+      deviceCount?: number | null;
+      onlineDeviceCount?: number | null;
+      offlineDeviceCount?: number | null;
+      diagnosticDeviceCount?: number | null;
+      totalActivePowerKw?: number | null;
+      totalEnergyKwh?: number | null;
+      avgPowerFactor?: number | null;
+      maxTemperatureC?: number | null;
+      maxLeakageCurrentMa?: number | null;
+    }>;
+  };
+  projects?: ByxPowerProjectDto[];
+  sourceStatus?: SourceStatusDto;
+};
+
+export type ByxPowerAssignmentCheckDto = {
+  ok?: boolean;
+  siteId?: string;
+  generatedAt?: string;
+  mode?: "read_only_assignment_check" | string;
+  controlMutation?: boolean;
+  boundary?: string;
+  assignmentFile?: string;
+  reasonCode?: string;
+  message?: string;
+  summary?: {
+    projectCount?: number | null;
+    deviceCount?: number | null;
+    assignmentEntryCount?: number | null;
+    matchedDeviceCount?: number | null;
+    confirmedDeviceCount?: number | null;
+    unconfirmedDeviceCount?: number | null;
+    unmatchedAssignmentCount?: number | null;
+    minConfirmed?: number | null;
+  };
+  categorySummary?: Array<{
+    category?: string;
+    label?: string;
+    deviceCount?: number | null;
+    confirmedDeviceCount?: number | null;
+  }>;
+  blockingItems?: Array<{
+    severity?: string;
+    key?: string;
+    message?: string;
+  }>;
+  sampleConfirmedDevices?: Array<{
+    projectId?: string;
+    projectName?: string;
+    deviceId?: string;
+    deviceName?: string;
+    category?: string;
+    categoryLabel?: string;
+    ownerConfirmedSystem?: string;
+    ownerConfirmedLocation?: string;
+    ownerConfirmedPanel?: string;
+  }>;
+  sourceStatus?: SourceStatusDto;
+};
+
+export type ByxPowerHistoryCategoryDto = {
+  category?: string;
+  label?: string;
+  deviceCount?: number | null;
+  onlineDeviceCount?: number | null;
+  diagnosticDeviceCount?: number | null;
+  totalActivePowerKw?: number | null;
+  totalEnergyKwh?: number | null;
+  avgPowerFactor?: number | null;
+  maxTemperatureC?: number | null;
+  maxLeakageCurrentMa?: number | null;
+};
+
+export type ByxPowerHistorySampleDto = {
+  capturedAt?: string;
+  siteId?: string;
+  provider?: "byx" | string;
+  mode?: "read_only_history" | string;
+  projectCount?: number | null;
+  deviceCount?: number | null;
+  onlineDeviceCount?: number | null;
+  diagnosticDeviceCount?: number | null;
+  totalActivePowerKw?: number | null;
+  totalEnergyKwh?: number | null;
+  avgPowerFactor?: number | null;
+  categories?: ByxPowerHistoryCategoryDto[];
+};
+
+export type ByxPowerHistoryDto = {
+  ok?: boolean;
+  site?: {
+    siteId?: string;
+    siteName?: string;
+  };
+  generatedAt?: string;
+  provider?: "byx" | string;
+  mode?: "read_only_history" | string;
+  summary?: {
+    sampleCount?: number | null;
+    categoryCount?: number | null;
+    firstCapturedAt?: string | null;
+    lastCapturedAt?: string | null;
+    latestTotalActivePowerKw?: number | null;
+    latestOnlineDeviceCount?: number | null;
+    latestDiagnosticDeviceCount?: number | null;
+    invalidLineCount?: number | null;
+    retentionLimit?: number | null;
+  };
+  samples?: ByxPowerHistorySampleDto[];
+  series?: Array<{
+    category?: string;
+    label?: string;
+    points?: Array<{
+      t?: string;
+      v?: number | null;
+      energyKwh?: number | null;
+      deviceCount?: number | null;
+      diagnosticDeviceCount?: number | null;
+    }>;
+  }>;
+  sourceStatus?: SourceStatusDto;
+};
+
+export type FcuReadinessPlaybookDto = {
+  canExecuteCanary?: boolean;
+  readyGateCount?: number | null;
+  blockedGateCount?: number | null;
+  firstBlockedPhase?: string | null;
+  firstBlockedOwner?: string | null;
+  firstBlockedAction?: string | null;
+  fieldBlocked?: boolean;
+  baBlocked?: boolean;
+  canaryPackageBlocked?: boolean;
+  safetyBlocked?: boolean;
+  phasePlan?: Array<{
+    key?: string;
+    phase?: string;
+    owner?: string;
+    ready?: boolean;
+    blocking?: boolean;
+    evidence?: string;
+    sourceFile?: string;
+    nextAction?: string;
+  }>;
+  safetyBoundary?: string[];
 };
 
 export type ColdStationLogSummaryDto = {
@@ -1286,6 +1597,1364 @@ export type DeviceTreeDto = {
   };
   freshness?: FreshnessDto;
   sourceStatus?: SourceStatusDto;
+};
+
+export type FanCoilTerminalPointDto = {
+  key?: string;
+  label?: string;
+  pointName?: string;
+  tagName?: string;
+  value?: string;
+  numericValue?: number | null;
+  unit?: string | null;
+  writable?: boolean;
+  writeAllowed?: boolean;
+  rawTagTime?: string | null;
+  alarmActive?: boolean | null;
+};
+
+export type FanCoilTerminalItemDto = {
+  deviceId?: string | null;
+  deviceCode?: string | null;
+  deviceName?: string;
+  deviceTypeId?: string | null;
+  deviceTypeName?: string;
+  floorName?: string | null;
+  buildingName?: string | null;
+  sampledAt?: string | null;
+  rawTagTime?: string | null;
+  pointCount?: number;
+  writablePointCount?: number;
+  readOnlyPointCount?: number;
+  running?: boolean | null;
+  communicationAlarm?: boolean | null;
+  alarmActive?: boolean | null;
+  zoneTemperatureC?: number | null;
+  setpointC?: number | null;
+  setpointFeedbackC?: number | null;
+  fanSpeedState?: number | null;
+  fanSpeedMode?: number | null;
+  valveOpen?: boolean | null;
+  valveOpenPct?: number | null;
+  points?: Record<string, FanCoilTerminalPointDto>;
+  quality?: {
+    status?: string;
+    flags?: string[];
+    comfortEligible?: boolean;
+    excludedFromComfortStats?: boolean;
+  };
+};
+
+export type FanCoilTerminalHistoryPointDto = {
+  sampledAt?: string;
+  total?: number;
+  runningCount?: number;
+  stoppedCount?: number;
+  communicationAlarmCount?: number;
+  invalidTemperatureCount?: number;
+  zeroTemperatureCount?: number;
+  comfortEligibleCount?: number;
+  averageZoneTemperatureC?: number | null;
+};
+
+export type FanCoilTerminalSnapshotDto = {
+  site?: {
+    siteId?: string;
+    siteName?: string;
+  };
+  generatedAt?: string;
+  subsystemType?: string;
+  equipmentType?: string;
+  building?: string;
+  floor?: string;
+  floorName?: string;
+  sampledAt?: string | null;
+  timestampBasis?: string;
+  rawTagTimeNote?: string;
+  items?: FanCoilTerminalItemDto[];
+  summary?: {
+    total?: number;
+    onlineCount?: number;
+    runningCount?: number;
+    stoppedCount?: number;
+    alarmCount?: number;
+    communicationAlarmCount?: number;
+    validTemperatureCount?: number;
+    invalidTemperatureCount?: number;
+    zeroTemperatureCount?: number;
+    outOfRangeTemperatureCount?: number;
+    missingTemperatureCount?: number;
+    comfortEligibleCount?: number;
+    excludedFromComfortStatsCount?: number;
+    averageZoneTemperatureC?: number | null;
+    averageSetpointC?: number | null;
+    averageValveOpenPct?: number | null;
+    writablePointCount?: number;
+    readOnlyPointCount?: number;
+    dataStatus?: string;
+    qualityStatus?: string;
+    qualityIssues?: {
+      communicationAlarm?: number;
+      zeroTemperature?: number;
+      outOfRangeTemperature?: number;
+      missingTemperature?: number;
+      excludedFromComfortStats?: number;
+      stopped?: number;
+    };
+  };
+  historySampling?: {
+    enabled?: boolean;
+    status?: string;
+    reason?: string;
+    inserted?: number;
+    skipped?: number;
+    sampledAt?: string;
+    latestSampledAt?: string | null;
+    minIntervalSeconds?: number;
+  };
+  freshness?: FreshnessDto;
+  sourceStatus?: SourceStatusDto;
+  disclaimers?: string[];
+};
+
+export type FanCoilTerminalHistoryDto = {
+  site?: {
+    siteId?: string;
+    siteName?: string;
+  };
+  generatedAt?: string;
+  subsystemType?: string;
+  equipmentType?: string;
+  building?: string;
+  floor?: string;
+  floorName?: string;
+  totalSamples?: number;
+  items?: FanCoilTerminalHistoryPointDto[];
+  sourceStatus?: SourceStatusDto;
+};
+
+export type FcuControlPolicyDto = {
+  enabled?: boolean;
+  defaultMode?: "shadow" | "assisted" | "enforced" | string;
+  targetLowC?: number;
+  targetHighC?: number;
+  minSetpointC?: number;
+  maxSetpointC?: number;
+  setpointStepC?: number;
+  setpointDwellMinutes?: number;
+  startStopDwellMinutes?: number;
+  dailyMaxSetpointShiftC?: number;
+  validTempMinC?: number;
+  validTempMaxC?: number;
+  feedbackTimeoutSeconds?: number;
+  rollbackLockoutMinutes?: number;
+  allowStartStop?: boolean;
+  allowSetpoint?: boolean;
+  allowFanSpeed?: boolean;
+  occupied?: boolean;
+  dispatchAdapter?: string;
+  fieldAuthorization?: {
+    siteAuthorizationStatus?: "not_started" | "requested" | "approved" | "revoked" | string;
+    siteAuthorizationBy?: string;
+    siteAuthorizationWindowStart?: string;
+    siteAuthorizationWindowEnd?: string;
+    baWriteConfirmArmed?: boolean;
+    finalRolloutConfirmArmed?: boolean;
+    commissioningOwner?: string;
+    baOwner?: string;
+    notes?: string;
+  };
+  whitelist?: string[];
+  deviceOverrides?: Record<string, unknown>;
+};
+
+export type FcuControlRecordDto = {
+  recordId?: string | null;
+  siteId?: string | null;
+  deviceId?: string | null;
+  drTypeId?: string | null;
+  deviceCode?: string | null;
+  deviceName?: string | null;
+  mode?: string;
+  status?: string;
+  actionKind?: string;
+  reason?: string | null;
+  blockReasons?: string[];
+  commands?: Array<{ commandType?: string; pointKey?: string; value?: string | number; unit?: string | null }>;
+  dispatch?: {
+    status?: string;
+    code?: string | null;
+    controlMutation?: boolean;
+    message?: string | null;
+  };
+  feedback?: {
+    status?: "confirmed" | "pending" | "mismatch" | "partial" | "not_required" | string;
+    checkedAt?: string | null;
+    timeoutExceeded?: boolean;
+    message?: string | null;
+    results?: Array<{
+      commandType?: string;
+      pointKey?: string;
+      target?: unknown;
+      actual?: unknown;
+      matched?: boolean;
+      checkable?: boolean;
+    }>;
+  } | null;
+  snapshot?: {
+    zoneTemperatureC?: number | null;
+    setpointC?: number | null;
+    running?: boolean | null;
+    communicationAlarm?: boolean | null;
+    qualityStatus?: string | null;
+  };
+  createdAt?: string | null;
+  rolledBackAt?: string | null;
+  rollbackReason?: string | null;
+};
+
+export type FcuControlPolicyResponseDto = {
+  site?: { siteId?: string };
+  generatedAt?: string;
+  policy?: FcuControlPolicyDto;
+  executionGate?: FcuExecutionGateDto;
+  finalDispatchGate?: FcuExecutionGateDto & {
+    sourceFile?: string | null;
+    summary?: Record<string, unknown>;
+  };
+  persisted?: boolean;
+  sourceStatus?: SourceStatusDto;
+};
+
+export type FcuGateActionDto = {
+  key?: string;
+  priority?: string;
+  phase?: string;
+  owner?: string;
+  action?: string;
+  target?: string;
+  reason?: string;
+  acceptance?: string;
+  writesControl?: boolean;
+};
+
+export type FcuDeviceCommissioningStatusDto = {
+  site?: { siteId?: string };
+  generatedAt?: string;
+  equipmentType?: string;
+  subsystemType?: string;
+  device?: {
+    deviceId?: string | null;
+    drTypeId?: string | null;
+    deviceCode?: string | null;
+    deviceName?: string | null;
+    floorName?: string | null;
+    running?: boolean | null;
+    zoneTemperatureC?: number | null;
+    setpointC?: number | null;
+    communicationAlarm?: boolean | null;
+    qualityStatus?: string | null;
+  } | null;
+  policyMode?: string;
+  deviceReady?: boolean;
+  canDispatch?: boolean;
+  status?: "ready" | "environment_blocked" | "blocked" | "not_found" | string;
+  conditions?: Array<{
+    key?: string;
+    label?: string;
+    ok?: boolean;
+  }>;
+  blockedReasons?: string[];
+  controlBlockReasons?: string[];
+  latestRecord?: {
+    recordId?: string | null;
+    status?: string | null;
+    actionKind?: string | null;
+    reason?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+    rolledBackAt?: string | null;
+  } | null;
+  executionGate?: FcuExecutionGateDto;
+  finalGate?: {
+    ok?: boolean;
+    verdict?: string;
+    deviceCode?: string | null;
+    isCurrentCanary?: boolean;
+    canaryDeviceCode?: string | null;
+    controlMutation?: boolean;
+    generatedAt?: string | null;
+    items?: Array<{
+      key?: string;
+      label?: string;
+      ok?: boolean;
+      value?: string;
+      note?: string;
+    }>;
+    blockingItems?: Array<{
+      key?: string;
+      label?: string;
+      message?: string;
+    }>;
+    latestRecord?: {
+      recordId?: string | null;
+      status?: string | null;
+      createdAt?: string | null;
+      updatedAt?: string | null;
+    } | null;
+  };
+};
+
+export type FcuDeviceCommissioningStatusResponseDto = {
+  ok?: boolean;
+  requestId?: string;
+  targetDeviceCode?: string | null;
+  verdict?: string;
+  executionGate?: FcuExecutionGateDto;
+  fieldArmCheck?: FcuFieldArmCheckResponseDto;
+  commissioningStatus?: FcuDeviceCommissioningStatusDto;
+  actionPlan?: FcuGateActionDto[];
+  summary?: {
+    total?: number;
+    ready?: number;
+    environmentBlocked?: number;
+    deviceBlocked?: number;
+    notFound?: number;
+    deviceReady?: number;
+    canDispatch?: number;
+  };
+  items?: FcuDeviceCommissioningStatusDto[];
+  report?: {
+    verdict?: "ready_for_control" | "environment_blocked" | "device_commissioning_required" | "no_devices" | string;
+    generatedAt?: string;
+    summaryText?: string;
+    conditionBlockers?: Array<{
+      key?: string;
+      label?: string;
+      count?: number;
+      deviceCodes?: string[];
+    }>;
+    releaseCandidateDeviceCodes?: string[];
+    blockedDeviceCodes?: string[];
+    nextActions?: Array<{
+      priority?: string;
+      action?: string;
+      target?: string;
+      reason?: string;
+    }>;
+  };
+};
+
+export type FcuFieldPreflightResponseDto = FcuDeviceCommissioningStatusResponseDto & {
+  site?: { siteId?: string };
+  generatedAt?: string;
+  build?: string;
+  floor?: string;
+  controlMutation?: boolean;
+  verdict?: string;
+  policy?: FcuControlPolicyDto;
+  authorizationGate?: {
+    ready?: boolean;
+    status?: string;
+    baWriteConfirmArmed?: boolean;
+    finalRolloutConfirmArmed?: boolean;
+    commissioningOwner?: string;
+    baOwner?: string;
+    windowStart?: string | null;
+    windowEnd?: string | null;
+    checks?: Array<{
+      key?: string;
+      label?: string;
+      ok?: boolean;
+      value?: string;
+      message?: string;
+    }>;
+    blockingItems?: Array<{
+      key?: string;
+      label?: string;
+      severity?: string;
+      message?: string;
+    }>;
+  };
+  finalGate?: FcuDeviceCommissioningStatusDto["finalGate"] | null;
+  recentRecords?: FcuControlRecordDto[];
+  blockingItems?: Array<{
+    key?: string;
+    label?: string;
+    severity?: string;
+    message?: string;
+  }>;
+  nextActions?: Array<{
+    priority?: string;
+    action?: string;
+    target?: string;
+    reason?: string;
+  }>;
+  actionPlan?: FcuGateActionDto[];
+  sourceStatus?: SourceStatusDto;
+};
+
+export type FcuFieldArmCheckResponseDto = {
+  ok?: boolean;
+  requestId?: string;
+  site?: { siteId?: string };
+  generatedAt?: string;
+  build?: string;
+  floor?: string;
+  subsystemType?: string;
+  equipmentType?: string;
+  verdict?: "field_arm_ready" | "field_arm_blocked" | string;
+  firstCanary?: string | null;
+  controlMutation?: boolean;
+  policy?: {
+    enabled?: boolean;
+    defaultMode?: string;
+    dispatchAdapter?: string;
+    whitelistCount?: number;
+  };
+  commissioningSummary?: FcuDeviceCommissioningStatusResponseDto["summary"];
+  executionGate?: FcuExecutionGateDto;
+  checks?: Array<{
+    key?: string;
+    label?: string;
+    ok?: boolean;
+    severity?: string;
+    message?: string;
+  }>;
+  blockingItems?: Array<{
+    key?: string;
+    label?: string;
+    ok?: boolean;
+    severity?: string;
+    message?: string;
+  }>;
+  warningItems?: Array<{
+    key?: string;
+    label?: string;
+    ok?: boolean;
+    severity?: string;
+    message?: string;
+  }>;
+  nextActions?: Array<{
+    priority?: string;
+    action?: string;
+    target?: string;
+    reason?: string;
+    command?: string;
+  }>;
+};
+
+export type FcuFinalControlStatusDto = {
+  ok?: boolean;
+  requestId?: string;
+  site?: { siteId?: string };
+  generatedAt?: string;
+  subsystemType?: string;
+  equipmentType?: string;
+  controlMutation?: boolean;
+  scope?: string;
+  verdict?: string;
+  finalControlGates?: {
+    ok?: boolean;
+    generatedAt?: string | null;
+    siteId?: string | null;
+    summary?: {
+      gateCount?: number;
+      passed?: number;
+      blocked?: number;
+      qualityP0Devices?: number | null;
+      fieldP0Devices?: number | null;
+      signoffCompleteRows?: number | null;
+      signoffExpectedRows?: number | null;
+      canaryReady?: boolean;
+      finalWorklistOpenActions?: number | null;
+    } | null;
+    gates?: Array<{
+      label?: string;
+      ok?: boolean;
+      value?: string;
+      blocker?: string;
+      evidence?: string;
+    }>;
+    blockers?: Array<{
+      label?: string;
+      ok?: boolean;
+      value?: string;
+      blocker?: string;
+      evidence?: string;
+    }>;
+    nextActions?: Array<{
+      priority?: string;
+      phase?: string;
+      action?: string;
+      target?: string;
+      command?: string;
+    }>;
+    outputs?: {
+      json?: string;
+      markdown?: string;
+    } | null;
+    controlMutation?: boolean;
+  };
+  finalRollout?: {
+    ok?: boolean;
+    generatedAt?: string | null;
+    mode?: string | null;
+    controlMutation?: boolean;
+    confirm?: {
+      finalRolloutConfirmPresent?: boolean;
+      smallBatchConfirmPresent?: boolean;
+    } | null;
+    phases?: Array<{
+      key?: string;
+      label?: string;
+      ok?: boolean;
+      status?: number | null;
+      outputPath?: string;
+      stdout?: string;
+      stderr?: string;
+    }>;
+    skipped?: Array<{
+      key?: string;
+      label?: string;
+      reason?: string;
+    }>;
+    blockers?: Array<{
+      key?: string;
+      label?: string;
+      message?: string;
+    }>;
+    nextActions?: Array<{
+      priority?: string;
+      action?: string;
+      command?: string;
+      reason?: string;
+    }>;
+  };
+  finalCompletion?: {
+    ok?: boolean;
+    generatedAt?: string | null;
+    milestones?: {
+      canary?: {
+        ok?: boolean;
+        deviceCode?: string | null;
+        feedbackStatus?: string | null;
+      };
+      smallBatch?: {
+        ok?: boolean;
+        devices?: number;
+        feedbackConfirmed?: boolean;
+      };
+      allDevice?: {
+        ok?: boolean;
+        targetDevices?: number;
+        confirmedDevices?: number;
+      };
+    } | null;
+    blockingItems?: Array<{
+      key?: string;
+      label?: string;
+      ok?: boolean;
+      severity?: string;
+      message?: string;
+    }>;
+    nextActions?: Array<{
+      priority?: string;
+      action?: string;
+      command?: string;
+      reason?: string;
+    }>;
+    firstCanary?: string | null;
+    canaryRecordId?: string | null;
+    canaryVerificationStatus?: string | null;
+  };
+  rolloutPlan?: {
+    ok?: boolean;
+    generatedAt?: string | null;
+    summary?: {
+      total?: number;
+      deviceReady?: number;
+      immediateReady?: number;
+      stagedSetpoint?: number;
+      blocked?: number;
+      plannedDeviceCount?: number;
+      canCompleteAllNow?: boolean;
+      dispatchAllowed?: boolean;
+      firstCanary?: string;
+      waveCount?: number;
+    } | null;
+    firstCanary?: string | null;
+    waves?: Array<{
+      key?: string;
+      label?: string;
+      size?: number;
+      devices?: string[];
+      purpose?: string;
+    }>;
+    blockedDevices?: Array<{
+      deviceCode?: string;
+      deviceName?: string;
+      status?: string;
+      zoneTemperatureC?: number | null;
+      setpointC?: number | null;
+      communicationAlarm?: boolean | null;
+      qualityStatus?: string | null;
+      blockedReasons?: string[];
+    }>;
+  };
+  qualityRemediation?: {
+    ok?: boolean;
+    generatedAt?: string | null;
+    summary?: {
+      total?: number;
+      remediationCount?: number;
+      p0Count?: number;
+      canCompleteFinalControl?: boolean;
+      communicationAlarmCount?: number;
+      zeroTemperatureCount?: number;
+      invalidTemperatureCount?: number;
+    };
+    reasonCounts?: Array<{
+      reason?: string;
+      count?: number;
+    }>;
+    devices?: Array<{
+      deviceCode?: string;
+      deviceName?: string;
+      severity?: string;
+      status?: string;
+      zoneTemperatureC?: number | null;
+      setpointC?: number | null;
+      communicationAlarm?: boolean | null;
+      qualityStatus?: string | null;
+      reasons?: string[];
+      fieldActions?: string[];
+      releaseCriteria?: string[];
+    }>;
+  };
+  canaryExecutionPackage?: {
+    ok?: boolean;
+    generatedAt?: string | null;
+    verdict?: string | null;
+    canary?: {
+      deviceCode?: string;
+      deviceName?: string;
+      executionCommand?: string;
+      rollbackCommand?: string;
+    } | null;
+    requiredEnv?: Record<string, string> | null;
+    preconditions?: Array<{
+      key?: string;
+      label?: string;
+      passed?: boolean;
+      evidence?: string;
+      action?: string;
+    }>;
+    blockers?: Array<{
+      key?: string;
+      label?: string;
+      message?: string;
+      action?: string;
+    }>;
+    feedbackChecks?: Array<{
+      key?: string;
+      check?: string;
+      expected?: string;
+    }>;
+    rollbackTriggers?: string[];
+    outputs?: {
+      json?: string;
+      markdown?: string;
+      csv?: string;
+    } | null;
+  };
+  baWriteAdapterReadiness?: {
+    ok?: boolean;
+    generatedAt?: string | null;
+    verdict?: string | null;
+    canary?: {
+      deviceCode?: string;
+      deviceName?: string;
+    } | null;
+    checks?: Array<{
+      key?: string;
+      label?: string;
+      ok?: boolean;
+      severity?: string;
+      evidence?: string;
+      action?: string;
+    }>;
+    blockingItems?: Array<{
+      key?: string;
+      label?: string;
+      evidence?: string;
+      action?: string;
+    }>;
+    nextActions?: Array<{
+      priority?: string;
+      action?: string;
+      reason?: string;
+      command?: string;
+    }>;
+    outputs?: {
+      json?: string;
+      markdown?: string;
+      csv?: string;
+    } | null;
+  };
+  canaryFeedbackMonitor?: {
+    ok?: boolean;
+    generatedAt?: string | null;
+    verdict?: string | null;
+    canary?: {
+      deviceCode?: string;
+      recordId?: string | null;
+      feedbackStatus?: string | null;
+      feedbackConfirmed?: boolean;
+      rollbackTriggered?: boolean;
+    } | null;
+    checks?: Array<{
+      key?: string;
+      label?: string;
+      ok?: boolean;
+      evidence?: string;
+    }>;
+    nextActions?: Array<{
+      priority?: string;
+      action?: string;
+      reason?: string;
+      command?: string;
+    }>;
+    outputs?: {
+      json?: string;
+      markdown?: string;
+      csv?: string;
+    } | null;
+  };
+  canaryWindow?: {
+    ok?: boolean;
+    generatedAt?: string | null;
+    mode?: string | null;
+    verdict?: string | null;
+    controlMutation?: boolean;
+    canary?: {
+      deviceCode?: string;
+      dispatchConfirmed?: boolean;
+      feedbackStatus?: string | null;
+      feedbackConfirmed?: boolean;
+      rollbackTriggered?: boolean;
+    } | null;
+    phases?: Array<{
+      key?: string;
+      label?: string;
+      ok?: boolean;
+      status?: number | null;
+      outputPath?: string;
+    }>;
+    skipped?: Array<{
+      key?: string;
+      label?: string;
+      reason?: string;
+    }>;
+    nextActions?: Array<{
+      priority?: string;
+      action?: string;
+      reason?: string;
+      command?: string;
+    }>;
+    outputs?: {
+      json?: string;
+      markdown?: string;
+    } | null;
+  };
+  fieldArmPackage?: {
+    ok?: boolean;
+    generatedAt?: string | null;
+    verdict?: string | null;
+    deviceCode?: string | null;
+    controlMutation?: boolean;
+    canary?: {
+      deviceCode?: string;
+      deviceName?: string | null;
+      command?: {
+        pointName?: string | null;
+        tagName?: string | null;
+        value?: string | number | boolean | null;
+        unit?: string | null;
+      } | null;
+      writeCommand?: string;
+      rollbackCommand?: string;
+    } | null;
+    requiredEnv?: Record<string, string> | null;
+    checklist?: Array<{
+      key?: string;
+      phase?: string;
+      label?: string;
+      status?: string;
+      owner?: string;
+      evidence?: string;
+      action?: string;
+      writesControl?: boolean;
+    }>;
+    blockers?: Array<{
+      key?: string;
+      label?: string;
+      severity?: string;
+      evidence?: string;
+      action?: string;
+    }>;
+    feedbackChecks?: Array<{
+      key?: string;
+      check?: string;
+      expected?: string;
+      label?: string;
+      evidence?: string;
+    }>;
+    rollbackTriggers?: string[];
+    acceptanceRecords?: Array<{
+      field?: string;
+      required?: boolean;
+    }>;
+    outputs?: {
+      json?: string;
+      markdown?: string;
+      csv?: string;
+    } | null;
+  };
+  finalWorklist?: {
+    ok?: boolean;
+    generatedAt?: string | null;
+    verdict?: string | null;
+    firstCanary?: string | null;
+    targetDevices?: number | null;
+    confirmedDevices?: number | null;
+    summary?: {
+      openActions?: number;
+      p0OpenActions?: number;
+      qualityP0Devices?: number;
+      stagedSetpointDevices?: number;
+      fieldCloseoutReady?: boolean;
+      plannedDeviceCount?: number;
+      blockedDeviceCount?: number;
+    } | null;
+    fieldRemediationPlaybook?: {
+      fieldReady?: boolean;
+      firstCanary?: string | null;
+      canaryBlockedByField?: boolean;
+      deviceCount?: number | null;
+      reasonGroups?: Array<{
+        reason?: string;
+        devices?: string[];
+      }>;
+      missingFieldCounts?: Record<string, number>;
+      recommendedOrder?: string[];
+      acceptance?: string[];
+      devices?: Array<{
+        workOrderId?: string;
+        deviceCode?: string;
+        deviceName?: string;
+        reasons?: string[];
+        reasonLabels?: string[];
+        missingFields?: string[];
+        fieldPriority?: string[];
+        releaseCriteria?: string[];
+      }>;
+    };
+    fieldPackages?: {
+      qualityRemediation?: {
+        csv?: string;
+        markdown?: string;
+        json?: string;
+      };
+      allDevicePlan?: {
+        markdown?: string;
+        json?: string;
+        firstCanary?: string | null;
+        total?: number | null;
+        immediateReady?: number | null;
+        stagedSetpoint?: number | null;
+        blocked?: number | null;
+        plannedDeviceCount?: number | null;
+        canCompleteAllNow?: boolean;
+        stagedSetpointDevices?: Array<{
+          deviceCode?: string;
+          deviceName?: string;
+          setpointC?: number | null;
+          zoneTemperatureC?: number | null;
+          blockedReasons?: string[];
+        }>;
+        blockedDevices?: Array<{
+          deviceCode?: string;
+          deviceName?: string;
+          setpointC?: number | null;
+          zoneTemperatureC?: number | null;
+          blockedReasons?: string[];
+        }>;
+      };
+      fieldRemediationCloseout?: {
+        csv?: string;
+        markdown?: string;
+        json?: string;
+        verdict?: string | null;
+        readyForCanary?: boolean;
+        remainingDeviceCount?: number | null;
+      };
+      fieldRemediationWorkOrders?: {
+        csv?: string;
+        signoffInputCsv?: string;
+        markdown?: string;
+        json?: string;
+        totalWorkOrders?: number | null;
+        openCount?: number | null;
+        requiresFieldSignoff?: boolean;
+      };
+      fieldRemediationExecutionPack?: {
+        csv?: string;
+        markdown?: string;
+        json?: string;
+        totalDevices?: number | null;
+        openP0Devices?: number | null;
+        reasonCounts?: Record<string, number>;
+        executionOrder?: Array<{
+          phase?: string;
+          deviceCount?: number | null;
+          deviceCodes?: string[];
+          owners?: string[];
+          acceptance?: string;
+        }>;
+      };
+      fieldRemediationSignoff?: {
+        csv?: string;
+        releaseMatrixCsv?: string;
+        inputCsv?: string;
+        markdown?: string;
+        json?: string;
+        signoffComplete?: boolean;
+        completeRows?: number | null;
+        expectedWorkOrders?: number | null;
+        stillRequiresRealtimeCloseout?: boolean;
+        openRecords?: Array<{
+          workOrderId?: string;
+          deviceCode?: string;
+          deviceName?: string;
+          issues?: string[];
+          missingChecklist?: Array<{
+            field?: string;
+            requiredValue?: string;
+            action?: string;
+          }>;
+        }>;
+        releaseMatrix?: Array<{
+          workOrderId?: string;
+          deviceCode?: string;
+          deviceName?: string;
+          owner?: string;
+          signoffComplete?: boolean;
+          canEnterCanary?: boolean;
+          canaryBlockReason?: string;
+          missingFields?: string[];
+          requiredValues?: string[];
+          nextActions?: string[];
+          releaseCriteria?: string[];
+          verificationTarget?: string;
+          rerunCommand?: string;
+        }>;
+        onsiteReleasePrecheck?: {
+          ok?: boolean;
+          onsiteReleaseReadyCount?: number | null;
+          onsiteReleaseBlockedCount?: number | null;
+          canaryCandidateCount?: number | null;
+          canaryStillBlockedCount?: number | null;
+          blockFieldCounts?: Record<string, number>;
+          nextGlobalActions?: string[];
+          devices?: Array<{
+            workOrderId?: string;
+            deviceCode?: string;
+            deviceName?: string;
+            onsiteReleaseReady?: boolean;
+            canEnterCanary?: boolean;
+            canaryBlockReason?: string;
+            nextBlockingFields?: string[];
+            nextAction?: string;
+          }>;
+        } | null;
+      };
+      fieldRemediationSignoffCleanInput?: {
+        markdown?: string;
+        json?: string;
+        currentCsv?: string;
+        staleCsv?: string;
+        currentRows?: number | null;
+        staleRows?: number | null;
+        generatedMissingRows?: number | null;
+      };
+      fieldRemediationSignoffPromote?: {
+        markdown?: string;
+        json?: string;
+        mode?: string | null;
+        fileMutation?: boolean;
+        confirmMatched?: boolean;
+        currentRows?: number | null;
+        staleRows?: number | null;
+        signoffInputCsv?: string;
+        backupCsv?: string;
+      };
+      fieldHandoff?: {
+        csv?: string;
+        markdown?: string;
+        json?: string;
+        openP0Devices?: number | null;
+        staleSignoffRows?: number | null;
+        signoffCompleteRows?: number | null;
+        signoffExpectedRows?: number | null;
+        nextAllowedStep?: string;
+        currentOnlyCsv?: string;
+        staleCsv?: string;
+        signoffInputCsv?: string;
+        devices?: Array<{
+          workOrderId?: string;
+          deviceCode?: string;
+          deviceName?: string;
+          owner?: string;
+          reasonLabels?: string[];
+          todayAction?: string;
+        }>;
+      };
+      fieldReturnTemplate?: {
+        csv?: string;
+        markdown?: string;
+        json?: string;
+        deviceCount?: number | null;
+        communicationBlocked?: number | null;
+        temperatureBlocked?: number | null;
+        setpointBlocked?: number | null;
+        signoffCompleteRows?: number | null;
+        signoffExpectedRows?: number | null;
+        requiredColumns?: string[];
+        devices?: Array<{
+          workOrderId?: string;
+          deviceCode?: string;
+          deviceName?: string;
+          missingFields?: string[];
+          releaseCriteria?: string[];
+        }>;
+      };
+      canaryExecution?: {
+        csv?: string;
+        markdown?: string;
+        json?: string;
+        deviceCode?: string;
+        verdict?: string | null;
+      };
+      canaryReadiness?: {
+        markdown?: string;
+        json?: string;
+        verdict?: string | null;
+        canaryReady?: boolean;
+        blockedCount?: number | null;
+        firstCanary?: string | null;
+        readinessPlaybook?: FcuReadinessPlaybookDto | null;
+      };
+      baWriteAdapterReadiness?: {
+        csv?: string;
+        markdown?: string;
+        json?: string;
+        deviceCode?: string;
+        verdict?: string | null;
+      };
+      canaryFeedbackMonitor?: {
+        csv?: string;
+        markdown?: string;
+        json?: string;
+        deviceCode?: string;
+        verdict?: string | null;
+        feedbackStatus?: string | null;
+      };
+      canaryWindow?: {
+        markdown?: string;
+        json?: string;
+        deviceCode?: string;
+        verdict?: string | null;
+        mode?: string | null;
+        controlMutation?: boolean;
+      };
+    } | null;
+    phases?: Array<{
+      key?: string;
+      label?: string;
+      status?: string;
+      evidence?: string;
+    }>;
+    actions?: Array<{
+      key?: string;
+      priority?: string;
+      phase?: string;
+      action?: string;
+      target?: string;
+      command?: string;
+      reason?: string;
+      acceptance?: string;
+      source?: string;
+    }>;
+    remediationDevices?: Array<{
+      deviceCode?: string;
+      deviceName?: string;
+      severity?: string;
+      reasons?: string[];
+      fieldActions?: string[];
+      releaseCriteria?: string[];
+    }>;
+  };
+  finalRunbook?: {
+    ok?: boolean;
+    generatedAt?: string | null;
+    verdict?: string | null;
+    summary?: {
+      finalGatePassed?: boolean;
+      gateCount?: number;
+      passedGates?: number;
+      blockedGates?: number;
+      canaryReady?: boolean;
+      finalComplete?: boolean;
+      signoffCompleteRows?: number | null;
+      signoffExpectedRows?: number | null;
+      signoffStaleRows?: number | null;
+      p0OpenActions?: number | null;
+      blockedDeviceCount?: number | null;
+    } | null;
+    nextActions?: Array<{
+      key?: string;
+      priority?: string;
+      phase?: string;
+      action?: string;
+      target?: string;
+      reason?: string;
+      acceptance?: string;
+    }>;
+    outputs?: Record<string, string> | null;
+    controlMutation?: boolean;
+    dispatch?: boolean;
+  };
+  evidenceConsistency?: {
+    ok?: boolean;
+    generatedAt?: string | null;
+    verdict?: string | null;
+    summary?: {
+      issueCount?: number;
+      staleSignoffRows?: number | null;
+      signoffCompleteRows?: number | null;
+      signoffExpectedRows?: number | null;
+      openP0Devices?: number | null;
+      finalGatePassed?: boolean;
+      canaryReady?: boolean;
+    } | null;
+    issues?: Array<{
+      severity?: string;
+      key?: string;
+      message?: string;
+      field?: string;
+      value?: string;
+      source?: string;
+    }>;
+    sourceFiles?: Record<string, string> | null;
+    controlMutation?: boolean;
+    dispatch?: boolean;
+  };
+  reportStatuses?: Record<string, {
+    status?: string;
+    sourceFile?: string;
+    error?: string | null;
+  }>;
+  refresh?: {
+    status?: string;
+    acceptedExitCodes?: number[];
+    note?: string;
+    scripts?: Array<{
+      key?: string;
+      label?: string;
+      status?: number;
+      ok?: boolean;
+      stdout?: string;
+      stderr?: string;
+    }>;
+  };
+  sourceStatus?: SourceStatusDto;
+};
+
+export type FcuFieldArmPackageResponseDto = FcuFinalControlStatusDto & {
+  deviceCode?: string;
+  fieldArmPackage?: FcuFinalControlStatusDto["fieldArmPackage"];
+};
+
+export type FcuFinalControlRolloutResponseDto = {
+  ok?: boolean;
+  code?: string;
+  error?: string;
+  requestId?: string;
+  site?: { siteId?: string };
+  generatedAt?: string;
+  dispatchRequested?: boolean;
+  dispatchAllowed?: boolean;
+  controlMutation?: boolean;
+  requiredConfirmPhrase?: string;
+  verdict?: string;
+  executionGate?: FcuExecutionGateDto;
+  blockers?: Array<{
+    key?: string;
+    label?: string;
+    severity?: string;
+  }>;
+  finalRollout?: FcuFinalControlStatusDto["finalRollout"];
+  evidence?: Record<string, unknown> | null;
+  outputs?: {
+    json?: string;
+    markdown?: string;
+    finalCompletionJson?: string;
+    finalWorklistJson?: string;
+  };
+  execution?: {
+    status?: number;
+    ok?: boolean;
+    stdout?: string;
+    stderr?: string;
+  };
+  sourceStatus?: SourceStatusDto;
+};
+
+export type FcuExecutionGateDto = {
+  ready?: boolean;
+  dispatchAllowed?: boolean;
+  readOnlyMode?: boolean;
+  subsystemWriteEnabled?: boolean;
+  boundaryMode?: string;
+  policyMode?: string;
+  adapterConfigured?: boolean;
+  whitelistCount?: number;
+  sourceStatus?: string | null;
+  blockedReasons?: string[];
+  conditions?: Array<{
+    key?: string;
+    label?: string;
+    ok?: boolean;
+  }>;
+};
+
+export type FcuCanaryWindowResponseDto = {
+  ok?: boolean;
+  requestId?: string;
+  deviceCode?: string;
+  controlMutation?: boolean;
+  mode?: string | null;
+  verdict?: string | null;
+  canary?: {
+    deviceCode?: string;
+    dispatchConfirmed?: boolean;
+    feedbackStatus?: string | null;
+    feedbackConfirmed?: boolean;
+    rollbackTriggered?: boolean;
+  } | null;
+  outputs?: {
+    json?: string;
+    markdown?: string;
+  } | null;
+  command?: string;
+  nextActions?: Array<{
+    priority?: string;
+    action?: string;
+    reason?: string;
+    command?: string;
+  }>;
+  execution?: {
+    status?: number;
+    ok?: boolean;
+    stdout?: string;
+    stderr?: string;
+  };
+  sourceStatus?: SourceStatusDto;
+};
+
+export type FcuCanaryDispatchResponseDto = {
+  ok?: boolean;
+  code?: string;
+  error?: string;
+  requestId?: string;
+  deviceCode?: string;
+  commandKind?: string;
+  dispatchRequested?: boolean;
+  dispatchAllowed?: boolean;
+  controlMutation?: boolean;
+  requiredConfirmPhrase?: string;
+  mode?: string | null;
+  canary?: {
+    deviceCode?: string;
+    deviceName?: string;
+  } | null;
+  dispatch?: FcuControlRecordDto["dispatch"] | null;
+  verification?: {
+    ok?: boolean;
+    status?: number;
+    recordStatus?: string | null;
+    timedOut?: boolean;
+  } | null;
+  rollback?: {
+    ok?: boolean;
+    status?: number;
+    recordStatus?: string | null;
+  } | null;
+  blockingItems?: Array<{
+    key?: string;
+    message?: string;
+  }>;
+  blockers?: Array<{
+    key?: string;
+    label?: string;
+    severity?: string;
+  }>;
+  outputs?: {
+    json?: string;
+    markdown?: string;
+  };
+  execution?: {
+    status?: number;
+    ok?: boolean;
+    stdout?: string;
+    stderr?: string;
+  };
+};
+
+export type FcuControlRecordListDto = {
+  site?: { siteId?: string };
+  generatedAt?: string;
+  total?: number;
+  items?: FcuControlRecordDto[];
+};
+
+export type FcuControlCycleDto = {
+  ok?: boolean;
+  requestId?: string;
+  dispatchRequested?: boolean;
+  dispatchAllowed?: boolean;
+  executionGate?: FcuExecutionGateDto;
+  targetDeviceCode?: string | null;
+  controlMutation?: boolean;
+  generatedAt?: string;
+  policy?: FcuControlPolicyDto;
+  summary?: {
+    total?: number;
+    commandCount?: number;
+    blockedCount?: number;
+    shadowCount?: number;
+    pendingApprovalCount?: number;
+    heldCount?: number;
+    readyCount?: number;
+    controlMutation?: boolean;
+  };
+  decisions?: FcuControlRecordDto[];
+  persisted?: {
+    status?: string;
+    inserted?: number;
+    reason?: string;
+  };
 };
 
 export type RuntimePointSummaryCountsDto = {
@@ -2507,11 +4176,12 @@ function resolveHeaderProjectContext(
   const currentDatabaseKey = normalizeHeaderText(currentProject.databaseKey);
   const candidateDatabaseKey = normalizeHeaderText(bestCandidate?.databaseKey);
   const invalidDatabaseKey = (value: string) => !value || (siteId ? value === `${siteId}${siteId}` : false);
-  const databaseKey = (siteId && siteCode)
-    ? `${siteId}${siteCode}`
-    : (!invalidDatabaseKey(currentDatabaseKey)
-        ? currentDatabaseKey
-        : (!invalidDatabaseKey(candidateDatabaseKey) ? candidateDatabaseKey : ""));
+  const synthesizedLegacyDatabaseKey = siteId && siteCode && /^\d+$/.test(siteId) ? `${siteId}${siteCode}` : "";
+  const databaseKey = !invalidDatabaseKey(currentDatabaseKey)
+    ? currentDatabaseKey
+    : (!invalidDatabaseKey(candidateDatabaseKey)
+        ? candidateDatabaseKey
+        : synthesizedLegacyDatabaseKey);
 
   return {
     siteId,
@@ -2538,9 +4208,7 @@ function resolveScopedHeaderProjectContext(
     siteCode = deriveSiteCodeFromModelKey(siteId, projectKey);
   }
   const explicitDatabaseKey = normalizeHeaderText(project.databaseKey);
-  const databaseKey = (siteId && siteCode)
-    ? `${siteId}${siteCode}`
-    : explicitDatabaseKey;
+  const databaseKey = explicitDatabaseKey || (siteId && siteCode && /^\d+$/.test(siteId) ? `${siteId}${siteCode}` : "");
   return {
     siteId,
     siteCode,
@@ -2768,6 +4436,38 @@ async function fetchFile(path: string): Promise<{ blob: Blob; filename: string |
 
 export async function fetchDashboardOverview(siteId: string): Promise<DashboardOverviewDto> {
   return fetchJson<DashboardOverviewDto>(`/bff/v1/sites/${siteId}/dashboard/overview`);
+}
+
+export async function fetchSiteCapabilities(siteId: string): Promise<RuntimeSubsystemCapabilityListDto> {
+  return fetchJson<RuntimeSubsystemCapabilityListDto>(`/bff/v1/sites/${siteId}/capabilities`);
+}
+
+export async function fetchSiteSubsystems(siteId: string): Promise<RuntimeSubsystemCapabilityListDto> {
+  return fetchJson<RuntimeSubsystemCapabilityListDto>(`/bff/v1/sites/${siteId}/subsystems`);
+}
+
+export async function fetchByxPowerMonitoring(siteId: string): Promise<ByxPowerMonitoringDto> {
+  return fetchJson<ByxPowerMonitoringDto>(`/bff/v1/sites/${siteId}/power-monitoring/byx`);
+}
+
+export async function fetchByxPowerAssignmentCsv(siteId: string): Promise<{ blob: Blob; filename: string | null }> {
+  return fetchFile(`/bff/v1/sites/${siteId}/power-monitoring/byx/assignment.csv`);
+}
+
+export async function fetchByxPowerAssignmentCheck(siteId: string, minConfirmed = 1): Promise<ByxPowerAssignmentCheckDto> {
+  return fetchJson<ByxPowerAssignmentCheckDto>(
+    `/bff/v1/sites/${siteId}/power-monitoring/byx/assignment-check?minConfirmed=${minConfirmed}`
+  );
+}
+
+export async function fetchByxPowerHistory(siteId: string, limit = 72): Promise<ByxPowerHistoryDto> {
+  return fetchJson<ByxPowerHistoryDto>(`/bff/v1/sites/${siteId}/power-monitoring/byx/history?limit=${limit}`);
+}
+
+export async function captureByxPowerHistorySnapshot(siteId: string, responseLimit = 72): Promise<ByxPowerHistoryDto> {
+  return postJson<ByxPowerHistoryDto>(`/bff/v1/sites/${siteId}/power-monitoring/byx/history/snapshots`, {
+    responseLimit
+  });
 }
 
 export async function fetchDashboardOverviewForProject(
@@ -3393,6 +5093,240 @@ export async function fetchDeviceTree(
   }
   return fetchJson<DeviceTreeDto>(
     `/bff/v1/sites/${siteId}/devices/tree${search.toString() ? `?${search.toString()}` : ""}`
+  );
+}
+
+export async function fetchFanCoilTerminalSnapshot(
+  siteId: string,
+  options: { build?: number; floor?: number } = {}
+): Promise<FanCoilTerminalSnapshotDto> {
+  const search = new URLSearchParams();
+  search.set("build", String(options.build ?? 1));
+  search.set("floor", String(options.floor ?? 1));
+  return fetchJson<FanCoilTerminalSnapshotDto>(
+    `/bff/v1/sites/${siteId}/hvac-terminal/fan-coils?${search.toString()}`
+  );
+}
+
+export async function fetchFanCoilTerminalHistory(
+  siteId: string,
+  options: { floor?: number; limit?: number } = {}
+): Promise<FanCoilTerminalHistoryDto> {
+  const search = new URLSearchParams();
+  search.set("floor", String(options.floor ?? 1));
+  search.set("limit", String(options.limit ?? 240));
+  return fetchJson<FanCoilTerminalHistoryDto>(
+    `/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/history?${search.toString()}`
+  );
+}
+
+export async function fetchFcuControlPolicy(siteId: string): Promise<FcuControlPolicyResponseDto> {
+  return fetchJson<FcuControlPolicyResponseDto>(`/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/control-policy`);
+}
+
+export async function fetchFcuControlRecords(
+  siteId: string,
+  options: { limit?: number; deviceCode?: string; status?: string } = {}
+): Promise<FcuControlRecordListDto> {
+  const search = new URLSearchParams();
+  search.set("limit", String(options.limit ?? 20));
+  if (options.deviceCode) {
+    search.set("deviceCode", options.deviceCode);
+  }
+  if (options.status) {
+    search.set("status", options.status);
+  }
+  return fetchJson<FcuControlRecordListDto>(
+    `/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/control-records?${search.toString()}`
+  );
+}
+
+export async function fetchFcuDeviceCommissioningStatus(
+  siteId: string,
+  options: { build?: number; floor?: number; deviceCode?: string } = {}
+): Promise<FcuDeviceCommissioningStatusResponseDto> {
+  const search = new URLSearchParams();
+  search.set("build", String(options.build ?? 1));
+  search.set("floor", String(options.floor ?? 1));
+  if (options.deviceCode) {
+    search.set("deviceCode", options.deviceCode);
+  }
+  return fetchJson<FcuDeviceCommissioningStatusResponseDto>(
+    `/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/commissioning-status?${search.toString()}`
+  );
+}
+
+export async function fetchFcuFieldArmCheck(
+  siteId: string,
+  options: { build?: number; floor?: number } = {}
+): Promise<FcuFieldArmCheckResponseDto> {
+  const search = new URLSearchParams();
+  search.set("build", String(options.build ?? 1));
+  search.set("floor", String(options.floor ?? 1));
+  return fetchJson<FcuFieldArmCheckResponseDto>(
+    `/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/field-arm-check?${search.toString()}`
+  );
+}
+
+export async function fetchFcuFieldPreflight(
+  siteId: string,
+  options: { build?: number; floor?: number; deviceCode?: string } = {}
+): Promise<FcuFieldPreflightResponseDto> {
+  const search = new URLSearchParams();
+  search.set("build", String(options.build ?? 1));
+  search.set("floor", String(options.floor ?? 1));
+  if (options.deviceCode) {
+    search.set("deviceCode", options.deviceCode);
+  }
+  return fetchJson<FcuFieldPreflightResponseDto>(
+    `/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/field-preflight?${search.toString()}`
+  );
+}
+
+export async function fetchFcuFinalControlStatus(siteId: string): Promise<FcuFinalControlStatusDto> {
+  return fetchJson<FcuFinalControlStatusDto>(
+    `/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/final-control-status`
+  );
+}
+
+export async function refreshFcuFinalControlStatus(siteId: string): Promise<FcuFinalControlStatusDto> {
+  return postJson<FcuFinalControlStatusDto>(
+    `/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/final-control-status/refresh`,
+    {}
+  );
+}
+
+export async function executeFcuFinalControlRollout(
+  siteId: string,
+  options: {
+    confirmPhrase: string;
+    finalRolloutConfirmPhrase: string;
+  }
+): Promise<FcuFinalControlRolloutResponseDto> {
+  return postJson<FcuFinalControlRolloutResponseDto>(
+    `/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/final-control-rollout`,
+    {
+      confirmPhrase: options.confirmPhrase,
+      finalRolloutConfirmPhrase: options.finalRolloutConfirmPhrase
+    }
+  );
+}
+
+export async function generateFcuFieldArmPackage(
+  siteId: string,
+  body: { deviceCode: string }
+): Promise<FcuFieldArmPackageResponseDto> {
+  const search = new URLSearchParams();
+  search.set("deviceCode", body.deviceCode);
+  return postJson<FcuFieldArmPackageResponseDto>(
+    `/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/field-arm-package?${search.toString()}`,
+    body
+  );
+}
+
+export async function runFcuControlCycle(
+  siteId: string,
+  options: { build?: number; floor?: number; dispatch?: boolean; deviceCode?: string } = {}
+): Promise<FcuControlCycleDto> {
+  const search = new URLSearchParams();
+  search.set("build", String(options.build ?? 1));
+  search.set("floor", String(options.floor ?? 1));
+  if (options.deviceCode) {
+    search.set("deviceCode", options.deviceCode);
+  }
+  return postJson<FcuControlCycleDto>(
+    `/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/control-cycle?${search.toString()}`,
+    { dispatch: options.dispatch === true, deviceCode: options.deviceCode || undefined }
+  );
+}
+
+export async function runFcuManualControlCommand(
+  siteId: string,
+  options: {
+    build?: number;
+    floor?: number;
+    dispatch?: boolean;
+    deviceCode: string;
+    command: {
+      start?: boolean;
+      stop?: boolean;
+      setpointC?: number | null;
+      fanSpeed?: "auto" | "low" | "medium" | "high" | string;
+    };
+  }
+): Promise<FcuControlCycleDto> {
+  const search = new URLSearchParams();
+  search.set("build", String(options.build ?? 1));
+  search.set("floor", String(options.floor ?? 1));
+  search.set("deviceCode", options.deviceCode);
+  return postJson<FcuControlCycleDto>(
+    `/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/control-command?${search.toString()}`,
+    {
+      dispatch: options.dispatch === true,
+      deviceCode: options.deviceCode,
+      command: options.command
+    }
+  );
+}
+
+export async function generateFcuCanaryWindow(
+  siteId: string,
+  options: {
+    deviceCode: string;
+  }
+): Promise<FcuCanaryWindowResponseDto> {
+  const search = new URLSearchParams();
+  search.set("deviceCode", options.deviceCode);
+  return postJson<FcuCanaryWindowResponseDto>(
+    `/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/canary-window?${search.toString()}`,
+    {
+      deviceCode: options.deviceCode
+    }
+  );
+}
+
+export async function executeFcuCanaryDispatch(
+  siteId: string,
+  options: {
+    deviceCode: string;
+    confirmPhrase: string;
+    commandKind?: "setpoint" | "fan_speed" | string;
+  }
+): Promise<FcuCanaryDispatchResponseDto> {
+  const search = new URLSearchParams();
+  search.set("deviceCode", options.deviceCode);
+  return postJson<FcuCanaryDispatchResponseDto>(
+    `/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/canary-dispatch?${search.toString()}`,
+    {
+      deviceCode: options.deviceCode,
+      confirmPhrase: options.confirmPhrase,
+      commandKind: options.commandKind || "setpoint"
+    }
+  );
+}
+
+export async function rollbackFcuControlRecord(
+  siteId: string,
+  recordId: string,
+  reason = "manual rollback"
+): Promise<{ ok?: boolean; record?: FcuControlRecordDto }> {
+  return postJson<{ ok?: boolean; record?: FcuControlRecordDto }>(
+    `/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/control-records/${encodeURIComponent(recordId)}/rollback`,
+    { reason }
+  );
+}
+
+export async function verifyFcuControlRecordFeedback(
+  siteId: string,
+  recordId: string,
+  options: { build?: number; floor?: number } = {}
+): Promise<{ ok?: boolean; record?: FcuControlRecordDto; feedback?: FcuControlRecordDto["feedback"] }> {
+  const search = new URLSearchParams();
+  search.set("build", String(options.build ?? 1));
+  search.set("floor", String(options.floor ?? 1));
+  return postJson<{ ok?: boolean; record?: FcuControlRecordDto; feedback?: FcuControlRecordDto["feedback"] }>(
+    `/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/control-records/${encodeURIComponent(recordId)}/verify-feedback?${search.toString()}`,
+    {}
   );
 }
 

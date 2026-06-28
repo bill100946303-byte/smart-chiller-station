@@ -1,4 +1,7 @@
 export const SITE_ID_QUERY_KEY = "siteId";
+const SITE_ID_ALIASES: Record<string, string> = {
+  "126lnoffice": "126"
+};
 
 function normalizeSiteId(value: string | null | undefined): string | null {
   if (typeof value !== "string") {
@@ -6,6 +9,23 @@ function normalizeSiteId(value: string | null | undefined): string | null {
   }
   const normalized = value.trim();
   return normalized ? normalized : null;
+}
+
+export function normalizeRouteSiteId(value: string | null | undefined): string | null {
+  const normalized = normalizeSiteId(value);
+  if (!normalized) {
+    return null;
+  }
+  return SITE_ID_ALIASES[normalized.toLowerCase()] || normalized;
+}
+
+export function siteIdsEquivalent(
+  left: string | null | undefined,
+  right: string | null | undefined
+): boolean {
+  const normalizedLeft = normalizeRouteSiteId(left);
+  const normalizedRight = normalizeRouteSiteId(right);
+  return Boolean(normalizedLeft && normalizedRight && normalizedLeft === normalizedRight);
 }
 
 export function readSiteIdFromSearch(search: string): string | null {

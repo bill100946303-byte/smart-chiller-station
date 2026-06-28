@@ -12,6 +12,7 @@ Current scope:
 - `/energy-analysis`
 - `/energy-efficiency`
 - `/energy-parameters`
+- `/config-center`
 - `/meter-readings`
 - `/performance-report`
 - `/report-records`
@@ -21,6 +22,9 @@ Current scope:
 - `/environment-conditions`
 - `/alarms`
 - `/devices`
+- `/power-monitoring`
+- `/compressed-air`
+- `/hvac-terminal`
 - `/ai-overview`
 - `/optimize-demo`
 - `/scene-control`
@@ -49,9 +53,9 @@ cp .env.example .env.local
 
 Supported variables:
 
-- `VITE_BFF_BASE_URL` (default same-origin; in dev it is proxied to `http://127.0.0.1:8787` by Vite)
+- `VITE_BFF_BASE_URL` (default `http://127.0.0.1:8787` in local dev, same-origin in production; set explicitly only when BFF runs elsewhere)
 - `VITE_LEGACY_BASE_URL` (default `https://www.ssge.com.cn:8098`)
-- `VITE_SITE_ID` (default `126lnoffice`)
+- `VITE_SITE_ID` (default `126lnoffice`, used as `盛世绿能办公楼` all-system demo data; use `140` for the B25 cold-plant-only project)
 - `VITE_TREND_RANGE` (`24h` | `7d` | `30d`, default `24h`)
 
 ## Verification

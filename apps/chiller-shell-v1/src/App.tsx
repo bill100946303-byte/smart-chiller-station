@@ -11,7 +11,7 @@ import {
   resolveAuthDestination,
   selectAuthProject
 } from "./services/auth";
-import { buildScopedLocationPath, readSiteIdFromSearch } from "./services/siteRouting";
+import { buildScopedLocationPath, readSiteIdFromSearch, siteIdsEquivalent } from "./services/siteRouting";
 
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
@@ -20,9 +20,13 @@ const TrendAnalysisPage = lazy(() => import("./pages/TrendAnalysisPage"));
 const AlarmPage = lazy(() => import("./pages/AlarmPage"));
 const ColdStationLogPage = lazy(() => import("./pages/ColdStationLogPage"));
 const DeviceOverviewPage = lazy(() => import("./pages/DeviceOverviewPage"));
+const PowerMonitoringPage = lazy(() => import("./pages/PowerMonitoringPage"));
+const CompressedAirMonitoringPage = lazy(() => import("./pages/CompressedAirMonitoringPage"));
+const HvacTerminalMonitoringPage = lazy(() => import("./pages/HvacTerminalMonitoringPage"));
 const EnergyAnalysisPage = lazy(() => import("./pages/EnergyAnalysisPage"));
 const EnergyEfficiencyPage = lazy(() => import("./pages/EnergyEfficiencyPage"));
 const EnergyParametersPage = lazy(() => import("./pages/EnergyParametersPage"));
+const ConfigCenterEntryPage = lazy(() => import("./pages/ConfigCenterEntryPage"));
 const MeterReadingPage = lazy(() => import("./pages/MeterReadingPage"));
 const OperationRecordsPage = lazy(() => import("./pages/OperationRecordsPage"));
 const PerformanceReportPage = lazy(() => import("./pages/PerformanceReportPage"));
@@ -226,15 +230,15 @@ function ProtectedShell() {
   const availableProjects = getSwitchableProjects(session?.projects || []);
   const currentProject = getCurrentProject(session);
   const requestedProject = requestedSiteId
-    ? availableProjects.find((project) => project.siteId === requestedSiteId) || null
+    ? availableProjects.find((project) => siteIdsEquivalent(project.siteId, requestedSiteId)) || null
     : null;
   const currentPath = `${location.pathname}${location.search}${location.hash}`;
   const requestedProjectSyncNeeded = Boolean(
-    requestedProject && requestedProject.siteId !== currentProject?.siteId
+    requestedProject && !siteIdsEquivalent(requestedProject.siteId, currentProject?.siteId)
   );
 
   useEffect(() => {
-    if (!session || !requestedProject || requestedProject.siteId === currentProject?.siteId) {
+    if (!session || !requestedProject || siteIdsEquivalent(requestedProject.siteId, currentProject?.siteId)) {
       return;
     }
 
@@ -339,6 +343,7 @@ export default function App() {
         <Route path="/energy-analysis" element={renderLazyPage(EnergyAnalysisPage)} />
         <Route path="/energy-efficiency" element={renderLazyPage(EnergyEfficiencyPage)} />
         <Route path="/energy-parameters" element={renderLazyPage(EnergyParametersPage)} />
+        <Route path="/config-center" element={renderLazyPage(ConfigCenterEntryPage)} />
         <Route path="/meter-readings" element={renderLazyPage(MeterReadingPage)} />
         <Route path="/performance-report" element={renderLazyPage(PerformanceReportPage)} />
         <Route path="/report-records" element={renderLazyPage(ReportRecordsPage)} />
@@ -347,6 +352,9 @@ export default function App() {
         <Route path="/environment-conditions" element={renderLazyPage(EnvironmentConditionsPage)} />
         <Route path="/alarms" element={renderLazyPage(AlarmPage)} />
         <Route path="/devices" element={renderLazyPage(DeviceOverviewPage)} />
+        <Route path="/power-monitoring" element={renderLazyPage(PowerMonitoringPage)} />
+        <Route path="/compressed-air" element={renderLazyPage(CompressedAirMonitoringPage)} />
+        <Route path="/hvac-terminal" element={renderLazyPage(HvacTerminalMonitoringPage)} />
         <Route path="/operational-diagnostics" element={renderLazyPage(OperationalDiagnosticsPage)} />
         <Route path="/ai-overview" element={renderLazyPage(AiOverviewPage)} />
         <Route path="/optimize-demo" element={renderLazyPage(OptimizeDemoPage)} />

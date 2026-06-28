@@ -1,9 +1,18 @@
 import { startTransition, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import chillerUnitImage from "../assets/dashboard-chain/chiller-unit.png";
+import chilledPumpImage from "../assets/dashboard-chain/chilled-pump.png";
+import controlLinkSchematicImage from "../assets/dashboard-chain/control-link-schematic.png";
+import coolingPumpImage from "../assets/dashboard-chain/cooling-pump.png";
+import coolingTowerImage from "../assets/dashboard-chain/cooling-tower.png";
+import edgeGatewayImage from "../assets/dashboard-chain/edge-gateway.png";
+import onlineCloudImage from "../assets/dashboard-chain/online-cloud.png";
+import plcControllerImage from "../assets/dashboard-chain/plc-controller.png";
+import terminalLoadImage from "../assets/dashboard-chain/terminal-load.png";
 import { runtimeConfig } from "../config/runtimeConfig";
 import useAiDigest from "../hooks/useAiDigest";
 import useRecommendationDiagnostics from "../hooks/useRecommendationDiagnostics";
-import { getAuthSession, getCurrentProject } from "../services/auth";
+import { getAuthSession, getCurrentProject, resolveEnergyConfigSiteId } from "../services/auth";
 import {
   getRiskCopy,
   getRuleCopy,
@@ -23,6 +32,8 @@ import {
   type EnvironmentBuildingListDto,
   type EnvironmentConditionListDto,
   type RecommendationDto,
+  type RuntimeSubsystemCapabilityDto,
+  type RuntimeSubsystemCapabilityListDto,
   type SourceStatusDto,
   type WorkOrderListDto,
   fetchAnomalyList,
@@ -33,6 +44,7 @@ import {
   fetchDeviceList,
   fetchEnvironmentBuildings,
   fetchEnvironmentConditions,
+  fetchSiteCapabilities,
   fetchWorkOrders
 } from "../services/bffClient";
 import { getDisplayAnomalySource, getDisplayAnomalyTitle } from "../utils/anomalyPresentation";
@@ -355,6 +367,11 @@ const DASHBOARD_TEXT = {
 };
 
 const MAIN_LOOP_ORDER: SystemType[] = ["chiller", "chilledPump", "coolingPump", "coolingTower"];
+const CHAIN_CONTROL_MODE_KEY_PATTERN = /remote|local|manual|auto/i;
+const CHAIN_CONTROL_MODE_LABEL_PATTERN = /控制位置|频率模式|远程|就地|本地|自动|手动/i;
+const CHAIN_CONTROL_MODE_VALUE_PATTERN = /远程|就地|本地|自动|手动|禁用|remote|local|auto|manual|disabled/i;
+const CHAIN_REMOTE_AUTO_VALUE_PATTERN = /远程|自动|remote|auto/i;
+const CHAIN_LOCAL_MANUAL_VALUE_PATTERN = /就地|本地|手动|禁用|local|manual|disabled/i;
 
 function toFixedOrDash(value: number | null | undefined, digits: number): string {
   if (typeof value !== "number" || Number.isNaN(value)) {
@@ -1695,6 +1712,48 @@ function needsManualAttention(device: MainLoopDeviceView): boolean {
   return device.controlSignals.some(isAttentionSignal);
 }
 
+function isChainControlModeSignal(signal: ControlSignalView): boolean {
+  const keyLabel = `${signal.key} ${signal.label}`.trim();
+  const value = String(signal.value || "").trim();
+  return (
+    CHAIN_CONTROL_MODE_KEY_PATTERN.test(keyLabel) ||
+    CHAIN_CONTROL_MODE_LABEL_PATTERN.test(keyLabel) ||
+    CHAIN_CONTROL_MODE_VALUE_PATTERN.test(value)
+  );
+}
+
+function hasLocalManualControlSignal(device: MainLoopDeviceView): boolean {
+  return device.controlSignals.some((signal) => {
+    const value = String(signal.value || "").trim();
+    return isChainControlModeSignal(signal) && signal.active && (signal.tone === "warn" || CHAIN_LOCAL_MANUAL_VALUE_PATTERN.test(value));
+  });
+}
+
+function hasRemoteAutoControlSignal(device: MainLoopDeviceView): boolean {
+  return device.controlSignals.some((signal) => {
+    const value = String(signal.value || "").trim();
+    return (
+      isChainControlModeSignal(signal) &&
+      CHAIN_REMOTE_AUTO_VALUE_PATTERN.test(value) &&
+      !CHAIN_LOCAL_MANUAL_VALUE_PATTERN.test(value)
+    );
+  });
+}
+
+function buildChainCountDisplay(
+  count: number | null | undefined,
+  unit: "台" | "项"
+): { compactValue: string; fullValue: string; hasValue: boolean; unit: "台" | "项" } {
+  const hasValue = typeof count === "number" && Number.isFinite(count);
+  const value = hasValue ? formatCountValue(count) : DASHBOARD_PENDING_REVIEW_LABEL;
+  return {
+    compactValue: hasValue ? value : compactChainDisplayValue(DASHBOARD_PENDING_REVIEW_LABEL),
+    fullValue: hasValue ? `${value}${unit}` : DASHBOARD_PENDING_REVIEW_LABEL,
+    hasValue,
+    unit
+  };
+}
+
 function normalizeDeviceView(
   catalogItem: NonNullable<DeviceListDto["items"]>[number],
   detailDto: DeviceDetailDto | null
@@ -2203,10 +2262,44 @@ function cleanDashboardDutyText(value: string): string {
     .replace(/保守方案回退，待复核链路/g, "治理动作已回退，待复核主链路");
 }
 
+function compactExecutionLabel(value: string): string {
+  const tcwsMatch = value.match(/冷却水出水温\s*([0-9.]+)\s*℃/);
+  if (value.includes("接近度执行")) {
+    return tcwsMatch ? `接近度；冷却出水${tcwsMatch[1]}℃` : "接近度执行";
+  }
+  if (value.includes("方案执行")) {
+    return value.replace(/方案执行（(.+?)）/, "$1方案").replace("方案执行", "方案");
+  }
+  return value.replace(/[（）]/g, "").replace(/\s+/g, "");
+}
+
+function compactDashboardDutyText(value: string): string {
+  const text = cleanDashboardDutyText(value).replace(/\s+/g, " ").trim();
+  const pendingExecutionMatch = text.match(/^近期已有\s*(\d+)\s*条待审批执行，先处理(.+?)，避免重复提交相近草案。?$/);
+  if (pendingExecutionMatch) {
+    return `${pendingExecutionMatch[1]}条待审批，先处理${compactExecutionLabel(pendingExecutionMatch[2])}`;
+  }
+  return text
+    .replace(/关键功率、COP 与温差已回传，当前判断可以继续，少量数据建议顺手复核。?/g, "功率/COP/温差已回传，少量数据复核。")
+    .replace(/首屏暂未发现主链路失稳或舒适越限高压，建议继续值守并跟踪能效变化。?/g, "主链路稳定，继续值守能效变化。")
+    .replace(/主链路已出现高等级异常、告警设备或人工接管信号，首页优先把供冷连续性放在第一位。?/g, "先稳供冷，再处理告警/接管。")
+    .replace(/系统仍在供冷，但房间温度偏差已经扩大，建议先处理最差房间与供冷覆盖面。?/g, "先处理最差房间与供冷覆盖。")
+    .replace(/数据延迟或缺口，先核对现场\/原始页。?/g, "数据有缺口，先核对现场/原始页。");
+}
+
+function compactChainDisplayValue(value: string): string {
+  return value
+    .replace(/待复核/g, "待核")
+    .replace(/未传回/g, "未回")
+    .replace(/待确认/g, "待确")
+    .replace(/\s+/g, "");
+}
+
 export default function DashboardPage() {
   const authSession = getAuthSession();
   const currentProject = getCurrentProject(authSession);
   const activeSiteId = currentProject?.siteId || runtimeConfig.siteId;
+  const activeConfigSiteId = resolveEnergyConfigSiteId(currentProject, runtimeConfig.siteId);
   const activeProjectKey =
     currentProject?.modelKey || authSession?.defaultProjectKey || activeSiteId || currentProject?.databaseKey;
   const activeProjectTemplate = currentProject?.template || authSession?.defaultProjectTemplate || "";
@@ -2219,6 +2312,7 @@ export default function DashboardPage() {
   const [environmentAll, setEnvironmentAll] = useState<EnvironmentConditionListDto | null>(null);
   const [environmentCooled, setEnvironmentCooled] = useState<EnvironmentConditionListDto | null>(null);
   const [workOrders, setWorkOrders] = useState<WorkOrderListDto | null>(null);
+  const [siteCapabilities, setSiteCapabilities] = useState<RuntimeSubsystemCapabilityListDto | null>(null);
   const [, setDeviceSourceStatus] = useState<SourceStatusDto | null>(null);
   const [mainLoopDevices, setMainLoopDevices] = useState<MainLoopDeviceView[]>([]);
   const [comfortTerminalAvailable, setComfortTerminalAvailable] = useState(false);
@@ -2276,6 +2370,30 @@ export default function DashboardPage() {
   }, [nextRefreshAt, fallbackRefreshSeconds]);
 
   const refreshCountdownLabel = nextRefreshAt == null ? "刷新中" : `${refreshCountdownSeconds}s`;
+
+  useEffect(() => {
+    let active = true;
+    async function loadCapabilities() {
+      try {
+        const result = await fetchSiteCapabilities(activeConfigSiteId);
+        if (active) {
+          setSiteCapabilities(result);
+        }
+      } catch {
+        if (active) {
+          setSiteCapabilities(null);
+        }
+      }
+    }
+    void loadCapabilities();
+    const timer = window.setInterval(() => {
+      void loadCapabilities();
+    }, 30_000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [activeConfigSiteId]);
 
   useEffect(() => {
     let active = true;
@@ -3115,7 +3233,7 @@ export default function DashboardPage() {
           }
         : null;
   const dutyConclusionTitle = cleanDashboardDutyText(efficiencyStatusNote?.title || verdict.title);
-  const dutyConclusionHint = cleanDashboardDutyText(efficiencyStatusNote?.hint || verdict.description);
+  const dutyConclusionHint = compactDashboardDutyText(efficiencyStatusNote?.hint || verdict.description);
 
   const chainMetricByKey = new Map(efficiencyChainCards.map((item) => [item.key, item]));
   const scaleMetricByKey = new Map(efficiencyScaleCards.map((item) => [item.key, item]));
@@ -3146,15 +3264,20 @@ export default function DashboardPage() {
   const outdoorBoundarySummary =
     !isFiniteNumber(outdoorWetBulb) && !isFiniteNumber(outdoorTemp) && coolingApproachMeasurement.rawValue === null
       ? "湿球/干球/接近未传回"
-      : `湿球${formatTemperatureValue(outdoorWetBulb)} · 干球${formatTemperatureValue(outdoorTemp)} · 接近${coolingApproachDisplay}`;
+      : `湿球${formatTemperatureValue(outdoorWetBulb)} 干球${formatTemperatureValue(outdoorTemp)} 接近${coolingApproachDisplay}`;
   const coolingApproachLow = isFiniteNumber(coolingApproach) && coolingApproach < 3;
   const coolingApproachHigh = isFiniteNumber(coolingApproach) && coolingApproach > 4.5;
   const coolingApproachOutOfBand = coolingApproachLow || coolingApproachHigh;
+  const coolingApproachImplausible =
+    coolingApproachMeasurement.rawValue !== null && !coolingApproachMeasurement.plausible;
+  const coolingApproachNeedsReview = coolingApproachOutOfBand || coolingApproachImplausible;
   const coolingApproachConstraintText = coolingApproachLow
     ? "接近度偏低，不加塔/不增风机"
     : coolingApproachHigh
       ? "接近度偏高，复核塔泵协同"
-      : "塔侧边界正常";
+      : coolingApproachImplausible
+        ? "接近度异常，复核湿球/水温"
+        : "塔侧边界正常";
   const activeAlarmCount =
     anomalySummary?.counts?.total ??
     overview?.energyCards?.activeAnomalyCount ??
@@ -3186,11 +3309,26 @@ export default function DashboardPage() {
       : activeAlarmCount > 0 || activeEventCount > 0 || manualAttentionCount > 0
         ? "中"
         : "低";
-  const autoRemoteCount = mainLoopDevices.filter((device) =>
-    device.controlSignals.some((signal) => /自动|远程/.test(`${signal.label}${signal.value}`))
-  ).length;
-  const localManualCount = manualAttentionCount;
-  const faultIsolationCount = mainLoopAlarmCount;
+  const controlModeResolvedDevices = mainLoopDevices.filter(
+    (device) => hasRemoteAutoControlSignal(device) || hasLocalManualControlSignal(device)
+  );
+  const controlModeReady = controlModeResolvedDevices.length > 0;
+  const autoRemoteCount = controlModeReady
+    ? mainLoopDevices.filter((device) => hasRemoteAutoControlSignal(device) && !hasLocalManualControlSignal(device)).length
+    : null;
+  const localManualCount = controlModeReady
+    ? mainLoopDevices.filter((device) => hasLocalManualControlSignal(device)).length
+    : null;
+  const faultIsolationReady = mainLoopDevices.some((device) => Boolean(device.alarmStatusText));
+  const faultIsolationCount = faultIsolationReady ? mainLoopAlarmCount : null;
+  const hasEfficiencyBoundaryEvidence = [
+    chilledPumpAssessment,
+    coolingPumpAssessment,
+    coolingTowerAssessment,
+    heatBalanceAssessment
+  ].some(Boolean);
+  const hasCoolingApproachBoundaryEvidence = coolingApproachMeasurement.rawValue !== null;
+  const boundaryAttentionReady = hasEfficiencyBoundaryEvidence || hasCoolingApproachBoundaryEvidence;
   const inefficientAreaCount = [
     chilledPumpAssessment?.tone === "warn",
     coolingPumpAssessment?.tone === "warn",
@@ -3200,32 +3338,25 @@ export default function DashboardPage() {
   const stageSummaryItems = processStageItems.length > 0 ? processStageItems : mainLoopStages.slice(0, 4);
   const lowEfficiencyScopeText =
     inefficientAreaCount > 0 ? `${stageSummaryItems[0]?.title || "泵/塔协同"}待复核` : "无低效设备";
-  const boundaryAttentionCount = inefficientAreaCount + (coolingApproachOutOfBand ? 1 : 0);
-  const boundaryAttentionScopeText = coolingApproachOutOfBand ? coolingApproachConstraintText : lowEfficiencyScopeText;
+  const boundaryAttentionCount = boundaryAttentionReady
+    ? inefficientAreaCount + (coolingApproachNeedsReview ? 1 : 0)
+    : null;
+  const boundaryAttentionScopeText = !boundaryAttentionReady
+    ? "边界数据待回传"
+    : coolingApproachNeedsReview
+      ? coolingApproachConstraintText
+      : hasEfficiencyBoundaryEvidence
+        ? lowEfficiencyScopeText
+        : "塔侧边界正常";
+  const remotePermissionDisplay = buildChainCountDisplay(autoRemoteCount, "台");
+  const localManualDisplay = buildChainCountDisplay(localManualCount, "台");
+  const faultIsolationDisplay = buildChainCountDisplay(faultIsolationCount, "台");
+  const boundaryAttentionDisplay = buildChainCountDisplay(boundaryAttentionCount, "项");
   const returnCoverageReady = mainLoopDevices.length > 0 && isFiniteNumber(processCoveragePct);
-  const returnCoverageComplete = returnCoverageReady && (processCoveragePct ?? 0) >= 95;
-  const returnCoverageStatus = returnCoverageComplete ? "完整" : "待复核";
-  const returnCoverageTone: Tone = returnCoverageComplete ? "good" : "neutral";
   const returnCoverageValue = returnCoverageReady ? formatPercentValue(processCoveragePct, 0) : DASHBOARD_PENDING_REVIEW_LABEL;
   const returnCoverageNote = returnCoverageReady
     ? `${formatCountRatioValue(processCoverageCount, mainLoopDevices.length)}在线`
     : "状态待回传";
-
-  const resolveStageStatus = (stage: MainLoopStageView | undefined): { text: string; tone: Tone } => {
-    if (!stage) {
-      return { text: DASHBOARD_PENDING_REVIEW_LABEL, tone: "neutral" };
-    }
-    if (stage.alarm > 0) {
-      return { text: "告警", tone: "warn" };
-    }
-    if (stage.attention > 0) {
-      return { text: "待确认", tone: "warn" };
-    }
-    if (stage.running > 0) {
-      return { text: "运行", tone: "good" };
-    }
-    return { text: "待确认", tone: "neutral" };
-  };
 
   const resolveStageControlValue = (systemType: SystemType, fallback: string): string => {
     const group = mainLoopDevices.filter((device) => device.systemType === systemType);
@@ -3245,28 +3376,20 @@ export default function DashboardPage() {
     return fallback;
   };
 
-  const resolveStageShortNote = (stage: MainLoopStageView | undefined, fallback: string): string => {
-    if (!stage) {
-      return fallback;
-    }
-    if (stage.alarm > 0) {
-      return `${formatCountValue(stage.alarm)}台告警`;
-    }
-    if (stage.attention > 0) {
-      return `${formatCountValue(stage.attention)}台需确认`;
-    }
-    if (stage.runningEstimated) {
-      return "估算运行";
-    }
-    return fallback;
-  };
-
-  const resolveStageSubline = (systemType: SystemType, stage: MainLoopStageView | undefined, fallback: string): string => {
-    const ratio = formatCountRatioValue(stage?.running, stage?.total);
-    const controlValue = resolveStageControlValue(systemType, ratio);
-    const shortNote = resolveStageShortNote(stage, fallback);
-    return controlValue === ratio ? shortNote : `${ratio} · ${shortNote}`;
-  };
+  const chilledLoopTempLabel = `供${formatTemperatureValue(chilledSupplyTemp, 1, "--")}/回${formatTemperatureValue(chilledReturnTemp, 1, "--")} · ΔT${formatMetricValue(chilledDeltaT, 1, "°C", "--")}`;
+  const coolingLoopTempLabel = `出${formatTemperatureValue(coolingTowerOutletTemp, 1, "--")}/进${formatTemperatureValue(coolingTowerInletTemp, 1, "--")} · 接近${compactCoolingApproachDisplay}`;
+  const chillerCopLabel = chainMetricByKey.get("chillerCop")?.value || "--";
+  const chillerRatioLabel = formatCountRatioValue(chillerStage?.running, chillerStage?.total);
+  const chilledPumpControlLabel = resolveStageControlValue("chilledPump", formatCountRatioValue(chilledPumpStage?.running, chilledPumpStage?.total));
+  const coolingPumpControlLabel = resolveStageControlValue("coolingPump", formatCountRatioValue(coolingPumpStage?.running, coolingPumpStage?.total));
+  const coolingTowerControlLabel = resolveStageControlValue("coolingTower", formatCountRatioValue(coolingTowerStage?.running, coolingTowerStage?.total));
+  const loadCapacityChainLabel = compactChainDisplayValue(formatMetricValue(totalCoolingCapacity, 0, "kW"));
+  const chilledPumpControlCompactLabel = compactChainDisplayValue(chilledPumpControlLabel);
+  const coolingPumpControlCompactLabel = compactChainDisplayValue(coolingPumpControlLabel);
+  const coolingTowerControlCompactLabel = compactChainDisplayValue(coolingTowerControlLabel);
+  const chillerChainFootnote = `${compactChainDisplayValue(chillerRatioLabel)} · COP ${compactChainDisplayValue(chillerCopLabel)}`;
+  const returnCoverageCompactValue = compactChainDisplayValue(returnCoverageValue);
+  const returnCoverageMapValue = returnCoverageReady ? `${returnCoverageCompactValue}在线` : returnCoverageCompactValue;
 
   const renderValueParts = (value: string, className = "dashboard-cockpit-value") => {
     const parts = splitMetricDisplay(value);
@@ -3366,6 +3489,59 @@ export default function DashboardPage() {
       tone: handoverItems[0]?.tone || "good"
     }
   ];
+  const subsystemCapabilityItems = (siteCapabilities?.items || [])
+    .filter((item) => item.reserved !== true)
+    .slice(0, 6);
+  const isSubsystemWaitingForRealData = (item: RuntimeSubsystemCapabilityDto): boolean =>
+    item.status === "enabled" && item.sourceStatus === "waiting_points";
+  const isSubsystemDemoData = (item: RuntimeSubsystemCapabilityDto): boolean =>
+    item.status === "enabled" && item.sourceStatus === "demo_data";
+  const liveSubsystemCount = subsystemCapabilityItems.filter(
+    (item) => item.status === "enabled" && !isSubsystemWaitingForRealData(item) && !isSubsystemDemoData(item)
+  ).length;
+  const demoSubsystemCount = subsystemCapabilityItems.filter(isSubsystemDemoData).length;
+  const waitingSubsystemCount = subsystemCapabilityItems.filter(isSubsystemWaitingForRealData).length;
+  const configuredSubsystemLabel = siteCapabilities
+    ? demoSubsystemCount > 0
+      ? `${demoSubsystemCount}演示`
+      : `${liveSubsystemCount}/${subsystemCapabilityItems.length || siteCapabilities.items?.length || 0}`
+    : "--";
+  const subsystemCapabilitySummary = siteCapabilities
+    ? `实时 ${liveSubsystemCount} / 演示 ${demoSubsystemCount} / 待接 ${waitingSubsystemCount}；待接不计KPI`
+    : "配置中心同步中";
+  const formatSubsystemStatus = (item: RuntimeSubsystemCapabilityDto): string => {
+    if (isSubsystemDemoData(item)) {
+      return "演示数据";
+    }
+    if (isSubsystemWaitingForRealData(item)) {
+      return "待接实时";
+    }
+    if (item.status === "enabled") {
+      return "已接入";
+    }
+    if (item.status === "not_configured") {
+      return "未配置";
+    }
+    if (item.status === "not_applicable") {
+      return "不适用";
+    }
+    return item.status || "未知";
+  };
+  const subsystemTone = (item: RuntimeSubsystemCapabilityDto): "good" | "warn" | "neutral" => {
+    if (isSubsystemDemoData(item)) {
+      return "neutral";
+    }
+    if (isSubsystemWaitingForRealData(item)) {
+      return "warn";
+    }
+    if (item.status === "enabled") {
+      return "good";
+    }
+    if (item.status === "not_configured") {
+      return "warn";
+    }
+    return "neutral";
+  };
 
   void toFixedOrDash;
   void formatCountDisplayValue;
@@ -3384,7 +3560,7 @@ export default function DashboardPage() {
     >
       <header className="dashboard-cockpit-topbar">
         <div className="dashboard-cockpit-title-row">
-          <h1>能源站值班驾驶舱</h1>
+          <h1>综合能源站总览</h1>
           <span className="dashboard-cockpit-badge is-good">云端实时</span>
           <span className={`dashboard-cockpit-badge ${aiApprovalTone === "warn" ? "is-warn" : "is-good"}`}>{aiBadgeText}</span>
           <span className="dashboard-cockpit-badge">PLC保护在线</span>
@@ -3424,6 +3600,39 @@ export default function DashboardPage() {
         </article>
       </section>
 
+      <section className="dashboard-subsystem-strip">
+        <article className="dashboard-subsystem-summary">
+          <span>子系统配置状态</span>
+          <strong>{configuredSubsystemLabel}</strong>
+          <small title="配置已发布但实时待接的子系统不显示假 KPI、不参与统计">{subsystemCapabilitySummary}</small>
+        </article>
+        <div className="dashboard-subsystem-list">
+          {subsystemCapabilityItems.length ? (
+            subsystemCapabilityItems.map((item) => (
+              <article key={item.subsystemType} className={`dashboard-subsystem-chip tone-${subsystemTone(item)}`}>
+                <span>{item.displayName}</span>
+                <strong>{formatSubsystemStatus(item)}</strong>
+                <small>
+                  {item.status === "enabled"
+                    ? isSubsystemWaitingForRealData(item)
+                      ? `模板 ${item.pointMappingProgress || 0}% · 实时待接`
+                      : isSubsystemDemoData(item)
+                        ? `模板 ${item.pointMappingProgress || 0}% · 演示数据`
+                      : `映射 ${item.pointMappingProgress || 0}%`
+                    : "可接入"}
+                </small>
+              </article>
+            ))
+          ) : (
+            <article className="dashboard-subsystem-chip tone-neutral">
+              <span>配置中心</span>
+              <strong>待同步</strong>
+              <small>当前不影响冷站运行页</small>
+            </article>
+          )}
+        </div>
+      </section>
+
       <section className="dashboard-cockpit-kpis">
         <article className="dashboard-cockpit-kpi">
           <span>冷站COP</span>
@@ -3448,7 +3657,7 @@ export default function DashboardPage() {
         <article className="dashboard-cockpit-kpi">
           <span>主链路运行</span>
           {renderValueParts(formatCountRatioValue(runningMainLoopCount, mainLoopTotalCount))}
-          <small>远程 {formatCountValue(autoRemoteCount)}台 · 本地/手动 {formatCountValue(localManualCount)}台</small>
+          <small>远程 {remotePermissionDisplay.fullValue} · 本地/手动 {localManualDisplay.fullValue}</small>
         </article>
         <article className="dashboard-cockpit-kpi">
           <span>告警 / 事件</span>
@@ -3582,50 +3791,149 @@ export default function DashboardPage() {
         </article>
 
         <article className="dashboard-cockpit-panel dashboard-cockpit-chain">
+          <img
+            className="dashboard-cockpit-full-map"
+            src={controlLinkSchematicImage}
+            alt=""
+            aria-hidden="true"
+          />
+          <div className="dashboard-cockpit-full-map-live" aria-hidden="true">
+            <span className="is-chilled-loop">{chilledLoopTempLabel}</span>
+            <span className="is-cooling-loop">{coolingLoopTempLabel}</span>
+            <span className="is-online-value">{returnCoverageMapValue}</span>
+            <span className="is-remote-count"><b>{remotePermissionDisplay.compactValue}</b>{remotePermissionDisplay.hasValue ? <em>{remotePermissionDisplay.unit}</em> : null}</span>
+            <span className="is-manual-count"><b>{localManualDisplay.compactValue}</b>{localManualDisplay.hasValue ? <em>{localManualDisplay.unit}</em> : null}</span>
+            <span className="is-fault-count"><b>{faultIsolationDisplay.compactValue}</b>{faultIsolationDisplay.hasValue ? <em>{faultIsolationDisplay.unit}</em> : null}</span>
+            <span className="is-boundary-count"><b>{boundaryAttentionDisplay.compactValue}</b>{boundaryAttentionDisplay.hasValue ? <em>{boundaryAttentionDisplay.unit}</em> : null}</span>
+          </div>
           <div className="dashboard-cockpit-panel-head">
             <h2>设备控制链路</h2>
-            <span className="dashboard-cockpit-badge">蓝：冷冻水 · 绿：冷却水</span>
+            <span className="dashboard-cockpit-badge">蓝：冷冻水 · 绿：冷却水 · 虚线：数据</span>
           </div>
           <div className="dashboard-cockpit-panel-body">
-            <div className="dashboard-cockpit-flow">
-              <div className="dashboard-cockpit-water-tag is-chilled">冷冻供/回 {formatTemperatureValue(chilledSupplyTemp, 1, "--")}/{formatTemperatureValue(chilledReturnTemp, 1, "--")} · ΔT {formatMetricValue(chilledDeltaT, 1, "°C", "--")}</div>
-              <div className="dashboard-cockpit-water-tag is-cooling">冷却出/进 {formatTemperatureValue(coolingTowerOutletTemp, 1, "--")}/{formatTemperatureValue(coolingTowerInletTemp, 1, "--")} · 接近 {compactCoolingApproachDisplay}</div>
-              <article className="dashboard-cockpit-equip is-chiller">
-                <b>冷机 <span className={`tone-${resolveStageStatus(chillerStage).tone}`}>{resolveStageStatus(chillerStage).text}</span></b>
-                <strong>{formatCountRatioValue(chillerStage?.running, chillerStage?.total)}</strong>
-                <small>主机COP {chainMetricByKey.get("chillerCop")?.value || "--"}</small>
+            <div className="dashboard-cockpit-flow dashboard-cockpit-schematic" aria-label="设备控制链路示意图">
+              <img
+                className="dashboard-cockpit-schematic-base"
+                src={controlLinkSchematicImage}
+                alt=""
+                aria-hidden="true"
+              />
+              <svg className="dashboard-cockpit-schematic-pipes" viewBox="0 0 1000 260" preserveAspectRatio="none" role="img" aria-label="冷冻水、冷却水与数据链路">
+                <defs>
+                  <filter id="dashboardCockpitPipeGlow" x="-20%" y="-40%" width="140%" height="180%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                  <marker id="dashboardCockpitChilledArrow" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+                    <path d="M0,0 L7,2.5 L0,5 Z" />
+                  </marker>
+                  <marker id="dashboardCockpitCoolingArrow" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+                    <path d="M0,0 L7,2.5 L0,5 Z" />
+                  </marker>
+                  <marker id="dashboardCockpitDataArrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+                    <path d="M0,0 L10,4 L0,8 Z" />
+                  </marker>
+                </defs>
+                <path className="dashboard-cockpit-pipe-halo is-chilled" d="M 424 110 H 126 V 168 H 424" />
+                <path className="dashboard-cockpit-pipe-main is-chilled" d="M 424 110 H 126 V 168 H 424" />
+                <path className="dashboard-cockpit-pipe-halo is-cooling" d="M 576 110 H 892 V 168 H 576" />
+                <path className="dashboard-cockpit-pipe-main is-cooling" d="M 576 110 H 892 V 168 H 576" />
+                <path className="dashboard-cockpit-flow-arrow is-chilled is-top" d="M 330 110 H 244" markerEnd="url(#dashboardCockpitChilledArrow)" />
+                <path className="dashboard-cockpit-flow-arrow is-chilled is-bottom" d="M 244 168 H 330" markerEnd="url(#dashboardCockpitChilledArrow)" />
+                <path className="dashboard-cockpit-flow-arrow is-cooling is-top" d="M 790 110 H 704" markerEnd="url(#dashboardCockpitCoolingArrow)" />
+                <path className="dashboard-cockpit-flow-arrow is-cooling is-bottom" d="M 704 168 H 790" markerEnd="url(#dashboardCockpitCoolingArrow)" />
+                <path className="dashboard-cockpit-data-line" d="M 188 214 H 468 Q 500 214 500 184 V 145" />
+                <path className="dashboard-cockpit-data-line" d="M 512 214 H 635" markerEnd="url(#dashboardCockpitDataArrow)" />
+                <path className="dashboard-cockpit-data-line" d="M 718 214 H 820" markerEnd="url(#dashboardCockpitDataArrow)" />
+              </svg>
+
+              <div className="dashboard-cockpit-loop-label is-chilled">
+                <b>冷冻水回路</b>
+                <span>{chilledLoopTempLabel}</span>
+              </div>
+              <div className="dashboard-cockpit-loop-label is-cooling">
+                <b>冷却水回路</b>
+                <span>{coolingLoopTempLabel}</span>
+              </div>
+
+              <article className="dashboard-cockpit-chain-node is-load">
+                <img className="dashboard-cockpit-chain-photo" src={terminalLoadImage} alt="" aria-hidden="true" />
+                <span className="dashboard-cockpit-chain-icon is-load" aria-hidden="true" />
+                <b>末端负荷</b>
+                <strong>空调系统</strong>
+                <small>{loadCapacityChainLabel}</small>
               </article>
-              <article className="dashboard-cockpit-equip is-cooling-pump">
-                <b>冷却泵 <span className={`tone-${resolveStageStatus(coolingPumpStage).tone}`}>{resolveStageStatus(coolingPumpStage).text}</span></b>
-                <strong>{resolveStageControlValue("coolingPump", formatCountRatioValue(coolingPumpStage?.running, coolingPumpStage?.total))}</strong>
-                <small>{resolveStageSubline("coolingPump", coolingPumpStage, "协同")}</small>
+
+              <article className="dashboard-cockpit-chain-node is-chilled-pump">
+                <img className="dashboard-cockpit-chain-photo" src={chilledPumpImage} alt="" aria-hidden="true" />
+                <span className="dashboard-cockpit-chain-icon is-pump" aria-hidden="true" />
+                <b>冷冻水泵</b>
+                <strong>变频控制</strong>
+                <small>{chilledPumpControlCompactLabel}</small>
               </article>
-              <article className="dashboard-cockpit-equip is-tower">
-                <b>冷却塔 <span className={`tone-${resolveStageStatus(coolingTowerStage).tone}`}>{resolveStageStatus(coolingTowerStage).text}</span></b>
-                <strong>{resolveStageControlValue("coolingTower", formatCountRatioValue(coolingTowerStage?.running, coolingTowerStage?.total))}</strong>
-                <small>{resolveStageSubline("coolingTower", coolingTowerStage, "风机")}</small>
+
+              <article className="dashboard-cockpit-chain-node is-chiller">
+                <img className="dashboard-cockpit-chain-photo" src={chillerUnitImage} alt="" aria-hidden="true" />
+                <header>
+                  <b>冷机</b>
+                </header>
+                <strong>蒸发器·冷凝器</strong>
+                <div className="dashboard-cockpit-chiller-core">
+                  <span className="is-evaporator"><b>蒸发器</b><small>冷冻侧</small></span>
+                  <span className="is-condenser"><b>冷凝器</b><small>冷却侧</small></span>
+                </div>
+                <small>{chillerChainFootnote}</small>
               </article>
-              <article className="dashboard-cockpit-equip is-load">
-                <b>负荷侧 <span className="tone-good">稳定</span></b>
-                <strong>{formatMetricValue(totalCoolingCapacity, 0, "kW")}</strong>
-                <small>覆盖 {formatPercentValue(processCoveragePct, 0)}</small>
+
+              <article className="dashboard-cockpit-chain-node is-cooling-pump">
+                <img className="dashboard-cockpit-chain-photo" src={coolingPumpImage} alt="" aria-hidden="true" />
+                <span className="dashboard-cockpit-chain-icon is-pump" aria-hidden="true" />
+                <b>冷却水泵</b>
+                <strong>变频控制</strong>
+                <small>{coolingPumpControlCompactLabel}</small>
               </article>
-              <article className="dashboard-cockpit-equip is-chilled-pump">
-                <b>冷冻泵 <span className={`tone-${resolveStageStatus(chilledPumpStage).tone}`}>{resolveStageStatus(chilledPumpStage).text}</span></b>
-                <strong>{resolveStageControlValue("chilledPump", formatCountRatioValue(chilledPumpStage?.running, chilledPumpStage?.total))}</strong>
-                <small>{resolveStageSubline("chilledPump", chilledPumpStage, "ΔP待接入")}</small>
+
+              <article className="dashboard-cockpit-chain-node is-tower">
+                <img className="dashboard-cockpit-chain-photo" src={coolingTowerImage} alt="" aria-hidden="true" />
+                <span className="dashboard-cockpit-chain-icon is-tower" aria-hidden="true" />
+                <b>冷却塔</b>
+                <strong>风机变频</strong>
+                <small>{coolingTowerControlCompactLabel}</small>
               </article>
-              <article className="dashboard-cockpit-equip is-return">
-                <b>回传 <span className={`tone-${returnCoverageTone}`}>{returnCoverageStatus}</span></b>
-                <strong>{returnCoverageValue}</strong>
+
+              <div className="dashboard-cockpit-telemetry-strip" aria-label="采集点">
+                <span>温度</span>
+                <span>压力</span>
+                <span>流量</span>
+                <span>能耗</span>
+                <span>阀门</span>
+              </div>
+
+              <article className="dashboard-cockpit-data-node is-plc">
+                <img className="dashboard-cockpit-data-photo" src={plcControllerImage} alt="" aria-hidden="true" />
+                <b>PLC/控制器</b>
+                <small>逻辑控制</small>
+              </article>
+              <article className="dashboard-cockpit-data-node is-gateway">
+                <img className="dashboard-cockpit-data-photo" src={edgeGatewayImage} alt="" aria-hidden="true" />
+                <b>边缘网关</b>
+                <small>数据汇聚</small>
+              </article>
+              <article className="dashboard-cockpit-data-node is-online">
+                <img className="dashboard-cockpit-data-photo" src={onlineCloudImage} alt="" aria-hidden="true" />
+                <b>点位在线</b>
+                <strong>{returnCoverageCompactValue}</strong>
                 <small>{returnCoverageNote}</small>
               </article>
             </div>
             <div className="dashboard-cockpit-control-row">
-              <article><span>远程权限</span><strong>{formatCountValue(autoRemoteCount)}台</strong><small>远程/自动</small></article>
-              <article><span>本地/手动</span><strong>{formatCountValue(localManualCount)}台</strong><small>人工确认</small></article>
-              <article><span>故障隔离</span><strong>{formatCountValue(faultIsolationCount)}台</strong><small>隔离调度</small></article>
-              <article><span>约束提示</span><strong>{formatCountValue(boundaryAttentionCount)}项</strong><small>{boundaryAttentionScopeText}</small></article>
+              <article className="is-remote"><i aria-hidden="true" /><span>远程权限</span><strong>{remotePermissionDisplay.fullValue}</strong><small>远程/自动</small></article>
+              <article className="is-manual"><i aria-hidden="true" /><span>本地/手动</span><strong>{localManualDisplay.fullValue}</strong><small>人工确认</small></article>
+              <article className="is-fault"><i aria-hidden="true" /><span>故障隔离</span><strong>{faultIsolationDisplay.fullValue}</strong><small>隔离调度</small></article>
+              <article className="is-boundary"><i aria-hidden="true" /><span>约束提示</span><strong>{boundaryAttentionDisplay.fullValue}</strong><small>{boundaryAttentionScopeText}</small></article>
             </div>
           </div>
         </article>

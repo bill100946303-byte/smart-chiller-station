@@ -11,6 +11,10 @@ const DASHBOARD_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/DashboardPage.tsx")
 const ALARM_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/AlarmPage.tsx");
 const SYSTEM_OVERVIEW_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/SystemOverviewPage.tsx");
 const OPTIMIZE_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/OptimizeDemoPage.tsx");
+const SCENE_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/SceneControlPage.tsx");
+const COMPRESSED_AIR_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/CompressedAirMonitoringPage.tsx");
+const HVAC_TERMINAL_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/HvacTerminalMonitoringPage.tsx");
+const AI_OVERVIEW_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/AiOverviewPage.tsx");
 const BFF_CLIENT_FILE = path.join(SHELL_ROOT, "src/services/bffClient.ts");
 const QA_SEED_FILE = path.join(SHELL_ROOT, "public/qa-auth-seed.html");
 
@@ -101,6 +105,8 @@ const FINAL_FOOTER_SCENE_SWITCHBAR_SELECTOR =
   "html body #root .content.is-scene-embed-content .scene-embed-switchbar";
 const FINAL_FOOTER_SCENE_CURRENT_STRONG_SELECTOR =
   "html body #root .content.is-scene-embed-content .scene-embed-current strong";
+const SCENE_NATIVE_2D_VIEWPORT_RULE_MARKER =
+  "function createSceneNative2dViewport(input: SceneNativeViewportPresetInput): SceneNativeViewportPreset";
 const FINAL_FOOTER_METER_PAGE_SELECTOR =
   "html body #root .content.is-subpage-compact > .meter-reading-compact-page-v2";
 const FINAL_FOOTER_METER_BOUNDARY_SELECTOR =
@@ -109,6 +115,34 @@ const FINAL_FOOTER_ALARM_FOOTER_SELECTOR =
   "html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-footer-grid";
 const FINAL_FOOTER_REPORT_FOOTER_SELECTOR =
   "html body #root .content.is-subpage-compact.has-secondary-nav .report-record-table-footer";
+const ENERGY_STATION_ACCEPTANCE_MARKER =
+  "/* 3001 energy-station acceptance pass: keep the demo-critical pages inside 720p duty screens. */";
+const ENERGY_STATION_ACCEPTANCE_V2_MARKER =
+  "/* 3001 energy-station acceptance pass v2: keep air KPI badges and AI recommendation rows fully visible. */";
+const ENERGY_STATION_DASHBOARD_CONTENT_SELECTOR =
+  "html body #root#root#root .content.is-dashboard-content";
+const ENERGY_STATION_AIR_CONTENT_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .power-monitor-page)";
+const ENERGY_STATION_AI_CONTENT_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .ai-overview-page)";
+const ENERGY_STATION_DASHBOARD_PAGE_SELECTOR =
+  "html body #root#root#root .content.is-dashboard-content > .dashboard-cockpit-v2";
+const ENERGY_STATION_AIR_PAGE_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .power-monitor-page) > .power-monitor-page";
+const ENERGY_STATION_AIR_KPI_CARD_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .power-monitor-page) .power-kpi-grid .stat-card";
+const ENERGY_STATION_AI_PAGE_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .ai-overview-page) > .ai-overview-page";
+const ENERGY_STATION_AI_MAIN_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .ai-overview-page) .ai-overview-main";
+const ENERGY_STATION_AI_BOTTOM_GRID_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .ai-overview-page) .ai-bottom-grid";
+const ENERGY_STATION_AI_REC_ROW_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .ai-overview-page) .ai-rec-row";
+const ENERGY_STATION_AI_SUBSYSTEM_GRID_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .ai-overview-page) .ai-subsystem-advice-grid";
+const ENERGY_STATION_AI_SUBSYSTEM_CARD_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .ai-overview-page) .ai-subsystem-advice-card";
 const ENERGY_PARAMETER_FINAL_GRID_SELECTOR =
   "html body #root .content.is-subpage-compact > .energy-parameter-compact-page-v2";
 const METER_READING_FINAL_GRID_SELECTOR =
@@ -246,6 +280,10 @@ function main() {
   const alarmSource = fs.readFileSync(ALARM_PAGE_FILE, "utf8");
   const systemOverviewSource = fs.readFileSync(SYSTEM_OVERVIEW_PAGE_FILE, "utf8");
   const optimizeSource = fs.readFileSync(OPTIMIZE_PAGE_FILE, "utf8");
+  const sceneSource = fs.readFileSync(SCENE_PAGE_FILE, "utf8");
+  const compressedAirSource = fs.readFileSync(COMPRESSED_AIR_PAGE_FILE, "utf8");
+  const hvacTerminalSource = fs.readFileSync(HVAC_TERMINAL_PAGE_FILE, "utf8");
+  const aiOverviewSource = fs.readFileSync(AI_OVERVIEW_PAGE_FILE, "utf8");
   const bffClientSource = fs.readFileSync(BFF_CLIENT_FILE, "utf8");
   const errors = [];
 
@@ -1104,6 +1142,12 @@ function main() {
   }
 
   assertIncludes(styleSource, FINAL_FOOTER_CLEARANCE_MARKER, "rendered 720p final footer clearance guard", errors);
+  assertIncludes(sceneSource, SCENE_NATIVE_2D_VIEWPORT_RULE_MARKER, "scene native 2D viewport rule", errors);
+  assertIncludes(sceneSource, "const SCENE_NATIVE_2D_TOP_SAFE_OFFSET_PX = 2;", "scene native 2D top safe offset", errors);
+  assertIncludes(sceneSource, "const SCENE_NATIVE_2D_BOTTOM_SAFE_OFFSET_PX = 2;", "scene native 2D bottom safe offset", errors);
+  assertIncludes(sceneSource, "const SCENE_NATIVE_2D_EFFECTIVE_TOP_Y = 120;", "scene native 2D effective top", errors);
+  assertIncludes(sceneSource, "const SCENE_NATIVE_2D_EFFECTIVE_HEIGHT = 730;", "scene native 2D effective height", errors);
+  assertIncludes(sceneSource, "preset: SCENE_NATIVE_COMPACT_2D_VIEWPORT", "scene native generic 2D viewport fallback", errors);
   const finalFooterClearanceStart = styleSource.indexOf(FINAL_FOOTER_CLEARANCE_MARKER);
   const finalFooterEnergyAnalysisPageBlock = findRuleBlock(
     styleSource,
@@ -1233,6 +1277,265 @@ function main() {
     assertIncludes(finalFooterReportFooterBlock.text, "transform: translateY(-12px) !important;", "report footer final lift", errors);
   }
 
+  assertIncludes(styleSource, ENERGY_STATION_ACCEPTANCE_MARKER, "3001 energy station 720p acceptance guard", errors);
+  assertIncludes(styleSource, ENERGY_STATION_ACCEPTANCE_V2_MARKER, "3001 energy station 720p acceptance guard v2", errors);
+  assertOrder(
+    styleSource,
+    FINAL_FOOTER_CLEARANCE_MARKER,
+    ENERGY_STATION_ACCEPTANCE_MARKER,
+    "3001 energy station guard cascade order",
+    errors
+  );
+  assertOrder(
+    styleSource,
+    ENERGY_STATION_ACCEPTANCE_MARKER,
+    ENERGY_STATION_ACCEPTANCE_V2_MARKER,
+    "3001 energy station v2 cascade order",
+    errors
+  );
+
+  const energyStationGuardStart = styleSource.indexOf(ENERGY_STATION_ACCEPTANCE_MARKER);
+  const energyStationGuardV2Start = styleSource.indexOf(ENERGY_STATION_ACCEPTANCE_V2_MARKER);
+  const energyStationDashboardContentBlock =
+    energyStationGuardStart >= 0 ? findRuleBlock(styleSource, ENERGY_STATION_DASHBOARD_CONTENT_SELECTOR, energyStationGuardStart) : null;
+  if (!energyStationDashboardContentBlock) {
+    errors.push("3001 energy station 720p acceptance guard: dashboard content selector block missing");
+  } else {
+    assertIncludes(
+      energyStationDashboardContentBlock.text,
+      "height: calc(100dvh - 100px) !important;",
+      "dashboard content uses 720p duty-screen height",
+      errors
+    );
+    assertIncludes(energyStationDashboardContentBlock.text, "overflow: hidden !important;", "dashboard content prevents page spill", errors);
+  }
+
+  const energyStationAirContentBlock =
+    energyStationGuardStart >= 0 ? findRuleBlock(styleSource, ENERGY_STATION_AIR_CONTENT_SELECTOR, energyStationGuardStart) : null;
+  if (!energyStationAirContentBlock) {
+    errors.push("3001 energy station 720p acceptance guard: air content selector block missing");
+  } else {
+    assertIncludes(
+      energyStationAirContentBlock.text,
+      "height: calc(100dvh - 100px) !important;",
+      "air page content uses 720p duty-screen height",
+      errors
+    );
+    assertIncludes(energyStationAirContentBlock.text, "overflow: hidden !important;", "air page content prevents page spill", errors);
+  }
+
+  const energyStationAiContentBlock =
+    energyStationGuardStart >= 0 ? findRuleBlock(styleSource, ENERGY_STATION_AI_CONTENT_SELECTOR, energyStationGuardStart) : null;
+  if (!energyStationAiContentBlock) {
+    errors.push("3001 energy station 720p acceptance guard: AI content selector block missing");
+  } else {
+    assertIncludes(
+      energyStationAiContentBlock.text,
+      "height: calc(100dvh - 100px) !important;",
+      "AI page content uses 720p duty-screen height",
+      errors
+    );
+    assertIncludes(energyStationAiContentBlock.text, "overflow: hidden !important;", "AI page content prevents page spill", errors);
+  }
+
+  const energyStationDashboardPageBlock =
+    energyStationGuardStart >= 0 ? findRuleBlock(styleSource, ENERGY_STATION_DASHBOARD_PAGE_SELECTOR, energyStationGuardStart) : null;
+  if (!energyStationDashboardPageBlock) {
+    errors.push("3001 energy station 720p acceptance guard: dashboard page selector block missing");
+  } else {
+    assertIncludes(
+      energyStationDashboardPageBlock.text,
+      "grid-template-rows: 29px 50px 64px 72px minmax(0, 1fr) 74px !important;",
+      "dashboard cockpit final compact row plan",
+      errors
+    );
+  }
+
+  const energyStationAirPageBlock =
+    energyStationGuardV2Start >= 0 ? findRuleBlock(styleSource, ENERGY_STATION_AIR_PAGE_SELECTOR, energyStationGuardV2Start) : null;
+  if (!energyStationAirPageBlock) {
+    errors.push("3001 energy station 720p acceptance guard v2: air page selector block missing");
+  } else {
+    assertIncludes(
+      energyStationAirPageBlock.text,
+      "grid-template-rows: 116px 80px minmax(0, 1fr) !important;",
+      "air page final compact row plan",
+      errors
+    );
+  }
+
+  const energyStationAirKpiBlock =
+    energyStationGuardV2Start >= 0 ? findRuleBlock(styleSource, ENERGY_STATION_AIR_KPI_CARD_SELECTOR, energyStationGuardV2Start) : null;
+  if (!energyStationAirKpiBlock) {
+    errors.push("3001 energy station 720p acceptance guard v2: air KPI card selector block missing");
+  } else {
+    assertIncludes(energyStationAirKpiBlock.text, "height: 80px !important;", "air KPI card readable height", errors);
+    assertIncludes(
+      energyStationAirKpiBlock.text,
+      "grid-template-rows: 15px 25px 20px !important;",
+      "air KPI card title-value-status rows",
+      errors
+    );
+  }
+
+  const energyStationAiPageBlock =
+    energyStationGuardStart >= 0 ? findRuleBlock(styleSource, ENERGY_STATION_AI_PAGE_SELECTOR, energyStationGuardStart) : null;
+  if (!energyStationAiPageBlock) {
+    errors.push("3001 energy station 720p acceptance guard: AI page selector block missing");
+  } else {
+    assertIncludes(energyStationAiPageBlock.text, "min-height: 0 !important;", "AI page can shrink inside 720p frame", errors);
+    assertIncludes(
+      energyStationAiPageBlock.text,
+      "grid-template-columns: minmax(0, 1fr) minmax(clamp(600px, 42vw, 700px), 0.54fr) !important;",
+      "AI page gives recommendation rail enough readable width",
+      errors
+    );
+    assertIncludes(
+      energyStationAiPageBlock.text,
+      "grid-template-rows: 52px 74px minmax(0, 0.72fr) minmax(112px, 0.28fr) !important;",
+      "AI page final compact row plan",
+      errors
+    );
+  }
+
+  assertIncludes(styleSource, ENERGY_STATION_AI_MAIN_SELECTOR, "AI main layout selector", errors);
+  assertIncludes(
+    styleSource,
+    "display: contents !important;",
+    "AI main layout allows right review rail to span lower row",
+    errors
+  );
+  assertIncludes(styleSource, ENERGY_STATION_AI_BOTTOM_GRID_SELECTOR, "AI bottom grid selector", errors);
+  assertIncludes(
+    styleSource,
+    "grid-template-columns: minmax(0, 0.96fr) minmax(0, 0.9fr) minmax(clamp(600px, 42vw, 700px), 0.54fr) !important;",
+    "AI bottom grid spans under both plant overview and right rail",
+    errors
+  );
+  assertIncludes(aiOverviewSource, 'layoutRole: "chiller"', "AI simplified topology keeps chiller semantic node", errors);
+  assertIncludes(aiOverviewSource, 'layoutRole: "chilled-pump"', "AI simplified topology keeps chilled pump semantic node", errors);
+  assertIncludes(aiOverviewSource, 'layoutRole: "cooling-pump"', "AI simplified topology keeps cooling pump semantic node", errors);
+  assertIncludes(aiOverviewSource, 'layoutRole: "cooling-tower"', "AI simplified topology keeps cooling tower semantic node", errors);
+  assertIncludes(aiOverviewSource, "equipment-${item.layoutRole}", "AI simplified topology uses semantic layout classes", errors);
+  assertIncludes(styleSource, ".equipment-chiller", "AI simplified topology chiller boundary card", errors);
+  assertIncludes(styleSource, ".equipment-chilled-pump", "AI simplified topology chilled side pump card", errors);
+  assertIncludes(styleSource, ".equipment-cooling-pump", "AI simplified topology cooling side pump card", errors);
+  assertIncludes(styleSource, ".equipment-cooling-tower", "AI simplified topology cooling tower card", errors);
+  assertIncludes(styleSource, ".equipment-telemetry", "AI simplified topology telemetry side node", errors);
+  assertIncludes(styleSource, ".ai-plant-network::before", "AI simplified topology chiller heat-exchange boundary line", errors);
+  assertIncludes(styleSource, "border-right: 8px solid rgba(255, 202, 107, 0.76);", "AI simplified topology cooling loop points back to chiller", errors);
+  assertIncludes(styleSource, "height: 82px;", "AI simplified topology uses compact process nodes", errors);
+  assertIncludes(styleSource, "height: 104px;", "AI simplified topology keeps chiller as primary boundary node", errors);
+  assertIncludes(styleSource, "height: 26px;", "AI simplified topology uses compact loop badges", errors);
+  assertNotIncludes(aiOverviewSource, "equipment-${index}", "AI simplified topology must not use index-positioned equipment cards", errors);
+
+  const energyStationAiRecBlock =
+    energyStationGuardV2Start >= 0 ? findRuleBlock(styleSource, ENERGY_STATION_AI_REC_ROW_SELECTOR, energyStationGuardV2Start) : null;
+  if (!energyStationAiRecBlock) {
+    errors.push("3001 energy station 720p acceptance guard v2: AI recommendation row selector block missing");
+  } else {
+    assertIncludes(energyStationAiRecBlock.text, "max-height: 78px !important;", "AI recommendation row readable bounded height", errors);
+    assertIncludes(energyStationAiRecBlock.text, "overflow: hidden !important;", "AI recommendation row no text spill", errors);
+  }
+
+  const energyStationAiSubsystemGridBlock =
+    energyStationGuardV2Start >= 0
+      ? findRuleBlock(styleSource, ENERGY_STATION_AI_SUBSYSTEM_GRID_SELECTOR, energyStationGuardV2Start)
+      : null;
+  if (!energyStationAiSubsystemGridBlock) {
+    errors.push("3001 energy station 720p acceptance guard v2: AI subsystem advice grid selector block missing");
+  } else {
+    assertIncludes(
+      energyStationAiSubsystemGridBlock.text,
+      "overflow-x: auto !important;",
+      "AI subsystem advice grid keeps horizontal overflow local",
+      errors
+    );
+    assertIncludes(
+      energyStationAiSubsystemGridBlock.text,
+      "scroll-snap-type: x mandatory !important;",
+      "AI subsystem advice grid snaps visible cards",
+      errors
+    );
+  }
+
+  const energyStationAiSubsystemCardBlock =
+    energyStationGuardV2Start >= 0
+      ? findRuleBlock(styleSource, ENERGY_STATION_AI_SUBSYSTEM_CARD_SELECTOR, energyStationGuardV2Start)
+      : null;
+  if (!energyStationAiSubsystemCardBlock) {
+    errors.push("3001 energy station 720p acceptance guard v2: AI subsystem advice card selector block missing");
+  } else {
+    assertIncludes(
+      energyStationAiSubsystemCardBlock.text,
+      "flex: 0 0 calc((100% - 12px) / 3) !important;",
+      "AI subsystem advice cards fit three-up inside right panel",
+      errors
+    );
+    assertIncludes(
+      energyStationAiSubsystemCardBlock.text,
+      "max-width: calc((100% - 12px) / 3) !important;",
+      "AI subsystem advice cards avoid right-edge clipping",
+      errors
+    );
+  }
+
+  assertIncludes(dashboardSource, "综合能源站总览", "dashboard integrated energy station title", errors);
+  assertIncludes(
+    dashboardSource,
+    "配置已发布但实时待接的子系统不显示假 KPI、不参与统计",
+    "dashboard unavailable subsystem no-fake-KPI copy",
+    errors
+  );
+  assertIncludes(dashboardSource, "待接实时", "dashboard waiting-for-real-data subsystem status copy", errors);
+  assertIncludes(compressedAirSource, "未接入实时数据不显示假 KPI", "compressed-air no-fake-KPI copy", errors);
+  assertIncludes(
+    compressedAirSource,
+    "当前未接入真实空压实时数据",
+    "compressed-air real-data-not-connected warning copy",
+    errors
+  );
+  assertIncludes(compressedAirSource, "不写 PLC", "compressed-air read-only PLC boundary copy", errors);
+  assertIncludes(
+    compressedAirSource,
+    "第一版只做只读诊断和影子建议",
+    "compressed-air read-only shadow scope copy",
+    errors
+  );
+  assertIncludes(
+    compressedAirSource,
+    "不下发加载卸载命令",
+    "compressed-air no compressor load-unload command copy",
+    errors
+  );
+  assertIncludes(hvacTerminalSource, "未接入实时数据不显示假 KPI", "hvac-terminal no-fake-KPI copy", errors);
+  assertIncludes(
+    hvacTerminalSource,
+    "当前未接入真实空调末端实时数据",
+    "hvac-terminal real-data-not-connected warning copy",
+    errors
+  );
+  assertIncludes(hvacTerminalSource, "不直接写 BA/PLC", "hvac-terminal frontend no-direct-write boundary copy", errors);
+  assertIncludes(
+    hvacTerminalSource,
+    "白名单、适配器、后端只读总闸和审计回退保护",
+    "hvac-terminal protected FCU closed-loop boundary copy",
+    errors
+  );
+  assertIncludes(
+    hvacTerminalSource,
+    "阀门只作为反馈，不直接写阀门开度",
+    "hvac-terminal no direct valve control copy",
+    errors
+  );
+  assertIncludes(aiOverviewSource, "影子建议模式", "AI overview shadow mode copy", errors);
+  assertIncludes(aiOverviewSource, "PLC安全边界在线", "AI overview PLC safety boundary copy", errors);
+  assertIncludes(aiOverviewSource, "人工确认后下发", "AI overview assisted boundary copy", errors);
+  assertIncludes(aiOverviewSource, "跨系统 AI 建议中心", "AI overview cross-system advice center copy", errors);
+  assertIncludes(aiOverviewSource, "待接实时", "AI overview waiting-for-real-data status copy", errors);
+  assertIncludes(aiOverviewSource, "真实空压/子系统实时数据未接入", "AI overview real-data-not-connected copy", errors);
+  assertIncludes(aiOverviewSource, "不生成假 KPI、不推送节能建议", "AI overview unavailable subsystem no-fake-advice copy", errors);
+
   if (errors.length > 0) {
     console.error("Visual readability contract check failed:");
     errors.forEach((error) => console.error(`- ${error}`));
@@ -1256,7 +1559,9 @@ function main() {
   console.log("- checked optimize result spotlight guard");
   console.log("- checked energy efficiency calendar value width guard");
   console.log("- checked 720p bottom safe-area guard");
+  console.log("- checked scene native 2D viewport rule");
   console.log("- checked rendered 720p final footer clearance guard");
+  console.log("- checked 3001 energy-station 720p demo acceptance guards");
   console.log("- checked temporary QA seed is absent");
 }
 

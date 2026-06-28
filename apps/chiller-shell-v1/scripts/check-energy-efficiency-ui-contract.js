@@ -15,6 +15,7 @@ const CALENDAR_TERMINAL_VIEWPORT_MARKER = "/* Energy efficiency calendar termina
 const CALENDAR_KPI_READABILITY_MARKER = "/* Energy efficiency calendar KPI readability guard: prevent top summary text clipping. */";
 const CALENDAR_MONTH_QUERY_MARKER = "/* Energy efficiency calendar month query: keep month selection and monthly average visible. */";
 const CALENDAR_PIE_ASSOCIATION_MARKER = "/* Energy efficiency calendar pie association: show the same month and COP basis as the calendar query. */";
+const CALENDAR_DONUT_RANKING_MARKER = "/* Energy efficiency calendar donut ranking: replace scattered pie callouts with a compact sorted legend. */";
 const CALENDAR_INTERNAL_CLIP_MARKER = "/* Energy efficiency calendar 1280x720 internal clip guard: keep bottom-card contents fully visible. */";
 const CALENDAR_LOAD_FINAL_NO_CLIP_MARKER = "/* Energy efficiency calendar load-band final no-clip guard: later day-cell readability rules must not stretch the load rows. */";
 const ENERGY_EFFICIENCY_FINAL_NO_CLIP_MARKER = "/* Final energy-efficiency no-clip guard after all compact overrides. */";
@@ -118,6 +119,28 @@ function main() {
   assertIncludes(pageSource, "<section className=\"energy-efficiency-overview-card energy-efficiency-overview-pie-card\">", "calendar pie card class", errors);
   assertIncludes(pageSource, "<span>{overviewPieCopLabel}</span>", "calendar pie visible COP association", errors);
   assertIncludes(pageSource, "<span>{overviewDonutScopeLabel}</span>", "calendar pie center label", errors);
+  assertIncludes(pageSource, "function formatCalendarPieSegmentName(", "calendar pie display-name helper", errors);
+  assertIncludes(pageSource, "return \"冷却塔风机\";", "calendar pie cooling tower fan wording", errors);
+  assertIncludes(pageSource, "const overviewPieLegendRows = [...overviewPieSlices].sort", "calendar pie sorted legend rows", errors);
+  assertIncludes(pageSource, "const segmentShare = Math.max(0, Math.min(100, item.ratio));", "calendar pie true-share bar basis", errors);
+  assertIncludes(pageSource, "\"--segment-share\": `${segmentShare}%`", "calendar pie true-share bar style", errors);
+  assertIncludes(pageSource, "const overviewPieTopSegment = overviewPieLegendRows[0] || null;", "calendar pie top segment summary", errors);
+  assertIncludes(pageSource, "const overviewPieNonChillerShare = overviewPieTotal > 0", "calendar pie non-chiller share summary", errors);
+  assertIncludes(pageSource, "<h3>分项电耗构成</h3>", "calendar pie engineering title", errors);
+  assertIncludes(pageSource, "分项电耗不等于系统能效", "calendar pie compact scope note", errors);
+  assertIncludes(pageSource, "className=\"energy-efficiency-overview-donut-ranking\"", "calendar pie ranking container", errors);
+  assertIncludes(pageSource, "<strong>分项占比</strong>", "calendar pie ranking title", errors);
+  assertIncludes(pageSource, "<span>按电耗降序</span>", "calendar pie ranking sort label", errors);
+  assertIncludes(pageSource, "energy-efficiency-overview-donut-ranking-row", "calendar pie ranking row", errors);
+  assertIncludes(pageSource, "energy-efficiency-overview-donut-ranking-bar", "calendar pie ranking bar", errors);
+  assertIncludes(pageSource, "<span>最大耗电项</span>", "calendar pie top segment visible summary", errors);
+  assertIncludes(pageSource, "<span>辅机电耗占比</span>", "calendar pie auxiliary-power visible summary", errors);
+  assertNotIncludes(pageSource, "overviewPieMaxRatio", "calendar pie old normalized bar basis", errors);
+  assertNotIncludes(pageSource, "<span>非主机电耗</span>", "calendar pie old non-chiller wording", errors);
+  assertNotIncludes(pageSource, "<h3>分项耗电构成</h3>", "calendar pie old title wording", errors);
+  assertNotIncludes(pageSource, "overviewPieCallouts", "calendar pie old scattered callout calculation", errors);
+  assertNotIncludes(pageSource, "energy-efficiency-overview-donut-leaders", "calendar pie old leader SVG", errors);
+  assertNotIncludes(pageSource, "energy-efficiency-overview-donut-callout", "calendar pie old external callout nodes", errors);
   assertIncludes(pageSource, "<span>{chillerShareScopeLabel}</span>", "calendar chiller-share visible scoped label", errors);
   assertIncludes(pageSource, "<small>{chillerShareScopeHint}</small>", "calendar chiller-share visible scope hint", errors);
   assertIncludes(pageSource, "<span>口径校核</span>", "calendar visible scope audit label", errors);
@@ -281,6 +304,33 @@ function main() {
     assertIncludes(pieAssociationSource, "text-overflow: ellipsis !important;", "calendar pie association overflow guard", errors);
   }
 
+  const donutRankingStart = styleSource.indexOf(CALENDAR_DONUT_RANKING_MARKER);
+  if (donutRankingStart < 0) {
+    errors.push("calendar donut ranking: marker missing");
+  } else {
+    const donutRankingSource = styleSource.slice(donutRankingStart);
+    assertIncludes(donutRankingSource, ".energy-efficiency-overview-pie-card .energy-efficiency-overview-donut-body", "calendar donut ranking body selector", errors);
+    assertIncludes(donutRankingSource, "grid-template-rows: 136px minmax(0, 1fr) !important;", "calendar donut ranking compact rows", errors);
+    assertIncludes(donutRankingSource, "width: 120px !important;", "calendar donut ranking compact donut size", errors);
+    assertIncludes(donutRankingSource, ".energy-efficiency-overview-donut-ranking", "calendar donut ranking style", errors);
+    assertIncludes(donutRankingSource, "grid-template-rows: 16px minmax(0, 1fr) 24px !important;", "calendar donut ranking list rows", errors);
+    assertIncludes(donutRankingSource, ".energy-efficiency-overview-donut-ranking-row", "calendar donut ranking row style", errors);
+    assertIncludes(donutRankingSource, "grid-template-columns: 7px minmax(70px, 0.85fr) minmax(30px, 1fr) 48px !important;", "calendar donut ranking row columns", errors);
+    assertIncludes(donutRankingSource, ".energy-efficiency-overview-donut-ranking-bar span", "calendar donut ranking bar fill", errors);
+    assertIncludes(donutRankingSource, "width: var(--segment-share) !important;", "calendar donut ranking bar dynamic width", errors);
+    assertIncludes(donutRankingSource, ".energy-efficiency-overview-donut-ranking-summary", "calendar donut ranking summary style", errors);
+    assertIncludes(donutRankingSource, "container-type: inline-size !important;", "calendar donut ranking card container", errors);
+    assertIncludes(donutRankingSource, "/* Energy efficiency calendar donut wide-card layout: restore side-by-side composition when the pie card has room. */", "calendar donut wide-card marker", errors);
+    assertIncludes(donutRankingSource, "@container (min-width: 520px)", "calendar donut wide-card container query", errors);
+    assertIncludes(donutRankingSource, "grid-template-columns: minmax(230px, 0.92fr) minmax(0, 1.08fr) !important;", "calendar donut wide-card columns", errors);
+    assertIncludes(donutRankingSource, "width: 208px !important;", "calendar donut wide-card donut size", errors);
+    assertIncludes(donutRankingSource, "/* Energy efficiency calendar donut wide-card specificity closeout. */", "calendar donut wide-card specificity closeout", errors);
+    assertIncludes(donutRankingSource, ".energy-efficiency-page[data-tab=\"calendar\"] .energy-efficiency-overview-pie-card .energy-efficiency-overview-donut-body", "calendar donut wide-card scoped selector", errors);
+    assertIncludes(donutRankingSource, "grid-template-columns: minmax(206px, 0.78fr) minmax(0, 1.22fr) !important;", "calendar donut scoped wide-card columns favor ranking", errors);
+    assertIncludes(donutRankingSource, "grid-template-columns: 10px minmax(92px, 0.78fr) minmax(72px, 1fr) 78px !important;", "calendar donut scoped row percentage fit", errors);
+    assertIncludes(donutRankingSource, "font-size: 20.5px !important;", "calendar donut scoped ratio font fit", errors);
+  }
+
   assertIncludes(styleSource, ".energy-efficiency-proportion-load-bar", "proportion load bar style", errors);
   assertIncludes(styleSource, ".energy-efficiency-proportion-efficiency-line", "proportion COP line style", errors);
   assertIncludes(styleSource, ".energy-efficiency-proportion-efficiency-marker", "proportion COP marker style", errors);
@@ -416,6 +466,7 @@ function main() {
   console.log("- checked calendar labels: 能效 / 电量 / 冷量");
   console.log("- checked calendar default month scope, month query and monthly average COP");
   console.log("- checked calendar pie month/COP association");
+  console.log("- checked calendar donut true-share bars, sorted legend and no scattered callouts");
   console.log("- checked cumulative COP helper wording: 累计折算 COP");
   console.log("- checked calendar COP target-line copy: 达标线 6.50");
   console.log("- checked calendar pie source alignment and 720p bottom-card fit");

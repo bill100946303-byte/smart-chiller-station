@@ -18,7 +18,7 @@ import {
   buildProjectDropdownEntries,
   flattenProjectDropdownTargets
 } from "../services/projectDropdownEntries";
-import { appendSiteIdToPath } from "../services/siteRouting";
+import { appendSiteIdToPath, siteIdsEquivalent } from "../services/siteRouting";
 
 type ProjectOverviewState =
   | {
@@ -39,8 +39,27 @@ type ProjectLiveState = {
   hint: string;
   tone: ProjectLiveStateTone;
 };
+type ProjectCommunicationEvidence = {
+  basis?: string;
+  status?: string;
+  metric?: string;
+  sampleCount?: number;
+  stableMinutes?: number | null;
+  lastChangedAt?: string | null;
+};
+type ProjectCommunicationFreshness = NonNullable<DashboardOverviewDto["freshness"]> & {
+  evidence?: ProjectCommunicationEvidence;
+};
+type ProjectCommunicationOverview = DashboardOverviewDto & {
+  communicationFreshness?: ProjectCommunicationFreshness;
+};
 
 const PLACEHOLDER_PROJECT_LABELS = new Set(["默认", "default", "榛樿"]);
+const COMM_DELAY_MINUTES = 5;
+const COMM_SUSPECT_MINUTES = 30;
+const COMM_DISCONNECTED_MINUTES = 120;
+const COMM_POWER_RECHECK_INITIAL_MS = 30 * 1000;
+const COMM_POWER_RECHECK_INTERVAL_MS = 60 * 1000;
 
 function isMeaningfulProjectLabel(label: string | null | undefined): boolean {
   const normalized = String(label || "").trim();
@@ -169,6 +188,36 @@ function formatMetricValue(
   return options.unit ? `${formatted} ${options.unit}` : formatted;
 }
 
+function resolveCommunicationFreshness(overview: DashboardOverviewDto): ProjectCommunicationFreshness | undefined {
+  const communicationOverview = overview as ProjectCommunicationOverview;
+  return communicationOverview.communicationFreshness || (overview.freshness as ProjectCommunicationFreshness | undefined);
+}
+
+function resolveCommunicationEvidence(overview: DashboardOverviewDto): ProjectCommunicationEvidence | null {
+  const freshness = resolveCommunicationFreshness(overview);
+  return freshness?.evidence || null;
+}
+
+function resolveOverviewAgeMinutes(overview: DashboardOverviewDto): number | null {
+  const freshness = resolveCommunicationFreshness(overview);
+  const ageHours = freshness?.ageHours;
+  if (typeof ageHours === "number" && Number.isFinite(ageHours)) {
+    return Math.max(ageHours * 60, 0);
+  }
+
+  const latestTimestamp = freshness?.latestTimestamp;
+  if (!latestTimestamp) {
+    return null;
+  }
+
+  const timestamp = new Date(latestTimestamp).getTime();
+  if (!Number.isFinite(timestamp)) {
+    return null;
+  }
+
+  return Math.max((Date.now() - timestamp) / (1000 * 60), 0);
+}
+
 function resolveProjectLiveState(state: ProjectOverviewState | undefined): ProjectLiveState {
   if (!state || state.status === "loading") {
     return {
@@ -195,9 +244,59 @@ function resolveProjectLiveState(state: ProjectOverviewState | undefined): Proje
     };
   }
 
-  if (state.overview.freshness?.stale || overall === "partial") {
+  const evidence = resolveCommunicationEvidence(state.overview);
+  if (evidence?.basis === "power_change") {
     return {
-      label: overall === "partial" ? zhCN.projectSwitcher.livePartial : zhCN.projectSwitcher.liveStale,
+      label: zhCN.projectSwitcher.liveInferred,
+      hint: zhCN.projectSwitcher.liveInferredHint,
+      tone: "good"
+    };
+  }
+
+  if (evidence?.status === "stable_suspect") {
+    return {
+      label: zhCN.projectSwitcher.liveSuspect,
+      hint: zhCN.projectSwitcher.livePowerStableHint,
+      tone: "warn"
+    };
+  }
+
+  const ageMinutes = resolveOverviewAgeMinutes(state.overview);
+  if (ageMinutes === null) {
+    return {
+      label: zhCN.projectSwitcher.liveUnknown,
+      hint: zhCN.projectSwitcher.liveUnknownHint,
+      tone: "neutral"
+    };
+  }
+
+  if (ageMinutes >= COMM_DISCONNECTED_MINUTES) {
+    return {
+      label: zhCN.projectSwitcher.liveDisconnected,
+      hint: zhCN.projectSwitcher.liveDisconnectedHint,
+      tone: "warn"
+    };
+  }
+
+  if (ageMinutes >= COMM_SUSPECT_MINUTES) {
+    return {
+      label: zhCN.projectSwitcher.liveSuspect,
+      hint: zhCN.projectSwitcher.liveSuspectHint,
+      tone: "warn"
+    };
+  }
+
+  if (ageMinutes >= COMM_DELAY_MINUTES || resolveCommunicationFreshness(state.overview)?.stale) {
+    return {
+      label: zhCN.projectSwitcher.liveDelayed,
+      hint: zhCN.projectSwitcher.liveDelayedHint,
+      tone: "warn"
+    };
+  }
+
+  if (overall === "partial") {
+    return {
+      label: zhCN.projectSwitcher.livePartial,
       hint: zhCN.projectSwitcher.liveWarnHint,
       tone: "warn"
     };
@@ -239,7 +338,33 @@ function resolveLatestOverviewTime(state: ProjectOverviewState | undefined): str
   if (state.status === "error") {
     return zhCN.common.timeUnknown;
   }
-  return formatVisitTime(state.overview.freshness?.latestTimestamp || state.overview.generatedAt || null);
+  const freshness = resolveCommunicationFreshness(state.overview);
+  const formattedTime = formatVisitTime(freshness?.latestTimestamp || null);
+  if (freshness?.latestTimestamp && resolveCommunicationEvidence(state.overview)?.basis === "power_change") {
+    return `${zhCN.projectSwitcher.powerChangePrefix} ${formattedTime}`;
+  }
+  return formattedTime;
+}
+
+function resolveCompactLatestOverviewTime(state: ProjectOverviewState | undefined): string {
+  if (!state || state.status === "loading") {
+    return zhCN.projectSwitcher.latestPending;
+  }
+  if (state.status === "error") {
+    return zhCN.common.timeUnknown;
+  }
+  const freshness = resolveCommunicationFreshness(state.overview);
+  const evidence = resolveCommunicationEvidence(state.overview);
+  if (freshness?.latestTimestamp) {
+    const formattedTime = formatCompactVisitTime(freshness.latestTimestamp);
+    return evidence?.basis === "power_change"
+      ? `${zhCN.projectSwitcher.powerChangePrefix} ${formattedTime}`
+      : formattedTime;
+  }
+  if (evidence?.basis === "power_collecting" || evidence?.status === "stable_recent") {
+    return zhCN.projectSwitcher.powerCollecting;
+  }
+  return formatCompactVisitTime(null);
 }
 
 function resolveProjectConfigLabel(project: AuthProject): string {
@@ -311,8 +436,10 @@ export default function ProjectSelectionPage() {
     startTransition(() => setProjectOverviewMap(pendingState));
 
     let active = true;
+    let initialRecheckTimer: number | undefined;
+    let recheckInterval: number | undefined;
 
-    queueProjects.forEach((project) => {
+    const refreshProjectOverview = (project: AuthProject) => {
       const projectOptionId = resolveProjectOptionId(project);
       void fetchDashboardOverviewForProject(project)
         .then((overview) => {
@@ -342,10 +469,26 @@ export default function ProjectSelectionPage() {
             }))
           );
         });
-    });
+    };
+
+    const refreshQueueOverviews = () => {
+      queueProjects.forEach((project) => refreshProjectOverview(project));
+    };
+
+    refreshQueueOverviews();
+    initialRecheckTimer = window.setTimeout(() => {
+      refreshQueueOverviews();
+      recheckInterval = window.setInterval(refreshQueueOverviews, COMM_POWER_RECHECK_INTERVAL_MS);
+    }, COMM_POWER_RECHECK_INITIAL_MS);
 
     return () => {
       active = false;
+      if (initialRecheckTimer !== undefined) {
+        window.clearTimeout(initialRecheckTimer);
+      }
+      if (recheckInterval !== undefined) {
+        window.clearInterval(recheckInterval);
+      }
     };
   }, [projectSignature]);
 
@@ -393,7 +536,7 @@ export default function ProjectSelectionPage() {
     }
 
     const projectModelKey = String(project.modelKey || "").trim();
-    const isCurrentBySite = Boolean(activeSiteId && activeSiteId === project.siteId);
+    const isCurrentBySite = siteIdsEquivalent(activeSiteId, project.siteId);
     const isCurrentByModel = isCurrentBySite && Boolean(activeModelKey) && activeModelKey === projectModelKey;
     const isCurrentByStoredName =
       isCurrentBySite &&
@@ -406,7 +549,7 @@ export default function ProjectSelectionPage() {
       ].includes(activeProjectName);
     const isCurrentBySessionId =
       Boolean(activeProjectIdHint) &&
-      (activeProjectIdHint === projectOptionId || activeProjectIdHint === project.siteId);
+      (activeProjectIdHint === projectOptionId || siteIdsEquivalent(activeProjectIdHint, project.siteId));
     const isCurrentBySingleSiteCard = isCurrentBySite && (siteProjectCountMap[project.siteId] || 0) === 1;
     return isCurrentBySessionId || isCurrentByModel || isCurrentByStoredName || isCurrentBySingleSiteCard;
   }
@@ -627,10 +770,11 @@ export default function ProjectSelectionPage() {
                   const visitStat = projectVisitStats[project.siteId];
                   const visitCount = visitStat?.visitCount || 0;
                   const lastVisitedAt = formatCompactVisitTime(visitStat?.lastVisitedAt || null);
+                  const latestDataAt = resolveCompactLatestOverviewTime(overviewState);
                   const cardMetaItems = [
                     `${zhCN.projectSwitcher.siteIdLabel} ${project.siteId}`,
                     resolveProjectConfigLabel(project),
-                    `上次 ${lastVisitedAt}`
+                    `${zhCN.projectSwitcher.latestDataLabel} ${latestDataAt}`
                   ];
 
                   return (

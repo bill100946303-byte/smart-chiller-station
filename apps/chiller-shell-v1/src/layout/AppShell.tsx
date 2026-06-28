@@ -1,4 +1,4 @@
-import { ArrowLeftRight, BellRing, BookOpen, Box, ChartColumnIncreasing, ChevronDown, ChevronRight, ClipboardList, Cpu, FileText, Gauge, LayoutGrid, LineChart, LogOut, Sparkles, Video, Wind, X } from "lucide-react";
+import { ArrowLeftRight, BellRing, BookOpen, Box, ChartColumnIncreasing, ChevronDown, ChevronRight, ClipboardList, Cpu, Fan, FileText, Gauge, LayoutGrid, LineChart, LogOut, PlugZap, Settings2, Sparkles, Video, Wind, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { runtimeConfig } from "../config/runtimeConfig";
@@ -15,7 +15,7 @@ import {
   resolveAuthProjectDisplayName,
   selectAuthProject
 } from "../services/auth";
-import { appendSiteIdToPath, buildScopedLocationPath } from "../services/siteRouting";
+import { appendSiteIdToPath, buildScopedLocationPath, siteIdsEquivalent } from "../services/siteRouting";
 import { preloadSceneFloorModels } from "../services/sceneFloorModelCache";
 
 type CascadedProjectNode = {
@@ -132,7 +132,7 @@ function resolveCurrentProjectDisplayNameFromDropdown(
   const sameSiteOptions = optionItems
     .map((item) => {
       const project = projects.find((candidate) => resolveAuthProjectId(candidate) === item.optionId);
-      if (!project || normalizeProjectLabel(project.siteId) !== currentSiteId) {
+      if (!project || !siteIdsEquivalent(project.siteId, currentSiteId)) {
         return null;
       }
       return item;
@@ -878,23 +878,14 @@ export default function AppShell() {
       : zhCN.projectSwitcher.pendingHint;
   const navModules = [
     {
-      key: "scene-control",
-      label: zhCN.appShell.navSceneControl,
-      description: "2D / 3D 场景",
-      icon: <Box size={14} />,
-      defaultTo: "/scene-control",
-      items: [
-        { to: "/scene-control", icon: <Box size={14} />, label: zhCN.appShell.navSceneControl }
-      ]
-    },
-    {
       key: "dashboard",
       label: zhCN.appShell.navDashboard,
-      description: "运行总览",
+      description: "运行 / 场景",
       icon: <Gauge size={14} />,
       defaultTo: "/dashboard",
       items: [
-        { to: "/dashboard", icon: <Gauge size={14} />, label: zhCN.appShell.navDashboard }
+        { to: "/dashboard", icon: <Gauge size={14} />, label: "运行驾驶舱" },
+        { to: "/scene-control", icon: <Box size={14} />, label: "冷站场景" }
       ]
     },
     {
@@ -919,6 +910,9 @@ export default function AppShell() {
       items: [
         { to: "/system-overview", icon: <LayoutGrid size={14} />, label: zhCN.appShell.navSystemOverview },
         { to: "/devices", icon: <Cpu size={14} />, label: zhCN.appShell.navDevices },
+        { to: "/power-monitoring", icon: <PlugZap size={14} />, label: "电力监控" },
+        { to: "/compressed-air", icon: <Wind size={14} />, label: "空压站" },
+        { to: "/hvac-terminal", icon: <Fan size={14} />, label: "空调末端" },
         { to: "/video-monitor", icon: <Video size={14} />, label: zhCN.appShell.navVideoMonitor },
         { to: "/environment-conditions", icon: <Wind size={14} />, label: zhCN.appShell.navEnvironment },
         { to: "/operational-diagnostics", icon: <Gauge size={14} />, label: zhCN.appShell.navOperationalDiagnostics }
@@ -947,6 +941,7 @@ export default function AppShell() {
       defaultTo: "/energy-parameters",
       items: [
         { to: "/energy-parameters", icon: <FileText size={14} />, label: zhCN.appShell.navEnergyParameters },
+        { to: "/config-center", icon: <Settings2 size={14} />, label: "子系统配置" },
         { to: "/knowledge-base", icon: <BookOpen size={14} />, label: zhCN.appShell.navKnowledgeBase }
       ]
     },

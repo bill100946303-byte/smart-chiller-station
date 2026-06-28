@@ -31,6 +31,7 @@ import {
 type SceneMode = "2d" | "3d";
 type SceneFitMode = "fit" | "native" | "zoom";
 type SceneDeviceDialogTab = "info" | "detail" | "control" | "alarm" | "operation";
+type SceneNativeViewportMode = SceneMode | "any";
 type SceneNativeViewportPreset = {
   x: number;
   y: number;
@@ -38,43 +39,80 @@ type SceneNativeViewportPreset = {
   height: number;
   maxScale: number;
 };
+type SceneNativeViewportPresetInput = {
+  x: number;
+  y?: number;
+  width: number;
+  height?: number;
+  maxScale: number;
+};
+type SceneNativeViewportRule = {
+  id: string;
+  mode: SceneNativeViewportMode;
+  matches: RegExp[];
+  excludes?: RegExp[];
+  preset: SceneNativeViewportPreset;
+};
 const SCENE_NATIVE_CANVAS_WIDTH = 2500;
 const SCENE_NATIVE_CANVAS_HEIGHT = 920;
-const SCENE_NATIVE_B25_VIEWPORT: SceneNativeViewportPreset = {
+const SCENE_NATIVE_2D_TOP_SAFE_OFFSET_PX = 2;
+const SCENE_NATIVE_2D_BOTTOM_SAFE_OFFSET_PX = 2;
+const SCENE_NATIVE_2D_EFFECTIVE_TOP_Y = 120;
+const SCENE_NATIVE_2D_EFFECTIVE_HEIGHT = 730;
+
+function createSceneNative2dViewport(input: SceneNativeViewportPresetInput): SceneNativeViewportPreset {
+  const y = input.y ?? SCENE_NATIVE_2D_EFFECTIVE_TOP_Y;
+  const height = input.height ?? SCENE_NATIVE_2D_EFFECTIVE_HEIGHT;
+  return {
+    x: input.x,
+    y,
+    width: input.width,
+    height: Math.max(1, Math.min(height, SCENE_NATIVE_CANVAS_HEIGHT - y)),
+    maxScale: input.maxScale
+  };
+}
+
+const SCENE_NATIVE_B25_VIEWPORT: SceneNativeViewportPreset = createSceneNative2dViewport({
   x: 520,
-  y: 100,
   width: 1500,
-  height: 760,
   maxScale: 1.12
+});
+const SCENE_NATIVE_B25_3D_VIEWPORT: SceneNativeViewportPreset = {
+  x: 460,
+  y: 120,
+  width: 1650,
+  height: 720,
+  maxScale: 1.02
 };
-const SCENE_NATIVE_BUILD_2D_VIEWPORT: SceneNativeViewportPreset = {
+const SCENE_NATIVE_BUILD_2D_VIEWPORT: SceneNativeViewportPreset = createSceneNative2dViewport({
   x: 670,
-  y: 100,
   width: 1120,
-  height: 650,
   maxScale: 1.08
-};
-const SCENE_NATIVE_FLOOR_OVERVIEW_VIEWPORT: SceneNativeViewportPreset = {
+});
+const SCENE_NATIVE_FLOOR_OVERVIEW_VIEWPORT: SceneNativeViewportPreset = createSceneNative2dViewport({
   x: 620,
-  y: 140,
   width: 1250,
-  height: 700,
   maxScale: 1
-};
-const SCENE_NATIVE_COMPACT_2D_VIEWPORT: SceneNativeViewportPreset = {
+});
+const SCENE_NATIVE_COMPACT_2D_VIEWPORT: SceneNativeViewportPreset = createSceneNative2dViewport({
   x: 620,
-  y: 150,
   width: 1350,
-  height: 650,
   maxScale: 1.05
+});
+const SCENE_NATIVE_GENERIC_3D_VIEWPORT: SceneNativeViewportPreset = {
+  x: 300,
+  y: 80,
+  width: 1900,
+  height: 780,
+  maxScale: 0.98
 };
-const SCENE_NATIVE_WIDE_BLUEPRINT_VIEWPORT: SceneNativeViewportPreset = {
+const SCENE_NATIVE_WIDE_BLUEPRINT_VIEWPORT: SceneNativeViewportPreset = createSceneNative2dViewport({
   x: 0,
   y: 0,
   width: SCENE_NATIVE_CANVAS_WIDTH,
   height: SCENE_NATIVE_CANVAS_HEIGHT,
   maxScale: 1
-};
+});
 const SCENE_NATIVE_SAFE_VIEWPORT: SceneNativeViewportPreset = {
   x: 0,
   y: 0,
@@ -83,23 +121,85 @@ const SCENE_NATIVE_SAFE_VIEWPORT: SceneNativeViewportPreset = {
   maxScale: 1
 };
 
-function resolveSceneNativeViewport(sceneUrl: string): SceneNativeViewportPreset {
-  if (/guanlanb25\/2d/i.test(sceneUrl)) {
-    return SCENE_NATIVE_B25_VIEWPORT;
+const SCENE_NATIVE_VIEWPORT_RULES: SceneNativeViewportRule[] = [
+  {
+    id: "guanlan-b25-2d",
+    mode: "2d",
+    matches: [/guanlanb25\/2d/i],
+    preset: SCENE_NATIVE_B25_VIEWPORT
+  },
+  {
+    id: "guanlan-b25-3d",
+    mode: "3d",
+    matches: [/guanlanb25(?:[/?#]|$)/i],
+    excludes: [/guanlanb25\/2d/i],
+    preset: SCENE_NATIVE_B25_3D_VIEWPORT
+  },
+  {
+    id: "build-2d",
+    mode: "2d",
+    matches: [/\/build\/2d(?:[/?#]|$)/i],
+    preset: SCENE_NATIVE_BUILD_2D_VIEWPORT
+  },
+  {
+    id: "vietnam-blueprint-2d",
+    mode: "2d",
+    matches: [/vietnamgoer\/2d/i],
+    preset: SCENE_NATIVE_WIDE_BLUEPRINT_VIEWPORT
+  },
+  {
+    id: "floor-overview-2d",
+    mode: "2d",
+    matches: [/\/2d\/floor\//i],
+    preset: SCENE_NATIVE_FLOOR_OVERVIEW_VIEWPORT
+  },
+  {
+    id: "generic-2d",
+    mode: "2d",
+    matches: [/\/2d(?:[/?#]|$)/i, /\/2d\//i],
+    preset: SCENE_NATIVE_COMPACT_2D_VIEWPORT
+  },
+  {
+    id: "generic-3d",
+    mode: "3d",
+    matches: [/\/3d(?:[/?#]|$)/i, /\/3d\//i],
+    preset: SCENE_NATIVE_GENERIC_3D_VIEWPORT
   }
-  if (/\/build\/2d(?:[/?#]|$)/i.test(sceneUrl)) {
-    return SCENE_NATIVE_BUILD_2D_VIEWPORT;
-  }
-  if (/vietnamgoer\/2d/i.test(sceneUrl)) {
-    return SCENE_NATIVE_WIDE_BLUEPRINT_VIEWPORT;
-  }
-  if (/\/2d\/floor\//i.test(sceneUrl)) {
-    return SCENE_NATIVE_FLOOR_OVERVIEW_VIEWPORT;
-  }
+];
+
+function inferSceneModeFromUrl(sceneUrl: string): SceneMode | null {
   if (/\/2d(?:[/?#]|$)/i.test(sceneUrl) || /\/2d\//i.test(sceneUrl)) {
+    return "2d";
+  }
+  if (/\/3d(?:[/?#]|$)/i.test(sceneUrl) || /\/3d\//i.test(sceneUrl)) {
+    return "3d";
+  }
+  return null;
+}
+
+function resolveSceneNativeFallbackViewport(sceneMode: SceneMode | null): SceneNativeViewportPreset {
+  if (sceneMode === "2d") {
     return SCENE_NATIVE_COMPACT_2D_VIEWPORT;
   }
+  if (sceneMode === "3d") {
+    return SCENE_NATIVE_GENERIC_3D_VIEWPORT;
+  }
   return SCENE_NATIVE_SAFE_VIEWPORT;
+}
+
+function resolveSceneNativeViewport(sceneUrl: string, sceneMode?: SceneMode): SceneNativeViewportPreset {
+  const resolvedMode = sceneMode ?? inferSceneModeFromUrl(sceneUrl);
+  const matchedRule = SCENE_NATIVE_VIEWPORT_RULES.find((rule) => {
+    if (rule.mode !== "any" && resolvedMode && rule.mode !== resolvedMode) {
+      return false;
+    }
+    if (rule.excludes?.some((pattern) => pattern.test(sceneUrl))) {
+      return false;
+    }
+    return rule.matches.some((pattern) => pattern.test(sceneUrl));
+  });
+
+  return matchedRule?.preset ?? resolveSceneNativeFallbackViewport(resolvedMode);
 }
 
 const SCENE_EMBED_TEXT: Record<
@@ -448,11 +548,23 @@ const SCENE_FRAME_FIT_MESSAGES = [
   { type: "resize" },
   { type: "scene-resize" },
   { type: "scene-fit-view" },
+  { type: "scene-point-clear" },
   { type: "fitToWindow" },
   { type: "resetCamera" },
+  { type: "resetLabels" },
+  { type: "showAllPoints" },
   { action: "resize" },
   { action: "fitToWindow" },
-  { action: "resetCamera" }
+  { action: "resetCamera" },
+  { action: "pointClear" },
+  { action: "resetLabels" },
+  { action: "showAllPoints" },
+  "resize",
+  "fitToWindow",
+  "resetCamera",
+  "pointClear",
+  "resetLabels",
+  "showAllPoints"
 ];
 
 const SCENE_FRAME_FIT_GLOBALS = [
@@ -476,7 +588,13 @@ const SCENE_FRAME_FIT_METHODS = [
   "zoomToFit",
   "resetCamera",
   "resetView",
-  "setFitView"
+  "setFitView",
+  "pointClear",
+  "clearPoints",
+  "showAllPoints",
+  "resetLabels",
+  "fitLabels",
+  "makePointsReadable"
 ];
 
 type SceneWeather = {
@@ -2227,6 +2345,170 @@ function renderSceneControlOptions(
   );
 }
 
+function getSceneInfoControlPreviewPriority(row: SceneControlRenderRow): number {
+  const label =
+    row.type === "combined"
+      ? row.label
+      : `${getSceneControlRegName(row.item)} ${readSceneSafeDisplayText(row.item.label)}`;
+  if (/手动启停/.test(label)) {
+    return 0;
+  }
+  if (/禁用|投用状态|投用/.test(label)) {
+    return 1;
+  }
+  if (/模式|手自动|联动|全自动/.test(label)) {
+    return 2;
+  }
+  if (/出水温度.*设定|出水温度设定/.test(label)) {
+    return 3;
+  }
+  return 99;
+}
+
+function formatSceneInfoControlPreviewLabel(label: string): string {
+  const text = readSceneSafeDisplayText(label);
+  if (/手动启停/.test(text)) {
+    return "手动启停";
+  }
+  if (/禁用|投用状态|投用/.test(text)) {
+    return "投用状态";
+  }
+  if (/模式|手自动|联动|全自动/.test(text)) {
+    return "运行模式";
+  }
+  if (/出水温度.*设定|出水温度设定/.test(text)) {
+    return "出水温度设定";
+  }
+  return formatSceneControlCardLabel(text);
+}
+
+function getSceneInfoControlPreviewRows(groups: SceneDeviceParameterGroupDto[]): SceneControlRenderRow[] {
+  const rows = groups.flatMap((group, groupIndex) =>
+    buildSceneControlRows(group.items || [], `info-preview-${group.groupName || "group"}-${groupIndex}`)
+  );
+  return rows
+    .map((row, index) => ({ row, index, priority: getSceneInfoControlPreviewPriority(row) }))
+    .filter((entry) => entry.priority < 99)
+    .sort((a, b) => a.priority - b.priority || a.index - b.index)
+    .slice(0, 4)
+    .map((entry) => entry.row);
+}
+
+function renderSceneInfoControlPreview(
+  groups: SceneDeviceParameterGroupDto[],
+  onSubmit: SceneControlSubmitHandler,
+  submittingKey: string,
+  statusText = ""
+) {
+  const rows = getSceneInfoControlPreviewRows(groups);
+  if (!rows.length && !statusText) {
+    return null;
+  }
+  return (
+    <div className="scene-embed-device-info-control-preview">
+      {statusText ? <div className="scene-embed-device-info-control-state">{statusText}</div> : null}
+      <div className="scene-embed-device-info-control-preview-grid">
+        {rows.map((row) => {
+          if (row.type === "combined") {
+            return (
+              <article key={row.key} className="scene-embed-device-info-control-card is-options">
+                <span title={row.label}>{formatSceneInfoControlPreviewLabel(row.label)}</span>
+                <div className="scene-embed-device-info-control-buttons">
+                  {row.members.map((member) => {
+                    const actionKey = getSceneControlActionKey(member.item, member.value);
+                    const submitting = submittingKey === actionKey;
+                    const isCurrent =
+                      normalizeSceneControlValue(member.item.value) === normalizeSceneControlValue(member.value);
+                    const intentClassName = getSceneControlIntentClassName(
+                      getSceneControlIntentClass(member.buttonLabel, member.buttonLabel)
+                    );
+                    return (
+                      <button
+                        key={`${row.key}-${member.item.id || member.buttonLabel}-${member.value}`}
+                        type="button"
+                        className={[isCurrent ? "is-current" : "", intentClassName].filter(Boolean).join(" ")}
+                        disabled={Boolean(submittingKey) && !submitting}
+                        title={`${row.label}: ${member.buttonLabel}`}
+                        onClick={() => onSubmit(member.item, member.value, actionKey, member.buttonLabel)}
+                      >
+                        {submitting ? SCENE_CONTROL_PENDING_LABEL : member.buttonLabel}
+                      </button>
+                    );
+                  })}
+                </div>
+              </article>
+            );
+          }
+
+          const { item, itemKey } = row;
+          const label = getSceneControlRegName(item) || readSceneSafeDisplayText(item.label) || "未命名参数";
+          const displayLabel = formatSceneInfoControlPreviewLabel(label);
+          const options = getSceneControlOptions(item);
+          if (options.length) {
+            return (
+              <article key={itemKey} className="scene-embed-device-info-control-card is-options">
+                <span title={label}>{displayLabel}</span>
+                <div className="scene-embed-device-info-control-buttons">
+                  {options.map((option) => {
+                    const displayOptionText = formatSceneControlOptionText(label, option.text);
+                    const actionKey = getSceneControlActionKey(item, option.value);
+                    const submitting = submittingKey === actionKey;
+                    const isCurrent =
+                      normalizeSceneControlValue(item.value) === normalizeSceneControlValue(option.value);
+                    const intentClassName = getSceneControlIntentClassName(
+                      getSceneControlIntentClass(label, displayOptionText)
+                    );
+                    return (
+                      <button
+                        key={`${itemKey}-${option.value}`}
+                        type="button"
+                        className={[isCurrent ? "is-current" : "", intentClassName].filter(Boolean).join(" ")}
+                        disabled={Boolean(submittingKey) && !submitting}
+                        title={`${label}: ${displayOptionText}`}
+                        onClick={() => onSubmit(item, option.value, actionKey, displayOptionText)}
+                      >
+                        {submitting ? SCENE_CONTROL_PENDING_LABEL : displayOptionText}
+                      </button>
+                    );
+                  })}
+                </div>
+              </article>
+            );
+          }
+
+          const value = readSceneSafeDisplayText(item.value);
+          const unit = readSceneSafeDisplayText(item.unit);
+          const actionKey = getSceneControlActionKey(item, "input");
+          const submitting = submittingKey === actionKey;
+          return (
+            <article key={itemKey} className="scene-embed-device-info-control-card is-editable">
+              <span title={label}>{displayLabel}</span>
+              <div className="scene-embed-device-info-control-input">
+                <input defaultValue={value} aria-label={label} />
+                <em title={unit}>{unit}</em>
+                <button
+                  type="button"
+                  className="is-caution-action"
+                  aria-label={SCENE_CONTROL_SUBMIT_LABEL}
+                  title={SCENE_CONTROL_SUBMIT_LABEL}
+                  disabled={submitting}
+                  onClick={(event) => {
+                    const input = event.currentTarget.parentElement?.querySelector("input");
+                    const nextValue = input?.value ?? "";
+                    onSubmit(item, nextValue, actionKey, formatSceneParameterValue(nextValue, unit, undefined));
+                  }}
+                >
+                  {submitting ? SCENE_CONTROL_PENDING_LABEL : SCENE_CONTROL_SUBMIT_LABEL}
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function getSceneControlGroupClassName(groupName: string, itemCount: number): string {
   const name = readSceneSafeDisplayText(groupName);
   if (/控制参数/.test(name)) {
@@ -2439,12 +2721,23 @@ function formatSceneMergedOperationResult(record: SceneMergedOperationRecord): s
   ].filter(Boolean).join(" / ") || "--";
 }
 
+function formatSceneOperationResultBody(result: string, kind: "dispatch" | "execution"): string {
+  const normalized = readSceneSafeDisplayText(result);
+  if (!normalized) {
+    return "--";
+  }
+  if (kind === "dispatch") {
+    return normalized.replace(/^下发[：:\s]*/, "") || normalized;
+  }
+  return normalized.replace(/^执行[：:\s]*/, "") || normalized;
+}
+
 function renderSceneMergedOperationResult(record: SceneMergedOperationRecord) {
   const resultText = formatSceneMergedOperationResult(record);
   return (
     <div className="scene-embed-device-operation-result" title={resultText}>
-      {record.dispatchResult ? <span>{record.dispatchResult}</span> : null}
-      {record.executionResult ? <span>{record.executionResult}</span> : null}
+      {record.dispatchResult ? <span><em>下发</em>{formatSceneOperationResultBody(record.dispatchResult, "dispatch")}</span> : null}
+      {record.executionResult ? <span><em>执行</em>{formatSceneOperationResultBody(record.executionResult, "execution")}</span> : null}
       {record.otherResults.map((result) => (
         <span key={result}>{result}</span>
       ))}
@@ -2630,6 +2923,7 @@ export default function SceneControlPage() {
   const activeUrl = mode === "2d" ? model2dUrl : model3dUrl;
   const activeSceneFrameResetKey = sceneFrameResetKeys[mode];
   const activeSceneFrameToken = activeUrl ? `${mode}:${activeUrl}:${activeSceneFrameResetKey}` : "";
+  const activeNativeViewport = useMemo(() => resolveSceneNativeViewport(activeUrl, mode), [activeUrl, mode]);
   const inactiveSceneUrl = mode === "2d" ? model3dUrl : model2dUrl;
   const sceneModelUrls = useMemo(
     () => [model2dUrl, model3dUrl].filter((url): url is string => Boolean(url)),
@@ -2664,6 +2958,7 @@ export default function SceneControlPage() {
   );
   const showDeviceInfoTab = deviceParameters?.deviceInfo?.visible !== false;
   const embedControlInInfoTab = showDeviceInfoTab;
+  const isDeviceInfoDialog = deviceDialogTab === "info" && showDeviceInfoTab;
   const closeText = getSceneDeviceDialogCloseText(sceneLocale);
   const visibleDeviceDialogTabs = useMemo(
     () =>
@@ -3132,19 +3427,29 @@ export default function SceneControlPage() {
       return;
     }
     const currentStage = stage;
-    const nativeViewport = resolveSceneNativeViewport(activeUrl);
+    const nativeViewport = activeNativeViewport;
 
     function updateNativeFrameScale() {
       const widthScale = currentStage.clientWidth / nativeViewport.width;
-      const heightScale = currentStage.clientHeight / nativeViewport.height;
+      const nativeViewportHeight =
+        mode === "2d"
+          ? Math.max(1, Math.min(SCENE_NATIVE_CANVAS_HEIGHT, nativeViewport.y + nativeViewport.height) - nativeViewport.y)
+          : nativeViewport.height;
+      const availableStageHeight =
+        mode === "2d"
+          ? currentStage.clientHeight - SCENE_NATIVE_2D_TOP_SAFE_OFFSET_PX - SCENE_NATIVE_2D_BOTTOM_SAFE_OFFSET_PX
+          : currentStage.clientHeight;
+      const heightScale = Math.max(1, availableStageHeight) / nativeViewportHeight;
       const scale = Math.max(0.1, Math.min(widthScale, heightScale, nativeViewport.maxScale));
       const roundedScale = Math.round(scale * 1000) / 1000;
       const offsetX =
         (currentStage.clientWidth - nativeViewport.width * roundedScale) / 2 -
         nativeViewport.x * roundedScale;
       const offsetY =
-        (currentStage.clientHeight - nativeViewport.height * roundedScale) / 2 -
-        nativeViewport.y * roundedScale;
+        mode === "2d"
+          ? SCENE_NATIVE_2D_TOP_SAFE_OFFSET_PX - nativeViewport.y * roundedScale
+          : (currentStage.clientHeight - nativeViewport.height * roundedScale) / 2 -
+            nativeViewport.y * roundedScale;
       setNativeFrameViewport({
         scale: roundedScale,
         x: Math.round(offsetX),
@@ -3166,7 +3471,7 @@ export default function SceneControlPage() {
     return () => {
       observer.disconnect();
     };
-  }, [activeUrl, fitMode, isFrameFullscreen, activeSceneFrameResetKey]);
+  }, [activeNativeViewport, activeUrl, fitMode, isFrameFullscreen, activeSceneFrameResetKey, mode]);
 
   useEffect(() => {
     if (!activeUrl || fitMode === "native") {
@@ -3240,6 +3545,12 @@ export default function SceneControlPage() {
     shell.requestFullscreen?.();
   }
 
+  function scheduleSceneFrameAutoFit(delays = [80, 320, 760, 1400]) {
+    delays.forEach((delay) => {
+      window.setTimeout(() => requestSceneFrameAutoFit(iframeRef.current), delay);
+    });
+  }
+
   function handleSceneFrameLoad(frameMode: SceneMode, frameUrl: string) {
     const frameToken = `${frameMode}:${frameUrl}:${sceneFrameResetKeys[frameMode]}`;
     if (frameMode === "2d") {
@@ -3257,15 +3568,18 @@ export default function SceneControlPage() {
       sceneFrameNoticeTimerRef.current = null;
     }
     setSceneFrameNoticeVisible(false);
+    if (frameMode === "3d") {
+      scheduleSceneFrameAutoFit([80, 260, 620, 1200, 1800]);
+      return;
+    }
     if (fitMode === "native") {
       return;
     }
-    [80, 320, 760, 1400].forEach((delay) => {
-      window.setTimeout(() => requestSceneFrameAutoFit(iframeRef.current), delay);
-    });
+    scheduleSceneFrameAutoFit();
   }
 
   function handleResetSceneNativeView() {
+    const resetMode = mode;
     if (sceneFrameNoticeTimerRef.current !== null) {
       window.clearTimeout(sceneFrameNoticeTimerRef.current);
       sceneFrameNoticeTimerRef.current = null;
@@ -3274,12 +3588,13 @@ export default function SceneControlPage() {
     setFitMode(SCENE_NATIVE_FIT_MODE_OPTION.value);
     setNativeFrameViewport({ scale: 1, x: 0, y: 0 });
     setLoadedActiveSceneFrameToken("");
-    if (mode === "3d") {
+    if (resetMode === "3d") {
       setPrewarmed3dReadyUrl("");
+      scheduleSceneFrameAutoFit([0, 120, 360]);
     }
     setSceneFrameResetKeys((value) => ({
       ...value,
-      [mode]: value[mode] + 1
+      [resetMode]: value[resetMode] + 1
     }));
   }
 
@@ -3471,7 +3786,12 @@ export default function SceneControlPage() {
           </div>
         </div>
 
-        <div className={`scene-embed-stage is-fit-${fitMode}`} ref={stageRef} style={nativeFrameStyle}>
+        <div
+          className={`scene-embed-stage is-fit-${fitMode}`}
+          data-scene-mode={mode}
+          ref={stageRef}
+          style={nativeFrameStyle}
+        >
           {activeUrl ? (
             <Fragment>
               {shouldMount2dFrame ? (
@@ -3549,7 +3869,12 @@ export default function SceneControlPage() {
 
         {clickedDevice ? (
           <div className="scene-embed-device-dialog-backdrop" role="presentation">
-            <section className="scene-embed-device-dialog" role="dialog" aria-modal="true" aria-live="polite">
+            <section
+              className={`scene-embed-device-dialog${isDeviceInfoDialog ? " is-device-info-dialog" : ""}`}
+              role="dialog"
+              aria-modal="true"
+              aria-live="polite"
+            >
               <div className="scene-embed-device-dialog-head">
                 <div className="scene-embed-device-dialog-title">
                   <strong>
@@ -3591,18 +3916,21 @@ export default function SceneControlPage() {
               </div>
 
               <div
-                className={`scene-embed-device-dialog-body${
-                  deviceDialogTab === "info" && showDeviceInfoTab ? " is-device-info" : ""
-                }`}
+                className={`scene-embed-device-dialog-body${isDeviceInfoDialog ? " is-device-info" : ""}`}
               >
-                {deviceDialogTab === "info" && showDeviceInfoTab ? (
+                {isDeviceInfoDialog ? (
                   renderSceneDeviceInfoTab(
                     deviceParameters?.deviceInfo,
                     clickedDeviceRows,
                     deviceParametersLoading,
                     deviceParametersError,
                     embedControlInInfoTab
-                      ? renderParameterGroups(controlGroups, SCENE_DEVICE_DIALOG_TEXT.controlEmpty, true)
+                      ? renderSceneInfoControlPreview(
+                          controlGroups,
+                          handleSubmitSceneControl,
+                          controlSubmittingKey,
+                          controlCommandStatus
+                        )
                       : null
                   )
                 ) : null}
