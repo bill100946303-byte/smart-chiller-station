@@ -123,6 +123,60 @@ test("loadEnergyOverview falls back from first candidate to second candidate", a
   }
 });
 
+test("loadEnergyOverview does not fabricate freshness when rows have no timestamp", async () => {
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+
+  globalThis.fetch = async (url) => {
+    requests.push(String(url));
+
+    if (String(url).endsWith("/zsqy/homepage/141/getEquipmentEnergyStatisticsCurve")) {
+      return new Response(
+        JSON.stringify([
+          {
+            totalPower: 103,
+            coldStationCop: 3,
+            totalCoolingCapacity: 309,
+            chilledWaterTemperatureDifference: 4.1,
+            chilledOutWaterTemperatureDifference: 4.8
+          },
+          {
+            title: "冷冻出水温度",
+            value: 7
+          },
+          {
+            title: "冷却回水温度",
+            value: 30
+          }
+        ]),
+        {
+          status: 200,
+          headers: {
+            "content-type": "application/json"
+          }
+        }
+      );
+    }
+
+    throw new Error(`Unexpected URL: ${String(url)}`);
+  };
+
+  try {
+    const result = await loadEnergyOverview("http://127.0.0.1:8098", "141");
+
+    assert.equal(result.sourceStatus?.ok, true);
+    assert.equal(result.metrics?.totalPowerKw, 103);
+    assert.equal(result.metrics?.currentCop, 3);
+    assert.equal(result.latestTimestamp, null);
+    assert.match(result.sourceStatus?.message || "", /timestampMissing=true/);
+    assert.deepEqual(requests, [
+      "http://127.0.0.1:8098/zsqy/homepage/141/getEquipmentEnergyStatisticsCurve"
+    ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("loadTrendSeries probes candidate identifiers for core curve endpoints", async () => {
   const originalFetch = globalThis.fetch;
   const requests = [];

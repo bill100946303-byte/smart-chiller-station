@@ -225,6 +225,62 @@ test("read-only v1 allowlist permits advisory endpoints without opening generic 
   assert.equal(
     isAllowedReadOnlyV1Write({
       method: "POST",
+      path: "/sites/126lnoffice/hvac-terminal/fan-coils/control-cycle"
+    }),
+    true
+  );
+  assert.equal(
+    isAllowedReadOnlyV1Write({
+      method: "POST",
+      path: "/sites/126lnoffice/hvac-terminal/fan-coils/control-command"
+    }),
+    true
+  );
+  assert.equal(
+    isAllowedReadOnlyV1Write({
+      method: "POST",
+      path: "/sites/126lnoffice/hvac-terminal/fan-coils/canary-window"
+    }),
+    true
+  );
+  assert.equal(
+    isAllowedReadOnlyV1Write({
+      method: "POST",
+      path: "/sites/126lnoffice/hvac-terminal/fan-coils/field-arm-package"
+    }),
+    true
+  );
+  assert.equal(
+    isAllowedReadOnlyV1Write({
+      method: "POST",
+      path: "/sites/126lnoffice/hvac-terminal/fan-coils/canary-dispatch"
+    }),
+    true
+  );
+  assert.equal(
+    isAllowedReadOnlyV1Write({
+      method: "POST",
+      path: "/sites/126lnoffice/hvac-terminal/fan-coils/final-control-status/refresh"
+    }),
+    true
+  );
+  assert.equal(
+    isAllowedReadOnlyV1Write({
+      method: "POST",
+      path: "/sites/126lnoffice/hvac-terminal/fan-coils/final-control-rollout"
+    }),
+    true
+  );
+  assert.equal(
+    isAllowedReadOnlyV1Write({
+      method: "POST",
+      path: "/sites/141/power-monitoring/byx/history/snapshots"
+    }),
+    true
+  );
+  assert.equal(
+    isAllowedReadOnlyV1Write({
+      method: "POST",
       path: "/sites/140/energy-parameters"
     }),
     false

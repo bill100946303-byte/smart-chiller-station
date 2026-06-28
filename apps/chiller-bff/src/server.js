@@ -23,7 +23,15 @@ export function isAllowedReadOnlyV1Write(req) {
     req.method === "POST" &&
     (req.path.endsWith("/optimize") ||
       req.path.endsWith("/optimize/tower-approach/advice") ||
+      req.path.endsWith("/hvac-terminal/fan-coils/control-cycle") ||
+      req.path.endsWith("/hvac-terminal/fan-coils/control-command") ||
+      req.path.endsWith("/hvac-terminal/fan-coils/canary-window") ||
+      req.path.endsWith("/hvac-terminal/fan-coils/field-arm-package") ||
+      req.path.endsWith("/hvac-terminal/fan-coils/canary-dispatch") ||
+      req.path.endsWith("/hvac-terminal/fan-coils/final-control-status/refresh") ||
+      req.path.endsWith("/hvac-terminal/fan-coils/final-control-rollout") ||
       req.path.endsWith("/scene/device-command") ||
+      req.path.endsWith("/power-monitoring/byx/history/snapshots") ||
       req.path.includes("/optimize/executions") ||
       req.path.endsWith("/assistant/query"))
   );
@@ -84,7 +92,8 @@ export function createApp(appConfig = config, dependencies = {}) {
       legacyBaseUrl: appConfig.legacyBaseUrl,
       realtimeParamsBaseUrl: appConfig.realtimeParamsBaseUrl,
       realtimeParamsTimeoutMs: appConfig.realtimeParamsTimeoutMs,
-      adminDbFile: appConfig.adminDbFile
+      adminDbFile: appConfig.adminDbFile,
+      adminDevAuth: appConfig.adminDevAuth === true
     });
   });
 

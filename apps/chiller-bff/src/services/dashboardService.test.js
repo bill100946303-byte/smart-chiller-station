@@ -2,10 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  buildCommunicationPowerEvidence,
   buildTrendBuckets,
   deriveLoadRatePct,
   normalizeEfficiencyMetric,
   normalizeTrendSeriesForRange,
+  pickCommunicationLatestTimestamp,
+  resetCommunicationPowerObservations,
   shouldUseRequestedB25CloudHistory
 } from "./dashboardService.js";
 
@@ -25,6 +28,66 @@ test("normalizeEfficiencyMetric treats non-positive values as unavailable", () =
   assert.equal(normalizeEfficiencyMetric(0), null);
   assert.equal(normalizeEfficiencyMetric(-1), null);
   assert.equal(normalizeEfficiencyMetric(null), null);
+});
+
+test("communication freshness ignores energy-only timestamps", () => {
+  assert.equal(
+    pickCommunicationLatestTimestamp(
+      {
+        latestTimestamp: null,
+        sourceStatus: {
+          ok: true,
+          message: "OK; timestampMissing=true",
+          rows: 17
+        }
+      },
+      null
+    ),
+    null
+  );
+});
+
+test("communication freshness uses latest realtime sample timestamp", () => {
+  assert.equal(
+    pickCommunicationLatestTimestamp(
+      { latestTimestamp: "2026-06-22T03:20:00.000Z" },
+      { overview: { latestTimestamp: "2026-06-22T03:10:00.000Z" } }
+    ),
+    "2026-06-22T03:20:00.000Z"
+  );
+});
+
+test("communication power evidence starts with collecting state", () => {
+  resetCommunicationPowerObservations();
+  const result = buildCommunicationPowerEvidence("site-141", 103.2, Date.parse("2026-06-22T04:00:00.000Z"));
+
+  assert.equal(result.status, "collecting");
+  assert.equal(result.latestTimestamp, null);
+  assert.equal(result.totalPowerKw, 103.2);
+  assert.equal(result.sampleCount, 1);
+});
+
+test("communication power evidence infers online when total power changes", () => {
+  resetCommunicationPowerObservations();
+  buildCommunicationPowerEvidence("site-141", 103.2, Date.parse("2026-06-22T04:00:00.000Z"));
+  const result = buildCommunicationPowerEvidence("site-141", 106.5, Date.parse("2026-06-22T04:03:00.000Z"));
+
+  assert.equal(result.basis, "power_change");
+  assert.equal(result.status, "changed");
+  assert.equal(result.latestTimestamp, "2026-06-22T04:03:00.000Z");
+  assert.equal(result.previousPowerKw, 103.2);
+  assert.equal(result.deltaKw, 3.3);
+});
+
+test("communication power evidence marks long unchanged power as suspected frozen link", () => {
+  resetCommunicationPowerObservations();
+  buildCommunicationPowerEvidence("site-141", 103.2, Date.parse("2026-06-22T04:00:00.000Z"));
+  const result = buildCommunicationPowerEvidence("site-141", 103.3, Date.parse("2026-06-22T04:31:00.000Z"));
+
+  assert.equal(result.basis, "power_stable");
+  assert.equal(result.status, "stable_suspect");
+  assert.equal(result.latestTimestamp, null);
+  assert.equal(result.sampleCount, 2);
 });
 
 test("shouldUseRequestedB25CloudHistory only enables B25 cloud history when request context explicitly carries B25 key", () => {

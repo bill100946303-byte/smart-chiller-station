@@ -11,9 +11,157 @@ const DEFAULT_OPTIMIZE_EXECUTION_LIMIT = 20;
 const MAX_OPTIMIZE_EXECUTION_LIMIT = 100;
 const DEFAULT_CHILLER_STAGING_SAMPLE_LIMIT = 500;
 const MAX_CHILLER_STAGING_SAMPLE_LIMIT = 2000;
+const DEFAULT_HVAC_TERMINAL_SAMPLE_LIMIT = 240;
+const MAX_HVAC_TERMINAL_SAMPLE_LIMIT = 2000;
+const DEFAULT_HVAC_TERMINAL_SAMPLE_MIN_INTERVAL_SECONDS = 60;
 const DEFAULT_SHADOW_VERIFICATION_RECORD_LIMIT = 100;
 const MAX_SHADOW_VERIFICATION_RECORD_LIMIT = 500;
+const DEFAULT_FCU_CONTROL_RECORD_LIMIT = 100;
+const MAX_FCU_CONTROL_RECORD_LIMIT = 500;
 const SHADOW_VERIFICATION_OUTCOMES = new Set(["improved", "neutral", "regressed", "invalid", "pending"]);
+const SUBSYSTEM_STATUSES = new Set(["enabled", "not_configured", "not_applicable"]);
+const SUBSYSTEM_MODES = new Set(["monitoring", "optimization_ready", "reserved"]);
+const CONTROL_BOUNDARY_MODES = new Set(["read_only", "shadow", "assisted", "enforced"]);
+const POINT_ROLE_KINDS = new Set([
+  "power",
+  "temperature",
+  "pressure",
+  "flow",
+  "status",
+  "alarm",
+  "setpoint",
+  "command",
+  "feedback"
+]);
+
+const GLOBAL_REGISTRY_SITE_ID = "__global__";
+
+const DEFAULT_SUBSYSTEM_REGISTRY = [
+  {
+    subsystemType: "chilled_plant",
+    displayName: "冷站系统",
+    category: "core",
+    description: "冷水机组、冷冻水泵、冷却水泵、冷却塔及冷站群控。",
+    defaultStatus: "enabled",
+    reserved: false,
+    sortOrder: 10,
+    pointRoles: [
+      { role: "power", label: "冷站总功率", required: true, unit: "kW" },
+      { role: "temperature", label: "冷冻/冷却水温度", required: true, unit: "°C" },
+      { role: "flow", label: "冷冻/冷却水流量", required: true, unit: "m3/h" },
+      { role: "status", label: "设备运行状态", required: true, unit: "" },
+      { role: "alarm", label: "设备告警", required: true, unit: "" },
+      { role: "setpoint", label: "冷冻水供水设定", required: false, unit: "°C" }
+    ]
+  },
+  {
+    subsystemType: "power_monitoring",
+    displayName: "电力监控",
+    category: "power",
+    description: "总表、馈线、需量、功率因数与电能质量监测。",
+    defaultStatus: "not_configured",
+    reserved: false,
+    sortOrder: 20,
+    pointRoles: [
+      { role: "power", label: "总有功功率", required: true, unit: "kW" },
+      { role: "feedback", label: "今日用电量", required: true, unit: "kWh" },
+      { role: "feedback", label: "最大需量", required: true, unit: "kW" },
+      { role: "feedback", label: "功率因数", required: true, unit: "" },
+      { role: "status", label: "馈线状态", required: false, unit: "" },
+      { role: "alarm", label: "电力告警", required: false, unit: "" }
+    ]
+  },
+  {
+    subsystemType: "compressed_air",
+    displayName: "空压站",
+    category: "process",
+    description: "空压机、干燥机、储气罐、管网压力、泄漏与单耗。",
+    defaultStatus: "not_configured",
+    reserved: false,
+    sortOrder: 30,
+    pointRoles: [
+      { role: "power", label: "空压站总功率", required: true, unit: "kW" },
+      { role: "pressure", label: "管网压力", required: true, unit: "bar" },
+      { role: "flow", label: "供气流量", required: true, unit: "Nm3/min" },
+      { role: "status", label: "运行/加载状态", required: true, unit: "" },
+      { role: "alarm", label: "空压站告警", required: true, unit: "" },
+      { role: "temperature", label: "干燥机露点", required: false, unit: "°C" },
+      { role: "feedback", label: "单耗/泄漏诊断派生", required: false, unit: "" }
+    ]
+  },
+  {
+    subsystemType: "boiler_room",
+    displayName: "锅炉房",
+    category: "thermal",
+    description: "锅炉、循环泵、补水、燃气/蒸汽/热水参数与热效率。",
+    defaultStatus: "not_configured",
+    reserved: false,
+    sortOrder: 40,
+    pointRoles: [
+      { role: "power", label: "锅炉房电功率", required: false, unit: "kW" },
+      { role: "temperature", label: "供回水/蒸汽温度", required: true, unit: "°C" },
+      { role: "pressure", label: "系统压力", required: true, unit: "MPa" },
+      { role: "flow", label: "热媒流量", required: true, unit: "m3/h" },
+      { role: "status", label: "锅炉状态", required: true, unit: "" }
+    ]
+  },
+  {
+    subsystemType: "hvac_terminal",
+    displayName: "空调末端",
+    category: "terminal",
+    description: "AHU、PAU、FCU、VAV、区域温湿度与末端阀门。",
+    defaultStatus: "not_configured",
+    reserved: false,
+    sortOrder: 50,
+    pointRoles: [
+      { role: "temperature", label: "区域/送回风温度", required: true, unit: "°C" },
+      { role: "status", label: "末端运行状态", required: true, unit: "" },
+      { role: "feedback", label: "阀门/风阀反馈", required: false, unit: "%" },
+      { role: "setpoint", label: "区域温度设定", required: false, unit: "°C" },
+      { role: "alarm", label: "末端告警", required: false, unit: "" }
+    ]
+  },
+  {
+    subsystemType: "photovoltaic_storage",
+    displayName: "光伏储能",
+    category: "reserved",
+    description: "光伏、储能 PCS、电池簇、并网点与削峰填谷策略预留。",
+    defaultStatus: "not_applicable",
+    reserved: true,
+    sortOrder: 70,
+    pointRoles: []
+  },
+  {
+    subsystemType: "water_treatment",
+    displayName: "水处理",
+    category: "reserved",
+    description: "补水、软化、排污、水质与药剂投加预留。",
+    defaultStatus: "not_applicable",
+    reserved: true,
+    sortOrder: 80,
+    pointRoles: []
+  },
+  {
+    subsystemType: "ev_charging",
+    displayName: "充电桩",
+    category: "reserved",
+    description: "充电负荷、排队策略、需量联动与站内配电约束预留。",
+    defaultStatus: "not_applicable",
+    reserved: true,
+    sortOrder: 90,
+    pointRoles: []
+  },
+  {
+    subsystemType: "steam_network",
+    displayName: "蒸汽管网",
+    category: "reserved",
+    description: "蒸汽压力、温度、流量、疏水与管网损失预留。",
+    defaultStatus: "not_applicable",
+    reserved: true,
+    sortOrder: 100,
+    pointRoles: []
+  }
+];
 
 function nowIso() {
   return new Date().toISOString();
@@ -41,6 +189,51 @@ function normalizeAdminRole(value, fallback = null) {
   return ADMIN_ROLES.has(normalized) ? normalized : fallback;
 }
 
+function normalizeSubsystemStatus(value, fallback = "not_configured") {
+  const normalized = normalizeText(value).toLowerCase();
+  return SUBSYSTEM_STATUSES.has(normalized) ? normalized : fallback;
+}
+
+function normalizeSubsystemMode(value, fallback = "monitoring") {
+  const normalized = normalizeText(value).toLowerCase();
+  return SUBSYSTEM_MODES.has(normalized) ? normalized : fallback;
+}
+
+function normalizeControlBoundaryMode(value, fallback = "read_only") {
+  const normalized = normalizeText(value).toLowerCase();
+  return CONTROL_BOUNDARY_MODES.has(normalized) ? normalized : fallback;
+}
+
+function normalizePointRoleKind(value, fallback = "feedback") {
+  const normalized = normalizeText(value).toLowerCase();
+  return POINT_ROLE_KINDS.has(normalized) ? normalized : fallback;
+}
+
+function normalizeBooleanFlag(value, fallback = false) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "number") {
+    return value !== 0;
+  }
+  const normalized = normalizeText(value).toLowerCase();
+  if (["1", "true", "yes", "enabled", "是", "启用"].includes(normalized)) {
+    return true;
+  }
+  if (["0", "false", "no", "disabled", "否", "停用"].includes(normalized)) {
+    return false;
+  }
+  return fallback;
+}
+
+function normalizeProgress(value, fallback = 0) {
+  const number = normalizeFiniteNumber(value);
+  if (number === null) {
+    return fallback;
+  }
+  return Math.max(0, Math.min(100, Math.round(number)));
+}
+
 function normalizeExecutionStatus(value, fallback = "pending_approval") {
   const normalized = normalizeText(value);
   return OPTIMIZE_EXECUTION_STATUSES.has(normalized) ? normalized : fallback;
@@ -62,12 +255,36 @@ function normalizeChillerStagingSampleLimit(value) {
   return Math.min(parsed, MAX_CHILLER_STAGING_SAMPLE_LIMIT);
 }
 
+function normalizeHvacTerminalSampleLimit(value) {
+  const parsed = Number.parseInt(String(value ?? DEFAULT_HVAC_TERMINAL_SAMPLE_LIMIT), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_HVAC_TERMINAL_SAMPLE_LIMIT;
+  }
+  return Math.min(parsed, MAX_HVAC_TERMINAL_SAMPLE_LIMIT);
+}
+
+function normalizeHvacTerminalSampleIntervalSeconds(value) {
+  const number = normalizeFiniteNumber(value);
+  if (number === null || number < 0) {
+    return DEFAULT_HVAC_TERMINAL_SAMPLE_MIN_INTERVAL_SECONDS;
+  }
+  return Math.min(Math.floor(number), 3600);
+}
+
 function normalizeShadowVerificationRecordLimit(value) {
   const parsed = Number.parseInt(String(value ?? DEFAULT_SHADOW_VERIFICATION_RECORD_LIMIT), 10);
   if (!Number.isFinite(parsed) || parsed <= 0) {
     return DEFAULT_SHADOW_VERIFICATION_RECORD_LIMIT;
   }
   return Math.min(parsed, MAX_SHADOW_VERIFICATION_RECORD_LIMIT);
+}
+
+function normalizeFcuControlRecordLimit(value) {
+  const parsed = Number.parseInt(String(value ?? DEFAULT_FCU_CONTROL_RECORD_LIMIT), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_FCU_CONTROL_RECORD_LIMIT;
+  }
+  return Math.min(parsed, MAX_FCU_CONTROL_RECORD_LIMIT);
 }
 
 function normalizeFiniteNumber(value) {
@@ -127,6 +344,21 @@ function createChillerStagingSampleId(siteId) {
 function createShadowVerificationRecordId(siteId) {
   const suffix = Math.random().toString(36).slice(2, 8);
   return `svr-${normalizeText(siteId) || "site"}-${Date.now()}-${suffix}`;
+}
+
+function createFcuControlRecordId(siteId) {
+  const suffix = Math.random().toString(36).slice(2, 8);
+  return `fcu-${normalizeText(siteId) || "site"}-${Date.now()}-${suffix}`;
+}
+
+function createHvacTerminalSampleId(siteId, floor, deviceCode, sampledAt) {
+  const key = [siteId, floor, deviceCode, sampledAt]
+    .map((item) => normalizeText(item))
+    .join("-")
+    .replace(/[^a-zA-Z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 180);
+  return `hts-${key || Date.now()}`;
 }
 
 function normalizeDispatchReceipt(value) {
@@ -481,6 +713,212 @@ function mapChillerStagingSampleRow(row) {
   };
 }
 
+function mapHvacTerminalSampleRow(row) {
+  if (!row) {
+    return null;
+  }
+  const qualityFlags = safeJsonParse(row.quality_flags_json, []);
+  return {
+    sampleId: row.sample_id,
+    siteId: row.site_id,
+    building: row.building || null,
+    floor: row.floor || null,
+    floorName: row.floor_name || null,
+    deviceId: row.device_id || null,
+    deviceCode: row.device_code || null,
+    deviceName: row.device_name || null,
+    sampledAt: row.sampled_at || null,
+    zoneTemperatureC: typeof row.zone_temp_c === "number" ? row.zone_temp_c : null,
+    setpointC: typeof row.setpoint_c === "number" ? row.setpoint_c : null,
+    running: row.running == null ? null : row.running === 1,
+    valveOpen: row.valve_open == null ? null : row.valve_open === 1,
+    valveOpenPct: typeof row.valve_open_pct === "number" ? row.valve_open_pct : null,
+    fanSpeedState: typeof row.fan_speed_state === "number" ? row.fan_speed_state : null,
+    communicationAlarm: row.communication_alarm == null ? null : row.communication_alarm === 1,
+    qualityStatus: row.quality_status || "unknown",
+    qualityFlags: Array.isArray(qualityFlags) ? qualityFlags : [],
+    rawTagTime: row.raw_tag_time || null,
+    sourceStatus: row.source_status || null,
+    createdAt: row.created_at || null,
+    requestId: row.request_id || null
+  };
+}
+
+function mapFcuControlPolicyRow(row) {
+  if (!row) {
+    return null;
+  }
+  return {
+    siteId: row.site_id,
+    policy: safeJsonParse(row.policy_json, {}),
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null,
+    createdBy: row.created_by || null,
+    updatedBy: row.updated_by || null
+  };
+}
+
+function mapFcuControlRecordRow(row) {
+  if (!row) {
+    return null;
+  }
+  const payload = safeJsonParse(row.payload_json, {});
+  return {
+    ...(payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {}),
+    recordId: row.record_id,
+    siteId: row.site_id,
+    deviceCode: row.device_code,
+    deviceName: row.device_name || null,
+    mode: row.mode,
+    status: row.status,
+    actionKind: row.action_kind,
+    reason: row.reason || null,
+    createdAt: row.created_at,
+    createdBy: row.created_by || null,
+    updatedAt: row.updated_at,
+    rolledBackAt: row.rolled_back_at || null,
+    rolledBackBy: row.rolled_back_by || null,
+    rollbackReason: row.rollback_reason || null,
+    requestId: row.request_id || null,
+    payload
+  };
+}
+
+function mapSubsystemRegistryRow(row) {
+  if (!row) {
+    return null;
+  }
+  return {
+    siteId: row.site_id || GLOBAL_REGISTRY_SITE_ID,
+    subsystemType: row.subsystem_type,
+    displayName: row.display_name || row.subsystem_type,
+    category: row.category || "general",
+    description: row.description || null,
+    defaultStatus: normalizeSubsystemStatus(row.default_status, "not_configured"),
+    reserved: row.reserved === 1,
+    sortOrder: typeof row.sort_order === "number" ? row.sort_order : 999,
+    pointRoles: safeJsonParse(row.point_roles_json, []),
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null,
+    createdBy: row.created_by || null,
+    updatedBy: row.updated_by || null
+  };
+}
+
+function mapSiteSubsystemCapabilityRow(row) {
+  if (!row) {
+    return null;
+  }
+  const status = normalizeSubsystemStatus(row.status, "not_configured");
+  const enabled = status === "enabled";
+  return {
+    siteId: row.site_id,
+    subsystemType: row.subsystem_type,
+    displayName: row.display_name || row.subsystem_type,
+    category: row.category || "general",
+    description: row.description || null,
+    status,
+    mode: normalizeSubsystemMode(row.mode, row.reserved === 1 ? "reserved" : "monitoring"),
+    reserved: row.reserved === 1,
+    enabled,
+    kpis: enabled ? safeJsonParse(row.kpis_json, []) : [],
+    alarmCount: enabled ? normalizeNonNegativeInteger(row.alarm_count) : null,
+    freshnessStatus: row.freshness_status || (enabled ? "unknown" : "not_configured"),
+    sourceStatus: row.source_status || (enabled ? "unknown" : "not_configured"),
+    pointMappingProgress: normalizeProgress(row.point_mapping_progress),
+    advisorPluginStatus: enabled ? row.advisor_plugin_status || "not_configured" : "not_configured",
+    pageTemplateStatus: row.page_template_status || "not_configured",
+    published: row.published !== 0,
+    notes: row.notes || null,
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null,
+    createdBy: row.created_by || null,
+    updatedBy: row.updated_by || null
+  };
+}
+
+function mapPointRoleMappingRow(row) {
+  if (!row) {
+    return null;
+  }
+  return {
+    mappingId: String(row.mapping_id),
+    siteId: row.site_id,
+    subsystemType: row.subsystem_type,
+    pointRole: normalizePointRoleKind(row.point_role),
+    pointName: row.point_name || "",
+    pointCode: row.point_code || "",
+    unit: row.unit || "",
+    dataType: row.data_type || "",
+    direction: row.direction || "read",
+    required: row.required === 1,
+    writable: row.writable === 1,
+    source: row.source || "manual",
+    notes: row.notes || null,
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null,
+    createdBy: row.created_by || null,
+    updatedBy: row.updated_by || null
+  };
+}
+
+function mapAdvisorPluginBindingRow(row) {
+  if (!row) {
+    return null;
+  }
+  return {
+    siteId: row.site_id,
+    subsystemType: row.subsystem_type,
+    pluginKey: row.plugin_key,
+    status: row.status || "not_configured",
+    mode: normalizeSubsystemMode(row.mode, "monitoring"),
+    config: safeJsonParse(row.config_json, {}),
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null,
+    createdBy: row.created_by || null,
+    updatedBy: row.updated_by || null
+  };
+}
+
+function mapControlBoundaryRow(row) {
+  if (!row) {
+    return null;
+  }
+  return {
+    siteId: row.site_id,
+    subsystemType: row.subsystem_type,
+    mode: normalizeControlBoundaryMode(row.mode),
+    approvalRequired: row.approval_required !== 0,
+    plcProtectionRequired: row.plc_protection_required !== 0,
+    rollbackRequired: row.rollback_required !== 0,
+    writeEnabled: row.write_enabled === 1,
+    notes: row.notes || null,
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null,
+    createdBy: row.created_by || null,
+    updatedBy: row.updated_by || null
+  };
+}
+
+function mapConfigVersionRow(row) {
+  if (!row) {
+    return null;
+  }
+  return {
+    versionId: row.version_id,
+    siteId: row.site_id,
+    status: row.status || "draft",
+    summary: row.summary || null,
+    payload: safeJsonParse(row.payload_json, {}),
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null,
+    createdBy: row.created_by || null,
+    updatedBy: row.updated_by || null,
+    publishedAt: row.published_at || null,
+    rolledBackAt: row.rolled_back_at || null
+  };
+}
+
 function ensureLocalDirectory(filePath) {
   const directory = path.dirname(filePath);
   fs.mkdirSync(directory, { recursive: true });
@@ -565,6 +1003,114 @@ function runMigrations(db) {
       FOREIGN KEY (site_id) REFERENCES admin_sites(site_id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS admin_subsystem_registry (
+      site_id TEXT NOT NULL DEFAULT '${GLOBAL_REGISTRY_SITE_ID}',
+      subsystem_type TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'general',
+      description TEXT,
+      default_status TEXT NOT NULL DEFAULT 'not_configured',
+      reserved INTEGER NOT NULL DEFAULT 0,
+      sort_order INTEGER NOT NULL DEFAULT 999,
+      point_roles_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      created_by TEXT,
+      updated_by TEXT,
+      PRIMARY KEY (site_id, subsystem_type)
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_site_subsystem_capabilities (
+      site_id TEXT NOT NULL,
+      subsystem_type TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'not_configured',
+      mode TEXT NOT NULL DEFAULT 'monitoring',
+      kpis_json TEXT NOT NULL DEFAULT '[]',
+      alarm_count INTEGER NOT NULL DEFAULT 0,
+      freshness_status TEXT NOT NULL DEFAULT 'not_configured',
+      source_status TEXT NOT NULL DEFAULT 'not_configured',
+      point_mapping_progress INTEGER NOT NULL DEFAULT 0,
+      advisor_plugin_status TEXT NOT NULL DEFAULT 'not_configured',
+      page_template_status TEXT NOT NULL DEFAULT 'not_configured',
+      notes TEXT,
+      published INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      created_by TEXT,
+      updated_by TEXT,
+      PRIMARY KEY (site_id, subsystem_type),
+      FOREIGN KEY (site_id) REFERENCES admin_sites(site_id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_point_role_mappings (
+      mapping_id INTEGER PRIMARY KEY AUTOINCREMENT,
+      site_id TEXT NOT NULL,
+      subsystem_type TEXT NOT NULL,
+      point_role TEXT NOT NULL,
+      point_name TEXT NOT NULL,
+      point_code TEXT,
+      unit TEXT,
+      data_type TEXT,
+      direction TEXT NOT NULL DEFAULT 'read',
+      required INTEGER NOT NULL DEFAULT 0,
+      writable INTEGER NOT NULL DEFAULT 0,
+      source TEXT NOT NULL DEFAULT 'manual',
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      created_by TEXT,
+      updated_by TEXT,
+      FOREIGN KEY (site_id) REFERENCES admin_sites(site_id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_advisor_plugin_bindings (
+      site_id TEXT NOT NULL,
+      subsystem_type TEXT NOT NULL,
+      plugin_key TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'not_configured',
+      mode TEXT NOT NULL DEFAULT 'monitoring',
+      config_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      created_by TEXT,
+      updated_by TEXT,
+      PRIMARY KEY (site_id, subsystem_type, plugin_key),
+      FOREIGN KEY (site_id) REFERENCES admin_sites(site_id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_control_boundaries (
+      site_id TEXT NOT NULL,
+      subsystem_type TEXT NOT NULL,
+      mode TEXT NOT NULL DEFAULT 'read_only',
+      approval_required INTEGER NOT NULL DEFAULT 1,
+      plc_protection_required INTEGER NOT NULL DEFAULT 1,
+      rollback_required INTEGER NOT NULL DEFAULT 1,
+      write_enabled INTEGER NOT NULL DEFAULT 0,
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      created_by TEXT,
+      updated_by TEXT,
+      PRIMARY KEY (site_id, subsystem_type),
+      FOREIGN KEY (site_id) REFERENCES admin_sites(site_id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_config_versions (
+      version_id TEXT NOT NULL,
+      site_id TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'draft',
+      summary TEXT,
+      payload_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      created_by TEXT,
+      updated_by TEXT,
+      published_at TEXT,
+      rolled_back_at TEXT,
+      PRIMARY KEY (site_id, version_id),
+      FOREIGN KEY (site_id) REFERENCES admin_sites(site_id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS admin_audit_logs (
       audit_id INTEGER PRIMARY KEY AUTOINCREMENT,
       actor_user_id TEXT,
@@ -618,6 +1164,62 @@ function runMigrations(db) {
       FOREIGN KEY (site_id) REFERENCES admin_sites(site_id) ON DELETE CASCADE
     );
 
+    CREATE TABLE IF NOT EXISTS admin_hvac_terminal_samples (
+      sample_id TEXT PRIMARY KEY,
+      site_id TEXT NOT NULL,
+      building TEXT,
+      floor TEXT NOT NULL,
+      floor_name TEXT,
+      device_id TEXT,
+      device_code TEXT NOT NULL,
+      device_name TEXT,
+      sampled_at TEXT NOT NULL,
+      zone_temp_c REAL,
+      setpoint_c REAL,
+      running INTEGER,
+      valve_open INTEGER,
+      valve_open_pct REAL,
+      fan_speed_state REAL,
+      communication_alarm INTEGER,
+      quality_status TEXT NOT NULL DEFAULT 'unknown',
+      quality_flags_json TEXT NOT NULL DEFAULT '[]',
+      raw_tag_time TEXT,
+      source_status TEXT,
+      created_at TEXT NOT NULL,
+      request_id TEXT,
+      FOREIGN KEY (site_id) REFERENCES admin_sites(site_id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_fcu_control_policies (
+      site_id TEXT PRIMARY KEY,
+      policy_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      created_by TEXT,
+      updated_by TEXT,
+      FOREIGN KEY (site_id) REFERENCES admin_sites(site_id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_fcu_control_records (
+      record_id TEXT PRIMARY KEY,
+      site_id TEXT NOT NULL,
+      device_code TEXT NOT NULL,
+      device_name TEXT,
+      mode TEXT NOT NULL,
+      status TEXT NOT NULL,
+      action_kind TEXT NOT NULL,
+      reason TEXT,
+      payload_json TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      created_by TEXT,
+      updated_at TEXT NOT NULL,
+      rolled_back_at TEXT,
+      rolled_back_by TEXT,
+      rollback_reason TEXT,
+      request_id TEXT,
+      FOREIGN KEY (site_id) REFERENCES admin_sites(site_id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS admin_shadow_verification_records (
       record_id TEXT PRIMARY KEY,
       site_id TEXT NOT NULL,
@@ -654,14 +1256,98 @@ function runMigrations(db) {
     CREATE INDEX IF NOT EXISTS idx_admin_chiller_staging_samples_site_combo_captured
       ON admin_chiller_staging_samples(site_id, combination_key, captured_at DESC);
 
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_admin_hvac_terminal_samples_unique
+      ON admin_hvac_terminal_samples(site_id, floor, device_code, sampled_at);
+
+    CREATE INDEX IF NOT EXISTS idx_admin_hvac_terminal_samples_site_floor_sampled
+      ON admin_hvac_terminal_samples(site_id, floor, sampled_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_admin_hvac_terminal_samples_device_sampled
+      ON admin_hvac_terminal_samples(site_id, device_code, sampled_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_admin_fcu_control_records_site_device_time
+      ON admin_fcu_control_records(site_id, device_code, created_at DESC);
+
     CREATE INDEX IF NOT EXISTS idx_admin_shadow_verification_site_recorded
       ON admin_shadow_verification_records(site_id, recorded_at DESC, created_at DESC);
 
     CREATE INDEX IF NOT EXISTS idx_admin_shadow_verification_execution
       ON admin_shadow_verification_records(site_id, execution_id, recorded_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_admin_site_subsystem_capabilities_site_status
+      ON admin_site_subsystem_capabilities(site_id, status, published);
+
+    CREATE INDEX IF NOT EXISTS idx_admin_point_role_mappings_site_subsystem
+      ON admin_point_role_mappings(site_id, subsystem_type, point_role);
+
+    CREATE INDEX IF NOT EXISTS idx_admin_config_versions_site_status
+      ON admin_config_versions(site_id, status, updated_at DESC);
   `);
 
   ensureTableColumn(db, "admin_site_source_configs", "preferred_project_key", "preferred_project_key TEXT");
+  ensureConfigVersionsSiteScopedKey(db);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_admin_config_versions_site_status
+      ON admin_config_versions(site_id, status, updated_at DESC);
+  `);
+}
+
+function ensureConfigVersionsSiteScopedKey(db) {
+  const columns = db.prepare("PRAGMA table_info(admin_config_versions)").all();
+  const versionColumn = columns.find((column) => column.name === "version_id");
+  const siteColumn = columns.find((column) => column.name === "site_id");
+  if (versionColumn?.pk === 2 && siteColumn?.pk === 1) {
+    return;
+  }
+  db.exec(`
+    PRAGMA foreign_keys = OFF;
+    BEGIN;
+    CREATE TABLE admin_config_versions_next (
+      version_id TEXT NOT NULL,
+      site_id TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'draft',
+      summary TEXT,
+      payload_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      created_by TEXT,
+      updated_by TEXT,
+      published_at TEXT,
+      rolled_back_at TEXT,
+      PRIMARY KEY (site_id, version_id),
+      FOREIGN KEY (site_id) REFERENCES admin_sites(site_id) ON DELETE CASCADE
+    );
+    INSERT OR REPLACE INTO admin_config_versions_next (
+      version_id,
+      site_id,
+      status,
+      summary,
+      payload_json,
+      created_at,
+      updated_at,
+      created_by,
+      updated_by,
+      published_at,
+      rolled_back_at
+    )
+    SELECT
+      version_id,
+      site_id,
+      status,
+      summary,
+      payload_json,
+      created_at,
+      updated_at,
+      created_by,
+      updated_by,
+      published_at,
+      rolled_back_at
+    FROM admin_config_versions;
+    DROP TABLE admin_config_versions;
+    ALTER TABLE admin_config_versions_next RENAME TO admin_config_versions;
+    COMMIT;
+    PRAGMA foreign_keys = ON;
+  `);
 }
 
 function createQueryHelpers(db) {
@@ -676,6 +1362,81 @@ function createQueryHelpers(db) {
       return db.prepare(sql).run(...params);
     }
   };
+}
+
+function seedDefaultSubsystemRegistry(sql) {
+  const timestamp = nowIso();
+  for (const item of DEFAULT_SUBSYSTEM_REGISTRY) {
+    const existing = sql.get(
+      `
+        SELECT subsystem_type
+        FROM admin_subsystem_registry
+        WHERE site_id = ? AND subsystem_type = ?
+        LIMIT 1
+      `,
+      GLOBAL_REGISTRY_SITE_ID,
+      item.subsystemType
+    );
+    if (existing) {
+      sql.run(
+        `
+          UPDATE admin_subsystem_registry
+          SET
+            display_name = ?,
+            category = ?,
+            description = ?,
+            default_status = ?,
+            reserved = ?,
+            sort_order = ?,
+            point_roles_json = ?,
+            updated_at = ?,
+            updated_by = 'system'
+          WHERE site_id = ? AND subsystem_type = ?
+        `,
+        item.displayName,
+        item.category,
+        item.description,
+        item.defaultStatus,
+        item.reserved ? 1 : 0,
+        item.sortOrder,
+        toJsonText(item.pointRoles, []),
+        timestamp,
+        GLOBAL_REGISTRY_SITE_ID,
+        item.subsystemType
+      );
+      continue;
+    }
+    sql.run(
+      `
+        INSERT INTO admin_subsystem_registry (
+          site_id,
+          subsystem_type,
+          display_name,
+          category,
+          description,
+          default_status,
+          reserved,
+          sort_order,
+          point_roles_json,
+          created_at,
+          updated_at,
+          created_by,
+          updated_by
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'system', 'system')
+      `,
+      GLOBAL_REGISTRY_SITE_ID,
+      item.subsystemType,
+      item.displayName,
+      item.category,
+      item.description,
+      item.defaultStatus,
+      item.reserved ? 1 : 0,
+      item.sortOrder,
+      toJsonText(item.pointRoles, []),
+      timestamp,
+      timestamp
+    );
+  }
 }
 
 function createSiteSelectSql(extraWhere = "") {
@@ -745,6 +1506,7 @@ export function createAdminStore(options) {
   const db = new DatabaseSync(dbFile);
   runMigrations(db);
   const sql = createQueryHelpers(db);
+  seedDefaultSubsystemRegistry(sql);
 
   function recordAudit(entry) {
     sql.run(
@@ -1808,6 +2570,60 @@ export function createAdminStore(options) {
     };
   }
 
+  function normalizeHvacTerminalSampleRecord(siteId, snapshot, item, options = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    if (!normalizedSiteId) {
+      throw badRequest("siteId is required", { field: "siteId" });
+    }
+    const normalizedItem = item && typeof item === "object" && !Array.isArray(item) ? item : {};
+    const floor = normalizeNullableText(options.floor ?? snapshot?.floor) || "1";
+    const sampledAt = normalizeNullableText(normalizedItem.sampledAt ?? snapshot?.sampledAt ?? options.sampledAt) || nowIso();
+    const deviceCode =
+      normalizeNullableText(normalizedItem.deviceCode) ||
+      normalizeNullableText(normalizedItem.deviceName) ||
+      normalizeNullableText(normalizedItem.deviceId);
+    if (!deviceCode) {
+      return null;
+    }
+    const quality = normalizedItem.quality && typeof normalizedItem.quality === "object" ? normalizedItem.quality : {};
+    const qualityFlags = normalizeTextList(Array.isArray(quality.flags) ? quality.flags : []);
+    return {
+      sampleId:
+        normalizeNullableText(normalizedItem.sampleId) ||
+        createHvacTerminalSampleId(normalizedSiteId, floor, deviceCode, sampledAt),
+      siteId: normalizedSiteId,
+      building: normalizeNullableText(options.building ?? snapshot?.building),
+      floor,
+      floorName: normalizeNullableText(options.floorName ?? snapshot?.floorName ?? normalizedItem.floorName),
+      deviceId: normalizeNullableText(normalizedItem.deviceId),
+      deviceCode,
+      deviceName: normalizeNullableText(normalizedItem.deviceName),
+      sampledAt,
+      zoneTemperatureC: normalizeFiniteNumber(normalizedItem.zoneTemperatureC),
+      setpointC: normalizeFiniteNumber(normalizedItem.setpointFeedbackC ?? normalizedItem.setpointC),
+      running:
+        typeof normalizedItem.running === "boolean"
+          ? normalizedItem.running
+          : null,
+      valveOpen:
+        typeof normalizedItem.valveOpen === "boolean"
+          ? normalizedItem.valveOpen
+          : null,
+      valveOpenPct: normalizeFiniteNumber(normalizedItem.valveOpenPct),
+      fanSpeedState: normalizeFiniteNumber(normalizedItem.fanSpeedState),
+      communicationAlarm:
+        typeof normalizedItem.communicationAlarm === "boolean"
+          ? normalizedItem.communicationAlarm
+          : null,
+      qualityStatus: normalizeNullableText(quality.status) || "unknown",
+      qualityFlags,
+      rawTagTime: normalizeNullableText(normalizedItem.rawTagTime),
+      sourceStatus: normalizeNullableText(snapshot?.summary?.dataStatus ?? snapshot?.sourceStatus?.overall),
+      createdAt: normalizeNullableText(options.createdAt) || nowIso(),
+      requestId: normalizeNullableText(options.requestId)
+    };
+  }
+
   function normalizeShadowVerificationRecord(siteId, record, options = {}) {
     const normalizedSiteId = normalizeText(siteId);
     if (!normalizedSiteId) {
@@ -1987,6 +2803,59 @@ export function createAdminStore(options) {
     );
   }
 
+  function insertHvacTerminalSampleRow(record) {
+    return sql.run(
+      `
+        INSERT OR IGNORE INTO admin_hvac_terminal_samples (
+          sample_id,
+          site_id,
+          building,
+          floor,
+          floor_name,
+          device_id,
+          device_code,
+          device_name,
+          sampled_at,
+          zone_temp_c,
+          setpoint_c,
+          running,
+          valve_open,
+          valve_open_pct,
+          fan_speed_state,
+          communication_alarm,
+          quality_status,
+          quality_flags_json,
+          raw_tag_time,
+          source_status,
+          created_at,
+          request_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      record.sampleId,
+      record.siteId,
+      record.building,
+      record.floor,
+      record.floorName,
+      record.deviceId,
+      record.deviceCode,
+      record.deviceName,
+      record.sampledAt,
+      record.zoneTemperatureC,
+      record.setpointC,
+      record.running == null ? null : record.running ? 1 : 0,
+      record.valveOpen == null ? null : record.valveOpen ? 1 : 0,
+      record.valveOpenPct,
+      record.fanSpeedState,
+      record.communicationAlarm == null ? null : record.communicationAlarm ? 1 : 0,
+      record.qualityStatus,
+      toJsonText(record.qualityFlags, []),
+      record.rawTagTime,
+      record.sourceStatus,
+      record.createdAt,
+      record.requestId
+    );
+  }
+
   function insertShadowVerificationRecordRow(record) {
     sql.run(
       `
@@ -2034,6 +2903,326 @@ export function createAdminStore(options) {
       record.recordedBy,
       record.requestId
     );
+  }
+
+  function getFcuControlPolicy(siteId) {
+    const normalizedSiteId = normalizeText(siteId);
+    if (!normalizedSiteId) {
+      return null;
+    }
+    return mapFcuControlPolicyRow(
+      sql.get(
+        `
+          SELECT *
+          FROM admin_fcu_control_policies
+          WHERE site_id = ?
+          LIMIT 1
+        `,
+        normalizedSiteId
+      )
+    );
+  }
+
+  function upsertFcuControlPolicy(siteId, policy, actor = {}, options = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    if (!normalizedSiteId) {
+      throw badRequest("siteId is required", { field: "siteId" });
+    }
+    assertSiteExists(normalizedSiteId);
+    const existing = getFcuControlPolicy(normalizedSiteId);
+    const timestamp = nowIso();
+    const nextPolicy = cloneJson(policy, {});
+    return withTransaction(db, () => {
+      if (existing) {
+        sql.run(
+          `
+            UPDATE admin_fcu_control_policies
+            SET policy_json = ?, updated_at = ?, updated_by = ?
+            WHERE site_id = ?
+          `,
+          toJsonText(nextPolicy, {}),
+          timestamp,
+          normalizeNullableText(actor?.userId),
+          normalizedSiteId
+        );
+      } else {
+        sql.run(
+          `
+            INSERT INTO admin_fcu_control_policies (
+              site_id,
+              policy_json,
+              created_at,
+              updated_at,
+              created_by,
+              updated_by
+            ) VALUES (?, ?, ?, ?, ?, ?)
+          `,
+          normalizedSiteId,
+          toJsonText(nextPolicy, {}),
+          timestamp,
+          timestamp,
+          normalizeNullableText(actor?.userId),
+          normalizeNullableText(actor?.userId)
+        );
+      }
+      const updated = getFcuControlPolicy(normalizedSiteId);
+      recordAudit({
+        actorUserId: actor?.userId,
+        actorUsername: actor?.username,
+        action: "hvac-terminal.fcu-control-policy.upsert",
+        targetType: "fcu_control_policy",
+        targetId: normalizedSiteId,
+        scopeType: "site",
+        scopeId: normalizedSiteId,
+        beforeJson: toJsonText(existing),
+        afterJson: toJsonText(updated),
+        requestId: options.requestId
+      });
+      return updated;
+    });
+  }
+
+  function createFcuControlRecord(siteId, decision, actor = {}, options = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    if (!normalizedSiteId) {
+      throw badRequest("siteId is required", { field: "siteId" });
+    }
+    assertSiteExists(normalizedSiteId);
+    const source = decision && typeof decision === "object" && !Array.isArray(decision) ? decision : {};
+    const timestamp = normalizeNullableText(source.createdAt) || nowIso();
+    const recordId = normalizeNullableText(source.recordId) || createFcuControlRecordId(normalizedSiteId);
+    const deviceCode = normalizeNullableText(source.deviceCode);
+    if (!deviceCode) {
+      throw badRequest("deviceCode is required", { field: "deviceCode" });
+    }
+    const payload = {
+      ...cloneJson(source, {}),
+      recordId,
+      siteId: normalizedSiteId,
+      createdAt: timestamp,
+      createdBy: normalizeNullableText(actor?.userId),
+      controlMutation: source?.dispatch?.controlMutation === true
+    };
+    sql.run(
+      `
+        INSERT INTO admin_fcu_control_records (
+          record_id,
+          site_id,
+          device_code,
+          device_name,
+          mode,
+          status,
+          action_kind,
+          reason,
+          payload_json,
+          created_at,
+          created_by,
+          updated_at,
+          request_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      recordId,
+      normalizedSiteId,
+      deviceCode,
+      normalizeNullableText(source.deviceName),
+      normalizeNullableText(source.mode) || "shadow",
+      normalizeNullableText(source.status) || "held",
+      normalizeNullableText(source.actionKind) || "hold",
+      normalizeNullableText(source.reason),
+      toJsonText(payload, {}),
+      timestamp,
+      normalizeNullableText(actor?.userId),
+      timestamp,
+      normalizeNullableText(options.requestId)
+    );
+    const created = getFcuControlRecord(normalizedSiteId, recordId);
+    recordAudit({
+      actorUserId: actor?.userId,
+      actorUsername: actor?.username,
+      action: "hvac-terminal.fcu-control-record.create",
+      targetType: "fcu_control_record",
+      targetId: recordId,
+      scopeType: "site",
+      scopeId: normalizedSiteId,
+      beforeJson: null,
+      afterJson: toJsonText(created),
+      requestId: options.requestId
+    });
+    return created;
+  }
+
+  function getFcuControlRecord(siteId, recordId) {
+    const normalizedSiteId = normalizeText(siteId);
+    const normalizedRecordId = normalizeText(recordId);
+    if (!normalizedSiteId || !normalizedRecordId) {
+      return null;
+    }
+    return mapFcuControlRecordRow(
+      sql.get(
+        `
+          SELECT *
+          FROM admin_fcu_control_records
+          WHERE site_id = ? AND record_id = ?
+          LIMIT 1
+        `,
+        normalizedSiteId,
+        normalizedRecordId
+      )
+    );
+  }
+
+  function listFcuControlRecords(siteId, filters = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    if (!normalizedSiteId) {
+      return {
+        siteId: "",
+        total: 0,
+        items: []
+      };
+    }
+    const where = ["site_id = ?"];
+    const params = [normalizedSiteId];
+    const deviceCode = normalizeText(filters.deviceCode);
+    const status = normalizeText(filters.status);
+    if (deviceCode) {
+      where.push("device_code = ?");
+      params.push(deviceCode);
+    }
+    if (status) {
+      where.push("status = ?");
+      params.push(status);
+    }
+    const totalRow = sql.get(
+      `
+        SELECT COUNT(*) AS count
+        FROM admin_fcu_control_records
+        WHERE ${where.join(" AND ")}
+      `,
+      ...params
+    );
+    const items = sql
+      .all(
+        `
+          SELECT *
+          FROM admin_fcu_control_records
+          WHERE ${where.join(" AND ")}
+          ORDER BY created_at DESC, record_id DESC
+          LIMIT ?
+        `,
+        ...params,
+        normalizeFcuControlRecordLimit(filters.limit)
+      )
+      .map(mapFcuControlRecordRow)
+      .filter(Boolean);
+    return {
+      siteId: normalizedSiteId,
+      total: typeof totalRow?.count === "number" ? totalRow.count : 0,
+      items
+    };
+  }
+
+  function rollbackFcuControlRecord(siteId, recordId, payload = {}, actor = {}, options = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    const normalizedRecordId = normalizeText(recordId);
+    if (!normalizedSiteId || !normalizedRecordId) {
+      throw badRequest("recordId is required", { field: "recordId" });
+    }
+    const existing = getFcuControlRecord(normalizedSiteId, normalizedRecordId);
+    if (!existing) {
+      throw notFound("FCU control record not found", { recordId: normalizedRecordId });
+    }
+    const timestamp = nowIso();
+    const reason = normalizeNullableText(payload?.reason) || "manual rollback";
+    const nextPayload = {
+      ...(existing.payload && typeof existing.payload === "object" ? existing.payload : existing),
+      status: "rolled_back",
+      rolledBackAt: timestamp,
+      rolledBackBy: normalizeNullableText(actor?.userId),
+      rollbackReason: reason
+    };
+    return withTransaction(db, () => {
+      sql.run(
+        `
+          UPDATE admin_fcu_control_records
+          SET status = ?, payload_json = ?, updated_at = ?, rolled_back_at = ?, rolled_back_by = ?, rollback_reason = ?
+          WHERE site_id = ? AND record_id = ?
+        `,
+        "rolled_back",
+        toJsonText(nextPayload, {}),
+        timestamp,
+        timestamp,
+        normalizeNullableText(actor?.userId),
+        reason,
+        normalizedSiteId,
+        normalizedRecordId
+      );
+      const updated = getFcuControlRecord(normalizedSiteId, normalizedRecordId);
+      recordAudit({
+        actorUserId: actor?.userId,
+        actorUsername: actor?.username,
+        action: "hvac-terminal.fcu-control-record.rollback",
+        targetType: "fcu_control_record",
+        targetId: normalizedRecordId,
+        scopeType: "site",
+        scopeId: normalizedSiteId,
+        beforeJson: toJsonText(existing),
+        afterJson: toJsonText(updated),
+        requestId: options.requestId
+      });
+      return updated;
+    });
+  }
+
+  function verifyFcuControlRecordFeedback(siteId, recordId, verification = {}, actor = {}, options = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    const normalizedRecordId = normalizeText(recordId);
+    if (!normalizedSiteId || !normalizedRecordId) {
+      throw badRequest("recordId is required", { field: "recordId" });
+    }
+    const existing = getFcuControlRecord(normalizedSiteId, normalizedRecordId);
+    if (!existing) {
+      throw notFound("FCU control record not found", { recordId: normalizedRecordId });
+    }
+    const timestamp = nowIso();
+    const nextStatus = normalizeNullableText(verification?.status) || existing.status;
+    const nextReason = normalizeNullableText(verification?.reason) || existing.reason;
+    const nextPayload = {
+      ...(existing.payload && typeof existing.payload === "object" ? existing.payload : existing),
+      ...cloneJson(verification, {}),
+      status: nextStatus,
+      reason: nextReason,
+      feedback: cloneJson(verification?.feedback, existing.feedback || null),
+      updatedAt: timestamp
+    };
+    return withTransaction(db, () => {
+      sql.run(
+        `
+          UPDATE admin_fcu_control_records
+          SET status = ?, reason = ?, payload_json = ?, updated_at = ?
+          WHERE site_id = ? AND record_id = ?
+        `,
+        nextStatus,
+        nextReason,
+        toJsonText(nextPayload, {}),
+        timestamp,
+        normalizedSiteId,
+        normalizedRecordId
+      );
+      const updated = getFcuControlRecord(normalizedSiteId, normalizedRecordId);
+      recordAudit({
+        actorUserId: actor?.userId,
+        actorUsername: actor?.username,
+        action: "hvac-terminal.fcu-control-record.verify-feedback",
+        targetType: "fcu_control_record",
+        targetId: normalizedRecordId,
+        scopeType: "site",
+        scopeId: normalizedSiteId,
+        beforeJson: toJsonText(existing),
+        afterJson: toJsonText(updated),
+        requestId: options.requestId
+      });
+      return updated;
+    });
   }
 
   function createOptimizeExecution(siteId, record, actor = {}, options = {}) {
@@ -2176,6 +3365,192 @@ export function createAdminStore(options) {
       limit: 1
     });
     return list.items[0] || null;
+  }
+
+  function getLatestHvacTerminalSample(siteId, filters = {}) {
+    const list = listHvacTerminalSamples(siteId, {
+      ...filters,
+      limit: 1
+    });
+    return list.items[0] || null;
+  }
+
+  function appendHvacTerminalSnapshotSamples(siteId, snapshot, actor = {}, options = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    if (!normalizedSiteId) {
+      throw badRequest("siteId is required", { field: "siteId" });
+    }
+    assertSiteExists(normalizedSiteId);
+    const items = Array.isArray(snapshot?.items) ? snapshot.items : [];
+    const floor = normalizeNullableText(options.floor ?? snapshot?.floor) || "1";
+    const sampledAt = normalizeNullableText(snapshot?.sampledAt ?? options.sampledAt) || nowIso();
+    const minIntervalSeconds = normalizeHvacTerminalSampleIntervalSeconds(options.minIntervalSeconds);
+    const latest = getLatestHvacTerminalSample(normalizedSiteId, { floor });
+    const elapsedSeconds =
+      latest?.sampledAt && Number.isFinite(Date.parse(latest.sampledAt))
+        ? (Date.parse(sampledAt) - Date.parse(latest.sampledAt)) / 1000
+        : Number.POSITIVE_INFINITY;
+
+    if (latest && elapsedSeconds >= 0 && elapsedSeconds < minIntervalSeconds) {
+      return {
+        status: "skipped_recent",
+        siteId: normalizedSiteId,
+        floor,
+        sampledAt,
+        inserted: 0,
+        skipped: items.length,
+        latestSampledAt: latest.sampledAt,
+        minIntervalSeconds
+      };
+    }
+
+    const records = items
+      .map((item) =>
+        normalizeHvacTerminalSampleRecord(normalizedSiteId, snapshot, item, {
+          ...options,
+          floor,
+          sampledAt,
+          requestId: options.requestId,
+          createdAt: options.createdAt
+        })
+      )
+      .filter(Boolean);
+
+    let inserted = 0;
+    withTransaction(db, () => {
+      for (const record of records) {
+        const result = insertHvacTerminalSampleRow(record);
+        inserted += Number(result?.changes || 0);
+      }
+      if (options.audit === true && inserted > 0) {
+        recordAudit({
+          actorUserId: actor?.userId,
+          actorUsername: actor?.username,
+          action: "hvac-terminal.samples.append",
+          targetType: "hvac_terminal_samples",
+          targetId: `${normalizedSiteId}:${floor}:${sampledAt}`,
+          scopeType: "site",
+          scopeId: normalizedSiteId,
+          beforeJson: null,
+          afterJson: toJsonText({ floor, sampledAt, inserted }),
+          requestId: options.requestId
+        });
+      }
+    });
+
+    return {
+      status: inserted > 0 ? "recorded" : "duplicate",
+      siteId: normalizedSiteId,
+      floor,
+      sampledAt,
+      inserted,
+      skipped: Math.max(0, records.length - inserted),
+      latestSampledAt: latest?.sampledAt || null,
+      minIntervalSeconds
+    };
+  }
+
+  function listHvacTerminalSamples(siteId, filters = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    if (!normalizedSiteId) {
+      return {
+        siteId: "",
+        total: 0,
+        items: []
+      };
+    }
+    const limit = normalizeHvacTerminalSampleLimit(filters.limit);
+    const where = ["site_id = ?"];
+    const params = [normalizedSiteId];
+    const floor = normalizeText(filters.floor);
+    const deviceCode = normalizeText(filters.deviceCode);
+    if (floor) {
+      where.push("floor = ?");
+      params.push(floor);
+    }
+    if (deviceCode) {
+      where.push("device_code = ?");
+      params.push(deviceCode);
+    }
+    const totalRow = sql.get(
+      `
+        SELECT COUNT(*) AS count
+        FROM admin_hvac_terminal_samples
+        WHERE ${where.join(" AND ")}
+      `,
+      ...params
+    );
+    const items = sql
+      .all(
+        `
+          SELECT *
+          FROM admin_hvac_terminal_samples
+          WHERE ${where.join(" AND ")}
+          ORDER BY sampled_at DESC, created_at DESC, device_code ASC
+          LIMIT ?
+        `,
+        ...params,
+        limit
+      )
+      .map(mapHvacTerminalSampleRow)
+      .filter(Boolean);
+    return {
+      siteId: normalizedSiteId,
+      total: typeof totalRow?.count === "number" ? totalRow.count : 0,
+      items
+    };
+  }
+
+  function listHvacTerminalSampleTimeline(siteId, filters = {}) {
+    const limit = normalizeHvacTerminalSampleLimit(filters.limit);
+    const list = listHvacTerminalSamples(siteId, {
+      ...filters,
+      limit
+    });
+    const buckets = new Map();
+    for (const sample of list.items) {
+      const key = sample.sampledAt || "";
+      if (!key) {
+        continue;
+      }
+      if (!buckets.has(key)) {
+        buckets.set(key, []);
+      }
+      buckets.get(key).push(sample);
+    }
+    const items = Array.from(buckets.entries())
+      .map(([sampledAt, samples]) => {
+        const validComfortSamples = samples.filter(
+          (item) => item.qualityStatus === "ok" && typeof item.zoneTemperatureC === "number"
+        );
+        const averageZoneTemperatureC =
+          validComfortSamples.length > 0
+            ? Number(
+                (
+                  validComfortSamples.reduce((sum, item) => sum + item.zoneTemperatureC, 0) /
+                  validComfortSamples.length
+                ).toFixed(1)
+              )
+            : null;
+        return {
+          sampledAt,
+          total: samples.length,
+          runningCount: samples.filter((item) => item.running === true).length,
+          stoppedCount: samples.filter((item) => item.running === false).length,
+          communicationAlarmCount: samples.filter((item) => item.communicationAlarm === true).length,
+          invalidTemperatureCount: samples.filter((item) => item.qualityFlags.includes("invalid_temperature")).length,
+          zeroTemperatureCount: samples.filter((item) => item.qualityFlags.includes("zero_temperature")).length,
+          comfortEligibleCount: validComfortSamples.length,
+          averageZoneTemperatureC
+        };
+      })
+      .sort((left, right) => String(left.sampledAt).localeCompare(String(right.sampledAt)));
+    return {
+      siteId: list.siteId,
+      floor: normalizeNullableText(filters.floor),
+      totalSamples: list.total,
+      items
+    };
   }
 
   function createShadowVerificationRecord(siteId, record, actor = {}, options = {}) {
@@ -2592,6 +3967,1080 @@ export function createAdminStore(options) {
     });
   }
 
+  function listSubsystemRegistry() {
+    return sql
+      .all(
+        `
+          SELECT *
+          FROM admin_subsystem_registry
+          WHERE site_id = ?
+          ORDER BY sort_order ASC, subsystem_type ASC
+        `,
+        GLOBAL_REGISTRY_SITE_ID
+      )
+      .map(mapSubsystemRegistryRow)
+      .filter(Boolean);
+  }
+
+  function getSubsystemRegistryItem(subsystemType) {
+    const normalizedType = normalizeText(subsystemType);
+    if (!normalizedType) {
+      return null;
+    }
+    return mapSubsystemRegistryRow(
+      sql.get(
+        `
+          SELECT *
+          FROM admin_subsystem_registry
+          WHERE site_id = ? AND subsystem_type = ?
+          LIMIT 1
+        `,
+        GLOBAL_REGISTRY_SITE_ID,
+        normalizedType
+      )
+    );
+  }
+
+  function assertSubsystemType(subsystemType) {
+    const registryItem = getSubsystemRegistryItem(subsystemType);
+    if (!registryItem) {
+      throw badRequest(`Unknown subsystem type: ${normalizeText(subsystemType)}`, {
+        field: "subsystemType"
+      });
+    }
+    return registryItem;
+  }
+
+  function getSiteCapabilityRow(siteId, subsystemType) {
+    return sql.get(
+      `
+        SELECT
+          c.*,
+          r.display_name,
+          r.category,
+          r.description,
+          r.reserved
+        FROM admin_site_subsystem_capabilities c
+        JOIN admin_subsystem_registry r
+          ON r.site_id = ? AND r.subsystem_type = c.subsystem_type
+        WHERE c.site_id = ? AND c.subsystem_type = ?
+        LIMIT 1
+      `,
+      GLOBAL_REGISTRY_SITE_ID,
+      siteId,
+      subsystemType
+    );
+  }
+
+  function upsertSiteCapabilityRow(siteId, subsystemType, patch, actor) {
+    const registryItem = assertSubsystemType(subsystemType);
+    const existing = mapSiteSubsystemCapabilityRow(getSiteCapabilityRow(siteId, subsystemType));
+    const timestamp = nowIso();
+    const status = normalizeSubsystemStatus(
+      patch?.status,
+      existing?.status || registryItem.defaultStatus || "not_configured"
+    );
+    const mode = normalizeSubsystemMode(
+      patch?.mode,
+      registryItem.reserved ? "reserved" : existing?.mode || "monitoring"
+    );
+    const enabled = status === "enabled";
+    const kpis = enabled ? cloneJson(patch?.kpis ?? existing?.kpis ?? [], []) : [];
+    const alarmCount = enabled ? normalizeNonNegativeInteger(patch?.alarmCount ?? existing?.alarmCount) : 0;
+    const published =
+      patch?.published == null
+        ? existing?.published !== false
+        : normalizeBooleanFlag(patch.published, true);
+    const next = {
+      siteId,
+      subsystemType,
+      status,
+      mode,
+      kpis,
+      alarmCount,
+      freshnessStatus: enabled
+        ? normalizeNullableText(patch?.freshnessStatus) || existing?.freshnessStatus || "unknown"
+        : "not_configured",
+      sourceStatus: enabled
+        ? normalizeNullableText(patch?.sourceStatus) || existing?.sourceStatus || "unknown"
+        : "not_configured",
+      pointMappingProgress: normalizeProgress(
+        patch?.pointMappingProgress,
+        existing?.pointMappingProgress || 0
+      ),
+      advisorPluginStatus: enabled
+        ? normalizeNullableText(patch?.advisorPluginStatus) || existing?.advisorPluginStatus || "not_configured"
+        : "not_configured",
+      pageTemplateStatus: normalizeNullableText(patch?.pageTemplateStatus) || existing?.pageTemplateStatus || "not_configured",
+      notes: normalizeNullableText(patch?.notes) ?? existing?.notes ?? null,
+      published
+    };
+
+    if (existing?.createdAt) {
+      sql.run(
+        `
+          UPDATE admin_site_subsystem_capabilities
+          SET
+            status = ?,
+            mode = ?,
+            kpis_json = ?,
+            alarm_count = ?,
+            freshness_status = ?,
+            source_status = ?,
+            point_mapping_progress = ?,
+            advisor_plugin_status = ?,
+            page_template_status = ?,
+            notes = ?,
+            published = ?,
+            updated_at = ?,
+            updated_by = ?
+          WHERE site_id = ? AND subsystem_type = ?
+        `,
+        next.status,
+        next.mode,
+        toJsonText(next.kpis, []),
+        next.alarmCount,
+        next.freshnessStatus,
+        next.sourceStatus,
+        next.pointMappingProgress,
+        next.advisorPluginStatus,
+        next.pageTemplateStatus,
+        next.notes,
+        next.published ? 1 : 0,
+        timestamp,
+        normalizeNullableText(actor?.userId),
+        siteId,
+        subsystemType
+      );
+    } else {
+      sql.run(
+        `
+          INSERT INTO admin_site_subsystem_capabilities (
+            site_id,
+            subsystem_type,
+            status,
+            mode,
+            kpis_json,
+            alarm_count,
+            freshness_status,
+            source_status,
+            point_mapping_progress,
+            advisor_plugin_status,
+            page_template_status,
+            notes,
+            published,
+            created_at,
+            updated_at,
+            created_by,
+            updated_by
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        siteId,
+        subsystemType,
+        next.status,
+        next.mode,
+        toJsonText(next.kpis, []),
+        next.alarmCount,
+        next.freshnessStatus,
+        next.sourceStatus,
+        next.pointMappingProgress,
+        next.advisorPluginStatus,
+        next.pageTemplateStatus,
+        next.notes,
+        next.published ? 1 : 0,
+        timestamp,
+        timestamp,
+        normalizeNullableText(actor?.userId),
+        normalizeNullableText(actor?.userId)
+      );
+    }
+    return mapSiteSubsystemCapabilityRow(getSiteCapabilityRow(siteId, subsystemType));
+  }
+
+  function getControlBoundary(siteId, subsystemType) {
+    return mapControlBoundaryRow(
+      sql.get(
+        `
+          SELECT *
+          FROM admin_control_boundaries
+          WHERE site_id = ? AND subsystem_type = ?
+          LIMIT 1
+        `,
+        siteId,
+        subsystemType
+      )
+    );
+  }
+
+  function upsertControlBoundary(siteId, subsystemType, patch = {}, actor = {}) {
+    const existing = getControlBoundary(siteId, subsystemType);
+    const timestamp = nowIso();
+    const next = {
+      mode: normalizeControlBoundaryMode(patch.mode, existing?.mode || "read_only"),
+      approvalRequired: normalizeBooleanFlag(patch.approvalRequired, existing?.approvalRequired ?? true),
+      plcProtectionRequired: normalizeBooleanFlag(
+        patch.plcProtectionRequired,
+        existing?.plcProtectionRequired ?? true
+      ),
+      rollbackRequired: normalizeBooleanFlag(patch.rollbackRequired, existing?.rollbackRequired ?? true),
+      writeEnabled: normalizeBooleanFlag(patch.writeEnabled, existing?.writeEnabled ?? false),
+      notes: normalizeNullableText(patch.notes) ?? existing?.notes ?? null
+    };
+    if (existing?.createdAt) {
+      sql.run(
+        `
+          UPDATE admin_control_boundaries
+          SET
+            mode = ?,
+            approval_required = ?,
+            plc_protection_required = ?,
+            rollback_required = ?,
+            write_enabled = ?,
+            notes = ?,
+            updated_at = ?,
+            updated_by = ?
+          WHERE site_id = ? AND subsystem_type = ?
+        `,
+        next.mode,
+        next.approvalRequired ? 1 : 0,
+        next.plcProtectionRequired ? 1 : 0,
+        next.rollbackRequired ? 1 : 0,
+        next.writeEnabled ? 1 : 0,
+        next.notes,
+        timestamp,
+        normalizeNullableText(actor?.userId),
+        siteId,
+        subsystemType
+      );
+    } else {
+      sql.run(
+        `
+          INSERT INTO admin_control_boundaries (
+            site_id,
+            subsystem_type,
+            mode,
+            approval_required,
+            plc_protection_required,
+            rollback_required,
+            write_enabled,
+            notes,
+            created_at,
+            updated_at,
+            created_by,
+            updated_by
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        siteId,
+        subsystemType,
+        next.mode,
+        next.approvalRequired ? 1 : 0,
+        next.plcProtectionRequired ? 1 : 0,
+        next.rollbackRequired ? 1 : 0,
+        next.writeEnabled ? 1 : 0,
+        next.notes,
+        timestamp,
+        timestamp,
+        normalizeNullableText(actor?.userId),
+        normalizeNullableText(actor?.userId)
+      );
+    }
+    return getControlBoundary(siteId, subsystemType);
+  }
+
+  function listAdvisorPluginBindings(siteId, subsystemType = "") {
+    const where = ["site_id = ?"];
+    const params = [siteId];
+    const normalizedType = normalizeText(subsystemType);
+    if (normalizedType) {
+      where.push("subsystem_type = ?");
+      params.push(normalizedType);
+    }
+    return sql
+      .all(
+        `
+          SELECT *
+          FROM admin_advisor_plugin_bindings
+          WHERE ${where.join(" AND ")}
+          ORDER BY subsystem_type ASC, plugin_key ASC
+        `,
+        ...params
+      )
+      .map(mapAdvisorPluginBindingRow)
+      .filter(Boolean);
+  }
+
+  function upsertAdvisorPluginBinding(siteId, subsystemType, patch = {}, actor = {}) {
+    const pluginKey = normalizeNullableText(patch.pluginKey) || `${subsystemType}_advisor`;
+    const existing = mapAdvisorPluginBindingRow(
+      sql.get(
+        `
+          SELECT *
+          FROM admin_advisor_plugin_bindings
+          WHERE site_id = ? AND subsystem_type = ? AND plugin_key = ?
+          LIMIT 1
+        `,
+        siteId,
+        subsystemType,
+        pluginKey
+      )
+    );
+    const timestamp = nowIso();
+    const next = {
+      pluginKey,
+      status: normalizeNullableText(patch.status) || existing?.status || "not_configured",
+      mode: normalizeSubsystemMode(patch.mode, existing?.mode || "monitoring"),
+      config: cloneJson(patch.config ?? existing?.config ?? {}, {})
+    };
+    if (existing?.createdAt) {
+      sql.run(
+        `
+          UPDATE admin_advisor_plugin_bindings
+          SET status = ?, mode = ?, config_json = ?, updated_at = ?, updated_by = ?
+          WHERE site_id = ? AND subsystem_type = ? AND plugin_key = ?
+        `,
+        next.status,
+        next.mode,
+        toJsonText(next.config, {}),
+        timestamp,
+        normalizeNullableText(actor?.userId),
+        siteId,
+        subsystemType,
+        pluginKey
+      );
+    } else {
+      sql.run(
+        `
+          INSERT INTO admin_advisor_plugin_bindings (
+            site_id,
+            subsystem_type,
+            plugin_key,
+            status,
+            mode,
+            config_json,
+            created_at,
+            updated_at,
+            created_by,
+            updated_by
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        siteId,
+        subsystemType,
+        pluginKey,
+        next.status,
+        next.mode,
+        toJsonText(next.config, {}),
+        timestamp,
+        timestamp,
+        normalizeNullableText(actor?.userId),
+        normalizeNullableText(actor?.userId)
+      );
+    }
+    return listAdvisorPluginBindings(siteId, subsystemType).find((item) => item.pluginKey === pluginKey) || null;
+  }
+
+  function ensureSiteSubsystemDefaults(siteId, actor = { userId: "system", username: "system" }) {
+    assertSiteExists(siteId);
+    const registry = listSubsystemRegistry();
+    for (const item of registry) {
+      if (!getSiteCapabilityRow(siteId, item.subsystemType)) {
+        upsertSiteCapabilityRow(
+          siteId,
+          item.subsystemType,
+          {
+            status: item.defaultStatus,
+            mode: item.reserved ? "reserved" : "monitoring",
+            published: true,
+            pageTemplateStatus: item.reserved ? "reserved" : "available",
+            notes: item.reserved ? "预留子系统，当前项目默认不适用。" : null
+          },
+          actor
+        );
+      }
+      if (!getControlBoundary(siteId, item.subsystemType)) {
+        upsertControlBoundary(
+          siteId,
+          item.subsystemType,
+          {
+            mode: "read_only",
+            approvalRequired: true,
+            plcProtectionRequired: true,
+            rollbackRequired: true,
+            notes: "第一版配置中心只读/影子运行，不启用 PLC 写控制。"
+          },
+          actor
+        );
+      }
+    }
+  }
+
+  function listPointRoleMappings(siteId, filters = {}) {
+    assertSiteExists(siteId);
+    const where = ["site_id = ?"];
+    const params = [siteId];
+    const subsystemType = normalizeText(filters.subsystemType);
+    if (subsystemType) {
+      where.push("subsystem_type = ?");
+      params.push(subsystemType);
+    }
+    return {
+      siteId,
+      items: sql
+        .all(
+          `
+            SELECT *
+            FROM admin_point_role_mappings
+            WHERE ${where.join(" AND ")}
+            ORDER BY subsystem_type ASC, point_role ASC, point_name ASC, mapping_id ASC
+          `,
+          ...params
+        )
+        .map(mapPointRoleMappingRow)
+        .filter(Boolean)
+    };
+  }
+
+  function computePointMappingProgress(siteId, registryItem) {
+    const requiredRoles = Array.from(
+      new Set(
+        (Array.isArray(registryItem.pointRoles) ? registryItem.pointRoles : [])
+          .filter((item) => item?.required !== false)
+          .map((item) => item.role)
+          .filter(Boolean)
+      )
+    );
+    if (!requiredRoles.length) {
+      return 0;
+    }
+    const mappings = listPointRoleMappings(siteId, {
+      subsystemType: registryItem.subsystemType
+    }).items;
+    const mappedRoles = new Set(mappings.map((item) => item.pointRole));
+    const mappedRequired = requiredRoles.filter((role) => mappedRoles.has(role)).length;
+    return normalizeProgress((mappedRequired / requiredRoles.length) * 100);
+  }
+
+  function listSiteSubsystems(siteId, options = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    if (!normalizedSiteId) {
+      throw badRequest("siteId is required", { field: "siteId" });
+    }
+    ensureSiteSubsystemDefaults(normalizedSiteId);
+    const where = ["c.site_id = ?"];
+    const params = [GLOBAL_REGISTRY_SITE_ID, normalizedSiteId];
+    if (options.publishedOnly === true) {
+      where.push("c.published = 1");
+    }
+    const rows = sql
+      .all(
+        `
+          SELECT
+            c.*,
+            r.display_name,
+            r.category,
+            r.description,
+            r.reserved,
+            r.sort_order
+          FROM admin_site_subsystem_capabilities c
+          JOIN admin_subsystem_registry r
+            ON r.site_id = ? AND r.subsystem_type = c.subsystem_type
+          WHERE ${where.join(" AND ")}
+          ORDER BY r.sort_order ASC, c.subsystem_type ASC
+        `,
+        ...params
+      )
+      .map(mapSiteSubsystemCapabilityRow)
+      .filter(Boolean);
+    const registryByType = new Map(listSubsystemRegistry().map((item) => [item.subsystemType, item]));
+    const advisorBindings = listAdvisorPluginBindings(normalizedSiteId);
+    const items = rows.map((item) => {
+      const registryItem = registryByType.get(item.subsystemType) || {
+        pointRoles: []
+      };
+      const computedProgress = computePointMappingProgress(normalizedSiteId, registryItem);
+      return {
+        ...item,
+        pointMappingProgress: computedProgress,
+        requiredPointRoles: registryItem.pointRoles || [],
+        advisorBindings: item.enabled
+          ? advisorBindings.filter((binding) => binding.subsystemType === item.subsystemType)
+          : [],
+        controlBoundary: getControlBoundary(normalizedSiteId, item.subsystemType)
+      };
+    });
+    return {
+      siteId: normalizedSiteId,
+      generatedAt: nowIso(),
+      items,
+      total: items.length
+    };
+  }
+
+  function getSiteCapabilities(siteId, options = {}) {
+    const subsystems = listSiteSubsystems(siteId, {
+      publishedOnly: options.publishedOnly === true
+    });
+    return {
+      siteId: subsystems.siteId,
+      generatedAt: subsystems.generatedAt,
+      items: subsystems.items.map((item) => ({
+        ...item,
+        kpis: item.enabled ? item.kpis : [],
+        alarmCount: item.enabled ? item.alarmCount : null,
+        advisorBindings: item.enabled ? item.advisorBindings : []
+      })),
+      total: subsystems.total
+    };
+  }
+
+  function upsertSiteSubsystems(siteId, payload, actor = {}, options = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    assertSiteExists(normalizedSiteId);
+    const items = Array.isArray(payload) ? payload : Array.isArray(payload?.items) ? payload.items : [];
+    if (!items.length) {
+      throw badRequest("subsystems payload requires items", { field: "items" });
+    }
+    const before = listSiteSubsystems(normalizedSiteId);
+    return withTransaction(db, () => {
+      for (const item of items) {
+        const subsystemType = normalizeText(item?.subsystemType);
+        if (!subsystemType) {
+          throw badRequest("subsystemType is required", { field: "subsystemType" });
+        }
+        upsertSiteCapabilityRow(normalizedSiteId, subsystemType, item, actor);
+        if (item?.controlBoundary && typeof item.controlBoundary === "object") {
+          upsertControlBoundary(normalizedSiteId, subsystemType, item.controlBoundary, actor);
+        }
+        if (item?.advisorBinding && typeof item.advisorBinding === "object") {
+          upsertAdvisorPluginBinding(normalizedSiteId, subsystemType, item.advisorBinding, actor);
+        }
+        if (Array.isArray(item?.advisorBindings)) {
+          item.advisorBindings.forEach((binding) => {
+            if (binding && typeof binding === "object") {
+              upsertAdvisorPluginBinding(normalizedSiteId, subsystemType, binding, actor);
+            }
+          });
+        }
+      }
+      const after = listSiteSubsystems(normalizedSiteId);
+      recordAudit({
+        actorUserId: actor?.userId,
+        actorUsername: actor?.username,
+        action: "site.subsystems.update",
+        targetType: "site_subsystem_capability",
+        targetId: normalizedSiteId,
+        scopeType: "site",
+        scopeId: normalizedSiteId,
+        beforeJson: toJsonText(before),
+        afterJson: toJsonText(after),
+        requestId: options.requestId
+      });
+      return after;
+    });
+  }
+
+  function normalizePointMappingInput(siteId, source, actor = {}) {
+    const subsystemType = normalizeText(source?.subsystemType);
+    if (!subsystemType) {
+      throw badRequest("subsystemType is required", { field: "subsystemType" });
+    }
+    assertSubsystemType(subsystemType);
+    return {
+      siteId,
+      subsystemType,
+      pointRole: normalizePointRoleKind(source?.pointRole || source?.role),
+      pointName: normalizeText(source?.pointName || source?.name || source?.label),
+      pointCode: normalizeNullableText(source?.pointCode || source?.code || source?.tag),
+      unit: normalizeNullableText(source?.unit) || "",
+      dataType: normalizeNullableText(source?.dataType || source?.type) || "",
+      direction: "read",
+      required: normalizeBooleanFlag(source?.required, false),
+      writable: false,
+      source: normalizeNullableText(source?.source) || "manual",
+      notes: normalizeNullableText(source?.notes || source?.note),
+      actorUserId: normalizeNullableText(actor?.userId)
+    };
+  }
+
+  function upsertPointRoleMappings(siteId, payload, actor = {}, options = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    assertSiteExists(normalizedSiteId);
+    const subsystemType = normalizeText(payload?.subsystemType);
+    if (subsystemType) {
+      assertSubsystemType(subsystemType);
+    }
+    const items = Array.isArray(payload) ? payload : Array.isArray(payload?.items) ? payload.items : [];
+    const before = listPointRoleMappings(normalizedSiteId, {
+      subsystemType
+    });
+    return withTransaction(db, () => {
+      if (subsystemType) {
+        sql.run(
+          `DELETE FROM admin_point_role_mappings WHERE site_id = ? AND subsystem_type = ?`,
+          normalizedSiteId,
+          subsystemType
+        );
+      } else {
+        sql.run(`DELETE FROM admin_point_role_mappings WHERE site_id = ?`, normalizedSiteId);
+      }
+      const timestamp = nowIso();
+      for (const rawItem of items) {
+        const normalized = normalizePointMappingInput(
+          normalizedSiteId,
+          {
+            ...rawItem,
+            subsystemType: subsystemType || rawItem?.subsystemType
+          },
+          actor
+        );
+        if (!normalized.pointName && !normalized.pointCode) {
+          continue;
+        }
+        sql.run(
+          `
+            INSERT INTO admin_point_role_mappings (
+              site_id,
+              subsystem_type,
+              point_role,
+              point_name,
+              point_code,
+              unit,
+              data_type,
+              direction,
+              required,
+              writable,
+              source,
+              notes,
+              created_at,
+              updated_at,
+              created_by,
+              updated_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)
+          `,
+          normalized.siteId,
+          normalized.subsystemType,
+          normalized.pointRole,
+          normalized.pointName || normalized.pointCode || "",
+          normalized.pointCode,
+          normalized.unit,
+          normalized.dataType,
+          normalized.direction,
+          normalized.required ? 1 : 0,
+          normalized.source,
+          normalized.notes,
+          timestamp,
+          timestamp,
+          normalized.actorUserId,
+          normalized.actorUserId
+        );
+      }
+      const after = listPointRoleMappings(normalizedSiteId, {
+        subsystemType
+      });
+      recordAudit({
+        actorUserId: actor?.userId,
+        actorUsername: actor?.username,
+        action: "site.point-role-mappings.update",
+        targetType: "point_role_mapping",
+        targetId: subsystemType ? `${normalizedSiteId}:${subsystemType}` : normalizedSiteId,
+        scopeType: "site",
+        scopeId: normalizedSiteId,
+        beforeJson: toJsonText(before),
+        afterJson: toJsonText(after),
+        requestId: options.requestId
+      });
+      return after;
+    });
+  }
+
+  function inferPointRoleFromText(value) {
+    const text = normalizeText(value).toLowerCase();
+    if (!text) {
+      return {
+        pointRole: "feedback",
+        confidence: 0.2,
+        reason: "字段为空，默认按反馈点预览。"
+      };
+    }
+    const matchers = [
+      { role: "command", words: ["cmd", "command", "命令", "指令", "写", "下发", "控制命令", "启停命令"] },
+      { role: "alarm", words: ["alarm", "fault", "告警", "报警", "故障"] },
+      { role: "status", words: ["status", "state", "run", "running", "运行", "状态", "启停状态", "加载", "卸载", "load", "unload", "开机", "停机", "ready"] },
+      { role: "feedback", words: ["specific", "单耗", "比功率", "能效", "泄漏率", "kwh/nm3", "kwh/nm³", "kwh", "用电", "电量", "累计", "feedback", "反馈", "开度", "频率"] },
+      { role: "temperature", words: ["temp", "temperature", "温度", "露点", "dew", "供水", "回水", "送风", "回风"] },
+      { role: "pressure", words: ["pressure", "press", "压力", "压差", "气压", "bar", "mpa"] },
+      { role: "flow", words: ["flow", "流量", "m3", "nm3", "瞬时流"] },
+      { role: "power", words: ["kw", "kwh", "power", "功率", "电量", "有功", "需量", "电能"] },
+      { role: "setpoint", words: ["set", "sp", "设定", "目标", "给定"] },
+      { role: "feedback", words: ["fb"] }
+    ];
+    for (const matcher of matchers) {
+      if (matcher.words.some((word) => text.includes(word))) {
+        return {
+          pointRole: matcher.role,
+          confidence: matcher.role === "command" ? 0.62 : 0.78,
+          reason: `命中 ${matcher.words.find((word) => text.includes(word))} 关键词。`
+        };
+      }
+    }
+    return {
+      pointRole: "feedback",
+      confidence: 0.35,
+      reason: "未命中强规则，按反馈点预览。"
+    };
+  }
+
+  function parsePointRoleImportRows(payload) {
+    if (Array.isArray(payload?.rows)) {
+      return payload.rows.map((row) => (row && typeof row === "object" ? row : {}));
+    }
+    const text = normalizeText(payload?.text || payload?.rawText || payload);
+    if (!text) {
+      return [];
+    }
+    const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+    if (!lines.length) {
+      return [];
+    }
+    const delimiter = lines[0].includes("\t") ? "\t" : ",";
+    const firstCells = lines[0].split(delimiter).map((cell) => cell.trim());
+    const hasHeader = firstCells.some((cell) => /name|point|code|tag|unit|subsystem|名称|点位|编码|单位|子系统/i.test(cell));
+    const headers = hasHeader
+      ? firstCells
+      : ["pointName", "pointCode", "unit", "subsystemType"];
+    const dataLines = hasHeader ? lines.slice(1) : lines;
+    return dataLines.map((line) => {
+      const cells = line.split(delimiter).map((cell) => cell.trim());
+      const record = {};
+      headers.forEach((header, index) => {
+        record[header] = cells[index] || "";
+      });
+      return record;
+    });
+  }
+
+  function pickImportField(row, candidates) {
+    for (const key of candidates) {
+      if (row[key] !== undefined && row[key] !== null && String(row[key]).trim()) {
+        return String(row[key]).trim();
+      }
+    }
+    return "";
+  }
+
+  function previewPointRoleMappingImport(siteId, payload = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    assertSiteExists(normalizedSiteId);
+    const fallbackSubsystemType = normalizeText(payload?.subsystemType) || "chilled_plant";
+    const rows = parsePointRoleImportRows(payload);
+    const items = rows.map((row, index) => {
+      const subsystemType =
+        normalizeText(
+          pickImportField(row, ["subsystemType", "subsystem", "子系统", "系统", "system"])
+        ) || fallbackSubsystemType;
+      const pointName = pickImportField(row, ["pointName", "name", "label", "点位名称", "名称", "变量名"]);
+      const pointCode = pickImportField(row, ["pointCode", "code", "tag", "点位编码", "编码", "变量编码"]);
+      const unit = pickImportField(row, ["unit", "单位"]);
+      const roleText = pickImportField(row, ["pointRole", "role", "点位角色", "角色"]) || `${pointName} ${pointCode}`;
+      const inferred = inferPointRoleFromText(roleText);
+      const writableCandidate = /cmd|command|命令|指令|控制|写/.test(`${pointName} ${pointCode}`.toLowerCase());
+      return {
+        rowNumber: index + 1,
+        subsystemType,
+        pointRole: inferred.pointRole,
+        pointName,
+        pointCode,
+        unit,
+        dataType: pickImportField(row, ["dataType", "type", "类型"]),
+        direction: "read",
+        required: inferred.confidence >= 0.7,
+        writable: false,
+        source: "import_preview",
+        confidence: inferred.confidence,
+        reason: inferred.reason,
+        warnings: [
+          !getSubsystemRegistryItem(subsystemType) ? `未知子系统 ${subsystemType}` : "",
+          !pointName && !pointCode ? "缺少点位名称或编码" : "",
+          writableCandidate ? "疑似写点/命令点，第一版只允许预览，不会启用写控制。" : ""
+        ].filter(Boolean)
+      };
+    });
+    const acceptedCount = items.filter((item) => item.warnings.length === 0).length;
+    const writableCandidates = items.filter((item) => item.warnings.some((warning) => warning.includes("写点"))).length;
+    return {
+      siteId: normalizedSiteId,
+      generatedAt: nowIso(),
+      totalRows: items.length,
+      acceptedRows: acceptedCount,
+      writableCandidates,
+      items,
+      summary: {
+        message: "导入预览不会写入真实控制点；请确认角色映射后再手动保存。",
+        blocked: false
+      }
+    };
+  }
+
+  function createSiteConfigSnapshot(siteId) {
+    return {
+      siteId,
+      capturedAt: nowIso(),
+      subsystems: listSiteSubsystems(siteId),
+      pointRoleMappings: listPointRoleMappings(siteId),
+      advisorPluginBindings: listAdvisorPluginBindings(siteId)
+    };
+  }
+
+  function getConfigVersion(siteId, versionId) {
+    const normalizedSiteId = normalizeText(siteId);
+    const normalizedVersionId = normalizeText(versionId);
+    if (!normalizedSiteId || !normalizedVersionId) {
+      return null;
+    }
+    return mapConfigVersionRow(
+      sql.get(
+        `
+          SELECT *
+          FROM admin_config_versions
+          WHERE site_id = ? AND version_id = ?
+          LIMIT 1
+        `,
+        normalizedSiteId,
+        normalizedVersionId
+      )
+    );
+  }
+
+  function listConfigVersions(siteId, options = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    assertSiteExists(normalizedSiteId);
+    const limit = Math.min(Math.max(Number(options.limit) || 20, 1), 100);
+    const items = sql
+      .all(
+        `
+          SELECT *
+          FROM admin_config_versions
+          WHERE site_id = ?
+          ORDER BY updated_at DESC, created_at DESC, version_id DESC
+          LIMIT ?
+        `,
+        normalizedSiteId,
+        limit
+      )
+      .map((row) => {
+        const mapped = mapConfigVersionRow(row);
+        if (!mapped) {
+          return null;
+        }
+        return {
+          ...mapped,
+          payload: undefined
+        };
+      })
+      .filter(Boolean);
+    return {
+      siteId: normalizedSiteId,
+      generatedAt: nowIso(),
+      items
+    };
+  }
+
+  function publishConfigVersion(siteId, versionId, actor = {}, options = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    const normalizedVersionId = normalizeText(versionId);
+    if (!normalizedVersionId) {
+      throw badRequest("versionId is required", { field: "versionId" });
+    }
+    assertSiteExists(normalizedSiteId);
+    const before = getConfigVersion(normalizedSiteId, normalizedVersionId);
+    const snapshot = createSiteConfigSnapshot(normalizedSiteId);
+    const timestamp = nowIso();
+    return withTransaction(db, () => {
+      if (before) {
+        sql.run(
+          `
+            UPDATE admin_config_versions
+            SET status = 'published',
+                summary = ?,
+                payload_json = ?,
+                updated_at = ?,
+                updated_by = ?,
+                published_at = ?,
+                rolled_back_at = NULL
+            WHERE site_id = ? AND version_id = ?
+          `,
+          normalizeNullableText(options.summary) || `发布配置 ${normalizedVersionId}`,
+          toJsonText(snapshot, {}),
+          timestamp,
+          normalizeNullableText(actor?.userId),
+          timestamp,
+          normalizedSiteId,
+          normalizedVersionId
+        );
+      } else {
+        sql.run(
+          `
+            INSERT INTO admin_config_versions (
+              version_id,
+              site_id,
+              status,
+              summary,
+              payload_json,
+              created_at,
+              updated_at,
+              created_by,
+              updated_by,
+              published_at
+            ) VALUES (?, ?, 'published', ?, ?, ?, ?, ?, ?, ?)
+          `,
+          normalizedVersionId,
+          normalizedSiteId,
+          normalizeNullableText(options.summary) || `发布配置 ${normalizedVersionId}`,
+          toJsonText(snapshot, {}),
+          timestamp,
+          timestamp,
+          normalizeNullableText(actor?.userId),
+          normalizeNullableText(actor?.userId),
+          timestamp
+        );
+      }
+      sql.run(
+        `
+          UPDATE admin_site_subsystem_capabilities
+          SET published = 1, updated_at = ?, updated_by = ?
+          WHERE site_id = ?
+        `,
+        timestamp,
+        normalizeNullableText(actor?.userId),
+        normalizedSiteId
+      );
+      const after = getConfigVersion(normalizedSiteId, normalizedVersionId);
+      recordAudit({
+        actorUserId: actor?.userId,
+        actorUsername: actor?.username,
+        action: "site.config-version.publish",
+        targetType: "config_version",
+        targetId: normalizedVersionId,
+        scopeType: "site",
+        scopeId: normalizedSiteId,
+        beforeJson: toJsonText(before),
+        afterJson: toJsonText(after),
+        requestId: options.requestId
+      });
+      return after;
+    });
+  }
+
+  function restorePointMappingsFromSnapshot(siteId, snapshot, actor = {}) {
+    const timestamp = nowIso();
+    const mappings = Array.isArray(snapshot?.pointRoleMappings?.items)
+      ? snapshot.pointRoleMappings.items
+      : [];
+    sql.run(`DELETE FROM admin_point_role_mappings WHERE site_id = ?`, siteId);
+    for (const item of mappings) {
+      const normalized = normalizePointMappingInput(siteId, item, actor);
+      sql.run(
+        `
+          INSERT INTO admin_point_role_mappings (
+            site_id,
+            subsystem_type,
+            point_role,
+            point_name,
+            point_code,
+            unit,
+            data_type,
+            direction,
+            required,
+            writable,
+            source,
+            notes,
+            created_at,
+            updated_at,
+            created_by,
+            updated_by
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 'read', ?, 0, ?, ?, ?, ?, ?, ?)
+        `,
+        normalized.siteId,
+        normalized.subsystemType,
+        normalized.pointRole,
+        normalized.pointName || normalized.pointCode || "",
+        normalized.pointCode,
+        normalized.unit,
+        normalized.dataType,
+        normalized.required ? 1 : 0,
+        normalized.source || "rollback",
+        normalized.notes,
+        timestamp,
+        timestamp,
+        normalizeNullableText(actor?.userId),
+        normalizeNullableText(actor?.userId)
+      );
+    }
+  }
+
+  function rollbackConfigVersion(siteId, versionId, actor = {}, options = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    const normalizedVersionId = normalizeText(versionId);
+    const version = getConfigVersion(normalizedSiteId, normalizedVersionId);
+    if (!version) {
+      throw notFound(`Config version not found: ${normalizedVersionId}`, {
+        siteId: normalizedSiteId,
+        versionId: normalizedVersionId
+      });
+    }
+    const before = createSiteConfigSnapshot(normalizedSiteId);
+    const snapshot = version.payload || {};
+    const timestamp = nowIso();
+    return withTransaction(db, () => {
+      const subsystemItems = Array.isArray(snapshot?.subsystems?.items)
+        ? snapshot.subsystems.items
+        : [];
+      for (const item of subsystemItems) {
+        upsertSiteCapabilityRow(normalizedSiteId, item.subsystemType, item, actor);
+        if (item.controlBoundary) {
+          upsertControlBoundary(normalizedSiteId, item.subsystemType, item.controlBoundary, actor);
+        }
+        if (Array.isArray(item.advisorBindings)) {
+          item.advisorBindings.forEach((binding) => {
+            upsertAdvisorPluginBinding(normalizedSiteId, item.subsystemType, binding, actor);
+          });
+        }
+      }
+      restorePointMappingsFromSnapshot(normalizedSiteId, snapshot, actor);
+      sql.run(
+        `
+          UPDATE admin_config_versions
+          SET status = 'rolled_back',
+              updated_at = ?,
+              updated_by = ?,
+              rolled_back_at = ?
+          WHERE site_id = ? AND version_id = ?
+        `,
+        timestamp,
+        normalizeNullableText(actor?.userId),
+        timestamp,
+        normalizedSiteId,
+        normalizedVersionId
+      );
+      const after = createSiteConfigSnapshot(normalizedSiteId);
+      recordAudit({
+        actorUserId: actor?.userId,
+        actorUsername: actor?.username,
+        action: "site.config-version.rollback",
+        targetType: "config_version",
+        targetId: normalizedVersionId,
+        scopeType: "site",
+        scopeId: normalizedSiteId,
+        beforeJson: toJsonText(before),
+        afterJson: toJsonText(after),
+        requestId: options.requestId
+      });
+      return {
+        version: getConfigVersion(normalizedSiteId, normalizedVersionId),
+        restored: after
+      };
+    });
+  }
+
   function listAuditLogs(filters = {}, access = {}) {
     const where = [];
     const params = [];
@@ -2711,6 +5160,17 @@ export function createAdminStore(options) {
     getChillerStagingSample,
     listChillerStagingSamples,
     getLatestChillerStagingSample,
+    appendHvacTerminalSnapshotSamples,
+    getLatestHvacTerminalSample,
+    listHvacTerminalSamples,
+    listHvacTerminalSampleTimeline,
+    getFcuControlPolicy,
+    upsertFcuControlPolicy,
+    createFcuControlRecord,
+    getFcuControlRecord,
+    listFcuControlRecords,
+    rollbackFcuControlRecord,
+    verifyFcuControlRecordFeedback,
     createShadowVerificationRecord,
     getShadowVerificationRecord,
     listShadowVerificationRecords,
@@ -2718,6 +5178,16 @@ export function createAdminStore(options) {
     rollbackOptimizeExecution,
     dispatchOptimizeExecution,
     getOptimizeExecutionOverview,
+    listSubsystemRegistry,
+    listSiteSubsystems,
+    getSiteCapabilities,
+    upsertSiteSubsystems,
+    listPointRoleMappings,
+    upsertPointRoleMappings,
+    previewPointRoleMappingImport,
+    listConfigVersions,
+    publishConfigVersion,
+    rollbackConfigVersion,
     listAuditLogs
   };
 }

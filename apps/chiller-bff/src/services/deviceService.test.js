@@ -3,10 +3,20 @@ import assert from "node:assert/strict";
 
 import {
   buildRuntimePointSummary,
+  getFanCoilTerminalSnapshot,
   resolveDeviceProjectKey,
   resolveDeviceQueryDefaults,
   resolveDeviceRealtimeInterface
 } from "./deviceService.js";
+
+function createJsonResponse(payload, status = 200) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      "content-type": "application/json"
+    }
+  });
+}
 
 function runtimeRow({ drcode, drname, drtypename = "", regs = [] }) {
   return {
@@ -144,6 +154,119 @@ test("resolveDeviceRealtimeInterface returns configured project data interface",
   const result = resolveDeviceRealtimeInterface(config);
 
   assert.equal(result?.endpointKind, "legacy-reg-findAllByDrTypeId");
+});
+
+test("getFanCoilTerminalSnapshot maps 10F fan coil runtime and keeps write points disabled", async () => {
+  const requests = [];
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    requests.push(url);
+
+    if (url.endsWith("/zsqy/drinfo/126lnoffice/findObject?pageCurrent=1&pageSize=200")) {
+      return createJsonResponse({
+        data: [
+          {
+            drid: "19",
+            drname: "办公室01",
+            drtypename: "风机盘管",
+            drcode: "BGS01"
+          },
+          {
+            drid: "20",
+            drname: "办公室02",
+            drtypename: "风机盘管",
+            drcode: "BGS02"
+          }
+        ]
+      });
+    }
+
+    if (url.endsWith("/zsqy/reg/126lnoffice/findAllByDrTypeId?build=1&floor=1")) {
+      return createJsonResponse({
+        status: "20000",
+        msg: "OK",
+        data: [
+          {
+            drid: "19",
+            drname: "办公室01",
+            drtypename: "风机盘管",
+            drcode: "BGS01",
+            reglist: {
+              reglist: [
+                { regName: "运行", tagName: "BGS01-502-40069", tagValue: "1", regReadWrite: "1", tagTime: "5" },
+                { regName: "通讯报警", tagName: "BGS01-502-40070", tagValue: "0", tagAlarmState: "0", regReadWrite: "1", tagTime: "5" },
+                { regName: "内置温度", tagName: "BGS01-506-40187", tagValue: "26.0", regUnits: "℃", regReadWrite: "1", tagTime: "5" },
+                { regName: "阀门状态", tagName: "BGS01-506-40189", tagValue: "1.0", regReadWrite: "1", tagTime: "5" },
+                { regName: "设置温度反馈", tagName: "BGS01-506-40191", tagValue: "24.0", regUnits: "℃", regReadWrite: "1", tagTime: "5" },
+                { regName: "设置温度", tagName: "BGS01-508-40133", tagValue: "20.0", regUnits: "℃", regReadWrite: "2", tagTime: "5" }
+              ]
+            }
+          },
+          {
+            drid: "20",
+            drname: "办公室02",
+            drtypename: "风机盘管",
+            drcode: "BGS02",
+            reglist: {
+              reglist: [
+                { regName: "运行", tagName: "BGS02-502-40073", tagValue: "0", regReadWrite: "1", tagTime: "5" },
+                { regName: "通讯报警", tagName: "BGS02-502-40074", tagValue: "1", tagAlarmState: "1", regReadWrite: "1", tagTime: "5" },
+                { regName: "内置温度", tagName: "BGS02-506-40203", tagValue: "27.0", regUnits: "℃", regReadWrite: "1", tagTime: "5" },
+                { regName: "阀门状态", tagName: "BGS02-506-40205", tagValue: "0.0", regReadWrite: "1", tagTime: "5" },
+                { regName: "设置温度", tagName: "BGS02-508-40149", tagValue: "20.0", regUnits: "℃", regReadWrite: "2", tagTime: "5" }
+              ]
+            }
+          }
+        ]
+      });
+    }
+
+    throw new Error(`Unexpected request: ${url}`);
+  };
+
+  try {
+    const result = await getFanCoilTerminalSnapshot({
+      legacyBaseUrl: "https://www.ssge.com.cn:8098",
+      staleThresholdHours: 1,
+      siteSourceConfig: {
+        deviceDataProjectKey: "126lnoffice",
+        databaseKey: "126lnoffice"
+      }
+    }, "126lnoffice", {
+      build: "1",
+      floor: "1"
+    });
+
+    assert.equal(result.subsystemType, "hvac_terminal");
+    assert.equal(result.equipmentType, "fan_coil");
+    assert.equal(result.floorName, "10楼");
+    assert.equal(result.summary.total, 2);
+    assert.equal(result.summary.runningCount, 1);
+    assert.equal(result.summary.communicationAlarmCount, 1);
+    assert.equal(result.summary.comfortEligibleCount, 1);
+    assert.equal(result.summary.excludedFromComfortStatsCount, 1);
+    assert.equal(result.summary.averageZoneTemperatureC, 26);
+    assert.equal(result.summary.averageValveOpenPct, 50);
+    assert.equal(result.summary.qualityStatus, "attention");
+    assert.equal(result.items[0].deviceCode, "BGS01");
+    assert.equal(result.items[0].zoneTemperatureC, 26);
+    assert.equal(result.items[0].quality.status, "ok");
+    assert.equal(result.items[1].quality.status, "invalid");
+    assert.deepEqual(result.items[1].quality.flags, ["communication_alarm", "stopped"]);
+    assert.equal(result.items[0].points.setpoint.writable, true);
+    assert.equal(result.items[0].points.setpoint.writeAllowed, false);
+    assert.equal(result.items[0].rawTagTime, "5");
+    assert.equal(result.timestampBasis, "bff_fetch_time");
+    assert.equal(result.sourceStatus.overall, "ok");
+    assert.deepEqual(requests, [
+      "https://www.ssge.com.cn:8098/zsqy/drinfo/126lnoffice/findObject?pageCurrent=1&pageSize=200",
+      "https://www.ssge.com.cn:8098/zsqy/reg/126lnoffice/findAllByDrTypeId?build=1&floor=1"
+    ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("buildRuntimePointSummary applies 140/B25 point dictionary before generic keyword matching", () => {

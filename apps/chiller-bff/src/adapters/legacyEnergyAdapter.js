@@ -1133,7 +1133,8 @@ export async function loadEnergyOverview(baseUrl, siteId, requestContext = {}) {
   const latestTimestamp =
     parsedLatestTimestamp ||
     homeSnapshot?.latestTimestamp ||
-    (rows.length > 0 ? new Date().toISOString() : null);
+    null;
+  const timestampMissing = rows.length > 0 && !latestTimestamp;
   const fallbackSummary = fallbackStatuses
     .map((status) => `${status.key}:${status.ok ? `rows=${status.rows ?? 0}` : "failed"}`)
     .join(",");
@@ -1149,8 +1150,8 @@ export async function loadEnergyOverview(baseUrl, siteId, requestContext = {}) {
       status: result.status ?? null,
       message:
         missingCoreMetrics.length > 0
-          ? `${extractMessage(result.payload, "OK")}; coreMetricsMissing=${missingCoreMetrics.join(",")}${fallbackSummary ? `; fallback=${fallbackSummary}` : ""}${identifierProbeSuffix}`
-          : `${extractMessage(result.payload, "OK")}; coreMetricsReady=3/3${fallbackSummary ? `; fallback=${fallbackSummary}` : ""}${identifierProbeSuffix}`,
+          ? `${extractMessage(result.payload, "OK")}; coreMetricsMissing=${missingCoreMetrics.join(",")}${timestampMissing ? "; timestampMissing=true" : ""}${fallbackSummary ? `; fallback=${fallbackSummary}` : ""}${identifierProbeSuffix}`
+          : `${extractMessage(result.payload, "OK")}; coreMetricsReady=3/3${timestampMissing ? "; timestampMissing=true" : ""}${fallbackSummary ? `; fallback=${fallbackSummary}` : ""}${identifierProbeSuffix}`,
       rows: rows.length
     },
     metrics,

@@ -346,7 +346,7 @@ function pickLatestTimestamp(payload, rows) {
     }
   }
   if (timestamps.length === 0) {
-    return (rows || []).length > 0 ? new Date().toISOString() : null;
+    return null;
   }
   const latest = timestamps
     .map((item) => Date.parse(item))
@@ -504,18 +504,20 @@ async function loadRealtimeParametersSnapshotInternal(baseUrl, siteId, options =
   }
 
   const rows = extractRows(payload);
+  const latestTimestamp = pickLatestTimestamp(payload, rows);
+  const timestampMissing = rows.length > 0 && !latestTimestamp;
   return {
     sourceStatus: {
       key: "realtimeParameters",
       endpoint,
       ok: true,
       status: response.status ?? null,
-      message: extractMessage(payload, "OK"),
+      message: `${extractMessage(payload, "OK")}${timestampMissing ? "; timestampMissing=true" : ""}`,
       error: null,
       rows: rows.length
     },
     metrics: buildMetrics(rows),
-    latestTimestamp: pickLatestTimestamp(payload, rows)
+    latestTimestamp
   };
 }
 

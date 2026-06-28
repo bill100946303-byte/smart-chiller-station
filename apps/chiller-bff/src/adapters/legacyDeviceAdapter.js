@@ -88,13 +88,13 @@ function parseBuildFloorFromProjectKey(projectKey) {
 }
 
 function resolveLegacyRegBuildFloor(options = {}) {
+  const explicitBuild = Number.isFinite(Number(options.build)) ? Math.max(0, Number(options.build)) : null;
+  const explicitFloor = Number.isFinite(Number(options.floor)) ? Math.max(0, Number(options.floor)) : null;
   const fromProjectKey = parseBuildFloorFromProjectKey(options.projectKey);
-  if (fromProjectKey) {
-    return fromProjectKey;
-  }
-  const build = Number.isFinite(Number(options.build)) ? Math.max(0, Number(options.build)) : 1;
-  const floor = Number.isFinite(Number(options.floor)) ? Math.max(0, Number(options.floor)) : 0;
-  return { build, floor };
+  return {
+    build: explicitBuild != null ? explicitBuild : fromProjectKey?.build ?? 1,
+    floor: explicitFloor != null ? explicitFloor : fromProjectKey?.floor ?? 0
+  };
 }
 
 function buildDeviceRealtimeCollectionEndpoint(siteId, options = {}) {

@@ -152,3 +152,92 @@ test("admin store appends and filters shadow verification records", () => {
     adminStore.close();
   }
 });
+
+test("admin store appends hvac terminal samples with interval guard and timeline summary", () => {
+  const adminStore = createAdminStore({ dbFile: ":memory:" });
+  try {
+    const actor = { userId: "platform-admin", username: "Platform Admin" };
+    adminStore.createSite({ siteId: "126lnoffice", siteName: "盛世绿能办公楼" }, actor, {});
+
+    const snapshot = {
+      building: "盛世绿能办公楼",
+      floor: "1",
+      floorName: "10楼",
+      sampledAt: "2026-06-17T12:00:00.000Z",
+      summary: {
+        dataStatus: "ok"
+      },
+      items: [
+        {
+          deviceId: "19",
+          deviceCode: "BGS01",
+          deviceName: "办公室01",
+          floorName: "10楼",
+          sampledAt: "2026-06-17T12:00:00.000Z",
+          zoneTemperatureC: 26,
+          setpointC: 24,
+          running: true,
+          valveOpen: true,
+          valveOpenPct: 100,
+          fanSpeedState: 1,
+          communicationAlarm: false,
+          quality: {
+            status: "ok",
+            flags: [],
+            comfortEligible: true
+          }
+        },
+        {
+          deviceId: "20",
+          deviceCode: "BGS02",
+          deviceName: "办公室02",
+          floorName: "10楼",
+          sampledAt: "2026-06-17T12:00:00.000Z",
+          zoneTemperatureC: 0,
+          setpointC: 20,
+          running: false,
+          valveOpen: false,
+          valveOpenPct: 0,
+          fanSpeedState: 0,
+          communicationAlarm: true,
+          quality: {
+            status: "invalid",
+            flags: ["zero_temperature", "invalid_temperature", "communication_alarm", "stopped"],
+            comfortEligible: false
+          }
+        }
+      ]
+    };
+
+    const first = adminStore.appendHvacTerminalSnapshotSamples("126lnoffice", snapshot, actor, {
+      floor: "1",
+      minIntervalSeconds: 60,
+      requestId: "req-hvac-1"
+    });
+    assert.equal(first.status, "recorded");
+    assert.equal(first.inserted, 2);
+
+    const duplicate = adminStore.appendHvacTerminalSnapshotSamples("126lnoffice", snapshot, actor, {
+      floor: "1",
+      minIntervalSeconds: 60,
+      requestId: "req-hvac-2"
+    });
+    assert.equal(duplicate.status, "skipped_recent");
+    assert.equal(duplicate.inserted, 0);
+
+    const list = adminStore.listHvacTerminalSamples("126lnoffice", { floor: "1", limit: 10 });
+    assert.equal(list.total, 2);
+    assert.equal(list.items.some((item) => item.deviceCode === "BGS01"), true);
+    assert.equal(list.items.find((item) => item.deviceCode === "BGS02")?.communicationAlarm, true);
+
+    const timeline = adminStore.listHvacTerminalSampleTimeline("126lnoffice", { floor: "1", limit: 10 });
+    assert.equal(timeline.items.length, 1);
+    assert.equal(timeline.items[0].total, 2);
+    assert.equal(timeline.items[0].comfortEligibleCount, 1);
+    assert.equal(timeline.items[0].communicationAlarmCount, 1);
+    assert.equal(timeline.items[0].zeroTemperatureCount, 1);
+    assert.equal(timeline.items[0].averageZoneTemperatureC, 26);
+  } finally {
+    adminStore.close();
+  }
+});

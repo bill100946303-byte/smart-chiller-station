@@ -186,6 +186,279 @@ function readRuntimeValue(record) {
   return pickFirstFiniteNumber(record.newtagvalue, record.tagValue, record.qstagvalue, record.tagvalue);
 }
 
+function readRuntimeText(record) {
+  if (!record || typeof record !== "object") {
+    return "";
+  }
+  return normalizeOptionalText(record.newtagvalue ?? record.tagValue ?? record.qstagvalue ?? record.tagvalue ?? record.showStatus);
+}
+
+function readRuntimePoint(row, names, key, label) {
+  const record = findRuntimeRegister(row, names);
+  if (!record) {
+    return null;
+  }
+  const numericValue = readRuntimeValue(record);
+  const readWrite = normalizeOptionalText(record.regReadWrite ?? record.regreadwrite);
+  const tagAlarmState = asFiniteNumber(record.tagAlarmState ?? record.tagalarmstate);
+  const isAlarm = asFiniteNumber(record.isAlarm ?? record.isalarm);
+  return {
+    key,
+    label,
+    pointName: normalizeOptionalText(record.regName) || label,
+    tagName: normalizeOptionalText(record.tagName),
+    value: readRuntimeText(record),
+    numericValue,
+    unit: normalizeOptionalText(record.regUnits ?? record.regunits) || null,
+    writable: readWrite === "2",
+    writeAllowed: false,
+    rawTagTime: normalizeOptionalText(record.tagTime) || null,
+    alarmActive: tagAlarmState != null ? tagAlarmState > 0 : isAlarm === 1 && numericValue != null ? numericValue > 0 : null
+  };
+}
+
+function isFanCoilRuntimeRow(row) {
+  const typeName = normalizeOptionalText(row?.drtypename || row?.deviceTypeName || row?.drtypenameCNEN);
+  if (/风机盘管|fan\s*coil|fcu/i.test(typeName)) {
+    return true;
+  }
+  const registers = getRuntimeRegisters(row);
+  return Boolean(
+    findRuntimeRegister(row, ["内置温度"]) &&
+    registers.some((record) => ["当前风速状态", "风速模式", "阀门状态"].includes(normalizeOptionalText(record?.regName)))
+  );
+}
+
+function roundTo(value, digits = 1) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
+}
+
+function averageNumbers(values) {
+  const valid = values.filter((value) => typeof value === "number" && Number.isFinite(value));
+  if (valid.length === 0) {
+    return null;
+  }
+  return valid.reduce((sum, value) => sum + value, 0) / valid.length;
+}
+
+function valueAsBool(point) {
+  if (!point || typeof point.numericValue !== "number") {
+    return null;
+  }
+  return point.numericValue > 0;
+}
+
+function buildFanCoilQuality({ zoneTemperatureC, running, communicationAlarm }) {
+  const flags = [];
+  if (zoneTemperatureC === null || zoneTemperatureC === undefined) {
+    flags.push("missing_temperature");
+  } else if (zoneTemperatureC === 0) {
+    flags.push("zero_temperature");
+    flags.push("invalid_temperature");
+  } else if (!validComfortTemperature(zoneTemperatureC)) {
+    flags.push("out_of_range_temperature");
+    flags.push("invalid_temperature");
+  }
+  if (communicationAlarm === true) {
+    flags.push("communication_alarm");
+  }
+  if (running === false) {
+    flags.push("stopped");
+  }
+
+  const comfortEligible =
+    validComfortTemperature(zoneTemperatureC) &&
+    zoneTemperatureC !== 0 &&
+    communicationAlarm !== true;
+  const status =
+    flags.includes("communication_alarm") || flags.includes("invalid_temperature") || flags.includes("missing_temperature")
+      ? "invalid"
+      : "ok";
+
+  return {
+    status,
+    flags,
+    comfortEligible,
+    excludedFromComfortStats: !comfortEligible
+  };
+}
+
+function normalizeFanCoilRow(row, sampledAt) {
+  const registers = getRuntimeRegisters(row);
+  const points = {
+    run: readRuntimePoint(row, ["运行"], "run", "运行"),
+    communicationAlarm: readRuntimePoint(row, ["通讯报警"], "communicationAlarm", "通讯报警"),
+    panelMode: readRuntimePoint(row, ["面板模式"], "panelMode", "面板模式"),
+    mode: readRuntimePoint(row, ["模式"], "mode", "模式"),
+    manualStart: readRuntimePoint(row, ["手动启动"], "manualStart", "手动启动"),
+    manualStop: readRuntimePoint(row, ["手动停止"], "manualStop", "手动停止"),
+    fanSpeedState: readRuntimePoint(row, ["当前风速状态"], "fanSpeedState", "当前风速状态"),
+    zoneTemperature: readRuntimePoint(row, ["内置温度"], "zoneTemperature", "内置温度"),
+    valveState: readRuntimePoint(row, ["阀门状态"], "valveState", "阀门状态"),
+    setpointFeedback: readRuntimePoint(row, ["设置温度反馈"], "setpointFeedback", "设置温度反馈"),
+    thermostatMode: readRuntimePoint(row, ["温控器模式"], "thermostatMode", "温控器模式"),
+    fanSpeedMode: readRuntimePoint(row, ["风速模式"], "fanSpeedMode", "风速模式"),
+    setpoint: readRuntimePoint(row, ["设置温度"], "setpoint", "设置温度")
+  };
+  const compactPoints = Object.fromEntries(Object.entries(points).filter(([, value]) => Boolean(value)));
+  const running = valueAsBool(points.run);
+  const communicationAlarm = valueAsBool(points.communicationAlarm);
+  const valveOpen = valueAsBool(points.valveState);
+  const zoneTemperatureC = points.zoneTemperature?.numericValue ?? null;
+  const quality = buildFanCoilQuality({
+    zoneTemperatureC,
+    running,
+    communicationAlarm
+  });
+  const rawTagTimes = Array.from(
+    new Set(
+      Object.values(compactPoints)
+        .map((point) => point?.rawTagTime)
+        .filter(Boolean)
+    )
+  );
+  const writablePointCount = registers.filter((record) => normalizeOptionalText(record?.regReadWrite ?? record?.regreadwrite) === "2").length;
+
+  return {
+    deviceId: normalizeOptionalText(row?.drid || row?.deviceId || row?.id) || null,
+    deviceCode: normalizeOptionalText(row?.drcode || row?.deviceCode || row?.drCode) || null,
+    deviceName: normalizeOptionalText(row?.drname || row?.deviceName || row?.name) || "风机盘管",
+    deviceTypeId: normalizeOptionalText(row?.drtypeid || row?.drTypeId || row?.deviceTypeId || row?.typeId) || null,
+    deviceTypeName: normalizeOptionalText(row?.drtypename || row?.deviceTypeName || row?.drtypenameCNEN) || "风机盘管",
+    floorName: normalizeOptionalText(row?.floorName || row?.floorname) || "10楼",
+    buildingName: normalizeOptionalText(row?.buildingName || row?.buildingname) || null,
+    sampledAt,
+    rawTagTime: rawTagTimes[0] || null,
+    pointCount: registers.length,
+    writablePointCount,
+    readOnlyPointCount: Math.max(0, registers.length - writablePointCount),
+    running,
+    communicationAlarm,
+    alarmActive: communicationAlarm === true,
+    zoneTemperatureC,
+    setpointC: points.setpoint?.numericValue ?? null,
+    setpointFeedbackC: points.setpointFeedback?.numericValue ?? null,
+    fanSpeedState: points.fanSpeedState?.numericValue ?? null,
+    fanSpeedMode: points.fanSpeedMode?.numericValue ?? null,
+    valveOpen,
+    valveOpenPct: valveOpen == null ? null : valveOpen ? 100 : 0,
+    points: compactPoints,
+    quality
+  };
+}
+
+function validComfortTemperature(value) {
+  return typeof value === "number" && Number.isFinite(value) && value >= 5 && value <= 45;
+}
+
+function fanCoilDedupeKey(item) {
+  return normalizeOptionalText(item?.deviceCode || item?.deviceId || item?.deviceName).toUpperCase();
+}
+
+function fanCoilQualityScore(item) {
+  let score = 0;
+  if (item?.communicationAlarm === false) {
+    score += 100;
+  }
+  if (item?.quality?.comfortEligible === true) {
+    score += 80;
+  }
+  if (validComfortTemperature(item?.zoneTemperatureC)) {
+    score += 50;
+  }
+  score += Math.min(40, Number(item?.pointCount || 0));
+  const rawTime = Date.parse(item?.rawTagTime || item?.sampledAt || "");
+  if (Number.isFinite(rawTime)) {
+    score += Math.min(30, Math.max(0, rawTime / 1000 / 60 / 60 / 24 / 365));
+  }
+  return score;
+}
+
+function dedupeFanCoilItems(items) {
+  const byKey = new Map();
+  let duplicateCollapsedCount = 0;
+  for (const item of Array.isArray(items) ? items : []) {
+    const key = fanCoilDedupeKey(item);
+    if (!key) {
+      continue;
+    }
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, item);
+      continue;
+    }
+    duplicateCollapsedCount += 1;
+    if (fanCoilQualityScore(item) > fanCoilQualityScore(existing)) {
+      byKey.set(key, item);
+    }
+  }
+  return {
+    items: [...byKey.values()].sort((a, b) => {
+      const left = normalizeOptionalText(a.deviceCode || a.deviceName);
+      const right = normalizeOptionalText(b.deviceCode || b.deviceName);
+      return left.localeCompare(right, "zh-Hans-CN", { numeric: true });
+    }),
+    duplicateCollapsedCount
+  };
+}
+
+function buildFanCoilSummary(items) {
+  const total = items.length;
+  const validTemperatures = items
+    .filter((item) => item.quality?.comfortEligible === true)
+    .map((item) => item.zoneTemperatureC)
+    .filter(validComfortTemperature);
+  const validSetpoints = items
+    .map((item) => (validComfortTemperature(item.setpointFeedbackC) ? item.setpointFeedbackC : item.setpointC))
+    .filter(validComfortTemperature);
+  const valveValues = items.map((item) => item.valveOpenPct).filter((value) => typeof value === "number");
+  const runningCount = items.filter((item) => item.running === true).length;
+  const stoppedCount = items.filter((item) => item.running === false).length;
+  const alarmCount = items.filter((item) => item.alarmActive === true).length;
+  const onlineCount = items.filter((item) => item.communicationAlarm !== true).length;
+  const zeroTemperatureCount = items.filter((item) => item.quality?.flags?.includes("zero_temperature")).length;
+  const outOfRangeTemperatureCount = items.filter((item) => item.quality?.flags?.includes("out_of_range_temperature")).length;
+  const missingTemperatureCount = items.filter((item) => item.quality?.flags?.includes("missing_temperature")).length;
+  const excludedFromComfortStatsCount = items.filter((item) => item.quality?.excludedFromComfortStats === true).length;
+
+  return {
+    total,
+    onlineCount,
+    runningCount,
+    stoppedCount,
+    alarmCount,
+    communicationAlarmCount: alarmCount,
+    validTemperatureCount: validTemperatures.length,
+    invalidTemperatureCount: zeroTemperatureCount + outOfRangeTemperatureCount + missingTemperatureCount,
+    zeroTemperatureCount,
+    outOfRangeTemperatureCount,
+    missingTemperatureCount,
+    comfortEligibleCount: validTemperatures.length,
+    excludedFromComfortStatsCount,
+    averageZoneTemperatureC: roundTo(averageNumbers(validTemperatures), 1),
+    averageSetpointC: roundTo(averageNumbers(validSetpoints), 1),
+    averageValveOpenPct: roundTo(averageNumbers(valveValues), 0),
+    writablePointCount: items.reduce((sum, item) => sum + item.writablePointCount, 0),
+    readOnlyPointCount: items.reduce((sum, item) => sum + item.readOnlyPointCount, 0),
+    qualityStatus:
+      alarmCount > 0 || zeroTemperatureCount > 0 || outOfRangeTemperatureCount > 0 || missingTemperatureCount > 0
+        ? "attention"
+        : "ok",
+    qualityIssues: {
+      communicationAlarm: alarmCount,
+      zeroTemperature: zeroTemperatureCount,
+      outOfRangeTemperature: outOfRangeTemperatureCount,
+      missingTemperature: missingTemperatureCount,
+      excludedFromComfortStats: excludedFromComfortStatsCount,
+      stopped: stoppedCount
+    }
+  };
+}
+
 function isChillerRuntimeRow(row) {
   const code = normalizeOptionalText(row?.drcode || row?.deviceCode || row?.drCode).toUpperCase();
   const name = normalizeOptionalText(row?.drname || row?.deviceName || row?.name);
@@ -946,6 +1219,81 @@ export async function getRuntimePointSummary(config, siteId, options = {}) {
     },
     disclaimers: pointSummary.disclaimers || [],
     sourceStatus: context.sourceStatus
+  };
+}
+
+export async function getFanCoilTerminalSnapshot(config, siteId, options = {}) {
+  const projectKey = resolveDeviceProjectKey(config, options);
+  const databaseKey = resolveDeviceDatabaseKey(config, options);
+  const build = normalizeOptionalText(options.build) || "1";
+  const floor = normalizeOptionalText(options.floor) || "1";
+  const queryOptions = resolveDeviceQueryDefaults(config, {
+    ...options,
+    build,
+    floor,
+    mock: false
+  });
+  const tree = await loadDeviceTree(config.legacyBaseUrl, siteId, {
+    ...queryOptions,
+    ...(databaseKey ? { databaseKey } : {}),
+    ...(projectKey ? { projectKey } : {}),
+    realtimeEndpointKind: "legacy-reg-findAllByDrTypeId",
+    placeholderFallback: false
+  });
+  const sampledAt = tree.fetchedAt || buildGeneratedAt(config);
+  const rows = Array.isArray(tree.realtimeCollectionRows) ? tree.realtimeCollectionRows : [];
+  const normalizedItems = rows
+    .filter(isFanCoilRuntimeRow)
+    .map((row) => normalizeFanCoilRow(row, sampledAt));
+  const deduped = dedupeFanCoilItems(normalizedItems);
+  const items = deduped.items;
+  const summary = buildFanCoilSummary(items);
+  const freshness = computeFreshnessState(sampledAt, config.staleThresholdHours);
+  const sourceStatus = buildSourceStatus([
+    annotateSourceEntry({
+      key: "fanCoilRuntime",
+      ...(tree.sourceStatus?.tree || {})
+    }, {
+      baseUrl: config.legacyBaseUrl,
+      interfaceKind: "legacy-reg-findAllByDrTypeId"
+    }),
+    annotateSourceEntry({
+      key: "fanCoilCatalog",
+      ...(tree.sourceStatus?.catalog || {})
+    }, {
+      baseUrl: config.legacyBaseUrl,
+      interfaceKind: "legacy-device-catalog"
+    })
+  ]);
+
+  return {
+    site: {
+      siteId: applyFieldNullStrategy(config, "site_id", siteId, siteId),
+      siteName: applyFieldNullStrategy(config, "site_name", siteId, siteId)
+    },
+    generatedAt: buildGeneratedAt(config),
+    subsystemType: "hvac_terminal",
+    equipmentType: "fan_coil",
+    building: normalizeOptionalText(options.building) || "盛世绿能办公楼",
+    floor,
+    floorName: floor === "1" ? "10楼" : `${floor}楼`,
+    sampledAt,
+    timestampBasis: "bff_fetch_time",
+    rawTagTimeNote: "上游 tagTime 当前为相对/周期值，不作为绝对采样时间。",
+    items,
+    summary: {
+      ...summary,
+      rawDeviceRows: normalizedItems.length,
+      duplicateCollapsedCount: deduped.duplicateCollapsedCount,
+      dataStatus: items.length > 0 && sourceStatus.overall !== "failed" ? "ok" : "unavailable"
+    },
+    freshness,
+    sourceStatus,
+    disclaimers: [
+      "风机盘管数据来自 BA 只读接口，仅用于监测、诊断和影子建议。",
+      "regReadWrite=2 的设定、风速、启停等点位只展示，不开放写入，不下发 PLC/BA 控制。",
+      "上游 tagTime 不是绝对时间戳，本响应使用 BFF 抓取时间 sampledAt 作为快照时间。"
+    ]
   };
 }
 

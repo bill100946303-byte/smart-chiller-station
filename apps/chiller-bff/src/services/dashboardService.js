@@ -16,6 +16,11 @@ const TREND_RANGE_SPECS = {
   "7d": { count: 7 * 24, stepMs: 60 * 60 * 1000, unit: "hour" },
   "30d": { count: 30 * 24, stepMs: 60 * 60 * 1000, unit: "hour" }
 };
+const COMM_POWER_CHANGE_ABS_KW = 1;
+const COMM_POWER_CHANGE_RELATIVE = 0.002;
+const COMM_POWER_SUSPECT_MS = 30 * 60 * 1000;
+const COMM_POWER_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+const communicationPowerObservationCache = new Map();
 
 function asFiniteNumber(value) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
@@ -246,6 +251,132 @@ function pickFirstEfficiencyMetric(...values) {
   return null;
 }
 
+function buildCommunicationObservationKey(siteId, requestContext = {}) {
+  return JSON.stringify([
+    asTrimmedText(siteId),
+    asTrimmedText(requestContext?.databaseKey),
+    asTrimmedText(requestContext?.projectKey),
+    asTrimmedText(requestContext?.template),
+    asTrimmedText(requestContext?.deviceDataProjectKey)
+  ]);
+}
+
+function powerChangeThresholdKw(previousValue, nextValue) {
+  const reference = Math.max(Math.abs(previousValue || 0), Math.abs(nextValue || 0), 1);
+  return Math.max(COMM_POWER_CHANGE_ABS_KW, reference * COMM_POWER_CHANGE_RELATIVE);
+}
+
+function hasMeaningfulPowerChange(previousValue, nextValue) {
+  if (
+    typeof previousValue !== "number" ||
+    !Number.isFinite(previousValue) ||
+    typeof nextValue !== "number" ||
+    !Number.isFinite(nextValue)
+  ) {
+    return false;
+  }
+  return Math.abs(nextValue - previousValue) >= powerChangeThresholdKw(previousValue, nextValue);
+}
+
+function roundPowerValue(value) {
+  return typeof value === "number" && Number.isFinite(value) ? Number(value.toFixed(3)) : null;
+}
+
+function pruneCommunicationPowerObservationCache(nowMs) {
+  for (const [key, item] of communicationPowerObservationCache.entries()) {
+    if (!item?.lastObservedAtMs || nowMs - item.lastObservedAtMs > COMM_POWER_CACHE_MAX_AGE_MS) {
+      communicationPowerObservationCache.delete(key);
+    }
+  }
+}
+
+export function resetCommunicationPowerObservations() {
+  communicationPowerObservationCache.clear();
+}
+
+export function buildCommunicationPowerEvidence(cacheKey, totalPowerKw, nowMs = Date.now()) {
+  const power = asFiniteNumber(totalPowerKw);
+  const observedAt = new Date(nowMs).toISOString();
+
+  if (!cacheKey || power === null) {
+    return {
+      basis: "power_unavailable",
+      status: "unavailable",
+      metric: "totalPowerKw",
+      latestTimestamp: null,
+      totalPowerKw: power
+    };
+  }
+
+  pruneCommunicationPowerObservationCache(nowMs);
+  const previous = communicationPowerObservationCache.get(cacheKey);
+  if (!previous) {
+    communicationPowerObservationCache.set(cacheKey, {
+      firstObservedAtMs: nowMs,
+      lastObservedAtMs: nowMs,
+      lastPowerKw: power,
+      lastChangedAtMs: null,
+      sampleCount: 1
+    });
+    return {
+      basis: "power_collecting",
+      status: "collecting",
+      metric: "totalPowerKw",
+      latestTimestamp: null,
+      totalPowerKw: roundPowerValue(power),
+      sampleCount: 1,
+      firstObservedAt: observedAt,
+      lastObservedAt: observedAt,
+      lastChangedAt: null,
+      stableMinutes: 0
+    };
+  }
+
+  const changed = hasMeaningfulPowerChange(previous.lastPowerKw, power);
+  const next = {
+    ...previous,
+    lastObservedAtMs: nowMs,
+    lastPowerKw: power,
+    sampleCount: (previous.sampleCount || 0) + 1
+  };
+
+  if (changed) {
+    next.lastChangedAtMs = nowMs;
+    communicationPowerObservationCache.set(cacheKey, next);
+    return {
+      basis: "power_change",
+      status: "changed",
+      metric: "totalPowerKw",
+      latestTimestamp: observedAt,
+      totalPowerKw: roundPowerValue(power),
+      previousPowerKw: roundPowerValue(previous.lastPowerKw),
+      deltaKw: roundPowerValue(power - previous.lastPowerKw),
+      sampleCount: next.sampleCount,
+      firstObservedAt: new Date(next.firstObservedAtMs).toISOString(),
+      lastObservedAt: observedAt,
+      lastChangedAt: observedAt,
+      stableMinutes: 0
+    };
+  }
+
+  communicationPowerObservationCache.set(cacheKey, next);
+  const referenceMs = previous.lastChangedAtMs || previous.firstObservedAtMs;
+  const stableMinutes = Math.max((nowMs - referenceMs) / (1000 * 60), 0);
+  const lastChangedAt = previous.lastChangedAtMs ? new Date(previous.lastChangedAtMs).toISOString() : null;
+  return {
+    basis: previous.lastChangedAtMs ? "power_change" : "power_stable",
+    status: stableMinutes * 60 * 1000 >= COMM_POWER_SUSPECT_MS ? "stable_suspect" : "stable_recent",
+    metric: "totalPowerKw",
+    latestTimestamp: lastChangedAt,
+    totalPowerKw: roundPowerValue(power),
+    sampleCount: next.sampleCount,
+    firstObservedAt: new Date(next.firstObservedAtMs).toISOString(),
+    lastObservedAt: observedAt,
+    lastChangedAt,
+    stableMinutes: Number(stableMinutes.toFixed(1))
+  };
+}
+
 function deriveCoolingCapacity(metrics) {
   const directValue = asFiniteNumber(metrics?.totalCoolingCapacity);
   if (directValue !== null) {
@@ -428,6 +559,13 @@ function pickLaterTimestamp(...timestamps) {
   const normalized = timestamps.filter(Boolean).map((value) => Date.parse(value));
   const latest = normalized.filter(Number.isFinite).sort((a, b) => a - b).at(-1);
   return Number.isFinite(latest) ? new Date(latest).toISOString() : null;
+}
+
+export function pickCommunicationLatestTimestamp(realtimeParameters, realtimeSnapshot) {
+  return pickLaterTimestamp(
+    realtimeParameters?.latestTimestamp,
+    realtimeSnapshot?.overview?.latestTimestamp
+  );
 }
 
 function needsRealtimeEnergyFallback(metrics) {
@@ -628,8 +766,31 @@ export async function getDashboardOverview(config, siteId, anomalySummary = null
     realtimeSnapshot?.overview?.latestTimestamp,
     realtimeParameters?.latestTimestamp
   );
+  const communicationLatestTimestamp = pickCommunicationLatestTimestamp(
+    realtimeParameters,
+    realtimeSnapshot
+  );
 
   const freshness = computeFreshnessState(latestTimestamp, config.staleThresholdHours);
+  const communicationPowerEvidence = buildCommunicationPowerEvidence(
+    buildCommunicationObservationKey(siteId, requestContext),
+    pickFirstMetric(
+      realtimeParameters?.metrics?.totalPowerKw,
+      realtimeSnapshot?.overview?.metrics?.totalPowerKw,
+      mergedMetrics.totalPowerKw
+    )
+  );
+  const communicationEvidenceTimestamp =
+    communicationPowerEvidence?.basis === "power_change"
+      ? communicationPowerEvidence.latestTimestamp
+      : null;
+  const communicationFreshness = {
+    ...computeFreshnessState(
+      communicationEvidenceTimestamp || communicationLatestTimestamp || communicationPowerEvidence?.latestTimestamp,
+      config.staleThresholdHours
+    ),
+    ...(communicationPowerEvidence ? { evidence: communicationPowerEvidence } : {})
+  };
   const realtimeSource = buildRealtimeSource(realtimeSnapshot?.sourceStatus, config.legacyBaseUrl);
   const realtimeParametersSource = buildRealtimeParametersSource(
     realtimeParameters?.sourceStatus,
@@ -711,6 +872,7 @@ export async function getDashboardOverview(config, siteId, anomalySummary = null
     deviceSummary: normalizedDeviceSummary,
     alarmSummary: normalizeAlarmSummary(anomalySummary),
     freshness,
+    communicationFreshness,
     sourceStatus: buildSourceStatus(
       [
         !realtimeCoversOverview || energy.sourceStatus?.ok === true
