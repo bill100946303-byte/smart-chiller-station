@@ -1,0 +1,4 @@
+interface:
+  display_name: "冷站数字孪生建模"
+  short_description: "生成并验收冷站设备、管路、水流动画、LOD、GIF与WebGL数字孪生交付物"
+  default_prompt: "使用 $blender-chilled-water-plant 优化冷站水流动画，并完成Blend、GLB、LOD、GIF和WebGL验收。"
