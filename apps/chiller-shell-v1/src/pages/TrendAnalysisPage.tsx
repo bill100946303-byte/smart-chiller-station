@@ -922,7 +922,7 @@ export default function TrendAnalysisPage() {
       <section className="trend-page-header trend-command-board subpage-command-board">
         <div className="trend-command-copy subpage-command-copy">
           <div className="trend-title-row">
-            <h2>{zhCN.trendAnalysis.heading}</h2>
+            <h1>{zhCN.trendAnalysis.heading}</h1>
             <span>{aiDigestSummaryText || "多序列联动评审"}</span>
           </div>
           <p>按时间窗口追踪总站功率、冷站 COP 与冷热侧温差，并结合系统负荷率判断节能策略是否稳定生效。</p>

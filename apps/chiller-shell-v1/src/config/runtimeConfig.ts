@@ -53,7 +53,11 @@ const appMode = resolveAppMode(import.meta.env.VITE_APP_MODE);
 export const runtimeConfig = {
   appMode,
   appModeLabel: resolveAppModeLabel(appMode, import.meta.env.VITE_APP_MODE_LABEL),
-  readOnlyMode: normalizeBooleanFlag(import.meta.env.VITE_APP_READ_ONLY),
+  readOnlyMode:
+    import.meta.env.VITE_APP_READ_ONLY === undefined
+      ? true
+      : normalizeBooleanFlag(import.meta.env.VITE_APP_READ_ONLY),
+  sceneControlEnabled: normalizeBooleanFlag(import.meta.env.VITE_SCENE_CONTROL_ENABLED),
   get siteId() {
     return resolveSiteId();
   },

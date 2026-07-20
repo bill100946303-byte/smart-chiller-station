@@ -1,11 +1,23 @@
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
+import "./DeviceOverviewShared.css";
+import OperationalTruthBadges, {
+  resolveOperationalDataState
+} from "../components/common/OperationalTruthBadges";
+import {
+  isAppliedStationRuntimeScope,
+  useStationRuntimeScope
+} from "../context/StationRuntimeScopeContext";
 import SectionCard from "../components/common/SectionCard";
 import StatusPill from "../components/common/StatusPill";
 import LazyDeviceModelPreview from "../components/device/LazyDeviceModelPreview";
 import { type DeviceModelRuntimeVariant } from "../config/modelRegistry";
 import { runtimeConfig } from "../config/runtimeConfig";
+import {
+  ENERGY_STATION_INSTANCE_QUERY_KEY,
+  ENERGY_STATION_QUERY_KEY
+} from "../config/energyStationNavigation";
 import useAiDigest from "../hooks/useAiDigest";
 import { summarizeSourceStatus } from "../i18n/sourceStatusCN";
 import { getCurrentLocale, zhCN } from "../i18n/zhCN";
@@ -881,8 +893,13 @@ function renderDeviceRow(
 }
 
 export default function DeviceOverviewPage() {
-  const siteId = runtimeConfig.siteId;
+  const stationRuntimeScope = useStationRuntimeScope();
+  const siteId = stationRuntimeScope.projectSiteId || runtimeConfig.siteId;
   const { aiDigest } = useAiDigest(siteId);
+  const runtimeStationId = stationRuntimeScope.runtimeStationId;
+  const stationDataSiteId = runtimeStationId
+    ? stationRuntimeScope.runtimeBindingSiteId || siteId
+    : siteId;
   const [searchParams, setSearchParams] = useSearchParams();
   const [overview, setOverview] = useState<DashboardOverviewDto | null>(null);
   const [topology, setTopology] = useState<SystemTopologyDto | null>(null);
@@ -911,13 +928,32 @@ export default function DeviceOverviewPage() {
   const requestedSceneNodeId = searchParams.get("sceneNodeId") || "";
 
   useEffect(() => {
+    setDeviceList(null);
+    setAssetDeviceList(null);
+    setDeviceTree(null);
+    setDeviceDetail(null);
+    setTreeRuntimeStatusByDeviceId(new Map());
+    setSelectedTreeNodeId(null);
+    setBaseFailedCount(null);
+    setListFailed(null);
+    setListError(null);
+    setDetailError(null);
+    setPage(1);
+  }, [stationRuntimeScope.scopeKey]);
+
+  useEffect(() => {
     let active = true;
 
     async function loadBaseData() {
       const [overviewResult, topologyResult, treeResult] = await Promise.allSettled([
-        fetchDashboardOverview(siteId),
-        fetchSystemTopology(siteId),
-        fetchDeviceTree(siteId)
+        runtimeStationId ? Promise.resolve(null) : fetchDashboardOverview(siteId),
+        runtimeStationId ? Promise.resolve(null) : fetchSystemTopology(siteId),
+        fetchDeviceTree(stationDataSiteId, { stationId: runtimeStationId }).then((payload) => {
+          if (runtimeStationId && !isAppliedStationRuntimeScope(payload.dataScope, stationRuntimeScope)) {
+            throw new Error("Device tree did not prove the selected physical-station scope");
+          }
+          return payload;
+        })
       ]);
 
       if (!active) {
@@ -928,7 +964,9 @@ export default function DeviceOverviewPage() {
         const overviewData = overviewResult.status === "fulfilled" ? overviewResult.value : null;
         const topologyData = topologyResult.status === "fulfilled" ? topologyResult.value : null;
         const treeData = treeResult.status === "fulfilled" ? treeResult.value : null;
-        const failed = [overviewData, topologyData, treeData].filter((item) => item == null).length;
+        const failed = runtimeStationId
+          ? (treeData == null ? 1 : 0)
+          : [overviewData, topologyData, treeData].filter((item) => item == null).length;
 
         setOverview(overviewData);
         setTopology(topologyData);
@@ -941,19 +979,23 @@ export default function DeviceOverviewPage() {
     return () => {
       active = false;
     };
-  }, [siteId]);
+  }, [runtimeStationId, siteId, stationDataSiteId, stationRuntimeScope.scopeKey]);
 
   useEffect(() => {
     let active = true;
 
     async function loadListData() {
       try {
-        const listData = await fetchDeviceList(siteId, {
+        const listData = await fetchDeviceList(stationDataSiteId, {
           page,
           pageSize,
           type: typeFilter || undefined,
-          floor: floorFilter || undefined
+          floor: floorFilter || undefined,
+          stationId: runtimeStationId
         });
+        if (runtimeStationId && !isAppliedStationRuntimeScope(listData.dataScope, stationRuntimeScope)) {
+          throw new Error("Device list did not prove the selected physical-station scope");
+        }
 
         if (!active) {
           return;
@@ -980,17 +1022,21 @@ export default function DeviceOverviewPage() {
     return () => {
       active = false;
     };
-  }, [floorFilter, page, pageSize, siteId, typeFilter]);
+  }, [floorFilter, page, pageSize, runtimeStationId, stationDataSiteId, stationRuntimeScope.scopeKey, typeFilter]);
 
   useEffect(() => {
     let active = true;
 
     async function loadAssetDeviceList() {
       try {
-        const listData = await fetchDeviceList(siteId, {
+        const listData = await fetchDeviceList(stationDataSiteId, {
           page: 1,
-          pageSize: 200
+          pageSize: 200,
+          stationId: runtimeStationId
         });
+        if (runtimeStationId && !isAppliedStationRuntimeScope(listData.dataScope, stationRuntimeScope)) {
+          throw new Error("Asset list did not prove the selected physical-station scope");
+        }
         if (!active) {
           return;
         }
@@ -1007,21 +1053,21 @@ export default function DeviceOverviewPage() {
     return () => {
       active = false;
     };
-  }, [siteId]);
+  }, [runtimeStationId, stationDataSiteId, stationRuntimeScope.scopeKey]);
 
   const loadError = useMemo(() => {
     if (baseFailedCount == null && listFailed == null) {
       return null;
     }
     const failedCount = (baseFailedCount ?? 0) + (listFailed ? 1 : 0);
-    if (failedCount >= 4) {
+    if (failedCount >= (runtimeStationId ? 2 : 4)) {
       return zhCN.devicePage.degraded;
     }
     if (failedCount > 0) {
       return zhCN.dashboard.partialDataset;
     }
     return null;
-  }, [baseFailedCount, listFailed]);
+  }, [baseFailedCount, listFailed, runtimeStationId]);
 
   const items = deviceList?.items || [];
   const total = typeof deviceList?.total === "number" ? deviceList.total : items.length;
@@ -1063,13 +1109,18 @@ export default function DeviceOverviewPage() {
         for (let index = 0; index < deviceIds.length; index += chunkSize) {
           chunks.push(deviceIds.slice(index, index + chunkSize));
         }
-        const results = await Promise.allSettled(chunks.map((ids) => fetchDeviceDetails(siteId, ids)));
+        const results = await Promise.allSettled(chunks.map((ids) => (
+          fetchDeviceDetails(stationDataSiteId, ids, { stationId: runtimeStationId })
+        )));
         if (!active) {
           return;
         }
         const mapping = new Map<string, string>();
         for (const result of results) {
           if (result.status !== "fulfilled") {
+            continue;
+          }
+          if (runtimeStationId && !isAppliedStationRuntimeScope(result.value.dataScope, stationRuntimeScope)) {
             continue;
           }
           for (const item of result.value.items || []) {
@@ -1099,7 +1150,7 @@ export default function DeviceOverviewPage() {
     return () => {
       active = false;
     };
-  }, [siteId, treeState.nodes]);
+  }, [runtimeStationId, stationDataSiteId, stationRuntimeScope.scopeKey, treeState.nodes]);
   const runtimeStatusByDeviceId = useMemo(() => {
     const mapping = new Map(treeNodeRuntimeStatusByDeviceId);
     for (const [deviceId, statusLabel] of treeRuntimeStatusByDeviceId) {
@@ -1117,20 +1168,31 @@ export default function DeviceOverviewPage() {
     (selectedTreeNodeId ? treeState.index.get(selectedTreeNodeId) : null) || defaultDeviceNode || treeRoot;
   const selectedDeviceId = selectedTreeNode?.deviceIdRef || null;
   const sceneContextDeviceId = selectedDeviceId || requestedDeviceId || null;
-  const pageSourceStatuses = [
-    overview?.sourceStatus,
-    topology?.sourceStatus,
-    assetDeviceList?.sourceStatus || deviceList?.sourceStatus,
-    deviceTree?.sourceStatus,
-    selectedDeviceId ? deviceDetail?.sourceStatus : null
-  ];
+  const pageSourceStatuses = runtimeStationId
+    ? [
+        assetDeviceList?.sourceStatus || deviceList?.sourceStatus,
+        deviceTree?.sourceStatus,
+        selectedDeviceId ? deviceDetail?.sourceStatus : null
+      ]
+    : [
+        overview?.sourceStatus,
+        topology?.sourceStatus,
+        assetDeviceList?.sourceStatus || deviceList?.sourceStatus,
+        deviceTree?.sourceStatus,
+        selectedDeviceId ? deviceDetail?.sourceStatus : null
+      ];
   const sourceSummary = summarizeSourceStatus(pageSourceStatuses);
 
   const partialActive = !loadError && sourceSummary.warn;
   const listPlaceholderActive = hasFallbackSource(deviceList?.sourceStatus);
-  const summary = overview?.deviceSummary || topology?.summary || null;
-  const freshness = aiDigest?.freshness || overview?.freshness;
-  const floorGroups = useMemo(() => buildFloorGroups(topology), [topology]);
+  const summary = runtimeStationId ? null : overview?.deviceSummary || topology?.summary || null;
+  const freshness = runtimeStationId
+    ? assetDeviceList?.freshness || deviceList?.freshness || deviceTree?.freshness || deviceDetail?.freshness
+    : aiDigest?.freshness || overview?.freshness;
+  const floorGroups = useMemo(
+    () => runtimeStationId ? [] : buildFloorGroups(topology),
+    [runtimeStationId, topology]
+  );
   const detailRecordWithDto = buildDeviceDetailRecord(selectedTreeNode || null, items, deviceDetail);
   const assetItems = assetDeviceList?.items || deviceList?.items || [];
   const deviceGroups = useMemo(
@@ -1154,8 +1216,20 @@ export default function DeviceOverviewPage() {
   const sourceLinkRows = buildSourceLinkRows(assetDeviceList || deviceList, deviceTree, pageSourceStatuses);
   const deviceCatalogHealthy = isSourceStatusOk(assetDeviceList?.sourceStatus || deviceList?.sourceStatus);
   const deviceTreeHealthy = isSourceStatusOk(deviceTree?.sourceStatus);
+  const stationCatalogScopeApplied = !runtimeStationId || isAppliedStationRuntimeScope(
+    (assetDeviceList || deviceList)?.dataScope,
+    stationRuntimeScope
+  );
+  const stationTreeScopeApplied = !runtimeStationId || isAppliedStationRuntimeScope(
+    deviceTree?.dataScope,
+    stationRuntimeScope
+  );
+  const stationScopeEvidenceReady = stationCatalogScopeApplied && stationTreeScopeApplied;
   const realtimeParameterHealthy = sourceLinkRows.find((row) => row.label === "实时参数")?.state === "正常";
-  const deviceAccessReady = deviceCatalogHealthy && deviceTreeHealthy && realtimeParameterHealthy;
+  const deviceAccessReady = deviceCatalogHealthy
+    && deviceTreeHealthy
+    && realtimeParameterHealthy
+    && stationScopeEvidenceReady;
   const deviceAccessHeadline = deviceCatalogHealthy
     ? deviceAccessReady
       ? "可用"
@@ -1173,15 +1247,38 @@ export default function DeviceOverviewPage() {
     assetDeviceList?.generatedAt,
     deviceList?.generatedAt,
     deviceTree?.generatedAt,
-    overview?.generatedAt,
+    runtimeStationId ? undefined : overview?.generatedAt,
     freshness?.latestTimestamp
   );
-  const activeAlarmCount =
-    typeof overview?.alarmSummary?.total === "number"
+  const activeAlarmCount = !runtimeStationId && typeof overview?.alarmSummary?.total === "number"
       ? overview.alarmSummary.total
-      : typeof overview?.energyCards?.activeAnomalyCount === "number"
+      : !runtimeStationId && typeof overview?.energyCards?.activeAnomalyCount === "number"
         ? overview.energyCards.activeAnomalyCount
         : 0;
+  const hasKnownActiveAlarmCount =
+    !runtimeStationId && (
+      typeof overview?.alarmSummary?.total === "number" ||
+      typeof overview?.energyCards?.activeAnomalyCount === "number"
+    );
+  const deviceDataState = resolveOperationalDataState({
+    requestFailed: Boolean(loadError),
+    sourceWarn: partialActive || !deviceAccessReady || !stationScopeEvidenceReady,
+    stale: Boolean(freshness?.stale),
+    hasData: runtimeStationId
+      ? Boolean(assetDeviceList || deviceList || deviceTree)
+      : Boolean(overview || topology || assetDeviceList || deviceList || deviceTree)
+  });
+  const deviceTruthMessage = runtimeStationId && stationScopeEvidenceReady
+    ? `设备目录与设备树已按 ${stationRuntimeScope.stationName || runtimeStationId} 过滤；所选设备详情逐响应校验，项目概览与拓扑不参与本站汇总。`
+    : runtimeStationId
+      ? `尚未取得与 ${stationRuntimeScope.stationName || runtimeStationId}、绑定版本 ${stationRuntimeScope.bindingVersion ?? "-"} 一致的运行作用域证据。`
+      : deviceDataState === "live"
+      ? "设备主数据、设备树与实时参数链路已通过当前校验。"
+      : deviceDataState === "stale"
+        ? "当前设备状态已陈旧，不能据此执行巡检结论。"
+        : deviceDataState === "offline"
+          ? "设备链路不可用，运行与告警状态不可判定。"
+          : "设备链路部分降级，绿色状态仅在来源恢复后显示。";
   const selectedRealtimePowerKw = useMemo(
     () => extractRealtimePowerKw(deviceDetail?.detail),
     [deviceDetail?.detail]
@@ -1259,6 +1356,15 @@ export default function DeviceOverviewPage() {
     if (scopedSiteId) {
       nextParams.set(SITE_ID_QUERY_KEY, scopedSiteId);
     }
+    for (const stationContextKey of [
+      ENERGY_STATION_QUERY_KEY,
+      ENERGY_STATION_INSTANCE_QUERY_KEY
+    ]) {
+      const stationContextValue = searchParams.get(stationContextKey)?.trim();
+      if (stationContextValue) {
+        nextParams.set(stationContextKey, stationContextValue);
+      }
+    }
     if (floorFilter) {
       nextParams.set("floor", floorFilter);
     }
@@ -1331,7 +1437,12 @@ export default function DeviceOverviewPage() {
         return;
       }
       try {
-        const result = await fetchDeviceDetail(siteId, selectedDeviceId);
+        const result = await fetchDeviceDetail(stationDataSiteId, selectedDeviceId, {
+          stationId: runtimeStationId
+        });
+        if (runtimeStationId && !isAppliedStationRuntimeScope(result.dataScope, stationRuntimeScope)) {
+          throw new Error("Device detail did not prove the selected physical-station scope");
+        }
         if (!active) {
           return;
         }
@@ -1354,7 +1465,7 @@ export default function DeviceOverviewPage() {
     return () => {
       active = false;
     };
-  }, [selectedDeviceId, siteId]);
+  }, [runtimeStationId, selectedDeviceId, stationDataSiteId, stationRuntimeScope.scopeKey]);
 
   useEffect(() => {
     if (!selectedTreeNodeId) {
@@ -1410,13 +1521,24 @@ export default function DeviceOverviewPage() {
       <section className="device-ops-header" aria-label="设备资产与运行总览">
         <div className="device-ops-title">
           <p>{runtimeConfig.appModeLabel} / 设备管理</p>
-          <h2>设备资产与运行总览</h2>
+          <h1>设备资产与运行总览</h1>
           <span>{`更新：${generatedAtLabel}`}</span>
         </div>
         <div className="device-ops-source-pills" aria-label="数据状态">
-          <StatusPill label={deviceCatalogHealthy ? "设备清单正常" : "设备清单待恢复"} tone={deviceCatalogHealthy ? "good" : "warn"} />
-          <StatusPill label={deviceTreeHealthy ? "设备树正常" : "设备树待恢复"} tone={deviceTreeHealthy ? "good" : "warn"} />
-          <StatusPill label={realtimeParameterHealthy ? "实时参数正常" : "实时参数待恢复"} tone={realtimeParameterHealthy ? "good" : "warn"} />
+          <OperationalTruthBadges
+            state={deviceDataState}
+            sourceTime={generatedAtLabel}
+            controlMode={runtimeConfig.readOnlyMode ? "只读监视" : "待服务端授权"}
+            message={deviceTruthMessage}
+          />
+          {runtimeStationId ? (
+            <StatusPill
+              label={stationScopeEvidenceReady
+                ? `${stationRuntimeScope.stationName || runtimeStationId} · 站房筛选已验证`
+                : `${stationRuntimeScope.stationName || runtimeStationId} · 站房筛选待核`}
+              tone={stationScopeEvidenceReady ? "good" : "warn"}
+            />
+          ) : null}
           <StatusPill label="模型库已接入" tone="neutral" />
         </div>
       </section>
@@ -1427,12 +1549,12 @@ export default function DeviceOverviewPage() {
           <strong>{`${formatCount(assetDeviceList?.total ?? summary?.totalDevices ?? total)}项`}</strong>
           <small>主机/泵/塔/阀门</small>
         </article>
-        <article className="device-ops-kpi is-good">
+        <article className="device-ops-kpi">
           <span>核心设备</span>
           <strong>{`${formatCount(runningDeviceTotal)}/${formatCount(coreDeviceTotal)}`}</strong>
           <small>{`停止${formatCount(stoppedDeviceTotal)} · 待确认${formatCount(unknownDeviceTotal)}`}</small>
         </article>
-        <article className="device-ops-kpi is-good">
+        <article className="device-ops-kpi">
           <span>冷机运行</span>
           <strong>{`${formatCount(chillerGroup?.running || 0)}/${formatCount(chillerGroup?.total || summary?.chillerCount || 0)}`}</strong>
           <small>
@@ -1444,10 +1566,16 @@ export default function DeviceOverviewPage() {
               .join(" / ") || selectedTreeNode?.deviceCode || "--"}
           </small>
         </article>
-        <article className="device-ops-kpi is-good">
+        <article className={`device-ops-kpi${hasKnownActiveAlarmCount && activeAlarmCount === 0 ? " is-good" : ""}`}>
           <span>当前告警</span>
-          <strong>{`${formatCount(activeAlarmCount)}项`}</strong>
-          <small>无活动告警</small>
+          <strong>{hasKnownActiveAlarmCount ? `${formatCount(activeAlarmCount)}项` : "--"}</strong>
+          <small>
+            {hasKnownActiveAlarmCount
+              ? activeAlarmCount > 0
+                ? "存在活动告警"
+                : "当前链路确认无活动告警"
+              : "告警数据待恢复"}
+          </small>
         </article>
         <article className={`device-ops-kpi device-ops-access${deviceAccessReady ? "" : " is-warn"}`}>
           <div>
@@ -1460,7 +1588,13 @@ export default function DeviceOverviewPage() {
           </div>
           <div className="device-ops-actions">
             <button type="button" onClick={() => setActiveTab("list")}>设备列表</button>
-            <button type="button" className="primary" onClick={() => setActiveTab("navigation")}>进入巡检</button>
+            <button
+              type="button"
+              className={deviceAccessReady ? "primary" : undefined}
+              onClick={() => setActiveTab("navigation")}
+            >
+              {deviceAccessReady ? "进入巡检" : "查看待恢复项"}
+            </button>
           </div>
         </article>
       </section>

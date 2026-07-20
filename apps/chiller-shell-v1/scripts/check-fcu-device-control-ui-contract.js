@@ -19,6 +19,12 @@ function assertRegex(source, regex, message) {
   }
 }
 
+function assertNotRegex(source, regex, message) {
+  if (regex.test(source)) {
+    throw new Error(message);
+  }
+}
+
 const pageSource = fs.readFileSync(HVAC_TERMINAL_PAGE_FILE, "utf8");
 const clientSource = fs.readFileSync(BFF_CLIENT_FILE, "utf8");
 
@@ -522,6 +528,26 @@ assertRegex(
   clientSource,
   /runFcuManualControlCommand\([\s\S]+?deviceCode: string[\s\S]+?search\.set\("deviceCode", options\.deviceCode\)/,
   "BFF client manual command helper must require and send deviceCode."
+);
+assertNotRegex(
+  pageSource,
+  /setErrorText\(\s*(?:error instanceof Error \? error\.message : )?["`][^"`]*[\u3400-\u9fff]/,
+  "FCU error paths must not emit direct Chinese fallback copy; use the locale-aware error formatter."
+);
+assertNotRegex(
+  pageSource,
+  /setControlNotice\(\s*`[^`]*[\u3400-\u9fff]/,
+  "FCU action notices must not emit direct Chinese template copy; use locale-aware copy."
+);
+assertNotRegex(
+  pageSource,
+  /(?:aria-label|placeholder|title)="[^"]*[\u3400-\u9fff][^"]*"/,
+  "FCU accessibility labels, placeholders, and tooltips must use locale-aware copy."
+);
+assertNotRegex(
+  pageSource,
+  /title=\{`[^`]*[\u3400-\u9fff]/,
+  "FCU dynamic tooltips must use locale-aware copy."
 );
 
 console.log("FCU_DEVICE_CONTROL_UI_CONTRACT ok=true per_device_detail=true per_device_control=true");

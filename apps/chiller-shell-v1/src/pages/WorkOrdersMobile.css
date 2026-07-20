@@ -1,0 +1,282 @@
+@media (max-width: 760px) {
+  html body #root#root#root .content.is-subpage-compact > .work-order-page {
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 0 0 12px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-header {
+    display: block !important;
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 12px !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page > .work-order-alarm-context {
+    flex: 0 0 auto !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-command-copy {
+    display: grid !important;
+    grid-template-rows: auto auto auto !important;
+    gap: 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-command-copy :is(h1, h2) {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 32px !important;
+    margin: 0 !important;
+    font-size: 23px !important;
+    line-height: 32px !important;
+    overflow: visible !important;
+    white-space: normal !important;
+    writing-mode: horizontal-tb !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-command-tags,
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-command-side,
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-filter-panel {
+    display: none !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-command-summary-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-command-stat {
+    box-sizing: border-box !important;
+    display: grid !important;
+    align-content: center !important;
+    min-height: 62px !important;
+    height: auto !important;
+    padding: 8px 10px !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-command-stat strong {
+    min-height: 24px !important;
+    font-size: 17px !important;
+    line-height: 24px !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-alarm-context {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-alarm-context .work-order-button,
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-button {
+    box-sizing: border-box !important;
+    min-height: 44px !important;
+    height: 44px !important;
+    padding: 0 12px !important;
+    font-size: 13px !important;
+    line-height: 44px !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page > .section-card:nth-of-type(n) {
+    display: block !important;
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page > .section-card > .section-card-header {
+    min-height: 44px !important;
+    padding: 10px 12px !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page > .section-card > .section-card-body {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 10px !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-filter-layout,
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-filter-main {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-filter-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: none !important;
+    gap: 8px !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-field {
+    box-sizing: border-box !important;
+    display: grid !important;
+    grid-template-rows: auto 44px !important;
+    gap: 5px !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 66px !important;
+    padding: 7px 8px !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-field input,
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-field select,
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-field textarea {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 44px !important;
+    height: 44px !important;
+    padding: 0 10px !important;
+    font-size: 14px !important;
+    line-height: 44px !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-field textarea {
+    height: 112px !important;
+    padding-block: 10px !important;
+    line-height: 1.5 !important;
+    resize: vertical;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-filter-footer {
+    display: grid !important;
+    gap: 10px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin-top: 10px !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-filter-meta {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-table-stage {
+    min-height: 0 !important;
+    padding: 10px !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-table-shell {
+    width: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-empty {
+    min-height: 130px !important;
+    padding: 24px 14px !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-pagination {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin-top: 10px !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-page-size {
+    grid-column: 1 / -1;
+    justify-content: space-between !important;
+    min-height: 44px !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact .work-order-page .work-order-page-size select {
+    min-height: 44px !important;
+  }
+
+  html body #root#root#root .work-order-modal-backdrop {
+    align-items: start !important;
+    padding: 12px !important;
+    overflow-y: auto !important;
+  }
+
+  html body #root#root#root .work-order-modal {
+    width: 100% !important;
+    max-height: calc(100% - 24px) !important;
+    padding: 16px !important;
+    border-radius: 16px !important;
+    overflow-y: auto !important;
+  }
+
+  html body #root#root#root .work-order-modal-header {
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+
+  html body #root#root#root .work-order-modal-close {
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+  }
+
+  html body #root#root#root .work-order-modal .work-order-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  html body #root#root#root .work-order-modal .work-order-modal-actions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  html body #root#root#root .work-order-modal .work-order-button {
+    min-height: 44px !important;
+    height: 44px !important;
+    line-height: 44px !important;
+  }
+}

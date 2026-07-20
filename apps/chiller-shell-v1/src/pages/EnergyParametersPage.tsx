@@ -1,4 +1,5 @@
 import { startTransition, useEffect, useMemo, useState } from "react";
+import "./EnergyParametersExtracted.css";
 import { runtimeConfig } from "../config/runtimeConfig";
 import { summarizeSourceStatus } from "../i18n/sourceStatusCN";
 import { zhCN } from "../i18n/zhCN";
@@ -532,7 +533,7 @@ export default function EnergyParametersPage() {
         <div className="energy-parameter-compact-hero-copy">
           <div>
             <span className="energy-parameter-compact-label">{runtimeConfig.appModeLabel}</span>
-            <h2>{zhCN.energyParameterPage.heading}</h2>
+            <h1>{zhCN.energyParameterPage.heading}</h1>
           </div>
           <div className="energy-parameter-compact-tags" aria-label="能源参数摘要">
             <article>

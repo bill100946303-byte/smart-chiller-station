@@ -1,0 +1,1300 @@
+{
+  "generatedAt": "2026-07-19T12:55:05.283Z",
+  "status": "PASS",
+  "contract": "read-only-evidence-v1",
+  "allowedStates": [
+    "LIVE",
+    "STALE",
+    "FAULT",
+    "UNBOUND"
+  ],
+  "stateSemantics": {
+    "LIVE": "finite value, healthy related source, and authoritative field timestamp within threshold",
+    "STALE": "value exists but authoritative field timestamp is absent or outside threshold",
+    "FAULT": "explicit equipment fault evidence only; source degradation is not a fault",
+    "UNBOUND": "no finite value or no authoritative point mapping"
+  },
+  "controlBoundary": "presentation-only; no PLC writes, setpoints, or control commands",
+  "bindings": [
+    {
+      "id": "CHW.HEADER.flowM3h",
+      "endpoint": "/runtime/summary",
+      "selector": "keySignals.chilledWater.flowM3h",
+      "unit": "m³/h",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": null,
+      "runtimeId": null,
+      "runtimeGroup": null,
+      "layout": {
+        "x": 1240,
+        "y": 104,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CW.HEADER.flowM3h",
+      "endpoint": "/runtime/summary",
+      "selector": "keySignals.coolingWater.flowM3h",
+      "unit": "m³/h",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": null,
+      "runtimeId": null,
+      "runtimeGroup": null,
+      "layout": {
+        "x": 489,
+        "y": 104,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT01.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF11].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT01",
+      "runtimeId": "CTF11",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 128,
+        "y": 227,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT02.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF12].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT02",
+      "runtimeId": "CTF12",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 208,
+        "y": 227,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT03.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF13].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT03",
+      "runtimeId": "CTF13",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 288,
+        "y": 227,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT04.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF14].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT04",
+      "runtimeId": "CTF14",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 368,
+        "y": 227,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT05.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF15].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT05",
+      "runtimeId": "CTF15",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 448,
+        "y": 227,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT06.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF16].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT06",
+      "runtimeId": "CTF16",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 528,
+        "y": 227,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT07.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF21].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT07",
+      "runtimeId": "CTF21",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 128,
+        "y": 372,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT08.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF22].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT08",
+      "runtimeId": "CTF22",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 208,
+        "y": 372,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT09.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF23].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT09",
+      "runtimeId": "CTF23",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 288,
+        "y": 372,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT10.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF24].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT10",
+      "runtimeId": "CTF24",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 368,
+        "y": 372,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT11.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF25].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT11",
+      "runtimeId": "CTF25",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 448,
+        "y": 372,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT12.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF26].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT12",
+      "runtimeId": "CTF26",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 528,
+        "y": 372,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT13.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF31].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT13",
+      "runtimeId": "CTF31",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 128,
+        "y": 517,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT14.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF32].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT14",
+      "runtimeId": "CTF32",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 208,
+        "y": 517,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT15.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF33].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT15",
+      "runtimeId": "CTF33",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 288,
+        "y": 517,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT16.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF34].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT16",
+      "runtimeId": "CTF34",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 368,
+        "y": 517,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT17.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF35].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT17",
+      "runtimeId": "CTF35",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 448,
+        "y": 517,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT18.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF36].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT18",
+      "runtimeId": "CTF36",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 528,
+        "y": 517,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT19.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF41].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT19",
+      "runtimeId": "CTF41",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 128,
+        "y": 662,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT20.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF42].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT20",
+      "runtimeId": "CTF42",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 208,
+        "y": 662,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT21.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF43].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT21",
+      "runtimeId": "CTF43",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 288,
+        "y": 662,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT22.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF44].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT22",
+      "runtimeId": "CTF44",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 368,
+        "y": 662,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT23.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF45].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT23",
+      "runtimeId": "CTF45",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 448,
+        "y": 662,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT24.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF46].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT24",
+      "runtimeId": "CTF46",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 528,
+        "y": 662,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT25.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF51].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT25",
+      "runtimeId": "CTF51",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 128,
+        "y": 807,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT26.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF52].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT26",
+      "runtimeId": "CTF52",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 208,
+        "y": 807,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT27.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF53].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT27",
+      "runtimeId": "CTF53",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 288,
+        "y": 807,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT28.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF54].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT28",
+      "runtimeId": "CTF54",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 368,
+        "y": 807,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT29.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF55].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT29",
+      "runtimeId": "CTF55",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 448,
+        "y": 807,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT30.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF56].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT30",
+      "runtimeId": "CTF56",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 528,
+        "y": 807,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT31.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF61].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT31",
+      "runtimeId": "CTF61",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 248,
+        "y": 952,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT32.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF62].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT32",
+      "runtimeId": "CTF62",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 328,
+        "y": 952,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CT33.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingTowers[id=CTF63].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CT33",
+      "runtimeId": "CTF63",
+      "runtimeGroup": "coolingTowers",
+      "layout": {
+        "x": 408,
+        "y": 952,
+        "width": 54,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CWP1.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingPumps[id=CWP1].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CWP1",
+      "runtimeId": "CWP1",
+      "runtimeGroup": "coolingPumps",
+      "layout": {
+        "x": 697,
+        "y": 232,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CH1.currentPercent",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.chillers[id=CH1].currentPercent",
+      "unit": "%",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CH1",
+      "runtimeId": "CH1",
+      "runtimeGroup": "chillers",
+      "layout": {
+        "x": 947,
+        "y": 232,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CHWP1.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.chilledPumps[id=CHP1].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CHWP1",
+      "runtimeId": "CHP1",
+      "runtimeGroup": "chilledPumps",
+      "layout": {
+        "x": 1172,
+        "y": 232,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CWP2.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingPumps[id=CWP2].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CWP2",
+      "runtimeId": "CWP2",
+      "runtimeGroup": "coolingPumps",
+      "layout": {
+        "x": 697,
+        "y": 356,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CH2.currentPercent",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.chillers[id=CH2].currentPercent",
+      "unit": "%",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CH2",
+      "runtimeId": "CH2",
+      "runtimeGroup": "chillers",
+      "layout": {
+        "x": 947,
+        "y": 356,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CHWP2.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.chilledPumps[id=CHP2].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CHWP2",
+      "runtimeId": "CHP2",
+      "runtimeGroup": "chilledPumps",
+      "layout": {
+        "x": 1172,
+        "y": 356,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CWP3.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingPumps[id=CWP3].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CWP3",
+      "runtimeId": "CWP3",
+      "runtimeGroup": "coolingPumps",
+      "layout": {
+        "x": 697,
+        "y": 480,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CH3.currentPercent",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.chillers[id=CH3].currentPercent",
+      "unit": "%",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CH3",
+      "runtimeId": "CH3",
+      "runtimeGroup": "chillers",
+      "layout": {
+        "x": 947,
+        "y": 480,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CHWP3.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.chilledPumps[id=CHP3].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CHWP3",
+      "runtimeId": "CHP3",
+      "runtimeGroup": "chilledPumps",
+      "layout": {
+        "x": 1172,
+        "y": 480,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CWP4.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingPumps[id=CWP4].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CWP4",
+      "runtimeId": "CWP4",
+      "runtimeGroup": "coolingPumps",
+      "layout": {
+        "x": 697,
+        "y": 604,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CH4.currentPercent",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.chillers[id=CH4].currentPercent",
+      "unit": "%",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CH4",
+      "runtimeId": "CH4",
+      "runtimeGroup": "chillers",
+      "layout": {
+        "x": 947,
+        "y": 604,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CHWP4.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.chilledPumps[id=CHP4].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CHWP4",
+      "runtimeId": "CHP4",
+      "runtimeGroup": "chilledPumps",
+      "layout": {
+        "x": 1172,
+        "y": 604,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CWP5.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingPumps[id=CWP5].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CWP5",
+      "runtimeId": "CWP5",
+      "runtimeGroup": "coolingPumps",
+      "layout": {
+        "x": 697,
+        "y": 728,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CH5.currentPercent",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.chillers[id=CH5].currentPercent",
+      "unit": "%",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CH5",
+      "runtimeId": "CH5",
+      "runtimeGroup": "chillers",
+      "layout": {
+        "x": 947,
+        "y": 728,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CHWP5.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.chilledPumps[id=CHP5].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CHWP5",
+      "runtimeId": "CHP5",
+      "runtimeGroup": "chilledPumps",
+      "layout": {
+        "x": 1172,
+        "y": 728,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CWP6.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingPumps[id=CWP6].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CWP6",
+      "runtimeId": "CWP6",
+      "runtimeGroup": "coolingPumps",
+      "layout": {
+        "x": 697,
+        "y": 852,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CH6.currentPercent",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.chillers[id=CH6].currentPercent",
+      "unit": "%",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CH6",
+      "runtimeId": "CH6",
+      "runtimeGroup": "chillers",
+      "layout": {
+        "x": 947,
+        "y": 852,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CHWP6.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.chilledPumps[id=CHP6].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CHWP6",
+      "runtimeId": "CHP6",
+      "runtimeGroup": "chilledPumps",
+      "layout": {
+        "x": 1172,
+        "y": 852,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CWP7.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.coolingPumps[id=CWP7].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CWP7",
+      "runtimeId": "CWP7",
+      "runtimeGroup": "coolingPumps",
+      "layout": {
+        "x": 697,
+        "y": 976,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CH7.currentPercent",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.chillers[id=CH7].currentPercent",
+      "unit": "%",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CH7",
+      "runtimeId": "CH7",
+      "runtimeGroup": "chillers",
+      "layout": {
+        "x": 947,
+        "y": 976,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "CHWP7.frequencyHz",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.chilledPumps[id=CHP7].frequencyHz",
+      "unit": "Hz",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": "CHWP7",
+      "runtimeId": "CHP7",
+      "runtimeGroup": "chilledPumps",
+      "layout": {
+        "x": 1172,
+        "y": 976,
+        "width": 106,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "LOAD-01.supplyTempC",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.branches[0].supplyTempC",
+      "unit": "°C",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": null,
+      "runtimeId": null,
+      "runtimeGroup": null,
+      "layout": {
+        "x": 1590,
+        "y": 210,
+        "width": 126,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "LOAD-01.returnTempC",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.branches[0].returnTempC",
+      "unit": "°C",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": null,
+      "runtimeId": null,
+      "runtimeGroup": null,
+      "layout": {
+        "x": 1590,
+        "y": 238,
+        "width": 126,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "LOAD-02.supplyTempC",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.branches[1].supplyTempC",
+      "unit": "°C",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": null,
+      "runtimeId": null,
+      "runtimeGroup": null,
+      "layout": {
+        "x": 1590,
+        "y": 390,
+        "width": 126,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "LOAD-02.returnTempC",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.branches[1].returnTempC",
+      "unit": "°C",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": null,
+      "runtimeId": null,
+      "runtimeGroup": null,
+      "layout": {
+        "x": 1590,
+        "y": 418,
+        "width": 126,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "LOAD-03.supplyTempC",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.branches[2].supplyTempC",
+      "unit": "°C",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": null,
+      "runtimeId": null,
+      "runtimeGroup": null,
+      "layout": {
+        "x": 1590,
+        "y": 570,
+        "width": 126,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "LOAD-03.returnTempC",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.branches[2].returnTempC",
+      "unit": "°C",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": null,
+      "runtimeId": null,
+      "runtimeGroup": null,
+      "layout": {
+        "x": 1590,
+        "y": 598,
+        "width": 126,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "LOAD-04.supplyTempC",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.branches[3].supplyTempC",
+      "unit": "°C",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": null,
+      "runtimeId": null,
+      "runtimeGroup": null,
+      "layout": {
+        "x": 1590,
+        "y": 750,
+        "width": 126,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    },
+    {
+      "id": "LOAD-04.returnTempC",
+      "endpoint": "/runtime/summary",
+      "selector": "groups.branches[3].returnTempC",
+      "unit": "°C",
+      "state": "UNBOUND",
+      "value": null,
+      "observedAt": null,
+      "readOnly": true,
+      "modelId": null,
+      "runtimeId": null,
+      "runtimeGroup": null,
+      "layout": {
+        "x": 1590,
+        "y": 778,
+        "width": 126,
+        "height": 24
+      },
+      "liveRequirement": "finite value + healthy related source + authoritative field timestamp within threshold"
+    }
+  ]
+}

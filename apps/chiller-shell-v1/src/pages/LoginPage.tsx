@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { zhCN } from "../i18n/zhCN";
 import { loginWithLegacy, resolveAuthDestination } from "../services/auth";
+import "./LoginMobile.css";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -67,6 +68,10 @@ export default function LoginPage() {
               {zhCN.login.username}
               <input
                 autoComplete="username"
+                name="username"
+                required
+                aria-invalid={errorText ? true : undefined}
+                aria-describedby={errorText ? "login-error" : undefined}
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
               />
@@ -75,7 +80,11 @@ export default function LoginPage() {
               {zhCN.login.password}
               <input
                 autoComplete="current-password"
+                name="password"
+                required
                 type="password"
+                aria-invalid={errorText ? true : undefined}
+                aria-describedby={errorText ? "login-error" : undefined}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder={zhCN.login.passwordPlaceholder}
@@ -85,7 +94,11 @@ export default function LoginPage() {
               {submitting ? zhCN.login.submitting : zhCN.login.submit}
             </button>
           </form>
-          {errorText ? <p className="login-error">{errorText}</p> : null}
+          {errorText ? (
+            <p id="login-error" className="login-error" role="alert" aria-live="polite">
+              {errorText}
+            </p>
+          ) : null}
           <p className="login-hint">适合远端联调和日常登录，默认会返回你刚才打开的页面。</p>
         </section>
       </div>

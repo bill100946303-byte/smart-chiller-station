@@ -7,6 +7,7 @@ import path from "node:path";
 const SHELL_ROOT = path.resolve(process.cwd());
 const APP_FILE = path.join(SHELL_ROOT, "src/App.tsx");
 const APP_SHELL_FILE = path.join(SHELL_ROOT, "src/layout/AppShell.tsx");
+const STATION_NAV_FILE = path.join(SHELL_ROOT, "src/config/energyStationNavigation.ts");
 const ZH_CN_FILE = path.join(SHELL_ROOT, "src/i18n/zhCN.ts");
 const README_FILE = path.join(SHELL_ROOT, "README.md");
 
@@ -140,6 +141,23 @@ function extractNavigationEntries(shellSource) {
   return entries;
 }
 
+function extractStationNavigationEntries(stationSource) {
+  const entries = [];
+  const navPattern = /\{\s*to:\s*"([^"]+)"\s*,\s*labelKey:\s*"([A-Za-z0-9_]+)"/g;
+  let match;
+
+  while ((match = navPattern.exec(stationSource))) {
+    if (match[1].startsWith("/")) {
+      entries.push({
+        route: match[1],
+        label: `zhCN.appShell.${match[2]}`
+      });
+    }
+  }
+
+  return entries;
+}
+
 function findDuplicates(values) {
   const seen = new Set();
   const duplicated = new Set();
@@ -165,11 +183,15 @@ function resolveZhCnAppShellValue(expression, zhBase) {
 function main() {
   const appSource = fs.readFileSync(APP_FILE, "utf8");
   const shellSource = fs.readFileSync(APP_SHELL_FILE, "utf8");
+  const stationNavSource = fs.readFileSync(STATION_NAV_FILE, "utf8");
   const zhCnSource = fs.readFileSync(ZH_CN_FILE, "utf8");
   const readmeSource = fs.readFileSync(README_FILE, "utf8");
   const zhBase = parseObjectLiteral(extractObjectLiteral(zhCnSource, "zhBase"), "zhBase");
   const appRoutes = extractCanonicalRoutes(appSource);
-  const navEntries = extractNavigationEntries(shellSource);
+  const navEntries = [
+    ...extractNavigationEntries(shellSource),
+    ...extractStationNavigationEntries(stationNavSource)
+  ];
   const navRoutes = Array.from(new Set(navEntries.map((entry) => entry.route))).sort();
   const readmeRoutes = extractReadmeScope(readmeSource);
 
@@ -178,17 +200,21 @@ function main() {
   const readmeSet = new Set(readmeRoutes);
   const duplicates = findDuplicates(readmeRoutes);
   const duplicateNavRoutes = findDuplicates(navEntries.map((entry) => entry.route));
-  const duplicateNavLabels = findDuplicates(navEntries.map((entry) => entry.label));
+  const repeatedStationOverviewExpression = "zhCN.appShell.navStationOverview";
+  const duplicateNavLabels = findDuplicates(
+    navEntries.map((entry) => entry.label).filter((label) => label !== repeatedStationOverviewExpression)
+  );
   const missingNavLabelValues = navEntries
     .map((entry) => ({
       ...entry,
       value: resolveZhCnAppShellValue(entry.label, zhBase)
     }))
     .filter((entry) => entry.value === "");
+  const repeatedStationOverviewValue = resolveZhCnAppShellValue(repeatedStationOverviewExpression, zhBase);
   const duplicateNavLabelValues = findDuplicates(
     navEntries
       .map((entry) => resolveZhCnAppShellValue(entry.label, zhBase))
-      .filter(Boolean)
+      .filter((value) => Boolean(value) && value !== repeatedStationOverviewValue)
   );
   const missing = appRoutes.filter((routePath) => !readmeSet.has(routePath));
   const extra = readmeRoutes.filter((routePath) => !appSet.has(routePath));

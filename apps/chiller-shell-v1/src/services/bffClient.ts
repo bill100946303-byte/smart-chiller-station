@@ -46,8 +46,11 @@ function buildBffBaseUrlCandidates(baseUrl: string): string[] {
     const localDevBaseUrls = import.meta.env.DEV ? [localDevDefaultBaseUrl] : [];
     return Array.from(
       new Set([
-        ...localDevBaseUrls,
+        // An explicit VITE_BFF_BASE_URL is an operator choice, not a hint.
+        // Keep it first so an isolated audit/integration BFF cannot silently
+        // consume the default 8787 database when that service is also online.
         normalized,
+        ...localDevBaseUrls,
         ...LOCAL_BFF_FALLBACK_PORTS.map((port) => `${parsed.protocol}//${parsed.hostname}:${port}`)
       ])
     );
@@ -178,6 +181,38 @@ export type SourceStatusDto = {
   sources?: SourceEndpointStatusDto[];
 };
 
+export type RuntimeDataScopeFilterMode =
+  | "fixed_subsystem"
+  | "site_aggregate"
+  | "project_unfiltered"
+  | "device_selected"
+  | "station_binding";
+
+export type RuntimeDataScopeReason =
+  | "ENDPOINT_FIXED_SCOPE"
+  | "SUBSYSTEM_FILTER_NOT_IMPLEMENTED"
+  | "DEVICE_SELECTOR_APPLIED"
+  | "STATION_RUNTIME_BINDING_APPLIED"
+  | "SITE_AGGREGATE"
+  | "MIXED_SCOPE_PAYLOAD";
+
+export type RuntimeDataScopeDto = {
+  siteId: string;
+  requestedSubsystemType: string | null;
+  effectiveSubsystemType: string | null;
+  stationId: string | null;
+  filterMode: RuntimeDataScopeFilterMode;
+  applied: boolean;
+  reason: RuntimeDataScopeReason;
+  bindingVersion?: number | null;
+};
+
+export type RuntimeFieldScopeDto = {
+  fieldPaths: string[];
+  exclusions: string[];
+  dataScope: RuntimeDataScopeDto;
+};
+
 export type FreshnessDto = {
   label?: "fresh" | "stale" | "unknown" | string;
   latestTimestamp?: string | null;
@@ -233,6 +268,25 @@ export type RuntimeSubsystemCapabilityDto = {
   controlBoundary?: RuntimeControlBoundaryDto;
 };
 
+export type RuntimeStationInstanceDto = {
+  siteId: string;
+  stationId: string;
+  stationName: string;
+  parentSubsystemType: string;
+  status: RuntimeSubsystemStatus;
+  enabled?: boolean;
+  sourceStatus?: string;
+  freshnessStatus?: string;
+  alarmCount?: number | null;
+  bindingState?: "unconfigured" | "draft" | "validated" | "published" | "disabled" | string;
+  bindingVersion?: number | null;
+  draftBindingVersion?: number | null;
+  publishedBindingVersion?: number | null;
+  sortOrder?: number;
+  published?: boolean;
+  notes?: string | null;
+};
+
 export type RuntimeSubsystemCapabilityListDto = {
   site?: {
     siteId?: string;
@@ -242,6 +296,9 @@ export type RuntimeSubsystemCapabilityListDto = {
   kind?: string;
   items?: RuntimeSubsystemCapabilityDto[];
   total?: number;
+  stationInstances?: RuntimeStationInstanceDto[];
+  stationTotal?: number;
+  dataScope?: RuntimeDataScopeDto;
   freshness?: FreshnessDto;
   sourceStatus?: SourceStatusDto;
 };
@@ -1044,6 +1101,11 @@ export type DashboardOverviewDto = {
   };
   freshness?: FreshnessDto;
   sourceStatus?: SourceStatusDto;
+  dataScope?: RuntimeDataScopeDto;
+  fieldScopes?: {
+    chilledPlantMetrics?: RuntimeFieldScopeDto;
+    projectAggregate?: RuntimeFieldScopeDto;
+  };
 };
 
 export type DashboardTrendSeriesDto = {
@@ -1073,6 +1135,7 @@ export type DashboardTrendsDto = {
   stats?: DashboardTrendStatDto[];
   freshness?: FreshnessDto;
   sourceStatus?: SourceStatusDto;
+  dataScope?: RuntimeDataScopeDto;
 };
 
 export type TopologySummaryDto = {
@@ -1565,6 +1628,7 @@ export type DeviceListDto = {
   };
   freshness?: FreshnessDto;
   sourceStatus?: SourceStatusDto;
+  dataScope?: RuntimeDataScopeDto;
 };
 
 export type DeviceTreeNodeDto = {
@@ -1597,6 +1661,7 @@ export type DeviceTreeDto = {
   };
   freshness?: FreshnessDto;
   sourceStatus?: SourceStatusDto;
+  dataScope?: RuntimeDataScopeDto;
 };
 
 export type FanCoilTerminalPointDto = {
@@ -2048,6 +2113,7 @@ export type FcuFinalControlStatusDto = {
   ok?: boolean;
   requestId?: string;
   site?: { siteId?: string };
+  dataScope?: RuntimeDataScopeDto;
   generatedAt?: string;
   subsystemType?: string;
   equipmentType?: string;
@@ -2975,6 +3041,119 @@ export type RuntimePointSummaryCountsDto = {
   keywordCounts?: Record<string, number>;
 };
 
+export type RuntimePointEvidenceItemDto = {
+  pointKey?: string | null;
+  sourceKey?: string | null;
+  semanticKey?: "running" | "frequencyHz" | "faultActive" | "flowM3h" | "powerKw" | "remoteEnabled" | string | null;
+  deviceId?: string | number | null;
+  deviceCode?: string | null;
+  regId?: string | number | null;
+  regName?: string | null;
+  tagName?: string | null;
+  unit?: string | null;
+  value?: boolean | number | string | null;
+  observedAt?: string | null;
+  changedAt?: string | null;
+  receivedAt?: string | null;
+  timestampBasis?: string | null;
+  changedTimestampBasis?: string | null;
+  authoritativeTimestamp?: boolean | null;
+  qualityCode?: string | null;
+  sourceSequence?: number | null;
+  scanCycleId?: string | null;
+  bootId?: string | null;
+  rawTagTime?: string | number | null;
+};
+
+export type RuntimePointEvidenceDto = {
+  contractVersion?: string | null;
+  sourceKey?: string | null;
+  evidenceProfileId?: string | null;
+  receivedAt?: string | null;
+  points?: RuntimePointEvidenceItemDto[];
+  summary?: {
+    totalPoints?: number | null;
+    authoritativeTimestampPoints?: number | null;
+    missingTimestampPoints?: number | null;
+    goodQualityPoints?: number | null;
+    replayProofPoints?: number | null;
+    missingReplayProofPoints?: number | null;
+  };
+};
+
+export type RuntimePointFreshnessPolicyDto = {
+  clientRefreshIntervalMs?: number | null;
+  sourceExpectedIntervalMs?: number | null;
+  liveMaxAgeMs?: number | null;
+  maxFutureSkewMs?: number | null;
+};
+
+export type StationProcessRoleMeasurementDto = {
+  mappingId?: string | null;
+  role?: string;
+  label?: string;
+  pointCode?: string | null;
+  required?: boolean;
+  value?: boolean | number | string | null;
+  unit?: string | null;
+  configuredUnit?: string | null;
+  sourceUnit?: string | null;
+  qualityCode?: string;
+  observedAt?: string | null;
+  authoritativeTimestamp?: boolean;
+  deviceId?: string | null;
+  deviceCode?: string | null;
+  sourcePointKey?: string | null;
+  matched?: boolean;
+};
+
+export type StationProcessSummaryDto = {
+  contractVersion?: string;
+  station?: {
+    siteId?: string;
+    stationId?: string;
+    stationName?: string;
+    subsystemType?: string;
+    bindingVersion?: number | null;
+  };
+  readiness?: "ready" | "partial" | "blocked" | string;
+  timestampStatus?: "authoritative" | "partial" | "unverified" | "unavailable" | string;
+  coverage?: {
+    selectedDeviceCount?: number;
+    selectedPointCount?: number;
+    observedPointCount?: number;
+    configuredRoleMeasurementCount?: number;
+    matchedRoleMeasurementCount?: number;
+    requiredRoleCount?: number;
+    mappedRequiredRoleCount?: number;
+    observedRequiredRoleCount?: number;
+  };
+  missingRequiredRoles?: string[];
+  roleMeasurements?: StationProcessRoleMeasurementDto[];
+  operatingState?: {
+    statusPointCount?: number;
+    runningPointCount?: number;
+    alarmPointCount?: number;
+    activeAlarmPointCount?: number;
+  };
+  metrics?: {
+    compressedAir?: {
+      powerKw?: number | null;
+      pressureBar?: number | null;
+      flowNm3Min?: number | null;
+      specificEnergyKwhNm3?: number | null;
+      dewPointC?: number | null;
+    };
+    boilerRoom?: {
+      powerKw?: number | null;
+      pressureMpa?: number | null;
+      thermalMediumFlow?: number | null;
+      thermalMediumFlowUnit?: string | null;
+      temperatureC?: number | null;
+    };
+  };
+};
+
 export type RuntimePointSummaryDto = {
   site?: {
     siteId?: string;
@@ -2987,6 +3166,8 @@ export type RuntimePointSummaryDto = {
     applied?: boolean;
     source?: string | null;
   };
+  pointEvidence?: RuntimePointEvidenceDto;
+  freshnessPolicy?: RuntimePointFreshnessPolicyDto;
   counts?: RuntimePointSummaryCountsDto;
   keySignals?: {
     chilledWater?: {
@@ -3085,8 +3266,10 @@ export type RuntimePointSummaryDto = {
     activeChillerModels?: string[];
     chillerPowerFromRuntimeKw?: number | null;
   };
+  stationProcess?: StationProcessSummaryDto;
   disclaimers?: string[];
   sourceStatus?: SourceStatusDto;
+  dataScope?: RuntimeDataScopeDto;
 };
 
 export type DeviceDetailDto = {
@@ -3123,6 +3306,7 @@ export type DeviceDetailDto = {
   } | null;
   freshness?: FreshnessDto;
   sourceStatus?: SourceStatusDto;
+  dataScope?: RuntimeDataScopeDto;
 };
 
 export type DeviceDetailBatchItemDto = {
@@ -3145,6 +3329,7 @@ export type DeviceDetailBatchDto = {
     missing?: number;
   };
   sourceStatus?: SourceStatusDto;
+  dataScope?: RuntimeDataScopeDto;
 };
 
 export type SceneLegacyPointDto = {
@@ -5061,9 +5246,20 @@ export async function exportWorkOrders(siteId: string): Promise<{ blob: Blob; fi
   return fetchFile(`/bff/v1/sites/${siteId}/work-orders/export`);
 }
 
+function appendStationScopeQuery(path: string, stationId: string | null | undefined): string {
+  const normalizedStationId = typeof stationId === "string" ? stationId.trim() : "";
+  if (!normalizedStationId) {
+    return path;
+  }
+  const [pathname, rawSearch = ""] = path.split("?", 2);
+  const search = new URLSearchParams(rawSearch);
+  search.set("stationId", normalizedStationId);
+  return `${pathname}?${search.toString()}`;
+}
+
 export async function fetchDeviceList(
   siteId: string,
-  options: { page?: number; pageSize?: number; type?: string; floor?: string } = {}
+  options: { page?: number; pageSize?: number; type?: string; floor?: string; stationId?: string | null } = {}
 ): Promise<DeviceListDto> {
   const search = new URLSearchParams();
   search.set("page", String(options.page ?? 1));
@@ -5074,12 +5270,15 @@ export async function fetchDeviceList(
   if (options.floor) {
     search.set("floor", options.floor);
   }
-  return fetchJson<DeviceListDto>(`/bff/v1/sites/${siteId}/devices/list?${search.toString()}`);
+  return fetchJson<DeviceListDto>(appendStationScopeQuery(
+    `/bff/v1/sites/${siteId}/devices/list?${search.toString()}`,
+    options.stationId
+  ));
 }
 
 export async function fetchDeviceTree(
   siteId: string,
-  options: { build?: number; floor?: number; mock?: boolean } = {}
+  options: { build?: number; floor?: number; mock?: boolean; stationId?: string | null } = {}
 ): Promise<DeviceTreeDto> {
   const search = new URLSearchParams();
   if (options.build != null) {
@@ -5091,9 +5290,10 @@ export async function fetchDeviceTree(
   if (typeof options.mock === "boolean") {
     search.set("mock", options.mock ? "1" : "0");
   }
-  return fetchJson<DeviceTreeDto>(
-    `/bff/v1/sites/${siteId}/devices/tree${search.toString() ? `?${search.toString()}` : ""}`
-  );
+  return fetchJson<DeviceTreeDto>(appendStationScopeQuery(
+    `/bff/v1/sites/${siteId}/devices/tree${search.toString() ? `?${search.toString()}` : ""}`,
+    options.stationId
+  ));
 }
 
 export async function fetchFanCoilTerminalSnapshot(
@@ -5330,14 +5530,29 @@ export async function verifyFcuControlRecordFeedback(
   );
 }
 
-export async function fetchRuntimePointSummary(siteId: string): Promise<RuntimePointSummaryDto> {
-  return fetchJson<RuntimePointSummaryDto>(`/bff/v1/sites/${siteId}/runtime/summary`);
+export async function fetchRuntimePointSummary(
+  siteId: string,
+  options: { signal?: AbortSignal; stationId?: string | null } = {}
+): Promise<RuntimePointSummaryDto> {
+  const path = appendStationScopeQuery(
+    `/bff/v1/sites/${siteId}/runtime/summary`,
+    options.stationId
+  );
+  const response = await fetchFromBff(path, {
+    headers: buildBffHeaders(),
+    cache: "no-store",
+    signal: options.signal
+  });
+  if (!response.ok) {
+    throw new Error(`${path} failed with ${response.status}`);
+  }
+  return (await response.json()) as RuntimePointSummaryDto;
 }
 
 export async function fetchDeviceDetail(
   siteId: string,
   deviceId: string,
-  options: { build?: number; floor?: number; mock?: boolean } = {}
+  options: { build?: number; floor?: number; mock?: boolean; stationId?: string | null } = {}
 ): Promise<DeviceDetailDto> {
   const search = new URLSearchParams();
   if (options.build != null) {
@@ -5349,15 +5564,16 @@ export async function fetchDeviceDetail(
   if (typeof options.mock === "boolean") {
     search.set("mock", options.mock ? "1" : "0");
   }
-  return fetchJson<DeviceDetailDto>(
-    `/bff/v1/sites/${siteId}/devices/${encodeURIComponent(deviceId)}${search.toString() ? `?${search.toString()}` : ""}`
-  );
+  return fetchJson<DeviceDetailDto>(appendStationScopeQuery(
+    `/bff/v1/sites/${siteId}/devices/${encodeURIComponent(deviceId)}${search.toString() ? `?${search.toString()}` : ""}`,
+    options.stationId
+  ));
 }
 
 export async function fetchDeviceDetails(
   siteId: string,
   deviceIds: string[],
-  options: { build?: number; floor?: number; mock?: boolean } = {}
+  options: { build?: number; floor?: number; mock?: boolean; stationId?: string | null } = {}
 ): Promise<DeviceDetailBatchDto> {
   const normalizedIds = Array.from(new Set(deviceIds.map((item) => String(item || "").trim()).filter(Boolean)));
   if (normalizedIds.length === 0) {
@@ -5384,7 +5600,10 @@ export async function fetchDeviceDetails(
   if (typeof options.mock === "boolean") {
     search.set("mock", options.mock ? "1" : "0");
   }
-  return fetchJson<DeviceDetailBatchDto>(`/bff/v1/sites/${siteId}/devices/details?${search.toString()}`);
+  return fetchJson<DeviceDetailBatchDto>(appendStationScopeQuery(
+    `/bff/v1/sites/${siteId}/devices/details?${search.toString()}`,
+    options.stationId
+  ));
 }
 
 export async function fetchUiBadgeState(url: string = UI_BADGE_STATE_URL): Promise<UiBadgeStateDto> {

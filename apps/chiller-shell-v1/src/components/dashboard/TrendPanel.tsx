@@ -1,4 +1,5 @@
 ﻿import { useState, type PointerEvent } from "react";
+import "./TrendAnalysisShared.css";
 import type { DashboardTrendSeriesDto, DashboardTrendStatDto } from "../../services/bffClient";
 import { zhCN } from "../../i18n/zhCN";
 

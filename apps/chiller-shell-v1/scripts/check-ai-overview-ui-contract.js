@@ -7,6 +7,8 @@ const APP_FILE = path.join(SHELL_ROOT, "src/App.tsx");
 const APP_SHELL_FILE = path.join(SHELL_ROOT, "src/layout/AppShell.tsx");
 const ZH_CN_FILE = path.join(SHELL_ROOT, "src/i18n/zhCN.ts");
 const STYLE_FILE = path.join(SHELL_ROOT, "src/styles/global.css");
+const EXTRACTED_STYLE_FILE = path.join(SHELL_ROOT, "src/pages/AiOverviewExtracted.css");
+const TRUTH_STYLE_FILE = path.join(SHELL_ROOT, "src/pages/AiOverviewTruth.css");
 const README_FILE = path.join(SHELL_ROOT, "README.md");
 
 function read(file) {
@@ -37,24 +39,26 @@ function main() {
   const appSource = read(APP_FILE);
   const shellSource = read(APP_SHELL_FILE);
   const zhCnSource = read(ZH_CN_FILE);
-  const styleSource = read(STYLE_FILE);
+  const styleSource = `${read(STYLE_FILE)}\n${read(EXTRACTED_STYLE_FILE)}\n${read(TRUTH_STYLE_FILE)}`;
   const readmeSource = read(README_FILE);
 
   assertIncludes(appSource, "const AiOverviewPage = lazy(() => import(\"./pages/AiOverviewPage\"));", "route lazy import", errors);
   assertIncludes(appSource, "<Route path=\"/ai-overview\" element={renderLazyPage(AiOverviewPage)} />", "route registration", errors);
   assertIncludes(readmeSource, "- `/ai-overview`", "README route scope", errors);
+  assertIncludes(pageSource, "<h1>{runtimeStationId", "page-level H1", errors);
+  assertNotIncludes(pageSource, "<h2>{runtimeStationId", "page-level heading must not start at H2", errors);
 
   assertIncludes(shellSource, "defaultTo: \"/ai-overview\"", "AI nav default route", errors);
   assertIncludes(shellSource, "to: \"/ai-overview\"", "AI nav overview item", errors);
   assertIncludes(shellSource, "zhCN.appShell.navAiOverview", "AI nav localized label", errors);
-  assertIncludes(zhCnSource, "navAiOverview: \"AI总览大屏\"", "AI nav zh-CN label", errors);
+  assertIncludes(zhCnSource, "navAiOverview: \"AI优化总览\"", "AI nav zh-CN label", errors);
 
   [
     "智慧冷冻站 AI优化总览",
     "影子建议模式",
-    "PLC安全边界在线",
+    "安全边界待站点确认",
     "AI只建议不接管",
-    "人工确认后下发",
+    "人工确认仅形成评审记录",
     "实时寄存器在线",
     "实时摘要驱动",
     "湿球",
@@ -64,6 +68,15 @@ function main() {
     "复核与审计",
     "进入建议复核"
   ].forEach((copy) => assertIncludes(pageSource, copy, "operator-facing control boundary copy", errors));
+
+  [
+    "暂无可评审的 AI 优化建议",
+    "数据未确认前不生成收益、风险或批准状态",
+    "趋势数据待接入",
+    "当前仅有摘要值，不能绘制上升或下降趋势"
+  ].forEach((copy) => assertIncludes(pageSource, copy, "AI evidence truth guard", errors));
+  assertNotIncludes(pageSource, "PLC安全边界在线", "unverified PLC state", errors);
+  assertNotIncludes(pageSource, 'd="M0 88 L60 78', "static COP trend", errors);
 
   [
     "系统COP",
@@ -111,10 +124,18 @@ function main() {
 
   assertIncludes(pageSource, "fetchRuntimePointSummary", "runtime summary API wiring", errors);
   assertIncludes(pageSource, "fetchDashboardOverview", "dashboard overview API wiring", errors);
+  assertIncludes(pageSource, "fetchDashboardOverviewForProject(currentProject)", "project-scoped dashboard request", errors);
+  assertIncludes(pageSource, "siteIdsEquivalent(overviewCandidate.site?.siteId, siteId)", "dashboard project-scope guard", errors);
+  assertIncludes(pageSource, "siteIdsEquivalent(runtimeCandidate.site?.siteId, runtimeSiteId)", "runtime project-scope guard", errors);
+  assertIncludes(pageSource, "resolveAuthProjectDisplayName", "current project display label", errors);
+  assertNotIncludes(pageSource, "B25 中央空调能源站", "cross-project B25 heading fallback", errors);
+  assertNotIncludes(pageSource, "B25实时寄存器待恢复", "cross-project B25 telemetry fallback", errors);
+  assertNotIncludes(pageSource, "只用于盛世绿能办公楼演示", "fixed-project demo explanation", errors);
   assertIncludes(pageSource, "AI_OVERVIEW_REFRESH_MS = 15_000", "runtime refresh cadence", errors);
   assertIncludes(pageSource, "useState<string[]>([])", "approval state", errors);
   assertIncludes(pageSource, "pendingCount", "pending recommendation count", errors);
   assertIncludes(pageSource, "toggleApprove", "approval interaction handler", errors);
+  assertIncludes(pageSource, "if (!runtimeOnline)", "offline approval fail-closed guard", errors);
   assertIncludes(pageSource, "setApprovedIds", "approval state mutation", errors);
   assertIncludes(pageSource, "aria-expanded={isExpanded}", "recommendation disclosure accessibility", errors);
   assertIncludes(pageSource, "isApproved ? \"撤回\" : item.actionLabel", "approved button state copy", errors);
@@ -131,6 +152,8 @@ function main() {
   assertIncludes(styleSource, ".ai-rec-row.is-approved", "approved recommendation visual state", errors);
   assertIncludes(styleSource, ".ai-constraint-grid", "constraint grid layout", errors);
   assertIncludes(styleSource, ".ai-audit-copy", "review audit card layout", errors);
+  assertIncludes(styleSource, ".ai-rec-unavailable", "offline recommendation empty state", errors);
+  assertIncludes(styleSource, ".ai-chart-unavailable", "missing trend empty state", errors);
   assertIncludes(styleSource, "max-width: 100%;", "recommendation queue width guard", errors);
   assertIncludes(styleSource, "@media (max-width: 1180px)", "tablet responsive guard", errors);
   assertIncludes(styleSource, "@media (max-width: 760px)", "mobile responsive guard", errors);
@@ -143,8 +166,10 @@ function main() {
 
   console.log("AI overview UI contract check passed.");
   console.log("- checked /ai-overview route and AI navigation entry");
-  console.log("- checked shadow/advisory boundary and PLC safety copy");
-  console.log("- checked recommendation approval interaction contract");
+  console.log("- checked shadow/advisory boundary without unverified PLC-online claims");
+  console.log("- checked recommendation approval fail-closed interaction contract");
+  console.log("- checked missing realtime/trend evidence empty states");
+  console.log("- checked current-project request headers and response scope guards");
   console.log("- checked desktop fit and responsive CSS guards");
 }
 

@@ -1,7 +1,18 @@
 ﻿import { CloudSun, Droplets, Maximize2, Minimize2, ThermometerSun } from "lucide-react";
 import { Fragment, type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import PlantOverview3D, {
+  resolvePlantOverviewEquipmentMetrics,
+  type PlantOverviewEquipmentMetric,
+  type PlantOverviewEquipmentSelection
+} from "../components/scene3d/PlantOverview3D";
+import PlantOverview2D from "../components/scene3d/PlantOverview2D";
+import { getPlantOverviewProfile } from "../config/plantOverviewRegistry";
 import { runtimeConfig } from "../config/runtimeConfig";
 import { useShellProjectDisplay } from "../context/ShellProjectDisplayContext";
+import {
+  isAppliedStationRuntimeScope,
+  useStationRuntimeScope
+} from "../context/StationRuntimeScopeContext";
 import { getCurrentLocale, type LocaleCode, zhCN } from "../i18n/zhCN";
 import {
   getAuthSession,
@@ -10,6 +21,7 @@ import {
 } from "../services/auth";
 import {
   type DashboardOverviewDto,
+  type RuntimePointSummaryDto,
   type SceneDeviceAlarmRecordDto,
   type SceneDeviceInfoItemDto,
   type SceneDeviceOperationRecordDto,
@@ -18,6 +30,7 @@ import {
   type SceneDeviceParametersDto,
   type SceneFloorModelItemDto,
   fetchDashboardOverviewForProject,
+  fetchRuntimePointSummary,
   fetchSceneDeviceParameters,
   submitSceneDeviceCommand
 } from "../services/bffClient";
@@ -27,10 +40,12 @@ import {
   preloadSceneFloorModels,
   resolveSceneDropdownProjectKey
 } from "../services/sceneFloorModelCache";
+import "./SceneControlExtracted.css";
 
 type SceneMode = "2d" | "3d";
 type SceneFitMode = "fit" | "native" | "zoom";
 type SceneDeviceDialogTab = "info" | "detail" | "control" | "alarm" | "operation";
+type PlantEquipmentInspectorTab = "overview" | "trend" | "diagnostics" | "asset";
 type SceneNativeViewportMode = SceneMode | "any";
 type SceneNativeViewportPreset = {
   x: number;
@@ -55,6 +70,8 @@ type SceneNativeViewportRule = {
 };
 const SCENE_NATIVE_CANVAS_WIDTH = 2500;
 const SCENE_NATIVE_CANVAS_HEIGHT = 920;
+const B25_LOCAL_2D_CANVAS_WIDTH = 1920;
+const B25_LOCAL_2D_CANVAS_HEIGHT = 1080;
 const SCENE_NATIVE_2D_TOP_SAFE_OFFSET_PX = 2;
 const SCENE_NATIVE_2D_BOTTOM_SAFE_OFFSET_PX = 2;
 const SCENE_NATIVE_2D_EFFECTIVE_TOP_Y = 120;
@@ -77,6 +94,13 @@ const SCENE_NATIVE_B25_VIEWPORT: SceneNativeViewportPreset = createSceneNative2d
   width: 1500,
   maxScale: 1.12
 });
+const SCENE_NATIVE_B25_LOCAL_2D_VIEWPORT: SceneNativeViewportPreset = {
+  x: 0,
+  y: 0,
+  width: B25_LOCAL_2D_CANVAS_WIDTH,
+  height: B25_LOCAL_2D_CANVAS_HEIGHT,
+  maxScale: 1
+};
 const SCENE_NATIVE_B25_3D_VIEWPORT: SceneNativeViewportPreset = {
   x: 460,
   y: 120,
@@ -630,6 +654,34 @@ type SceneDeviceClick = {
   frequencyPoint: string;
 };
 
+const PLANT_EQUIPMENT_INSPECTOR_TABS: Array<{ key: PlantEquipmentInspectorTab; label: string }> = [
+  { key: "overview", label: "运行概况" },
+  { key: "trend", label: "趋势" },
+  { key: "diagnostics", label: "告警诊断" },
+  { key: "asset", label: "设备档案" }
+];
+
+function formatPlantEquipmentMetric(metric: PlantOverviewEquipmentMetric): string {
+  if (!isFiniteSceneNumber(metric.value)) {
+    return "--";
+  }
+  const digits = metric.key === "loadPercent" ? 0 : 1;
+  return `${formatSceneRuntimeNumber(metric.value, digits)} ${metric.unit}`;
+}
+
+function formatPlantMetricEvidence(metric: PlantOverviewEquipmentMetric): string {
+  if (metric.evidenceMode === "live") {
+    return "LIVE";
+  }
+  if (metric.evidenceMode === "shadow") {
+    return "SHADOW · 时效不可证";
+  }
+  if (metric.evidenceMode === "stale") {
+    return "STALE · 证据不完整";
+  }
+  return "UNBOUND · 未绑定";
+}
+
 function normalizeUrl(value: string | null | undefined): string {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -831,7 +883,8 @@ function formatSceneRuntimeTime(value: string | null | undefined): string {
 
 function formatSceneRuntimeSourceState(overview: DashboardOverviewDto | null): { label: string; tone: "good" | "warn" | "neutral" } {
   const freshness = overview?.freshness;
-  const timestamp = formatSceneRuntimeTime(freshness?.latestTimestamp || overview?.generatedAt);
+  const sourceTimestamp = freshness?.latestTimestamp || overview?.generatedAt;
+  const timestamp = formatSceneRuntimeTime(sourceTimestamp);
   const suffix = timestamp ? ` · ${timestamp}` : "";
   if (!overview) {
     return { label: "数据待回传", tone: "neutral" };
@@ -842,7 +895,21 @@ function formatSceneRuntimeSourceState(overview: DashboardOverviewDto | null): {
   if (freshness?.label === "fresh") {
     return { label: `数据新鲜${suffix}`, tone: "good" };
   }
-  return { label: `数据已更新${suffix}`, tone: "good" };
+  return { label: `数据时效未确认${suffix}`, tone: "warn" };
+}
+
+function formatSceneStationRuntimeSourceState(
+  summary: RuntimePointSummaryDto | null
+): { label: string; tone: "good" | "warn" | "neutral" } {
+  if (!summary) {
+    return { label: "站房实时摘要待验证", tone: "neutral" };
+  }
+  const timestamp = formatSceneRuntimeTime(summary.generatedAt || summary.pointEvidence?.receivedAt);
+  const suffix = timestamp ? ` · ${timestamp}` : "";
+  if (summary.status === "ready" && (summary.counts?.registerPoints ?? 0) > 0) {
+    return { label: `站房筛选已验证${suffix}`, tone: "good" };
+  }
+  return { label: `站房筛选已验证 · 摘要未就绪${suffix}`, tone: "warn" };
 }
 
 function formatSceneTemperaturePair(first: number | null | undefined, second: number | null | undefined): string {
@@ -866,6 +933,27 @@ function formatSceneEquipmentCounts(overview: DashboardOverviewDto | null): stri
     return "--";
   }
   return values.map((value) => formatSceneRuntimeCount(value)).join("/");
+}
+
+function formatSceneRuntimeEquipmentCounts(summary: RuntimePointSummaryDto | null): string {
+  const values = [
+    summary?.counts?.chillerCount,
+    summary?.counts?.chilledPumpCount,
+    summary?.counts?.coolingPumpCount,
+    summary?.counts?.coolingTowerCount
+  ];
+  if (!values.some(isFiniteSceneNumber)) {
+    return "--";
+  }
+  return values.map((value) => formatSceneRuntimeCount(value)).join("/");
+}
+
+function sumSceneNumbersOrNull(values: Array<number | null | undefined>): number | null {
+  const validValues = values.filter(isFiniteSceneNumber);
+  if (validValues.length === 0) {
+    return null;
+  }
+  return validValues.reduce((total, value) => total + value, 0);
 }
 
 function parseSceneLoadPercent(value: unknown): number | null {
@@ -2868,12 +2956,23 @@ function renderSceneDeviceAlarmRecords(records: SceneDeviceAlarmRecordDto[], loa
 export default function SceneControlPage() {
   const session = getAuthSession();
   const currentProject = getCurrentProject(session);
+  const stationRuntimeScope = useStationRuntimeScope();
+  const runtimeStationId = stationRuntimeScope.runtimeStationId;
+  const plantOverviewProfile = getPlantOverviewProfile(
+    currentProject?.siteId,
+    currentProject?.siteCode,
+    currentProject?.databaseKey,
+    currentProject?.modelKey,
+    currentProject ? undefined : runtimeConfig.siteId
+  );
   const shellProjectDisplayName = useShellProjectDisplay();
   const shellRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const sceneFrameNoticeTimerRef = useRef<number | null>(null);
-  const [mode, setMode] = useState<SceneMode>("2d");
+  const runtimeHudBeforeFullscreenRef = useRef(true);
+  const previousPlantOverviewActiveRef = useRef(Boolean(plantOverviewProfile));
+  const [mode, setMode] = useState<SceneMode>(() => plantOverviewProfile ? "3d" : "2d");
   const [fitMode, setFitMode] = useState<SceneFitMode>("native");
   const [sceneFrameResetKeys, setSceneFrameResetKeys] = useState<Record<SceneMode, number>>({ "2d": 0, "3d": 0 });
   const [loaded2dSceneUrl, setLoaded2dSceneUrl] = useState("");
@@ -2882,10 +2981,12 @@ export default function SceneControlPage() {
   const [loadedActiveSceneFrameToken, setLoadedActiveSceneFrameToken] = useState("");
   const [expiredSceneComfortLoadingToken, setExpiredSceneComfortLoadingToken] = useState("");
   const [nativeFrameViewport, setNativeFrameViewport] = useState({ scale: 1, x: 0, y: 0 });
-  const [items, setItems] = useState<SceneFloorModelItemDto[]>(() => getCachedSceneFloorModels());
+  const [items, setItems] = useState<SceneFloorModelItemDto[]>(() => getCachedSceneFloorModels(currentProject?.siteId));
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState("");
   const [clickedDevice, setClickedDevice] = useState<SceneDeviceClick | null>(null);
+  const [plantEquipmentSelection, setPlantEquipmentSelection] = useState<PlantOverviewEquipmentSelection | null>(null);
+  const [plantEquipmentInspectorTab, setPlantEquipmentInspectorTab] = useState<PlantEquipmentInspectorTab>("overview");
   const [deviceDialogTab, setDeviceDialogTab] = useState<SceneDeviceDialogTab>("info");
   const [deviceParameters, setDeviceParameters] = useState<SceneDeviceParametersDto | null>(null);
   const [deviceParametersLoading, setDeviceParametersLoading] = useState(false);
@@ -2899,9 +3000,24 @@ export default function SceneControlPage() {
     outdoorTempC: null
   });
   const [stationOverview, setStationOverview] = useState<DashboardOverviewDto | null>(null);
+  const [plantRuntimeSummary, setPlantRuntimeSummary] = useState<RuntimePointSummaryDto | null>(null);
   const [runtimeHudExpanded, setRuntimeHudExpanded] = useState(true);
   const [isFrameFullscreen, setIsFrameFullscreen] = useState(false);
   const [sceneFrameNoticeVisible, setSceneFrameNoticeVisible] = useState(false);
+
+  useEffect(() => {
+    setClickedDevice(null);
+    setPlantEquipmentSelection(null);
+    setPlantEquipmentInspectorTab("overview");
+    setDeviceDialogTab("info");
+    setDeviceParameters(null);
+    setDeviceParametersError("");
+    setControlSubmittingKey("");
+    setControlCommandStatus("");
+    setPendingControlCommand(null);
+    setPlantRuntimeSummary(null);
+  }, [stationRuntimeScope.scopeKey]);
+
   const fallbackProjectLabel = resolveAuthProjectDisplayName(currentProject, zhCN.appShell.projectPending);
   const projectLabel = normalizeLabel(shellProjectDisplayName) || fallbackProjectLabel;
   const dashboardProjectKey = useMemo(
@@ -2918,23 +3034,44 @@ export default function SceneControlPage() {
     };
   }, [currentProject, dashboardProjectKey]);
   const activeModel = useMemo(() => findSceneFloorModelForProject(dashboardProject, items), [dashboardProject, items]);
-  const model2dUrl = normalizeUrl(activeModel?.model2dUrl);
+  const remoteModel2dUrl = normalizeUrl(activeModel?.model2dUrl);
+  const model2dUrl = plantOverviewProfile?.model2dAssetPath || remoteModel2dUrl;
   const model3dUrl = normalizeUrl(activeModel?.model3dUrl);
-  const activeUrl = mode === "2d" ? model2dUrl : model3dUrl;
+  const localPlantOverviewActive = mode === "3d" && Boolean(plantOverviewProfile);
+  const localPlantOverview2dActive = mode === "2d" && Boolean(plantOverviewProfile);
+  const sceneRenderer = localPlantOverviewActive
+    ? "local-plant-overview"
+    : localPlantOverview2dActive
+      ? "local-plant-overview-2d"
+      : "remote-scene";
+  const activeUrl = mode === "2d" ? model2dUrl : plantOverviewProfile ? "" : model3dUrl;
+  const hasActiveScene = localPlantOverviewActive || Boolean(activeUrl);
   const activeSceneFrameResetKey = sceneFrameResetKeys[mode];
   const activeSceneFrameToken = activeUrl ? `${mode}:${activeUrl}:${activeSceneFrameResetKey}` : "";
-  const activeNativeViewport = useMemo(() => resolveSceneNativeViewport(activeUrl, mode), [activeUrl, mode]);
-  const inactiveSceneUrl = mode === "2d" ? model3dUrl : model2dUrl;
+  const activeNativeViewport = useMemo(
+    () => localPlantOverview2dActive
+      ? SCENE_NATIVE_B25_LOCAL_2D_VIEWPORT
+      : resolveSceneNativeViewport(activeUrl, mode),
+    [activeUrl, localPlantOverview2dActive, mode]
+  );
+  const activeNativeCanvasWidth = localPlantOverview2dActive
+    ? B25_LOCAL_2D_CANVAS_WIDTH
+    : SCENE_NATIVE_CANVAS_WIDTH;
+  const activeNativeCanvasHeight = localPlantOverview2dActive
+    ? B25_LOCAL_2D_CANVAS_HEIGHT
+    : SCENE_NATIVE_CANVAS_HEIGHT;
+  const inactiveSceneUrl = plantOverviewProfile ? "" : mode === "2d" ? model3dUrl : model2dUrl;
   const sceneModelUrls = useMemo(
-    () => [model2dUrl, model3dUrl].filter((url): url is string => Boolean(url)),
-    [model2dUrl, model3dUrl]
+    () => (plantOverviewProfile ? [model2dUrl] : [model2dUrl, model3dUrl]).filter((url): url is string => Boolean(url)),
+    [model2dUrl, model3dUrl, plantOverviewProfile]
   );
   const shouldMount3dPrewarmFrame = Boolean(
+    !plantOverviewProfile &&
     model3dUrl &&
     (mode === "3d" || (runtimeConfig.sceneIdle3dPrewarm && prewarm3dSceneUrl === model3dUrl))
   );
   const shouldMount2dFrame = Boolean(model2dUrl && mode === "2d");
-  const is3dFrameActive = mode === "3d";
+  const is3dFrameActive = mode === "3d" && !plantOverviewProfile;
   const showSceneComfortLoading = Boolean(
     activeSceneFrameToken &&
       loadedActiveSceneFrameToken !== activeSceneFrameToken &&
@@ -2942,7 +3079,13 @@ export default function SceneControlPage() {
   );
   const sceneLocale = getCurrentLocale();
   const sceneText = getSceneEmbedText(sceneLocale);
-  const activeLabel = sceneText.modeLabels[mode];
+  const activeLabel = localPlantOverviewActive
+    ? runtimeStationId
+      ? `${stationRuntimeScope.stationName || "当前站房"} · 项目级3D模型`
+      : "B25 全站3D"
+    : localPlantOverview2dActive
+      ? plantOverviewProfile?.model2dDisplayName || "B25 全站2D"
+    : sceneText.modeLabels[mode];
   const deviceFilterContext = buildSceneDeviceFilterContext(clickedDevice, deviceParameters?.deviceName);
   const detailGroups = filterSceneDeviceParameterGroups(deviceParameters?.groups || [], deviceFilterContext);
   const controlGroups = filterSceneDeviceParameterGroups(deviceParameters?.controlGroups || [], deviceFilterContext);
@@ -2985,51 +3128,100 @@ export default function SceneControlPage() {
         { label: "\u8bbe\u5907\u7c7b\u578b", value: /^\d+$/.test(readSceneSafeDisplayText(clickedDevice.deviceType)) ? "" : clickedDevice.deviceType }
       ].filter((item) => readSceneSafeDisplayText(item.value))
     : [];
+  const stationScopedRuntimeSummary = runtimeStationId
+    && isAppliedStationRuntimeScope(plantRuntimeSummary?.dataScope, stationRuntimeScope)
+    ? plantRuntimeSummary
+    : null;
+  const sceneRuntimeSummary = runtimeStationId ? stationScopedRuntimeSummary : plantRuntimeSummary;
+  const plantEquipmentMetrics = useMemo(
+    () => resolvePlantOverviewEquipmentMetrics(sceneRuntimeSummary, plantEquipmentSelection),
+    [plantEquipmentSelection, sceneRuntimeSummary]
+  );
+  const plantEquipmentInspectorOpen = (localPlantOverviewActive || localPlantOverview2dActive)
+    && Boolean(plantEquipmentSelection);
+  const runtimeSignals = stationScopedRuntimeSummary?.keySignals;
+  const sceneWeather: SceneWeather = runtimeStationId
+    ? {
+        outdoorWetBulbC: runtimeSignals?.weather?.wetBulbC ?? null,
+        outdoorHumidityPct: runtimeSignals?.weather?.humidityPct ?? null,
+        outdoorTempC: runtimeSignals?.weather?.outdoorTempC ?? null
+      }
+    : weather;
   const environmentItems = [
     {
       key: "wet-bulb",
       label: sceneText.wetBulb,
-      value: formatSceneMetric(weather.outdoorWetBulbC, "\u00b0C"),
+      value: formatSceneMetric(sceneWeather.outdoorWetBulbC, "\u00b0C"),
       icon: <CloudSun size={15} />
     },
     {
       key: "humidity",
       label: sceneText.outdoorHumidity,
-      value: formatSceneMetric(weather.outdoorHumidityPct, "%", 0),
+      value: formatSceneMetric(sceneWeather.outdoorHumidityPct, "%", 0),
       icon: <Droplets size={15} />
     },
     {
       key: "temperature",
       label: sceneText.outdoorTemperature,
-      value: formatSceneMetric(weather.outdoorTempC, "\u00b0C"),
+      value: formatSceneMetric(sceneWeather.outdoorTempC, "\u00b0C"),
       icon: <ThermometerSun size={15} />
     }
   ];
-  const runtimeSourceState = formatSceneRuntimeSourceState(stationOverview);
-  const energyCards = stationOverview?.energyCards;
-  const totalPowerKw = energyCards?.totalPowerKw ?? null;
-  const totalCoolingCapacity = energyCards?.totalCoolingCapacity ?? null;
+  const runtimeSourceState = runtimeStationId
+    ? formatSceneStationRuntimeSourceState(stationScopedRuntimeSummary)
+    : formatSceneRuntimeSourceState(stationOverview);
+  const sceneControlBlocked = Boolean(plantOverviewProfile) || Boolean(runtimeStationId);
+  const energyCards = runtimeStationId ? null : stationOverview?.energyCards;
+  const stationPower = runtimeSignals?.power;
+  const totalPowerKw = runtimeStationId
+    ? sumSceneNumbersOrNull([
+        stationPower?.runningChillerPowerKw,
+        stationPower?.runningChilledPumpPowerKw,
+        stationPower?.runningCoolingPumpPowerKw,
+        stationPower?.runningCoolingTowerPowerKw
+      ])
+    : energyCards?.totalPowerKw ?? null;
+  const totalCoolingCapacity = runtimeStationId ? null : energyCards?.totalCoolingCapacity ?? null;
   const stationEfficiency = energyCards?.currentCop ?? divideSceneOrNull(totalCoolingCapacity, totalPowerKw);
   const loadRate = energyCards?.currentLoadRate ?? null;
-  const chillerPowerKw = energyCards?.chillerPowerKw ?? null;
-  const chilledPumpPowerKw = energyCards?.chilledPumpPowerKw ?? null;
-  const coolingPumpPowerKw = energyCards?.coolingPumpPowerKw ?? null;
-  const coolingTowerPowerKw = energyCards?.coolingTowerPowerKw ?? null;
+  const chillerPowerKw = runtimeStationId
+    ? stationPower?.runningChillerPowerKw ?? null
+    : energyCards?.chillerPowerKw ?? null;
+  const chilledPumpPowerKw = runtimeStationId
+    ? stationPower?.runningChilledPumpPowerKw ?? null
+    : energyCards?.chilledPumpPowerKw ?? null;
+  const coolingPumpPowerKw = runtimeStationId
+    ? stationPower?.runningCoolingPumpPowerKw ?? null
+    : energyCards?.coolingPumpPowerKw ?? null;
+  const coolingTowerPowerKw = runtimeStationId
+    ? stationPower?.runningCoolingTowerPowerKw ?? null
+    : energyCards?.coolingTowerPowerKw ?? null;
   const auxiliaryPowerKw =
     (isFiniteSceneNumber(chilledPumpPowerKw) ? chilledPumpPowerKw : 0) +
     (isFiniteSceneNumber(coolingPumpPowerKw) ? coolingPumpPowerKw : 0) +
     (isFiniteSceneNumber(coolingTowerPowerKw) ? coolingTowerPowerKw : 0);
   const hasAuxiliaryPower = [chilledPumpPowerKw, coolingPumpPowerKw, coolingTowerPowerKw].some(isFiniteSceneNumber);
-  const chilledSupplyTemp = energyCards?.chilledSupplyTemp ?? null;
-  const chilledDeltaT = energyCards?.chilledDeltaT ?? null;
-  const chilledReturnTemp =
-    isFiniteSceneNumber(chilledSupplyTemp) && isFiniteSceneNumber(chilledDeltaT)
+  const chilledSupplyTemp = runtimeStationId
+    ? runtimeSignals?.chilledWater?.supplyTempC ?? null
+    : energyCards?.chilledSupplyTemp ?? null;
+  const chilledDeltaT = runtimeStationId
+    ? runtimeSignals?.chilledWater?.deltaTC ?? null
+    : energyCards?.chilledDeltaT ?? null;
+  const chilledReturnTemp = runtimeStationId
+    ? runtimeSignals?.chilledWater?.returnTempC ?? null
+    : isFiniteSceneNumber(chilledSupplyTemp) && isFiniteSceneNumber(chilledDeltaT)
       ? chilledSupplyTemp + chilledDeltaT
       : null;
-  const coolingReturnTemp = energyCards?.coolingReturnTemp ?? null;
-  const coolingDeltaT = energyCards?.coolingDeltaT ?? null;
-  const activeAlarmCount = stationOverview?.alarmSummary?.total ?? energyCards?.activeAnomalyCount ?? null;
-  const highAlarmCount = stationOverview?.alarmSummary?.high ?? null;
+  const coolingReturnTemp = runtimeStationId
+    ? runtimeSignals?.coolingWater?.returnTempC ?? null
+    : energyCards?.coolingReturnTemp ?? null;
+  const coolingDeltaT = runtimeStationId
+    ? runtimeSignals?.coolingWater?.deltaTC ?? null
+    : energyCards?.coolingDeltaT ?? null;
+  const activeAlarmCount = runtimeStationId
+    ? null
+    : stationOverview?.alarmSummary?.total ?? energyCards?.activeAnomalyCount ?? null;
+  const highAlarmCount = runtimeStationId ? null : stationOverview?.alarmSummary?.high ?? null;
   const alarmRuntimeText =
     isFiniteSceneNumber(highAlarmCount) && highAlarmCount > 0
       ? `${formatSceneRuntimeCount(highAlarmCount)}高危`
@@ -3079,13 +3271,15 @@ export default function SceneControlPage() {
       label: "冷却水",
       value: formatSceneRuntimeNumber(coolingReturnTemp, 1),
       unit: "°C",
-      hint: `回水 · ΔT ${formatSceneRuntimeNumber(coolingDeltaT, 1)}°C · 湿球 ${formatSceneMetric(weather.outdoorWetBulbC, "°C")}`,
+      hint: `回水 · ΔT ${formatSceneRuntimeNumber(coolingDeltaT, 1)}°C · 湿球 ${formatSceneMetric(sceneWeather.outdoorWetBulbC, "°C")}`,
       tone: "warn"
     },
     {
       key: "equipment-counts",
       label: "设备组合",
-      value: formatSceneEquipmentCounts(stationOverview),
+      value: runtimeStationId
+        ? formatSceneRuntimeEquipmentCounts(stationScopedRuntimeSummary)
+        : formatSceneEquipmentCounts(stationOverview),
       hint: "冷机/泵/塔 · 设备数"
     }
   ];
@@ -3110,7 +3304,11 @@ export default function SceneControlPage() {
       label: "活跃告警",
       value: alarmRuntimeText,
       hint: alarmRuntimeHint,
-      tone: isFiniteSceneNumber(highAlarmCount) && highAlarmCount > 0 ? "danger" : "good"
+      tone: isFiniteSceneNumber(highAlarmCount)
+        ? highAlarmCount > 0
+          ? "danger"
+          : "good"
+        : "neutral"
     }
   ];
   const visibleRuntimeMetrics = runtimeHudExpanded ? sceneRuntimeMetrics : sceneRuntimeCompactMetrics;
@@ -3120,6 +3318,122 @@ export default function SceneControlPage() {
     { label: "告警", value: alarmRuntimeText },
     { label: "状态", value: runtimeSourceState.label.replace(/^数据/, "") }
   ];
+
+  useEffect(() => {
+    const wasPlantOverviewActive = previousPlantOverviewActiveRef.current;
+    const plantOverviewActive = Boolean(plantOverviewProfile);
+    if (plantOverviewActive && !wasPlantOverviewActive) {
+      setMode("3d");
+    } else if (!plantOverviewActive && wasPlantOverviewActive && mode === "3d" && !model3dUrl) {
+      setMode("2d");
+    }
+    previousPlantOverviewActiveRef.current = plantOverviewActive;
+  }, [mode, model3dUrl, plantOverviewProfile]);
+
+  useEffect(() => {
+    if (!localPlantOverviewActive && !localPlantOverview2dActive) {
+      setPlantEquipmentSelection(null);
+      setPlantEquipmentInspectorTab("overview");
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setPlantEquipmentSelection(null);
+        setPlantEquipmentInspectorTab("overview");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [localPlantOverview2dActive, localPlantOverviewActive]);
+
+  useEffect(() => {
+    const runtimeSiteId = runtimeStationId
+      ? stationRuntimeScope.runtimeBindingSiteId
+      : dashboardProject?.siteId || currentProject?.siteId || runtimeConfig.siteId;
+    if ((!plantOverviewProfile && !runtimeStationId) || !runtimeSiteId) {
+      setPlantRuntimeSummary(null);
+      return;
+    }
+    const siteId = String(runtimeSiteId);
+    const refreshIntervalMs = 10_000;
+    let active = true;
+    let requestInFlight = false;
+    let refreshTimer: number | null = null;
+    let activeRequestController: AbortController | null = null;
+    setPlantRuntimeSummary(null);
+
+    const scheduleNextRefresh = () => {
+      if (!active) {
+        return;
+      }
+      refreshTimer = window.setTimeout(() => {
+        void refreshRuntimeSummary();
+      }, refreshIntervalMs);
+    };
+    const refreshRuntimeSummary = async () => {
+      if (!active || requestInFlight) {
+        return;
+      }
+      if (document.visibilityState === "hidden") {
+        scheduleNextRefresh();
+        return;
+      }
+      requestInFlight = true;
+      const requestController = new AbortController();
+      activeRequestController = requestController;
+      const requestTimeout = window.setTimeout(() => requestController.abort(), 8_000);
+      try {
+        const summary = await fetchRuntimePointSummary(siteId, {
+          signal: requestController.signal,
+          stationId: runtimeStationId
+        });
+        if (runtimeStationId && !isAppliedStationRuntimeScope(summary.dataScope, stationRuntimeScope)) {
+          throw new Error("Runtime summary did not prove the selected physical-station scope");
+        }
+        if (active) {
+          setPlantRuntimeSummary(summary);
+        }
+      } catch {
+        // Preserve the last evidence envelope. Its observedAt ages into STALE
+        // locally instead of a transport error being mislabeled as UNBOUND.
+      } finally {
+        window.clearTimeout(requestTimeout);
+        if (activeRequestController === requestController) {
+          activeRequestController = null;
+        }
+        requestInFlight = false;
+        scheduleNextRefresh();
+      }
+    };
+    const handleVisibilityChange = () => {
+      if (!active || document.visibilityState !== "visible" || requestInFlight) {
+        return;
+      }
+      if (refreshTimer !== null) {
+        window.clearTimeout(refreshTimer);
+        refreshTimer = null;
+      }
+      void refreshRuntimeSummary();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    void refreshRuntimeSummary();
+    return () => {
+      active = false;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (refreshTimer !== null) {
+        window.clearTimeout(refreshTimer);
+      }
+      activeRequestController?.abort();
+    };
+  }, [
+    currentProject?.siteId,
+    dashboardProject?.siteId,
+    plantOverviewProfile,
+    runtimeStationId,
+    stationRuntimeScope.runtimeBindingSiteId,
+    stationRuntimeScope.scopeKey
+  ]);
 
   useEffect(() => {
     setLoaded2dSceneUrl("");
@@ -3180,6 +3494,7 @@ export default function SceneControlPage() {
 
   useEffect(() => {
     if (
+      plantOverviewProfile ||
       !runtimeConfig.sceneIdle3dPrewarm ||
       mode !== "2d" ||
       !model2dUrl ||
@@ -3208,14 +3523,16 @@ export default function SceneControlPage() {
         idleWindow.cancelIdleCallback(idleHandle);
       }
     };
-  }, [loaded2dSceneUrl, mode, model2dUrl, model3dUrl, prewarm3dSceneUrl]);
+  }, [loaded2dSceneUrl, mode, model2dUrl, model3dUrl, plantOverviewProfile, prewarm3dSceneUrl]);
 
   useEffect(() => {
     if (!currentProject?.siteId) {
+      setItems([]);
       return;
     }
 
     let active = true;
+    setItems(getCachedSceneFloorModels(currentProject.siteId));
     setLoading(true);
     setErrorText("");
     preloadSceneFloorModels(currentProject.siteId)
@@ -3243,7 +3560,7 @@ export default function SceneControlPage() {
   }, [currentProject?.siteId, currentProject?.modelKey, currentProject?.template]);
 
   useEffect(() => {
-    if (!dashboardProject?.siteId) {
+    if (runtimeStationId || !dashboardProject?.siteId) {
       setStationOverview(null);
       setWeather({
         outdoorWetBulbC: null,
@@ -3280,7 +3597,8 @@ export default function SceneControlPage() {
     dashboardProject?.siteId,
     dashboardProject?.modelKey,
     dashboardProject?.databaseKey,
-    dashboardProject?.template
+    dashboardProject?.template,
+    runtimeStationId
   ]);
 
   useEffect(() => {
@@ -3328,6 +3646,15 @@ export default function SceneControlPage() {
       setPendingControlCommand(null);
       return;
     }
+    if (runtimeStationId) {
+      setDeviceParameters(null);
+      setDeviceParametersError("当前站房实例仅开放经过 allowlist 的运行摘要；场景设备详情接口尚未完成 stationId 过滤，本次未读取项目级参数。");
+      setDeviceParametersLoading(false);
+      setControlSubmittingKey("");
+      setControlCommandStatus("");
+      setPendingControlCommand(null);
+      return;
+    }
     if (!dashboardProject?.siteId || !clickedDevice.drId) {
       setDeviceParameters(null);
       setDeviceParametersError("\u5f53\u524d\u8bbe\u5907\u7f3a\u5c11 drId\uff0c\u6682\u65f6\u65e0\u6cd5\u62c9\u53d6\u8be6\u7ec6\u53c2\u6570\u3002");
@@ -3368,7 +3695,7 @@ export default function SceneControlPage() {
     return () => {
       active = false;
     };
-  }, [clickedDevice, dashboardProject?.siteId]);
+  }, [clickedDevice, dashboardProject?.siteId, runtimeStationId, stationRuntimeScope.scopeKey]);
 
   useEffect(() => {
     if (clickedDevice && deviceParameters?.deviceInfo?.visible === false && deviceDialogTab === "info") {
@@ -3384,7 +3711,11 @@ export default function SceneControlPage() {
 
   useEffect(() => {
     function handleFullscreenChange() {
-      setIsFrameFullscreen(document.fullscreenElement === shellRef.current);
+      const fullscreen = document.fullscreenElement === shellRef.current;
+      setIsFrameFullscreen(fullscreen);
+      if (!fullscreen) {
+        setRuntimeHudExpanded(runtimeHudBeforeFullscreenRef.current);
+      }
     }
 
     document.addEventListener("fullscreenchange", handleFullscreenChange);
@@ -3392,12 +3723,6 @@ export default function SceneControlPage() {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
     };
   }, []);
-
-  useEffect(() => {
-    if (isFrameFullscreen) {
-      setRuntimeHudExpanded(false);
-    }
-  }, [isFrameFullscreen]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
@@ -3432,11 +3757,11 @@ export default function SceneControlPage() {
     function updateNativeFrameScale() {
       const widthScale = currentStage.clientWidth / nativeViewport.width;
       const nativeViewportHeight =
-        mode === "2d"
-          ? Math.max(1, Math.min(SCENE_NATIVE_CANVAS_HEIGHT, nativeViewport.y + nativeViewport.height) - nativeViewport.y)
+        mode === "2d" && !localPlantOverview2dActive
+          ? Math.max(1, Math.min(activeNativeCanvasHeight, nativeViewport.y + nativeViewport.height) - nativeViewport.y)
           : nativeViewport.height;
       const availableStageHeight =
-        mode === "2d"
+        mode === "2d" && !localPlantOverview2dActive
           ? currentStage.clientHeight - SCENE_NATIVE_2D_TOP_SAFE_OFFSET_PX - SCENE_NATIVE_2D_BOTTOM_SAFE_OFFSET_PX
           : currentStage.clientHeight;
       const heightScale = Math.max(1, availableStageHeight) / nativeViewportHeight;
@@ -3446,7 +3771,7 @@ export default function SceneControlPage() {
         (currentStage.clientWidth - nativeViewport.width * roundedScale) / 2 -
         nativeViewport.x * roundedScale;
       const offsetY =
-        mode === "2d"
+        mode === "2d" && !localPlantOverview2dActive
           ? SCENE_NATIVE_2D_TOP_SAFE_OFFSET_PX - nativeViewport.y * roundedScale
           : (currentStage.clientHeight - nativeViewport.height * roundedScale) / 2 -
             nativeViewport.y * roundedScale;
@@ -3471,7 +3796,16 @@ export default function SceneControlPage() {
     return () => {
       observer.disconnect();
     };
-  }, [activeNativeViewport, activeUrl, fitMode, isFrameFullscreen, activeSceneFrameResetKey, mode]);
+  }, [
+    activeNativeCanvasHeight,
+    activeNativeViewport,
+    activeUrl,
+    fitMode,
+    isFrameFullscreen,
+    activeSceneFrameResetKey,
+    localPlantOverview2dActive,
+    mode
+  ]);
 
   useEffect(() => {
     if (!activeUrl || fitMode === "native") {
@@ -3542,6 +3876,7 @@ export default function SceneControlPage() {
       document.exitFullscreen?.();
       return;
     }
+    runtimeHudBeforeFullscreenRef.current = runtimeHudExpanded;
     shell.requestFullscreen?.();
   }
 
@@ -3588,7 +3923,7 @@ export default function SceneControlPage() {
     setFitMode(SCENE_NATIVE_FIT_MODE_OPTION.value);
     setNativeFrameViewport({ scale: 1, x: 0, y: 0 });
     setLoadedActiveSceneFrameToken("");
-    if (resetMode === "3d") {
+    if (resetMode === "3d" && !localPlantOverviewActive) {
       setPrewarmed3dReadyUrl("");
       scheduleSceneFrameAutoFit([0, 120, 360]);
     }
@@ -3610,6 +3945,12 @@ export default function SceneControlPage() {
     actionKey: string,
     displayText?: string
   ) {
+    if (sceneControlBlocked) {
+      setControlCommandStatus(runtimeStationId
+        ? "站房实例模式尚未完成场景控制端点的 stationId 过滤，禁止创建 BA/PLC 控制指令。"
+        : "B25 全站模型仅用于身份与运行态展示，禁止创建 BA/PLC 控制指令。");
+      return;
+    }
     if (!dashboardProject?.siteId || !clickedDevice) {
       return;
     }
@@ -3640,6 +3981,13 @@ export default function SceneControlPage() {
   }
 
   async function handleConfirmSceneControlCommand() {
+    if (sceneControlBlocked) {
+      setPendingControlCommand(null);
+      setControlCommandStatus(runtimeStationId
+        ? "站房实例场景控制尚未完成安全作用域验证，本次指令未下发。"
+        : "B25 只读三维展示不允许下发控制指令，本次指令未下发。");
+      return;
+    }
     if (!dashboardProject?.siteId || !clickedDevice || !pendingControlCommand) {
       return;
     }
@@ -3725,22 +4073,24 @@ export default function SceneControlPage() {
   }
 
   const nativeFrameStyle =
-    fitMode === "native"
+    fitMode === "native" && !localPlantOverviewActive
       ? ({
           "--scene-native-scale": nativeFrameViewport.scale,
           "--scene-native-x": `${nativeFrameViewport.x}px`,
           "--scene-native-y": `${nativeFrameViewport.y}px`,
-          "--scene-native-width": `${SCENE_NATIVE_CANVAS_WIDTH}px`,
-          "--scene-native-height": `${SCENE_NATIVE_CANVAS_HEIGHT}px`
+          "--scene-native-width": `${activeNativeCanvasWidth}px`,
+          "--scene-native-height": `${activeNativeCanvasHeight}px`
         } as CSSProperties)
       : undefined;
 
   return (
     <div className="scene-embed-page page-enter">
+      <h1 className="scene-embed-page-heading">冷冻站工艺总览</h1>
       <div
         className={`scene-embed-shell${runtimeHudExpanded ? "" : " is-runtime-collapsed"}${
           isFrameFullscreen ? " is-frame-fullscreen" : ""
         }`}
+        data-plant-immersive={localPlantOverviewActive ? (isFrameFullscreen ? "true" : "false") : undefined}
         ref={shellRef}
       >
         <div className="scene-embed-runtimebar" aria-label="冷站运行态">
@@ -3787,12 +4137,52 @@ export default function SceneControlPage() {
         </div>
 
         <div
-          className={`scene-embed-stage is-fit-${fitMode}`}
+          className={`scene-embed-stage is-fit-${fitMode}${plantEquipmentInspectorOpen ? " has-plant-device-inspector" : ""}`}
           data-scene-mode={mode}
+          data-scene-renderer={sceneRenderer}
+          data-b25-plant-overview-2d={localPlantOverview2dActive ? "physical-scada-2.5d" : undefined}
+          data-plant-device-inspector-open={plantEquipmentInspectorOpen ? "true" : "false"}
           ref={stageRef}
           style={nativeFrameStyle}
         >
-          {activeUrl ? (
+          {localPlantOverviewActive && plantOverviewProfile ? (
+            <div
+              className="scene-embed-plant-overview"
+              data-b25-plant-overview-entry="true"
+              data-scene-control-scope="read-only-no-ba-plc-write"
+            >
+              <PlantOverview3D
+                key={stationRuntimeScope.scopeKey}
+                profile={plantOverviewProfile}
+                runtimeSummary={sceneRuntimeSummary}
+                runtimeScopeKey={stationRuntimeScope.scopeKey}
+                operationalEvidence={false}
+                resetViewSignal={sceneFrameResetKeys["3d"]}
+                viewportFitSignal={`${isFrameFullscreen ? "immersive" : "embedded"}-${
+                  runtimeHudExpanded ? "expanded" : "collapsed"
+                }-${plantEquipmentInspectorOpen ? "inspector-open" : "inspector-closed"}`}
+                inspectedEquipmentId={plantEquipmentSelection?.equipmentId ?? null}
+                onEquipmentSelectionChange={(selection) => {
+                  setPlantEquipmentSelection(selection);
+                  setPlantEquipmentInspectorTab("overview");
+                }}
+                embedded
+              />
+            </div>
+          ) : localPlantOverview2dActive && plantOverviewProfile && model2dUrl ? (
+            <PlantOverview2D
+              key={`${stationRuntimeScope.scopeKey}-${sceneFrameResetKeys["2d"]}`}
+              profile={plantOverviewProfile}
+              runtimeSummary={sceneRuntimeSummary}
+              runtimeScopeKey={stationRuntimeScope.scopeKey}
+              inspectedEquipmentId={plantEquipmentSelection?.equipmentId ?? null}
+              onEquipmentSelectionChange={(selection) => {
+                setPlantEquipmentSelection(selection);
+                setPlantEquipmentInspectorTab("overview");
+              }}
+              onReady={() => handleSceneFrameLoad("2d", model2dUrl)}
+            />
+          ) : activeUrl ? (
             <Fragment>
               {shouldMount2dFrame ? (
                 <iframe
@@ -3801,8 +4191,14 @@ export default function SceneControlPage() {
                   className={`scene-embed-frame is-2d is-fit-${fitMode}`}
                   data-scene-active="true"
                   data-scene-mode="2d"
+                  data-b25-plant-overview-2d={localPlantOverview2dActive ? plantOverviewProfile?.model2dPresentation : undefined}
+                  data-plant-2d-evidence={localPlantOverview2dActive ? plantOverviewProfile?.model2dEvidenceMode : undefined}
+                  data-flow-evidence={localPlantOverview2dActive ? "schematic" : undefined}
+                  data-scene-control-scope={localPlantOverview2dActive ? "read-only-no-ba-plc-write" : undefined}
                   data-scene-reset-key={sceneFrameResetKeys["2d"]}
-                  title={`${projectLabel}-${sceneText.modeLabels["2d"]}`}
+                  title={localPlantOverview2dActive
+                    ? plantOverviewProfile?.model2dDisplayName
+                    : `${projectLabel}-${sceneText.modeLabels["2d"]}`}
                   src={model2dUrl}
                   scrolling="no"
                   onLoad={() => handleSceneFrameLoad("2d", model2dUrl)}
@@ -3865,9 +4261,126 @@ export default function SceneControlPage() {
               <span>场景加载未完成，请核对 2D/3D 场景服务</span>
             </div>
           ) : null}
+
+          {plantEquipmentInspectorOpen && plantEquipmentSelection ? (
+            <aside
+              className="scene-embed-plant-device-inspector"
+              aria-label={`${plantEquipmentSelection.equipmentId}设备只读检查器`}
+              data-plant-device-inspector="docked-read-only-v1"
+              data-plant-device-inspector-width-px="360"
+              data-plant-device-inspector-modal="false"
+              data-plant-device-inspector-control-tabs="0"
+              data-control-boundary="read-only-no-ba-plc-write"
+            >
+              <header className="scene-embed-plant-device-inspector-head">
+                <div>
+                  <span>{plantEquipmentSelection.groupLabel}</span>
+                  <strong>{plantEquipmentSelection.equipmentId}</strong>
+                  <small>{plantEquipmentSelection.runtimeId} · 设备 #{plantEquipmentSelection.deviceId}</small>
+                </div>
+                <div className={`scene-embed-plant-device-state is-${plantEquipmentSelection.state} is-${plantEquipmentSelection.evidenceMode}`}>
+                  <b>{plantEquipmentSelection.stateLabel}</b>
+                  <small>{plantEquipmentSelection.evidenceMode === "live"
+                    ? "LIVE"
+                    : plantEquipmentSelection.evidenceMode === "shadow"
+                      ? "SHADOW · 时效不可证"
+                      : plantEquipmentSelection.evidenceMode === "stale"
+                        ? "STALE"
+                        : "UNBOUND"}</small>
+                </div>
+                <button
+                  type="button"
+                  className="scene-embed-plant-device-inspector-close"
+                  onClick={() => {
+                    setPlantEquipmentSelection(null);
+                    setPlantEquipmentInspectorTab("overview");
+                  }}
+                  aria-label="关闭设备检查器"
+                >
+                  ×
+                </button>
+              </header>
+
+              <nav className="scene-embed-plant-device-inspector-tabs" role="tablist" aria-label="设备检查器标签页">
+                {PLANT_EQUIPMENT_INSPECTOR_TABS.map((tab) => <button
+                  type="button"
+                  key={tab.key}
+                  role="tab"
+                  aria-selected={plantEquipmentInspectorTab === tab.key}
+                  className={plantEquipmentInspectorTab === tab.key ? "active" : ""}
+                  onClick={() => setPlantEquipmentInspectorTab(tab.key)}
+                >
+                  {tab.label}
+                </button>)}
+              </nav>
+
+              <div className="scene-embed-plant-device-inspector-body">
+                {plantEquipmentInspectorTab === "overview" ? <>
+                  <section className="scene-embed-plant-device-kpis" aria-label="设备关键运行参数">
+                    <article className={`is-state is-${plantEquipmentSelection.state}`}>
+                      <span>设备状态</span>
+                      <strong>{plantEquipmentSelection.stateLabel}</strong>
+                      <small>{plantEquipmentSelection.evidenceMode === "shadow" ? "SHADOW · 时效不可证" : plantEquipmentSelection.evidenceMode.toUpperCase()}</small>
+                    </article>
+                    {plantEquipmentMetrics.map((metric) => <article
+                      key={metric.key}
+                      className={`is-${metric.evidenceMode}`}
+                      data-device-metric-key={metric.key}
+                      data-device-metric-evidence={metric.evidenceMode}
+                    >
+                      <span>{metric.label}</span>
+                      <strong>{formatPlantEquipmentMetric(metric)}</strong>
+                      <small>{formatPlantMetricEvidence(metric)}</small>
+                    </article>)}
+                    <article className="is-unbound">
+                      <span>状态持续</span>
+                      <strong>--</strong>
+                      <small>无权威 changedAt</small>
+                    </article>
+                  </section>
+                  <section className="scene-embed-plant-device-evidence">
+                    <strong>证据边界</strong>
+                    <p>设备状态与参数仅按精确 deviceId + tagName 读取；不使用同组设备、全站汇总或模糊名称回填。</p>
+                    <dl>
+                      <div><dt>状态依据</dt><dd>{plantEquipmentSelection.reason}</dd></div>
+                      <div><dt>observedAt</dt><dd>{plantEquipmentMetrics.find((metric) => metric.observedAt)?.observedAt || "-- · 时效不可证"}</dd></div>
+                    </dl>
+                  </section>
+                </> : null}
+
+                {plantEquipmentInspectorTab === "trend" ? <section className="scene-embed-plant-device-empty-tab">
+                  <strong>历史趋势未绑定</strong>
+                  <p>需接入带 stationId、deviceId、tagName 与权威 observedAt 的历史点位接口后才能展示，当前不使用站级曲线替代。</p>
+                </section> : null}
+
+                {plantEquipmentInspectorTab === "diagnostics" ? <section className="scene-embed-plant-device-diagnostics">
+                  <div><span>当前状态</span><strong>{plantEquipmentSelection.stateLabel}</strong></div>
+                  <div><span>告警记录</span><strong>-- · 未绑定</strong></div>
+                  <div><span>诊断结论</span><strong>-- · 未绑定</strong></div>
+                  <p>通信缺失、坏质量和时效不可证不会被推断为设备故障。</p>
+                </section> : null}
+
+                {plantEquipmentInspectorTab === "asset" ? <section className="scene-embed-plant-device-asset">
+                  <dl>
+                    <div><dt>模型设备</dt><dd>{plantEquipmentSelection.equipmentId}</dd></div>
+                    <div><dt>运行身份</dt><dd>{plantEquipmentSelection.runtimeId}</dd></div>
+                    <div><dt>设备ID</dt><dd>{plantEquipmentSelection.deviceId}</dd></div>
+                    <div><dt>设备类型</dt><dd>{plantEquipmentSelection.groupLabel}</dd></div>
+                    <div><dt>模型资产</dt><dd>{plantOverviewProfile?.assetId || "--"}</dd></div>
+                    <div><dt>控制权限</dt><dd>只读 · 禁止 BA/PLC 写入</dd></div>
+                  </dl>
+                </section> : null}
+              </div>
+
+              <footer className="scene-embed-plant-device-inspector-foot">
+                <span>只读检查器</span>
+                <strong>无启停、复位、频率设定入口</strong>
+              </footer>
+            </aside>
+          ) : null}
         </div>
 
-        {clickedDevice ? (
+        {clickedDevice && !localPlantOverviewActive && !localPlantOverview2dActive ? (
           <div className="scene-embed-device-dialog-backdrop" role="presentation">
             <section
               className={`scene-embed-device-dialog${isDeviceInfoDialog ? " is-device-info-dialog" : ""}`}
@@ -4010,8 +4523,14 @@ export default function SceneControlPage() {
                       <button type="button" onClick={() => setPendingControlCommand(null)}>
                         {"\u53d6\u6d88"}
                       </button>
-                      <button type="button" className="is-primary" onClick={handleConfirmSceneControlCommand}>
-                        {"确认下发"}
+                      <button
+                        type="button"
+                        className="is-primary"
+                        onClick={handleConfirmSceneControlCommand}
+                        disabled={sceneControlBlocked}
+                        title={sceneControlBlocked ? "当前场景作用域只读，禁止下发" : "确认下发"}
+                      >
+                        {sceneControlBlocked ? "作用域只读" : "确认下发"}
                       </button>
                     </div>
                   </section>
@@ -4025,7 +4544,7 @@ export default function SceneControlPage() {
         <div className="scene-embed-switchbar">
           <div className="scene-embed-current">
             <strong>{projectLabel}</strong>
-            <span>{activeUrl || loading ? `${activeLabel}${loading ? ` \u00b7 ${sceneText.loading}` : ""}` : sceneText.noRemoteUrl}</span>
+            <span>{hasActiveScene || loading ? `${activeLabel}${localPlantOverviewActive || localPlantOverview2dActive ? " · 只读展示" : ""}${runtimeStationId ? " · 运行摘要按站房筛选" : ""}${loading ? ` \u00b7 ${sceneText.loading}` : ""}` : sceneText.noRemoteUrl}</span>
           </div>
           <div className="scene-embed-environment" aria-label={sceneText.environmentAria}>
             {environmentItems.map((item) => (
@@ -4055,8 +4574,8 @@ export default function SceneControlPage() {
                 aria-selected={mode === "3d"}
                 className={mode === "3d" ? "active" : ""}
                 onClick={() => setMode("3d")}
-                disabled={!model3dUrl}
-                title={model3dUrl || sceneText.missing3dUrl}
+                disabled={!plantOverviewProfile && !model3dUrl}
+                title={plantOverviewProfile?.displayName || model3dUrl || sceneText.missing3dUrl}
               >
                 {sceneText.modeLabels["3d"]}
               </button>
@@ -4064,7 +4583,7 @@ export default function SceneControlPage() {
             <div className="scene-embed-fit-actions" aria-label="场景视口适配">
               <button
                 type="button"
-                className={fitMode === SCENE_NATIVE_FIT_MODE_OPTION.value ? "active" : ""}
+                className={!localPlantOverviewActive && fitMode === SCENE_NATIVE_FIT_MODE_OPTION.value ? "active" : ""}
                 onClick={handleResetSceneNativeView}
                 title={SCENE_NATIVE_FIT_MODE_OPTION.title}
               >
@@ -4075,7 +4594,7 @@ export default function SceneControlPage() {
               type="button"
               className="scene-embed-fullscreen-button"
               onClick={handleToggleFullscreen}
-              disabled={!activeUrl}
+              disabled={!hasActiveScene}
               aria-label={isFrameFullscreen ? sceneText.restore : sceneText.fullscreen}
               title={isFrameFullscreen ? sceneText.restore : sceneText.fullscreen}
             >

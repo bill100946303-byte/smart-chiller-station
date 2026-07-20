@@ -19,6 +19,8 @@ import {
   flattenProjectDropdownTargets
 } from "../services/projectDropdownEntries";
 import { appendSiteIdToPath, siteIdsEquivalent } from "../services/siteRouting";
+import "./ProjectSelectionExtracted.css";
+import "./ProjectSelectionMobile.css";
 
 type ProjectOverviewState =
   | {
@@ -413,7 +415,7 @@ export default function ProjectSelectionPage() {
   const landingPath =
     redirectPath && redirectPath.startsWith("/") && !redirectPath.startsWith("/projects")
       ? redirectPath
-      : "/scene-control";
+      : "/dashboard";
 
   function resolveQueueDisplayName(project: AuthProject | null | undefined): string {
     const optionId = resolveProjectOptionId(project);
@@ -693,7 +695,7 @@ export default function ProjectSelectionPage() {
       <section className="project-switch-header subpage-command-board">
         <div className="project-switch-command-copy subpage-command-copy">
           <p className="project-switch-command-eyebrow">{runtimeConfig.appModeLabel}</p>
-          <h2>{zhCN.projectSwitcher.title}</h2>
+          <h1>{zhCN.projectSwitcher.title}</h1>
           <div className="project-switch-command-tags">
             {commandTags.map((item) => (
               <span key={item.label}>

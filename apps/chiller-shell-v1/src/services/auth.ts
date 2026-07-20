@@ -1203,7 +1203,7 @@ export function resolveAuthDestination(
 
   return {
     kind: "internal",
-    path: appendSiteIdToPath(redirectTarget || "/scene-control", currentProject?.siteId)
+    path: appendSiteIdToPath(redirectTarget || "/dashboard", currentProject?.siteId)
   };
 }
 

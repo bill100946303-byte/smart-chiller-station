@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import "./OperationalDiagnosticsExtracted.css";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import SectionCard from "../components/common/SectionCard";
@@ -131,6 +132,33 @@ const DIAGNOSTIC_ORDER = [
   "coolingTowerCapability",
   "chillerHealthCombination"
 ];
+const OPERATIONAL_DIAGNOSTICS_TIMEOUT_MS = 12_000;
+
+async function requestOperationalDiagnostics(siteId: string): Promise<OptimizeDraftResponseDto> {
+  let timeoutId: number | null = null;
+  try {
+    return await Promise.race([
+      postOptimizeDraft(siteId, {
+        context: { siteId },
+        inputs: {
+          loadKw: DEFAULT_LOAD_KW,
+          loadSource: "scenario",
+          outdoorTempC: DEFAULT_WET_BULB_C,
+          mode: "cooling"
+        }
+      }),
+      new Promise<never>((_resolve, reject) => {
+        timeoutId = window.setTimeout(() => {
+          reject(new Error("运行诊断读取超过 12 秒，已停止等待；请检查优化草稿链路后重试。"));
+        }, OPERATIONAL_DIAGNOSTICS_TIMEOUT_MS);
+      })
+    ]);
+  } finally {
+    if (timeoutId != null) {
+      window.clearTimeout(timeoutId);
+    }
+  }
+}
 
 const ACTION_BY_DIAGNOSTIC_KEY: Record<string, PriorityAction> = {
   instrumentDataQuality: {
@@ -312,13 +340,23 @@ function summarizeItem(item: DiagnosticItem): string {
 function buildExecutiveConclusion(
   advisor: OperationalDiagnosticsAdvisor | undefined,
   summary: OperationalDiagnosticsAdvisor["summary"] | undefined,
-  items: DiagnosticItem[]
+  items: DiagnosticItem[],
+  loadError: string | null,
+  loading: boolean
 ): ExecutiveConclusion {
+  if (loadError) {
+    return {
+      tone: "danger",
+      title: "诊断链路不可用，禁止进入 shadow 验证",
+      detail: "诊断证据未返回，不能判定系统无硬阻断；先恢复优化草稿服务链路并重新读取。"
+    };
+  }
+
   if (!advisor) {
     return {
       tone: "neutral",
-      title: "正在读取运行诊断",
-      detail: "等待实时数据和历史样本返回。"
+      title: loading ? "正在读取运行诊断" : "暂无可用诊断结论",
+      detail: loading ? "等待实时数据和历史样本返回。" : "未取得诊断证据，当前不能进入 shadow 验证。"
     };
   }
 
@@ -569,17 +607,10 @@ export default function OperationalDiagnosticsPage() {
 
   async function loadDiagnostics() {
     setLoading(true);
+    setDetails(null);
     setError(null);
     try {
-      const response = await postOptimizeDraft(activeSiteId, {
-        context: { siteId: activeSiteId },
-        inputs: {
-          loadKw: DEFAULT_LOAD_KW,
-          loadSource: "scenario",
-          outdoorTempC: DEFAULT_WET_BULB_C,
-          mode: "cooling"
-        }
-      });
+      const response = await requestOperationalDiagnostics(activeSiteId);
       const nextDetails = readDraftDetails(response);
       setDetails(nextDetails);
       setLoadedAt(new Date().toLocaleString("zh-CN", { hour12: false }));
@@ -593,15 +624,9 @@ export default function OperationalDiagnosticsPage() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    postOptimizeDraft(activeSiteId, {
-      context: { siteId: activeSiteId },
-        inputs: {
-          loadKw: DEFAULT_LOAD_KW,
-          loadSource: "scenario",
-          outdoorTempC: DEFAULT_WET_BULB_C,
-          mode: "cooling"
-        }
-    })
+    setDetails(null);
+    setError(null);
+    requestOperationalDiagnostics(activeSiteId)
       .then((response) => {
         if (cancelled) {
           return;
@@ -641,7 +666,10 @@ export default function OperationalDiagnosticsPage() {
       return (leftIndex === -1 ? 99 : leftIndex) - (rightIndex === -1 ? 99 : rightIndex);
     });
   }, [advisor?.items]);
-  const conclusion = useMemo(() => buildExecutiveConclusion(advisor, summary, orderedItems), [advisor, orderedItems, summary]);
+  const conclusion = useMemo(
+    () => buildExecutiveConclusion(advisor, summary, orderedItems, error, loading),
+    [advisor, error, loading, orderedItems, summary]
+  );
   const topRisks = useMemo(() => collectTopRisks(orderedItems), [orderedItems]);
   const priorityActions = useMemo(() => buildPriorityActions(orderedItems), [orderedItems]);
   const primaryAction = priorityActions[0];
@@ -654,7 +682,7 @@ export default function OperationalDiagnosticsPage() {
       <header className="operational-diagnostics-hero subpage-command-board">
         <div className="operational-diagnostics-hero-copy subpage-command-copy">
           <span>站点 {activeSiteId} / 只读诊断</span>
-          <h2>工程诊断结论</h2>
+          <h1>工程诊断结论</h1>
           <p>{conclusion.title}</p>
         </div>
         <div className="operational-diagnostics-hero-actions subpage-command-side">
@@ -688,10 +716,21 @@ export default function OperationalDiagnosticsPage() {
         <article className="operational-diagnostics-action-card">
           <div>
             <span>优先动作</span>
-            <strong>{primaryAction ? `${primaryAction.priority}｜${primaryAction.title}` : "等待诊断数据"}</strong>
+            <strong>
+              {error
+                ? "P0｜恢复优化草稿服务链路后重试"
+                : primaryAction
+                  ? `${primaryAction.priority}｜${primaryAction.title}`
+                  : "等待诊断数据"}
+            </strong>
           </div>
           <ol className="operational-diagnostics-action-list">
-            {followUpActions.length ? (
+            {error ? (
+              <li className="is-p0">
+                <em>P0</em>
+                <span>检查诊断网关、上游优化草稿接口和站点 {activeSiteId} 的数据链路；恢复前保持只读。</span>
+              </li>
+            ) : followUpActions.length ? (
               followUpActions.map((action) => (
                 <li className={`is-${action.priority.toLowerCase()}`} key={action.key}>
                   <em>{action.priority}</em>
@@ -714,11 +753,17 @@ export default function OperationalDiagnosticsPage() {
         <article className="operational-diagnostics-risk-card">
           <div>
             <span>阻断/风险</span>
-            <strong>{formatNumber(topRisks.blockers.length, 0)} 阻断 / {formatNumber(topRisks.warnings.length, 0)} 风险</strong>
+            <strong>
+              {error
+                ? "1 阻断 / 风险未知"
+                : `${formatNumber(topRisks.blockers.length, 0)} 阻断 / ${formatNumber(topRisks.warnings.length, 0)} 风险`}
+            </strong>
           </div>
           {renderTextList(
             [...topRisks.blockers, ...topRisks.warnings],
-            "当前无硬阻断，按建议进入 shadow 验证。",
+            error
+              ? "诊断证据未返回，不能判定无硬阻断，也不能进入 shadow 验证。"
+              : "当前无硬阻断，按建议进入 shadow 验证。",
             { limit: 4 }
           )}
         </article>
@@ -759,8 +804,14 @@ export default function OperationalDiagnosticsPage() {
         </section>
       ) : (
         <section className="operational-diagnostics-loading-panel" aria-label="运行诊断加载状态">
-          <strong>{loading ? "正在读取诊断数据" : "暂无诊断数据"}</strong>
-          <span>{loading ? "读取站点运行点位、历史样本和诊断证据。" : "请刷新或检查数据服务链路。"}</span>
+          <strong>{loading ? "正在读取诊断数据" : error ? "诊断链路不可用" : "暂无诊断数据"}</strong>
+          <span>
+            {loading
+              ? "读取站点运行点位、历史样本和诊断证据。"
+              : error
+                ? "诊断证据未返回，已禁止进入 shadow 验证；请恢复数据服务链路后刷新。"
+                : "请刷新或检查数据服务链路。"}
+          </span>
         </section>
       )}
 
@@ -772,62 +823,61 @@ export default function OperationalDiagnosticsPage() {
         <span>多机无单机流量不算单机 COP</span>
       </div>
 
-      <section className="operational-diagnostics-detail-stack" aria-label="运行诊断完整明细">
-        {loading && !advisor ? (
-          <SectionCard title="运行诊断加载中" action={<StatusPill label="读取中" tone="neutral" />}>
-            <p className="operational-diagnostics-empty">读取中...</p>
+      {hasAdvisor ? (
+        <>
+          <section className="operational-diagnostics-detail-stack" aria-label="运行诊断完整明细">
+            {orderedItems.map(renderDiagnosticItem)}
+          </section>
+
+          <SectionCard title="现场复核对象" action={<StatusPill label={`${formatNumber(fieldChecklist?.total, 0)} 项任务`} tone="warn" />}>
+            <div className="operational-diagnostics-field-grid">
+              {(fieldChecklist?.items || []).map((task) => (
+                <article className={task.priority === "P0" ? "is-p0" : ""} key={task.key || task.title}>
+                  <div>
+                    <span>{task.priority || "P1"} · {task.sourceTier || "待分档"}档</span>
+                    <StatusPill label={task.ownerRole || "现场复核"} tone={task.priority === "P0" ? "warn" : "neutral"} />
+                  </div>
+                  <strong>{task.title || "现场复核任务"}</strong>
+                  <p>{task.verificationTarget || "待确认复核对象。"}</p>
+                  <small>证据：{(task.requiredEvidence || []).slice(0, 4).join(" / ") || "待补"}</small>
+                  <small>缺口：{(task.missingData || []).slice(0, 3).join(" / ") || "暂无"}</small>
+                </article>
+              ))}
+            </div>
           </SectionCard>
-        ) : null}
-        {orderedItems.map(renderDiagnosticItem)}
-      </section>
 
-      <SectionCard title="现场复核对象" action={<StatusPill label={`${formatNumber(fieldChecklist?.total, 0)} 项任务`} tone="warn" />}>
-        <div className="operational-diagnostics-field-grid">
-          {(fieldChecklist?.items || []).map((task) => (
-            <article className={task.priority === "P0" ? "is-p0" : ""} key={task.key || task.title}>
-              <div>
-                <span>{task.priority || "P1"} · {task.sourceTier || "待分档"}档</span>
-                <StatusPill label={task.ownerRole || "现场复核"} tone={task.priority === "P0" ? "warn" : "neutral"} />
-              </div>
-              <strong>{task.title || "现场复核任务"}</strong>
-              <p>{task.verificationTarget || "待确认复核对象。"}</p>
-              <small>证据：{(task.requiredEvidence || []).slice(0, 4).join(" / ") || "待补"}</small>
-              <small>缺口：{(task.missingData || []).slice(0, 3).join(" / ") || "暂无"}</small>
-            </article>
-          ))}
-        </div>
-      </SectionCard>
+          <SectionCard title="数据可用性" action={<StatusPill label={`${formatNumber(readinessMatrix?.total, 0)} 项`} tone="warn" />}>
+            <div className="operational-diagnostics-readiness-grid">
+              {(readinessMatrix?.items || []).map((item) => (
+                <article key={item.key || item.title}>
+                  <div>
+                    <span>{item.tier || "待分档"}档 · {localizeMode(item.allowedMode)}</span>
+                    <StatusPill label={localizeFeasibility(item.currentFeasibility)} tone={item.currentFeasibility === "can_do_v1" ? "good" : "warn"} />
+                  </div>
+                  <strong>{item.title || "诊断项"}</strong>
+                  <small>已有：{(item.availableData || []).slice(0, 3).join(" / ") || "待补"}</small>
+                  <small>缺口：{(item.missingData || []).slice(0, 3).join(" / ") || "暂无"}</small>
+                </article>
+              ))}
+            </div>
+          </SectionCard>
 
-      <SectionCard title="数据可用性" action={<StatusPill label={`${formatNumber(readinessMatrix?.total, 0)} 项`} tone="warn" />}>
-        <div className="operational-diagnostics-readiness-grid">
-          {(readinessMatrix?.items || []).map((item) => (
-            <article key={item.key || item.title}>
-              <div>
-                <span>{item.tier || "待分档"}档 · {localizeMode(item.allowedMode)}</span>
-                <StatusPill label={localizeFeasibility(item.currentFeasibility)} tone={item.currentFeasibility === "can_do_v1" ? "good" : "warn"} />
-              </div>
-              <strong>{item.title || "诊断项"}</strong>
-              <small>已有：{(item.availableData || []).slice(0, 3).join(" / ") || "待补"}</small>
-              <small>缺口：{(item.missingData || []).slice(0, 3).join(" / ") || "暂无"}</small>
-            </article>
-          ))}
-        </div>
-      </SectionCard>
-
-      <SectionCard title="现场采集包状态" action={<StatusPill label={collectionPackage?.finalDecision || "待确认"} tone={collectionPackage?.readyToCollect ? "good" : "warn"} />}>
-        <div className="operational-diagnostics-collection">
-          <article>
-            <span>正式输入</span>
-            <strong>{formatNumber(collectionPackage?.formalInputCount, 0)}</strong>
-            <small>缺失 {formatNumber(collectionPackage?.missingFormalInputCount, 0)} · 模板 {formatNumber(collectionPackage?.templateCount, 0)}</small>
-          </article>
-          <article>
-            <span>报告路径</span>
-            <strong>{collectionPackage?.reportPath || "待生成"}</strong>
-            <small>{collectionPackage?.controlBoundary || fieldChecklist?.controlBoundary || "只读采集包，不写 PLC。"}</small>
-          </article>
-        </div>
-      </SectionCard>
+          <SectionCard title="现场采集包状态" action={<StatusPill label={collectionPackage?.finalDecision || "待确认"} tone={collectionPackage?.readyToCollect ? "good" : "warn"} />}>
+            <div className="operational-diagnostics-collection">
+              <article>
+                <span>正式输入</span>
+                <strong>{formatNumber(collectionPackage?.formalInputCount, 0)}</strong>
+                <small>缺失 {formatNumber(collectionPackage?.missingFormalInputCount, 0)} · 模板 {formatNumber(collectionPackage?.templateCount, 0)}</small>
+              </article>
+              <article>
+                <span>报告路径</span>
+                <strong>{collectionPackage?.reportPath || "待生成"}</strong>
+                <small>{collectionPackage?.controlBoundary || fieldChecklist?.controlBoundary || "只读采集包，不写 PLC。"}</small>
+              </article>
+            </div>
+          </SectionCard>
+        </>
+      ) : null}
     </div>
   );
 }

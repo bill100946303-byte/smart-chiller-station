@@ -1,8 +1,36 @@
-import { ArrowLeftRight, BellRing, BookOpen, Box, ChartColumnIncreasing, ChevronDown, ChevronRight, ClipboardList, Cpu, Fan, FileText, Gauge, LayoutGrid, LineChart, LogOut, PlugZap, Settings2, Sparkles, Video, Wind, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { ArrowLeftRight, BellRing, BookOpen, Box, ChartColumnIncreasing, ChevronDown, ChevronRight, ClipboardList, Cpu, Fan, FileText, Flame, Gauge, LayoutGrid, LineChart, LogOut, Network, PlugZap, Settings2, Sparkles, Video, Wind, X } from "lucide-react";
+import {
+  type KeyboardEvent as ReactKeyboardEvent,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState
+} from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { runtimeConfig } from "../config/runtimeConfig";
+import "./AppShellMobile.css";
+import "./AppShellRole.css";
+import "./AppShellStation.css";
 import { ShellProjectDisplayProvider } from "../context/ShellProjectDisplayContext";
+import { StationRuntimeScopeProvider } from "../context/StationRuntimeScopeContext";
+import { prioritizeNavigationModules, resolveNavigationPerspective } from "../config/navigationPolicy";
+import {
+  appendEnergyStationContextToPath,
+  clearEnergyStationContextFromSearch,
+  ENERGY_OBJECT_SEMANTIC_GROUPS,
+  ENERGY_STATION_DEFINITIONS,
+  isEnergyStationVisible,
+  isPhysicalStationParentType,
+  isStationWorkspaceRouteSupported,
+  readEnergyStationIdFromSearch,
+  readEnergyStationTypeFromSearch,
+  resolveStationRuntimeBindingMode,
+  resolveStationWorkspaceRoutePolicy,
+  type EnergyStationIconKey,
+  type EnergyStationType,
+  type StationCapabilityLoadState,
+  type StationFunctionIconKey
+} from "../config/energyStationNavigation";
 import { getCurrentLocale, getLocaleOptions, setCurrentLocale, zhCN } from "../i18n/zhCN";
 import { getProjectVisitStats, recordProjectVisit } from "../services/projectSession";
 import {
@@ -11,12 +39,25 @@ import {
   getAuthSession,
   getCurrentProject,
   resolveAuthProjectId,
+  resolveEnergyConfigSiteId,
   getSwitchableProjects,
   resolveAuthProjectDisplayName,
   selectAuthProject
 } from "../services/auth";
-import { appendSiteIdToPath, buildScopedLocationPath, siteIdsEquivalent } from "../services/siteRouting";
+import {
+  fetchSiteCapabilities,
+  type RuntimeStationInstanceDto,
+  type RuntimeSubsystemCapabilityDto,
+  type RuntimeSubsystemCapabilityListDto
+} from "../services/bffClient";
+import {
+  appendSiteIdToPath,
+  buildScopedLocationPath,
+  clearCrossProjectTransientContextFromSearch,
+  siteIdsEquivalent
+} from "../services/siteRouting";
 import { preloadSceneFloorModels } from "../services/sceneFloorModelCache";
+import { getSubsystemStatusPresentation } from "../utils/subsystemStatus";
 
 type CascadedProjectNode = {
   key: string;
@@ -55,7 +96,100 @@ type ProjectDropdownOption = {
   order: number;
 };
 
+const PROJECT_SWITCHER_TRIGGER_ID = "top-project-switcher-trigger";
+const PROJECT_SWITCHER_LABEL_ID = "top-project-switcher-label";
+const PROJECT_SWITCHER_TREE_ID = "top-project-switcher-tree";
+const PROJECT_SWITCHER_VALUE_ID = "top-project-switcher-value";
+const LOCALE_SWITCHER_TRIGGER_ID = "top-locale-switcher-trigger";
+const LOCALE_SWITCHER_LABEL_ID = "top-locale-switcher-label";
+const LOCALE_SWITCHER_LISTBOX_ID = "top-locale-switcher-listbox";
+const LOCALE_SWITCHER_VALUE_ID = "top-locale-switcher-value";
+
+function buildStableDomId(prefix: string, value: string): string {
+  const suffix = value
+    ? Array.from(value)
+        .map((character) => character.codePointAt(0)?.toString(16) || "x")
+        .join("-")
+    : "empty";
+  return `${prefix}-${suffix}`;
+}
+
+function resolveProjectOptionDomId(optionId: string): string {
+  return buildStableDomId("top-project-switcher-option", optionId);
+}
+
+function resolveProjectGroupDomId(groupKey: string): string {
+  return buildStableDomId("top-project-switcher-group", groupKey);
+}
+
+function resolveProjectChildrenGroupDomId(groupKey: string): string {
+  return buildStableDomId("top-project-switcher-children", groupKey);
+}
+
+function resolveLocaleOptionDomId(localeCode: string): string {
+  return buildStableDomId("top-locale-switcher-option", localeCode);
+}
+
 const DEFAULT_INTERMEDIATE_PROJECT_LABELS = new Set(["默认", "default"]);
+
+function renderEnergyStationIcon(iconKey: EnergyStationIconKey) {
+  switch (iconKey) {
+    case "compressed-air":
+      return <Wind size={14} />;
+    case "boiler":
+      return <Flame size={14} />;
+    case "power":
+      return <PlugZap size={14} />;
+    case "terminal":
+      return <Fan size={14} />;
+    default:
+      return <Box size={14} />;
+  }
+}
+
+function renderStationFunctionIcon(iconKey: StationFunctionIconKey) {
+  switch (iconKey) {
+    case "twin":
+      return <Network size={14} />;
+    case "overview":
+      return <LayoutGrid size={14} />;
+    default:
+      return <Box size={14} />;
+  }
+}
+
+function resolvePublishedStationBindingVersion(
+  instance: RuntimeStationInstanceDto | null | undefined
+): number | null {
+  if (!instance) {
+    return null;
+  }
+  const publishedVersion = instance.publishedBindingVersion
+    ?? (instance.bindingState === "published" ? instance.bindingVersion : null);
+  return Number.isSafeInteger(publishedVersion) && Number(publishedVersion) > 0
+    ? Number(publishedVersion)
+    : null;
+}
+
+function formatStationInstanceBindingLabel(instance: RuntimeStationInstanceDto): string {
+  const publishedVersion = resolvePublishedStationBindingVersion(instance);
+  if (Number.isSafeInteger(publishedVersion) && Number(publishedVersion) > 0) {
+    return zhCN.appShell.navStationBindingPublished.replace("{version}", String(publishedVersion));
+  }
+  if (instance.bindingState === "validated" && Number.isSafeInteger(instance.draftBindingVersion)) {
+    return zhCN.appShell.navStationBindingValidated.replace(
+      "{version}",
+      String(instance.draftBindingVersion)
+    );
+  }
+  if (Number.isSafeInteger(instance.draftBindingVersion) && Number(instance.draftBindingVersion) > 0) {
+    return zhCN.appShell.navStationBindingDraft.replace(
+      "{version}",
+      String(instance.draftBindingVersion)
+    );
+  }
+  return zhCN.appShell.navStationBindingUnconfigured;
+}
 
 function scoreDropdownLabel(value: string): number {
   const normalized = normalizeProjectLabel(value);
@@ -660,14 +794,160 @@ export default function AppShell() {
   const [nowLabel, setNowLabel] = useState(() => formatNowLabel(locale));
   const [switchingProjectId, setSwitchingProjectId] = useState<string | null>(null);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isCompactViewport, setIsCompactViewport] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 900px)").matches : false
+  );
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
   const [isLocaleDropdownOpen, setIsLocaleDropdownOpen] = useState(false);
+  const [activeProjectTreeItemId, setActiveProjectTreeItemId] = useState<string | null>(null);
+  const [activeLocaleOptionId, setActiveLocaleOptionId] = useState<string | null>(null);
+  const [openWorkspaceMenuKey, setOpenWorkspaceMenuKey] = useState<string | null>(null);
+  const [expandedStationType, setExpandedStationType] = useState<EnergyStationType | null>(null);
   const [expandedProjectNodeKeys, setExpandedProjectNodeKeys] = useState<string[]>([]);
+  const [siteCapabilities, setSiteCapabilities] = useState<RuntimeSubsystemCapabilityListDto | null>(null);
+  const [stationCapabilityLoadState, setStationCapabilityLoadState] =
+    useState<StationCapabilityLoadState>("loading");
   const projectDropdownRef = useRef<HTMLDivElement | null>(null);
   const localeDropdownRef = useRef<HTMLDivElement | null>(null);
+  const projectDropdownTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const projectTreeRef = useRef<HTMLDivElement | null>(null);
+  const pendingProjectTreeFocusIntentRef = useRef<"current" | "first" | "last">("current");
+  const localeDropdownTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const localeListboxRef = useRef<HTMLDivElement | null>(null);
+  const mobileNavToggleRef = useRef<HTMLButtonElement | null>(null);
+  const primaryNavRef = useRef<HTMLElement | null>(null);
+  const shellMainRef = useRef<HTMLElement | null>(null);
   const session = getAuthSession();
   const sessionProjects = session?.projects || [];
   const currentProject = getCurrentProject(session);
+  const capabilitySiteId = resolveEnergyConfigSiteId(currentProject, runtimeConfig.siteId);
+
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    document.title = zhCN.appShell.title;
+  }, [locale]);
+
+  useLayoutEffect(() => {
+    if (shellMainRef.current) {
+      shellMainRef.current.scrollTop = 0;
+      shellMainRef.current.scrollLeft = 0;
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 900px)");
+    const handleViewportChange = (event: MediaQueryListEvent) => {
+      setIsCompactViewport(event.matches);
+      setOpenWorkspaceMenuKey(null);
+      if (!event.matches) {
+        setIsMobileNavOpen(false);
+      }
+    };
+    setIsCompactViewport(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleViewportChange);
+    return () => mediaQuery.removeEventListener("change", handleViewportChange);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    let refreshing = false;
+
+    setSiteCapabilities(null);
+    setStationCapabilityLoadState("loading");
+
+    async function loadCapabilities() {
+      if (refreshing) {
+        return;
+      }
+      refreshing = true;
+      try {
+        const result = await fetchSiteCapabilities(capabilitySiteId);
+        if (active) {
+          setSiteCapabilities(result);
+          setStationCapabilityLoadState("ready");
+        }
+      } catch {
+        if (active) {
+          setSiteCapabilities(null);
+          setStationCapabilityLoadState("error");
+        }
+      } finally {
+        refreshing = false;
+      }
+    }
+
+    void loadCapabilities();
+    const timer = window.setInterval(() => {
+      void loadCapabilities();
+    }, 30_000);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [capabilitySiteId]);
+
+  useEffect(() => {
+    if (!isCompactViewport || !isMobileNavOpen) {
+      return;
+    }
+    const navigation = primaryNavRef.current;
+    if (!navigation) {
+      return;
+    }
+    const focusableSelector = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusFrame = window.requestAnimationFrame(() => {
+      const firstFocusable = navigation.querySelector<HTMLElement>(focusableSelector);
+      (navigation.querySelector<HTMLElement>("[data-mobile-nav-close]") || firstFocusable)?.focus();
+    });
+
+    return () => window.cancelAnimationFrame(focusFrame);
+  }, [isCompactViewport, isMobileNavOpen]);
+
+  useEffect(() => {
+    if (!isCompactViewport || !isMobileNavOpen) {
+      return;
+    }
+    const navigation = primaryNavRef.current;
+    if (!navigation) {
+      return;
+    }
+    const focusableSelector = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+    const handleNavigationKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        if (openWorkspaceMenuKey) {
+          setOpenWorkspaceMenuKey(null);
+          window.requestAnimationFrame(() => focusVisibleWorkspaceMenuTrigger(openWorkspaceMenuKey));
+          return;
+        }
+        setIsMobileNavOpen(false);
+        window.requestAnimationFrame(() => mobileNavToggleRef.current?.focus());
+        return;
+      }
+      if (event.key !== "Tab") {
+        return;
+      }
+      const focusableElements = Array.from(navigation.querySelectorAll<HTMLElement>(focusableSelector))
+        .filter((element) => element.getClientRects().length > 0);
+      if (focusableElements.length === 0) {
+        return;
+      }
+      const first = focusableElements[0];
+      const last = focusableElements[focusableElements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleNavigationKeyDown);
+    return () => document.removeEventListener("keydown", handleNavigationKeyDown);
+  }, [isCompactViewport, isMobileNavOpen, openWorkspaceMenuKey]);
   const availableProjects = getSwitchableProjects(sessionProjects);
   const fallbackCurrentProjectDisplayName = resolveAuthProjectDisplayName(currentProject, zhCN.appShell.projectPending);
   const projectTree = buildCascadedProjectTree(sessionProjects);
@@ -855,20 +1135,105 @@ export default function AppShell() {
     })
     .sort(compareProjectDropdownEntries);
   const showRuntimeBadge = runtimeConfig.appMode !== "local";
+  const navigationPerspective = resolveNavigationPerspective(session?.role, runtimeConfig.readOnlyMode);
+  const capabilityBySubsystemType = new Map(
+    (siteCapabilities?.items || []).map((item) => [item.subsystemType, item] as const)
+  );
+  const registeredStationInstances = (siteCapabilities?.stationInstances || []).filter((instance) => (
+    instance.published !== false &&
+    siteIdsEquivalent(instance.siteId, capabilitySiteId) &&
+    isPhysicalStationParentType(instance.parentSubsystemType)
+  ));
+  const stationInstancesBySubsystemType = new Map<EnergyStationType, RuntimeStationInstanceDto[]>();
+  for (const instance of registeredStationInstances) {
+    const parentSubsystemType = instance.parentSubsystemType as EnergyStationType;
+    const current = stationInstancesBySubsystemType.get(parentSubsystemType) || [];
+    current.push(instance);
+    stationInstancesBySubsystemType.set(parentSubsystemType, current);
+  }
+  const energyStationItems = ENERGY_STATION_DEFINITIONS.map((definition) => {
+    const capability = capabilityBySubsystemType.get(definition.subsystemType) || null;
+    const label = zhCN.appShell[definition.labelKey];
+    const summary = zhCN.appShell[definition.summaryKey];
+    const statusSource: RuntimeSubsystemCapabilityDto | null = capability || (
+      stationCapabilityLoadState === "ready"
+        ? {
+            subsystemType: definition.subsystemType,
+            displayName: label,
+            status: "not_configured"
+          }
+        : null
+    );
+    const status = getSubsystemStatusPresentation(statusSource);
+    const functions = definition.functions.map((item) => ({
+      to: item.to,
+      label: zhCN.appShell[item.labelKey],
+      icon: renderStationFunctionIcon(item.iconKey)
+    }));
+    const alarmCount = status.realDataReady && typeof capability?.alarmCount === "number" && Number.isFinite(capability.alarmCount)
+      ? Math.max(0, capability.alarmCount)
+      : null;
+    const instances = (stationInstancesBySubsystemType.get(definition.subsystemType) || [])
+      .slice()
+      .sort((left, right) => (
+        (left.sortOrder ?? 999) - (right.sortOrder ?? 999) ||
+        left.stationName.localeCompare(right.stationName, "zh-CN", { numeric: true, sensitivity: "base" })
+      ))
+      .map((instance) => {
+        const instanceStatus = getSubsystemStatusPresentation({
+          siteId: instance.siteId,
+          subsystemType: instance.parentSubsystemType,
+          displayName: instance.stationName,
+          status: instance.status,
+          sourceStatus: instance.sourceStatus,
+          freshnessStatus: instance.freshnessStatus
+        });
+        return {
+          ...instance,
+          statusPresentation: instanceStatus,
+          alarmCount: instanceStatus.realDataReady && typeof instance.alarmCount === "number" && Number.isFinite(instance.alarmCount)
+            ? Math.max(0, instance.alarmCount)
+            : null
+        };
+      });
+
+    return {
+      ...definition,
+      label,
+      summary,
+      icon: renderEnergyStationIcon(definition.iconKey),
+      status,
+      capability,
+      alarmCount,
+      instances,
+      functions,
+      visible: isEnergyStationVisible(status.kind, stationCapabilityLoadState, navigationPerspective)
+    };
+  });
+  const visibleEnergyStationItems = energyStationItems.filter((item) => item.visible);
+  const visibleEnergyStationGroups = ENERGY_OBJECT_SEMANTIC_GROUPS
+    .map((group) => ({
+      ...group,
+      label: zhCN.appShell[group.labelKey],
+      items: visibleEnergyStationItems.filter((item) => item.semanticGroup === group.key)
+    }))
+    .filter((group) => group.items.length > 0);
+  const stationFunctionItems = energyStationItems.flatMap((station) => station.functions);
   const isDashboardRoute = location.pathname === "/dashboard";
   const isSceneControlRoute = location.pathname === "/scene-control";
+  const isAutoTwinRoute = location.pathname === "/auto-twin";
   const isProjectSelectionRoute = location.pathname === "/projects";
   const projectRouteShellSubtitle = runtimeConfig.readOnlyMode
     ? `${runtimeConfig.appModeLabel} · ${zhCN.runtimeMode.readOnlyBadge}`
     : runtimeConfig.appModeLabel;
   const projectSelectionTopHint =
     availableProjects.length > 0
-      ? `共 ${availableProjects.length} 个项目，当前项目已就绪，可直接切换进入。`
+      ? zhCN.projectSwitcher.availableHint.replace("{count}", String(availableProjects.length))
       : zhCN.projectSwitcher.pendingHint;
   const shellSubtitleParts = isProjectSelectionRoute
     ? []
     : currentProject
-      ? [currentProject.city, currentProject.siteId ? `项目编号 ${currentProject.siteId}` : ""].filter(Boolean)
+      ? [currentProject.city, currentProject.siteId ? `${zhCN.projectSwitcher.siteIdLabel} ${currentProject.siteId}` : ""].filter(Boolean)
       : [];
   const shellTitle = currentProjectCardDisplayName;
   const shellSubtitle = isProjectSelectionRoute
@@ -876,27 +1241,33 @@ export default function AppShell() {
     : currentProject
       ? shellSubtitleParts.join(" · ")
       : zhCN.projectSwitcher.pendingHint;
-  const navModules = [
+  const navModules = prioritizeNavigationModules([
     {
       key: "dashboard",
-      label: zhCN.appShell.navDashboard,
-      description: "运行 / 场景",
+      label: zhCN.appShell.navSectionDashboard,
+      description: zhCN.appShell.navDescriptionDashboard,
       icon: <Gauge size={14} />,
       defaultTo: "/dashboard",
       items: [
-        { to: "/dashboard", icon: <Gauge size={14} />, label: "运行驾驶舱" },
-        { to: "/scene-control", icon: <Box size={14} />, label: "冷站场景" }
+        { to: "/dashboard", icon: <Gauge size={14} />, label: zhCN.appShell.navOperationDashboard }
       ]
+    },
+    {
+      key: "operations",
+      label: zhCN.appShell.navSectionOperations,
+      description: zhCN.appShell.navDescriptionOperations,
+      icon: <Box size={14} />,
+      defaultTo: visibleEnergyStationItems[0]?.defaultTo || "/scene-control",
+      items: stationFunctionItems
     },
     {
       key: "duty",
       label: zhCN.appShell.navSectionDuty,
-      description: "告警 / 日志 / 工单",
+      description: zhCN.appShell.navDescriptionDuty,
       icon: <BellRing size={14} />,
       defaultTo: "/alarms",
       items: [
         { to: "/alarms", icon: <BellRing size={14} />, label: zhCN.appShell.navAlarms },
-        { to: "/cold-station-logs", icon: <FileText size={14} />, label: zhCN.appShell.navColdStationLog },
         { to: "/operation-records", icon: <ClipboardList size={14} />, label: zhCN.appShell.navOperationRecords },
         { to: "/work-orders", icon: <ClipboardList size={14} />, label: zhCN.appShell.navWorkOrders },
       ]
@@ -904,15 +1275,11 @@ export default function AppShell() {
     {
       key: "diagnostics",
       label: zhCN.appShell.navSectionDiagnostics,
-      description: "总览 / 设备 / 工况",
+      description: zhCN.appShell.navDescriptionDiagnostics,
       icon: <Cpu size={14} />,
-      defaultTo: "/system-overview",
+      defaultTo: "/devices",
       items: [
-        { to: "/system-overview", icon: <LayoutGrid size={14} />, label: zhCN.appShell.navSystemOverview },
         { to: "/devices", icon: <Cpu size={14} />, label: zhCN.appShell.navDevices },
-        { to: "/power-monitoring", icon: <PlugZap size={14} />, label: "电力监控" },
-        { to: "/compressed-air", icon: <Wind size={14} />, label: "空压站" },
-        { to: "/hvac-terminal", icon: <Fan size={14} />, label: "空调末端" },
         { to: "/video-monitor", icon: <Video size={14} />, label: zhCN.appShell.navVideoMonitor },
         { to: "/environment-conditions", icon: <Wind size={14} />, label: zhCN.appShell.navEnvironment },
         { to: "/operational-diagnostics", icon: <Gauge size={14} />, label: zhCN.appShell.navOperationalDiagnostics }
@@ -921,7 +1288,7 @@ export default function AppShell() {
     {
       key: "analysis",
       label: zhCN.appShell.navSectionAnalysis,
-      description: "趋势 / 能耗 / 报表",
+      description: zhCN.appShell.navDescriptionAnalysis,
       icon: <ChartColumnIncreasing size={14} />,
       defaultTo: "/trend-analysis",
       items: [
@@ -935,20 +1302,20 @@ export default function AppShell() {
     },
     {
       key: "config",
-      label: "配置",
-      description: "参数 / 知识",
+      label: zhCN.appShell.navSectionConfig,
+      description: zhCN.appShell.navDescriptionConfig,
       icon: <BookOpen size={14} />,
-      defaultTo: "/energy-parameters",
+      defaultTo: "/config-center",
       items: [
+        { to: "/config-center", icon: <Settings2 size={14} />, label: zhCN.appShell.navConfigCenter },
         { to: "/energy-parameters", icon: <FileText size={14} />, label: zhCN.appShell.navEnergyParameters },
-        { to: "/config-center", icon: <Settings2 size={14} />, label: "子系统配置" },
         { to: "/knowledge-base", icon: <BookOpen size={14} />, label: zhCN.appShell.navKnowledgeBase }
       ]
     },
     {
       key: "ai",
-      label: "AI优化",
-      description: "优化建议",
+      label: zhCN.appShell.navSectionAi,
+      description: zhCN.appShell.navDescriptionAi,
       icon: <Sparkles size={14} />,
       defaultTo: "/ai-overview",
       items: [
@@ -956,7 +1323,7 @@ export default function AppShell() {
         { to: "/optimize-demo", icon: <Sparkles size={14} />, label: zhCN.appShell.navOptimizeDemo }
       ]
     }
-  ];
+  ], navigationPerspective);
   const navItems = navModules.flatMap((module) =>
     module.items.map((item) => ({
       ...item,
@@ -968,27 +1335,683 @@ export default function AppShell() {
   const currentNavModule = navModules.find((module) =>
     module.items.some((item) => item.to === location.pathname)
   ) || navModules[0];
-  const showSecondaryNav = !isProjectSelectionRoute && currentNavModule.items.length > 1;
+  const routeEnergyStation = energyStationItems.find((station) =>
+    station.functions.some((item) => item.to === location.pathname)
+  ) || null;
+  const queryEnergyStationType = readEnergyStationTypeFromSearch(location.search);
+  const queryStationInstanceId = readEnergyStationIdFromSearch(location.search);
+  const acceptsQueryStationContext = ["duty", "analysis", "ai", "diagnostics"].includes(currentNavModule.key);
+  const requestedQueryEnergyStation = acceptsQueryStationContext
+    ? energyStationItems.find((station) => station.subsystemType === queryEnergyStationType) || null
+    : null;
+  const queryEnergyStationIsVisible = !requestedQueryEnergyStation || requestedQueryEnergyStation.visible;
+  const queryEnergyStationIsSupported = !requestedQueryEnergyStation || isStationWorkspaceRouteSupported(
+    location.pathname,
+    requestedQueryEnergyStation.subsystemType
+  );
+  const queryEnergyStation = queryEnergyStationIsVisible && queryEnergyStationIsSupported
+    ? requestedQueryEnergyStation
+    : null;
+  const rejectedQueryEnergyStation = requestedQueryEnergyStation && (
+    !queryEnergyStationIsVisible || !queryEnergyStationIsSupported
+  )
+    ? requestedQueryEnergyStation
+    : null;
+  const currentWorkspaceRoutePolicy = resolveStationWorkspaceRoutePolicy(location.pathname);
+  const policyBoundEnergyStation = !requestedQueryEnergyStation
+    && currentWorkspaceRoutePolicy?.supportedStationTypes?.length === 1
+    ? energyStationItems.find((station) => (
+        station.visible
+        && station.subsystemType === currentWorkspaceRoutePolicy.supportedStationTypes?.[0]
+      )) || null
+    : null;
+  const currentEnergyStation = routeEnergyStation || queryEnergyStation || policyBoundEnergyStation;
+  const associatedWorkspaceStation = currentEnergyStation || rejectedQueryEnergyStation;
+  const registeredStationInstance = queryStationInstanceId
+    ? registeredStationInstances.find((instance) => instance.stationId === queryStationInstanceId) || null
+    : null;
+  const currentStationInstance = registeredStationInstance && currentEnergyStation &&
+    registeredStationInstance.parentSubsystemType === currentEnergyStation.subsystemType
+    ? currentEnergyStation.instances.find((instance) => instance.stationId === registeredStationInstance.stationId) || null
+    : null;
+  const stationInstanceContextBlocked = Boolean(queryStationInstanceId) && (
+    stationCapabilityLoadState !== "ready" ||
+    !registeredStationInstance ||
+    !currentEnergyStation ||
+    registeredStationInstance.parentSubsystemType !== currentEnergyStation.subsystemType
+  );
+  const currentStationDisplayLabel = currentStationInstance && currentEnergyStation
+    ? `${currentEnergyStation.label} · ${currentStationInstance.stationName}`
+    : currentEnergyStation?.label || null;
+  const currentStationInstanceCount = currentEnergyStation?.instances.length || 0;
+  useEffect(() => {
+    const currentType = currentEnergyStation?.subsystemType || null;
+    setExpandedStationType((expandedType) => {
+      if (currentType && currentStationInstanceCount > 0) {
+        return currentType;
+      }
+      return expandedType === currentType ? null : expandedType;
+    });
+  }, [capabilitySiteId, currentEnergyStation?.subsystemType, currentStationInstanceCount]);
+  const unfilteredSecondaryNavItems = routeEnergyStation?.functions || (currentNavItem ? [currentNavItem] : currentNavModule.items);
+  const secondaryNavItems = currentStationInstance
+    ? unfilteredSecondaryNavItems.filter((item) => resolveStationRuntimeBindingMode(item.to) !== "unsupported")
+    : unfilteredSecondaryNavItems;
+  const secondaryNavTitle = routeEnergyStation
+    ? currentStationDisplayLabel || routeEnergyStation.label
+    : currentEnergyStation
+      ? `${currentStationDisplayLabel || currentEnergyStation.label} · ${currentNavModule.label}`
+      : currentNavModule.label;
+  const showSecondaryNav = !isProjectSelectionRoute;
+  const scopedHeadingTitle = routeEnergyStation
+    ? currentStationDisplayLabel || routeEnergyStation.label
+    : currentEnergyStation
+      ? `${currentStationDisplayLabel || currentEnergyStation.label} · ${currentNavModule.label}`
+      : currentNavModule?.label || currentNavItem?.label || currentProjectCardDisplayName;
   const topHeadingTitle = isProjectSelectionRoute
     ? zhCN.projectSwitcher.heading
-    : currentNavModule?.label || currentNavItem?.label || currentProjectCardDisplayName;
+    : scopedHeadingTitle;
   const topHeadingSubtitle = isProjectSelectionRoute
     ? projectSelectionTopHint
     : currentProject
       ? [
-          currentNavModule.items.length > 1 && currentNavItem?.label ? `当前页面：${currentNavItem.label}` : "",
+          currentNavItem?.label ? `${zhCN.appShell.currentPagePrefix}${currentNavItem.label}` : "",
           currentProjectCardDisplayName,
           currentProject.city,
-          currentProject.siteId ? `项目编号 ${currentProject.siteId}` : ""
+          currentProject.siteId ? `${zhCN.projectSwitcher.siteIdLabel} ${currentProject.siteId}` : ""
         ]
           .filter(Boolean)
           .join(" · ")
       : zhCN.projectSwitcher.pendingHint;
   const currentSiteId = currentProject?.siteId || null;
   const currentLocaleOption = localeOptions.find((item) => item.value === locale) || null;
+  const currentProjectTreeItemId = currentProjectOptionId
+    ? resolveProjectOptionDomId(currentProjectOptionId)
+    : null;
+  const firstProjectDropdownEntry = projectDropdownEntries[0] || null;
+  const firstProjectTreeItemId = firstProjectDropdownEntry
+    ? firstProjectDropdownEntry.type === "single"
+      ? resolveProjectOptionDomId(firstProjectDropdownEntry.optionId)
+      : resolveProjectGroupDomId(firstProjectDropdownEntry.key)
+    : null;
+  const lastProjectDropdownEntry = projectDropdownEntries[projectDropdownEntries.length - 1] || null;
+  const lastProjectTreeItemId = lastProjectDropdownEntry
+    ? lastProjectDropdownEntry.type === "group" &&
+      expandedProjectNodeSet.has(lastProjectDropdownEntry.key) &&
+      lastProjectDropdownEntry.children.length > 0
+      ? resolveProjectOptionDomId(lastProjectDropdownEntry.children[lastProjectDropdownEntry.children.length - 1].optionId)
+      : lastProjectDropdownEntry.type === "single"
+        ? resolveProjectOptionDomId(lastProjectDropdownEntry.optionId)
+        : resolveProjectGroupDomId(lastProjectDropdownEntry.key)
+    : null;
+  const currentLocaleOptionId = resolveLocaleOptionDomId(locale);
+  const firstLocaleOptionId = localeOptions[0] ? resolveLocaleOptionDomId(localeOptions[0].value) : null;
+  const lastLocaleOptionId = localeOptions.length > 0
+    ? resolveLocaleOptionDomId(localeOptions[localeOptions.length - 1].value)
+    : null;
+  const currentProjectDataScopeLabel = zhCN.appShell.navWorkspaceCurrentProject;
+  const projectUnfilteredDataScopeLabel = zhCN.appShell.navWorkspaceProjectUnfiltered;
+  const selectedDeviceDataScopeLabel = zhCN.appShell.navWorkspaceSelectedDevices;
+  function resolveEnergyObjectDataScopeLabel(station: typeof currentEnergyStation): string | null {
+    if (!station) {
+      return null;
+    }
+    if (station.subsystemType === "power_monitoring") {
+      return zhCN.appShell.navWorkspacePowerProjectAggregate;
+    }
+    if (station.subsystemType === "hvac_terminal") {
+      return zhCN.appShell.navWorkspaceHvacFixedFloor;
+    }
+    return station.label;
+  }
+  const defaultStationDataScopeLabel = energyStationItems.find((station) => (
+    currentWorkspaceRoutePolicy?.supportedStationTypes?.includes(station.subsystemType)
+  ))?.label || zhCN.appShell.navWorkspaceAllStations;
+  const baseCurrentPageDataScopeLabel = resolveEnergyObjectDataScopeLabel(routeEnergyStation) || (
+    currentWorkspaceRoutePolicy?.dataScope === "station"
+      ? queryEnergyStation?.label || defaultStationDataScopeLabel
+      : currentWorkspaceRoutePolicy?.dataScope === "device"
+        ? selectedDeviceDataScopeLabel
+      : currentWorkspaceRoutePolicy?.dataScope === "site"
+        ? projectUnfilteredDataScopeLabel
+        : currentProjectDataScopeLabel
+  );
+  const currentPageStationScopeApplied = Boolean(
+    currentStationInstance
+    && resolveStationRuntimeBindingMode(location.pathname) === "required"
+    && resolvePublishedStationBindingVersion(currentStationInstance) != null
+  );
+  const currentPageDataScopeLabel = currentPageStationScopeApplied && currentStationInstance
+    ? currentStationInstance.stationName
+    : currentStationInstance && (
+    Boolean(routeEnergyStation) || currentWorkspaceRoutePolicy?.dataScope === "station"
+  )
+    ? zhCN.appShell.navStationInstanceDataUnfiltered
+        .replace("{scope}", baseCurrentPageDataScopeLabel)
+        .replace("{station}", currentStationInstance.stationName)
+    : baseCurrentPageDataScopeLabel;
+
+  function resolveWorkspaceItemScopeLabel(path: string, station: typeof currentEnergyStation): string {
+    const runtimeBindingMode = resolveStationRuntimeBindingMode(path);
+    if (currentStationInstance && runtimeBindingMode === "unsupported") {
+      return zhCN.appShell.navWorkspaceStationInstanceUnsupported.replace(
+        "{scope}",
+        station?.label || baseCurrentPageDataScopeLabel
+      );
+    }
+    if (currentStationInstance && runtimeBindingMode === "required") {
+      const publishedVersion = currentStationInstance.publishedBindingVersion
+        ?? (currentStationInstance.bindingState === "published"
+          ? currentStationInstance.bindingVersion
+          : null);
+      if (Number.isSafeInteger(publishedVersion) && Number(publishedVersion) > 0) {
+        return currentStationInstance.stationName;
+      }
+      return `${currentStationInstance.stationName}（${formatStationInstanceBindingLabel(currentStationInstance)}）`;
+    }
+    const policy = resolveStationWorkspaceRoutePolicy(path);
+    if (!policy) {
+      return currentProjectDataScopeLabel;
+    }
+    if (policy.dataScope === "site") {
+      return projectUnfilteredDataScopeLabel;
+    }
+    if (policy.dataScope === "device") {
+      return selectedDeviceDataScopeLabel;
+    }
+    if (station && isStationWorkspaceRouteSupported(path, station.subsystemType)) {
+      return station.label;
+    }
+    const supportedLabels = energyStationItems
+      .filter((item) => policy.supportedStationTypes?.includes(item.subsystemType))
+      .map((item) => item.label);
+    return supportedLabels.join(" / ") || zhCN.appShell.navWorkspaceAllStations;
+  }
+
+  function resolveWorkspaceNavigationStationType(path: string): EnergyStationType | null {
+    if (associatedWorkspaceStation) {
+      return associatedWorkspaceStation.subsystemType;
+    }
+    const policy = resolveStationWorkspaceRoutePolicy(path);
+    return policy?.supportedStationTypes?.length === 1
+      ? policy.supportedStationTypes[0]
+      : null;
+  }
+
+  const stationWorkspaceModuleKeys = ["operations", "duty", "analysis", "ai", "diagnostics"] as const;
+  const workspaceLevel = associatedWorkspaceStation ? "energy-object" : "project";
+  const workspaceTitle = associatedWorkspaceStation
+    ? zhCN.appShell.navWorkspaceObjectTitle
+    : zhCN.appShell.navWorkspaceProjectTitle;
+  const stationWorkspaceActions = stationWorkspaceModuleKeys
+    .map((moduleKey) => {
+      const module = navModules.find((item) => item.key === moduleKey);
+      if (!module) {
+        return null;
+      }
+      const isRunAction = moduleKey === "operations";
+      const unfilteredSourceItems = isRunAction
+        ? associatedWorkspaceStation?.functions || navModules.find((item) => item.key === "dashboard")?.items || []
+        : module.items;
+      const sourceItems = unfilteredSourceItems.filter((item) => {
+        const stationTypeSupported = isRunAction || !associatedWorkspaceStation || isStationWorkspaceRouteSupported(
+          item.to,
+          associatedWorkspaceStation.subsystemType
+        );
+        const stationInstanceSupported = !currentStationInstance || resolveStationRuntimeBindingMode(item.to) !== "unsupported";
+        return stationTypeSupported && stationInstanceSupported;
+      });
+      const isActive = !isProjectSelectionRoute && (isRunAction
+        ? currentNavModule.key === "operations" || currentNavModule.key === "dashboard"
+        : currentNavModule.key === moduleKey);
+      return {
+        key: moduleKey,
+        label: isRunAction
+          ? associatedWorkspaceStation
+            ? zhCN.appShell.navWorkspaceRun
+            : zhCN.appShell.navWorkspaceOverview
+          : module.label,
+        icon: module.icon,
+        description: isRunAction
+          ? associatedWorkspaceStation
+            ? sourceItems.map((item) => item.label).join(" / ")
+            : navModules.find((item) => item.key === "dashboard")?.description || sourceItems.map((item) => item.label).join(" / ")
+          : module.description,
+        items: sourceItems.map((item) => {
+          const navigationStationType = resolveWorkspaceNavigationStationType(item.to);
+          const navigationStationInstanceId = navigationStationType === associatedWorkspaceStation?.subsystemType
+            ? currentStationInstance?.stationId || null
+            : null;
+          return {
+            ...item,
+            scopeLabel: isRunAction
+              ? currentStationInstance
+                ? resolveWorkspaceItemScopeLabel(item.to, associatedWorkspaceStation)
+                : resolveEnergyObjectDataScopeLabel(associatedWorkspaceStation) || currentProjectDataScopeLabel
+              : resolveWorkspaceItemScopeLabel(item.to, associatedWorkspaceStation),
+            to: appendSiteIdToPath(
+              appendEnergyStationContextToPath(item.to, navigationStationType, navigationStationInstanceId),
+              currentSiteId
+            )
+          };
+        }),
+        isActive,
+        isUnavailable: Boolean(associatedWorkspaceStation) && sourceItems.length === 0
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item != null);
+  const configNavigationModule = navModules.find((module) => module.key === "config") || null;
+  const configWorkspaceAction = configNavigationModule
+    ? {
+        key: "config",
+        label: zhCN.appShell.navWorkspaceGlobalConfig,
+        compactLabel: zhCN.appShell.navSectionConfig,
+        description: configNavigationModule.description,
+        icon: <Settings2 size={14} />,
+        isActive: !isProjectSelectionRoute && currentNavModule.key === "config",
+        items: configNavigationModule.items.map((item) => ({
+          ...item,
+          scopeLabel: currentProjectDataScopeLabel,
+          to: appendSiteIdToPath(
+            appendEnergyStationContextToPath(item.to, null),
+            currentSiteId
+          )
+        }))
+      }
+    : null;
+  const stationWorkspaceScopeLabel = currentStationInstance?.stationName || associatedWorkspaceStation?.label || zhCN.appShell.navWorkspaceAllStations;
+  const stationWorkspaceScopeKey = currentStationInstance?.stationId || associatedWorkspaceStation?.subsystemType || "project";
+  const stationBindingState = currentStationInstance?.bindingState || "unconfigured";
+  const stationBindingVersion = resolvePublishedStationBindingVersion(currentStationInstance);
+  const stationRuntimeBindingPublished = Boolean(
+    currentStationInstance
+    && stationBindingVersion != null
+  );
+  const stationRuntimeBindingMode = resolveStationRuntimeBindingMode(location.pathname);
+  const currentRouteRequiresStationRuntime = Boolean(
+    currentStationInstance && stationRuntimeBindingMode === "required"
+  );
+  const stationRuntimeEndpointUnsupported = Boolean(
+    currentStationInstance && stationRuntimeBindingMode === "unsupported"
+  );
+  const stationRuntimeBindingBlocked = currentRouteRequiresStationRuntime && !stationRuntimeBindingPublished;
+  const stationRuntimeScope = {
+    projectSiteId: currentSiteId,
+    runtimeBindingSiteId: currentStationInstance?.siteId || capabilitySiteId || currentSiteId,
+    selectedStationId: currentStationInstance?.stationId || null,
+    runtimeStationId: stationRuntimeBindingPublished ? currentStationInstance?.stationId || null : null,
+    stationType: currentEnergyStation?.subsystemType || null,
+    stationName: currentStationInstance?.stationName || null,
+    bindingState: stationRuntimeBindingPublished ? "published" : stationBindingState,
+    bindingVersion: stationBindingVersion,
+    bindingPublished: stationRuntimeBindingPublished,
+    scopeKey: [
+      `site:${currentSiteId || "none"}`,
+      `binding-site:${currentStationInstance?.siteId || capabilitySiteId || currentSiteId || "none"}`,
+      `station:${currentStationInstance?.stationId || "none"}`,
+      `binding:${stationBindingVersion ?? "none"}`
+    ].join("|")
+  };
+  const stationScopeGuardActive = Boolean(rejectedQueryEnergyStation)
+    || stationInstanceContextBlocked
+    || stationRuntimeBindingBlocked
+    || stationRuntimeEndpointUnsupported;
+  const scopeGuardBackStation = rejectedQueryEnergyStation || currentEnergyStation || (
+    registeredStationInstance
+      ? energyStationItems.find((station) => station.subsystemType === registeredStationInstance.parentSubsystemType) || null
+      : null
+  );
+  const unsupportedWorkspaceTitle = rejectedQueryEnergyStation
+    ? zhCN.appShell.navWorkspaceUnsupportedTitle
+        .replace("{station}", rejectedQueryEnergyStation.label)
+        .replace("{workspace}", currentNavModule.label)
+    : stationInstanceContextBlocked
+      ? zhCN.appShell.navStationInstanceInvalidTitle
+      : stationRuntimeBindingBlocked
+        ? zhCN.appShell.navStationRuntimeBindingRequiredTitle
+        : stationRuntimeEndpointUnsupported
+          ? zhCN.appShell.navStationRuntimeEndpointUnsupportedTitle
+          : "";
+  const unsupportedWorkspaceHint = rejectedQueryEnergyStation
+    ? zhCN.appShell.navWorkspaceUnsupportedHint
+        .replace("{station}", rejectedQueryEnergyStation.label)
+        .replace("{scope}", currentPageDataScopeLabel)
+    : stationInstanceContextBlocked
+      ? stationCapabilityLoadState === "ready"
+        ? zhCN.appShell.navStationInstanceInvalidHint
+        : zhCN.appShell.navStationInstanceVerifyingHint
+      : stationRuntimeBindingBlocked
+        ? zhCN.appShell.navStationRuntimeBindingRequiredHint
+            .replace("{station}", currentStationInstance?.stationName || queryStationInstanceId || "-")
+            .replace(
+              "{state}",
+              currentStationInstance
+                ? formatStationInstanceBindingLabel(currentStationInstance)
+                : stationBindingState
+            )
+        : stationRuntimeEndpointUnsupported
+          ? zhCN.appShell.navStationRuntimeEndpointUnsupportedHint
+              .replace("{station}", currentStationInstance?.stationName || queryStationInstanceId || "-")
+          : "";
+  const unsupportedWorkspaceBackLabel = scopeGuardBackStation
+    ? zhCN.appShell.navWorkspaceBackToStation.replace("{station}", scopeGuardBackStation.label)
+    : zhCN.appShell.navOperationDashboard;
+  const scopeGuardContextLabel = rejectedQueryEnergyStation?.label
+    || currentStationInstance?.stationName
+    || queryStationInstanceId
+    || zhCN.appShell.navWorkspaceAllStations;
+  const scopeGuardBackTarget = appendSiteIdToPath(scopeGuardBackStation?.defaultTo || "/dashboard", currentSiteId);
+
+  function resolveWorkspaceActionScopeLabel(items: readonly { scopeLabel: string }[]): string {
+    const scopes = Array.from(new Set(items.map((item) => item.scopeLabel)));
+    return scopes.length === 1 ? scopes[0] : zhCN.appShell.navWorkspaceMixedScope;
+  }
+
+  function formatWorkspaceActionAriaLabel(
+    label: string,
+    count: number,
+    scopeLabel: string,
+    unavailable = false
+  ): string {
+    const template = unavailable
+      ? zhCN.appShell.navWorkspaceActionUnavailable
+      : zhCN.appShell.navWorkspaceActionCount;
+    return template
+      .replace("{label}", label)
+      .replace("{count}", String(count))
+      .replace("{scope}", scopeLabel);
+  }
+
+  function buildContextualNavigationTarget(path: string): string {
+    const stationType = currentEnergyStation?.subsystemType || null;
+    return appendSiteIdToPath(
+      appendEnergyStationContextToPath(path, stationType, currentStationInstance?.stationId || null),
+      currentSiteId
+    );
+  }
+
+  function focusVisibleWorkspaceMenuTrigger(menuKey: string): void {
+    const triggers = Array.from(
+      document.querySelectorAll<HTMLElement>(`[data-workspace-menu-trigger="${menuKey}"]`)
+    );
+    triggers.find((trigger) => trigger.getClientRects().length > 0)?.focus();
+  }
+
+  function toggleWorkspaceMenu(menuKey: string): void {
+    setOpenWorkspaceMenuKey((current) => current === menuKey ? null : menuKey);
+  }
+
+  useEffect(() => {
+    setOpenWorkspaceMenuKey(null);
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    if (!openWorkspaceMenuKey) {
+      return;
+    }
+
+    function handleWorkspacePointerDown(event: PointerEvent) {
+      const target = event.target;
+      if (target instanceof Element && target.closest("[data-workspace-menu-root]")) {
+        return;
+      }
+      setOpenWorkspaceMenuKey(null);
+    }
+
+    function handleWorkspaceFocusIn(event: FocusEvent) {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const visibleOpenRoots = Array.from(
+        document.querySelectorAll<HTMLElement>("[data-workspace-menu-root].is-open")
+      ).filter((root) => root.getClientRects().length > 0);
+      if (visibleOpenRoots.some((root) => root.contains(target))) {
+        return;
+      }
+      setOpenWorkspaceMenuKey(null);
+    }
+
+    function handleWorkspaceKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape" || (isCompactViewport && isMobileNavOpen)) {
+        return;
+      }
+      event.preventDefault();
+      const menuKey = openWorkspaceMenuKey;
+      if (!menuKey) {
+        return;
+      }
+      setOpenWorkspaceMenuKey(null);
+      window.requestAnimationFrame(() => focusVisibleWorkspaceMenuTrigger(menuKey));
+    }
+
+    document.addEventListener("pointerdown", handleWorkspacePointerDown);
+    document.addEventListener("focusin", handleWorkspaceFocusIn);
+    document.addEventListener("keydown", handleWorkspaceKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handleWorkspacePointerDown);
+      document.removeEventListener("focusin", handleWorkspaceFocusIn);
+      document.removeEventListener("keydown", handleWorkspaceKeyDown);
+    };
+  }, [isCompactViewport, isMobileNavOpen, openWorkspaceMenuKey]);
+
+  function getVisibleProjectTreeItems(): HTMLButtonElement[] {
+    if (!projectTreeRef.current) {
+      return [];
+    }
+    return Array.from(
+      projectTreeRef.current.querySelectorAll<HTMLButtonElement>("[data-project-tree-item]")
+    ).filter((item) => !item.disabled && item.getClientRects().length > 0);
+  }
+
+  function getVisibleLocaleOptions(): HTMLButtonElement[] {
+    if (!localeListboxRef.current) {
+      return [];
+    }
+    return Array.from(
+      localeListboxRef.current.querySelectorAll<HTMLButtonElement>("[data-locale-option]")
+    ).filter((item) => !item.disabled && item.getClientRects().length > 0);
+  }
+
+  function focusProjectTreeItemById(targetId: string | null): boolean {
+    const items = getVisibleProjectTreeItems();
+    const target = items.find((item) => item.id === targetId) || null;
+    if (!target) {
+      return false;
+    }
+    setActiveProjectTreeItemId(target.id);
+    target.focus();
+    return true;
+  }
+
+  function focusLocaleOptionById(targetId: string | null): boolean {
+    const items = getVisibleLocaleOptions();
+    const target = items.find((item) => item.id === targetId) || null;
+    if (!target) {
+      return false;
+    }
+    setActiveLocaleOptionId(target.id);
+    target.focus();
+    return true;
+  }
+
+  function closeProjectDropdown(restoreFocus: boolean): void {
+    setIsProjectDropdownOpen(false);
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => projectDropdownTriggerRef.current?.focus());
+    }
+  }
+
+  function closeLocaleDropdown(restoreFocus: boolean): void {
+    setIsLocaleDropdownOpen(false);
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => localeDropdownTriggerRef.current?.focus());
+    }
+  }
+
+  function openProjectDropdown(focusIntent: "current" | "first" | "last" = "current"): void {
+    pendingProjectTreeFocusIntentRef.current = focusIntent;
+    if (currentProjectGroupKey) {
+      setExpandedProjectNodeKeys((current) => (
+        current.includes(currentProjectGroupKey)
+          ? current
+          : [...current, currentProjectGroupKey]
+      ));
+    }
+    const targetId = focusIntent === "first"
+      ? firstProjectTreeItemId
+      : focusIntent === "last"
+        ? lastProjectTreeItemId
+        : currentProjectTreeItemId || firstProjectTreeItemId;
+    setActiveProjectTreeItemId(targetId);
+    setIsLocaleDropdownOpen(false);
+    setIsProjectDropdownOpen(true);
+  }
+
+  function openLocaleDropdown(focusIntent: "current" | "first" | "last" = "current"): void {
+    const targetId = focusIntent === "first"
+      ? firstLocaleOptionId
+      : focusIntent === "last"
+        ? lastLocaleOptionId
+        : currentLocaleOptionId || firstLocaleOptionId;
+    setActiveLocaleOptionId(targetId);
+    setIsProjectDropdownOpen(false);
+    setIsLocaleDropdownOpen(true);
+  }
+
+  function handleProjectDropdownTriggerKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>): void {
+    if (event.key === "ArrowDown" || event.key === "Home") {
+      event.preventDefault();
+      openProjectDropdown("first");
+      return;
+    }
+    if (event.key === "ArrowUp" || event.key === "End") {
+      event.preventDefault();
+      openProjectDropdown("last");
+      return;
+    }
+    if (event.key === "Escape" && isProjectDropdownOpen) {
+      event.preventDefault();
+      closeProjectDropdown(true);
+    }
+  }
+
+  function handleLocaleDropdownTriggerKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>): void {
+    if (event.key === "ArrowDown" || event.key === "Home") {
+      event.preventDefault();
+      openLocaleDropdown("first");
+      return;
+    }
+    if (event.key === "ArrowUp" || event.key === "End") {
+      event.preventDefault();
+      openLocaleDropdown("last");
+      return;
+    }
+    if (event.key === "Escape" && isLocaleDropdownOpen) {
+      event.preventDefault();
+      closeLocaleDropdown(true);
+    }
+  }
+
+  function handleProjectTreeItemKeyDown(
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+    context: {
+      groupKey?: string;
+      isExpandedGroup?: boolean;
+      firstChildId?: string;
+      parentGroupId?: string;
+    } = {}
+  ): void {
+    const items = getVisibleProjectTreeItems();
+    const currentIndex = items.indexOf(event.currentTarget);
+    let nextItem: HTMLButtonElement | null = null;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      nextItem = items[Math.min(currentIndex + 1, items.length - 1)] || null;
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      nextItem = items[Math.max(currentIndex - 1, 0)] || null;
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      nextItem = items[0] || null;
+    } else if (event.key === "End") {
+      event.preventDefault();
+      nextItem = items[items.length - 1] || null;
+    } else if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      event.currentTarget.click();
+      return;
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      closeProjectDropdown(true);
+      return;
+    } else if (event.key === "ArrowRight" && context.groupKey) {
+      event.preventDefault();
+      if (!context.isExpandedGroup) {
+        setExpandedProjectNodeKeys((current) => (
+          current.includes(context.groupKey as string)
+            ? current
+            : [...current, context.groupKey as string]
+        ));
+      } else if (context.firstChildId) {
+        window.requestAnimationFrame(() => focusProjectTreeItemById(context.firstChildId || null));
+      }
+      return;
+    } else if (event.key === "ArrowLeft") {
+      if (context.groupKey && context.isExpandedGroup) {
+        event.preventDefault();
+        setExpandedProjectNodeKeys((current) => current.filter((item) => item !== context.groupKey));
+      } else if (context.parentGroupId) {
+        event.preventDefault();
+        focusProjectTreeItemById(context.parentGroupId);
+      }
+      return;
+    }
+
+    if (nextItem) {
+      setActiveProjectTreeItemId(nextItem.id);
+      nextItem.focus();
+    }
+  }
+
+  function handleLocaleOptionKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>): void {
+    const items = getVisibleLocaleOptions();
+    const currentIndex = items.indexOf(event.currentTarget);
+    let nextItem: HTMLButtonElement | null = null;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      nextItem = items[Math.min(currentIndex + 1, items.length - 1)] || null;
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      nextItem = items[Math.max(currentIndex - 1, 0)] || null;
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      nextItem = items[0] || null;
+    } else if (event.key === "End") {
+      event.preventDefault();
+      nextItem = items[items.length - 1] || null;
+    } else if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      event.currentTarget.click();
+      return;
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      closeLocaleDropdown(true);
+      return;
+    }
+
+    if (nextItem) {
+      setActiveLocaleOptionId(nextItem.id);
+      nextItem.focus();
+    }
+  }
 
   function handleLocaleChange(value: string) {
-    setIsLocaleDropdownOpen(false);
+    closeLocaleDropdown(true);
     setIsProjectDropdownOpen(false);
     if (value !== "zh-CN" && value !== "en-US" && value !== "vi-VN") {
       return;
@@ -1015,30 +2038,76 @@ export default function AppShell() {
       return;
     }
 
-    function handleDocumentPointerDown(event: MouseEvent) {
+    function handleDocumentPointerDown(event: PointerEvent) {
       const targetNode = event.target as Node;
       const clickedProjectDropdown = projectDropdownRef.current?.contains(targetNode);
       const clickedLocaleDropdown = localeDropdownRef.current?.contains(targetNode);
       if (!clickedProjectDropdown && !clickedLocaleDropdown) {
-        setIsProjectDropdownOpen(false);
-        setIsLocaleDropdownOpen(false);
+        closeProjectDropdown(false);
+        closeLocaleDropdown(false);
       }
     }
 
     function handleDocumentKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setIsProjectDropdownOpen(false);
-        setIsLocaleDropdownOpen(false);
+        if (isProjectDropdownOpen) {
+          event.preventDefault();
+          closeProjectDropdown(true);
+        } else if (isLocaleDropdownOpen) {
+          event.preventDefault();
+          closeLocaleDropdown(true);
+        }
       }
     }
 
-    document.addEventListener("mousedown", handleDocumentPointerDown);
+    document.addEventListener("pointerdown", handleDocumentPointerDown);
     document.addEventListener("keydown", handleDocumentKeyDown);
     return () => {
-      document.removeEventListener("mousedown", handleDocumentPointerDown);
+      document.removeEventListener("pointerdown", handleDocumentPointerDown);
       document.removeEventListener("keydown", handleDocumentKeyDown);
     };
   }, [isProjectDropdownOpen, isLocaleDropdownOpen]);
+
+  useLayoutEffect(() => {
+    if (!isProjectDropdownOpen) {
+      return;
+    }
+    const focusIntent = pendingProjectTreeFocusIntentRef.current;
+    pendingProjectTreeFocusIntentRef.current = "current";
+    const visibleItems = getVisibleProjectTreeItems();
+    const intentTarget = focusIntent === "first"
+      ? visibleItems[0] || null
+      : focusIntent === "last"
+        ? visibleItems[visibleItems.length - 1] || null
+        : null;
+    if (intentTarget) {
+      setActiveProjectTreeItemId(intentTarget.id);
+      intentTarget.focus();
+      return;
+    }
+    const fallbackId = currentProjectTreeItemId || firstProjectTreeItemId;
+    if (!focusProjectTreeItemById(activeProjectTreeItemId || fallbackId)) {
+      const firstVisibleItem = getVisibleProjectTreeItems()[0] || null;
+      if (firstVisibleItem) {
+        setActiveProjectTreeItemId(firstVisibleItem.id);
+        firstVisibleItem.focus();
+      }
+    }
+  }, [isProjectDropdownOpen]);
+
+  useLayoutEffect(() => {
+    if (!isLocaleDropdownOpen) {
+      return;
+    }
+    const fallbackId = currentLocaleOptionId || firstLocaleOptionId;
+    if (!focusLocaleOptionById(activeLocaleOptionId || fallbackId)) {
+      const firstVisibleOption = getVisibleLocaleOptions()[0] || null;
+      if (firstVisibleOption) {
+        setActiveLocaleOptionId(firstVisibleOption.id);
+        firstVisibleOption.focus();
+      }
+    }
+  }, [isLocaleDropdownOpen]);
 
   useEffect(() => {
     if (!isProjectDropdownOpen || !currentProjectGroupKey) {
@@ -1052,13 +2121,14 @@ export default function AppShell() {
   }, [currentProjectGroupKey, isProjectDropdownOpen]);
 
   useEffect(() => {
-    if (!currentProject?.siteId) {
+    const sceneRouteActive = location.pathname === "/scene-control" || location.pathname === "/auto-twin";
+    if (!sceneRouteActive || !currentProject?.siteId) {
       return;
     }
     preloadSceneFloorModels(currentProject.siteId).catch((error) => {
       console.warn("[sceneFloorModels] preload failed", error);
     });
-  }, [currentProject?.siteId, currentProjectOptionId]);
+  }, [currentProject?.siteId, currentProjectOptionId, location.pathname]);
 
   function handleSignOut() {
     clearAuthSession();
@@ -1066,7 +2136,7 @@ export default function AppShell() {
   }
 
   function handleProjectChange(value: string) {
-    setIsProjectDropdownOpen(false);
+    closeProjectDropdown(true);
     setIsLocaleDropdownOpen(false);
     if (!value || value === currentProjectOptionId || switchingProjectId) {
       return;
@@ -1091,8 +2161,15 @@ export default function AppShell() {
     );
     const nextPath =
       location.pathname === "/projects"
-        ? appendSiteIdToPath("/scene-control", nextProject.siteId)
-        : buildScopedLocationPath(location.pathname, location.search, location.hash, nextProject.siteId);
+        ? appendSiteIdToPath("/dashboard", nextProject.siteId)
+        : buildScopedLocationPath(
+            location.pathname,
+            clearCrossProjectTransientContextFromSearch(
+              clearEnergyStationContextFromSearch(location.search)
+            ),
+            location.hash,
+            nextProject.siteId
+          );
     window.location.assign(nextPath);
   }
 
@@ -1105,8 +2182,8 @@ export default function AppShell() {
   }
 
   function handleOpenProjectSelection() {
-    setIsProjectDropdownOpen(false);
-    setIsLocaleDropdownOpen(false);
+    closeProjectDropdown(false);
+    closeLocaleDropdown(false);
     const currentPath = buildScopedLocationPath(location.pathname, location.search, location.hash, currentSiteId);
     const nextPath =
       currentPath && currentPath !== "/projects"
@@ -1117,6 +2194,9 @@ export default function AppShell() {
 
   function closeMobileNav() {
     setIsMobileNavOpen(false);
+    if (isCompactViewport) {
+      window.requestAnimationFrame(() => mobileNavToggleRef.current?.focus());
+    }
   }
 
   function toggleMobileNav() {
@@ -1126,13 +2206,20 @@ export default function AppShell() {
   function renderProjectDropdownEntry(entry: ProjectDropdownEntry) {
     if (entry.type === "single") {
       const isActive = isProjectOptionActive(entry.optionId, entry.label);
+      const itemId = resolveProjectOptionDomId(entry.optionId);
       return (
         <button
           key={entry.key}
+          id={itemId}
           type="button"
-          role="option"
+          role="treeitem"
           aria-selected={isActive}
+          aria-level={1}
+          tabIndex={activeProjectTreeItemId === itemId ? 0 : -1}
+          data-project-tree-item
           className={`project-switcher-option${isActive ? " is-active" : ""}`}
+          onFocus={() => setActiveProjectTreeItemId(itemId)}
+          onKeyDown={(event) => handleProjectTreeItemKeyDown(event)}
           onClick={() => handleProjectChange(entry.optionId)}
         >
           <span className="project-switcher-option-main">
@@ -1145,57 +2232,124 @@ export default function AppShell() {
 
     const isExpanded = expandedProjectNodeSet.has(entry.key);
     const isCurrentGroup = entry.children.some((child) => isProjectOptionActive(child.optionId, child.label));
+    const groupItemId = resolveProjectGroupDomId(entry.key);
+    const childrenGroupId = resolveProjectChildrenGroupDomId(entry.key);
+    const firstChildId = entry.children[0]
+      ? resolveProjectOptionDomId(entry.children[0].optionId)
+      : undefined;
     return (
-      <div key={entry.key} className="project-switcher-group-wrap">
+      <div key={entry.key} className="project-switcher-group-wrap" role="none">
         <button
+          id={groupItemId}
           type="button"
+          role="treeitem"
           className={`project-switcher-group${isExpanded ? " is-open" : ""}${isCurrentGroup ? " is-active" : ""}`}
           onClick={() => toggleProjectNode(entry.key)}
+          onFocus={() => setActiveProjectTreeItemId(groupItemId)}
+          onKeyDown={(event) => handleProjectTreeItemKeyDown(event, {
+            groupKey: entry.key,
+            isExpandedGroup: isExpanded,
+            firstChildId
+          })}
           aria-expanded={isExpanded}
+          aria-controls={childrenGroupId}
+          aria-owns={isExpanded ? childrenGroupId : undefined}
+          aria-level={1}
+          tabIndex={activeProjectTreeItemId === groupItemId ? 0 : -1}
+          data-project-tree-item
         >
           <span className="project-switcher-group-main">
-            <ChevronRight size={14} />
+            <ChevronRight size={14} aria-hidden="true" />
             <span className="project-switcher-group-label">{entry.label}</span>
           </span>
           <span className="project-switcher-group-count">{entry.children.length}</span>
         </button>
-        {isExpanded ? (
-          <div className="project-switcher-group-children">
-            {entry.children.map((child) => {
-              const isActive = isProjectOptionActive(child.optionId, child.label);
-              return (
-                <button
-                  key={child.key}
-                  type="button"
-                  role="option"
-                  aria-selected={isActive}
-                  className={`project-switcher-option project-switcher-option-child${isActive ? " is-active" : ""}`}
-                  onClick={() => handleProjectChange(child.optionId)}
-                >
-                  <span className="project-switcher-option-main">
-                    <span className="project-switcher-option-label">{child.label}</span>
-                    {isActive ? <span className="project-switcher-option-state">{zhCN.projectSwitcher.currentTag}</span> : null}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        ) : null}
+        <div
+          id={childrenGroupId}
+          className="project-switcher-group-children"
+          role="group"
+          hidden={!isExpanded}
+        >
+          {entry.children.map((child) => {
+            const isActive = isProjectOptionActive(child.optionId, child.label);
+            const childItemId = resolveProjectOptionDomId(child.optionId);
+            return (
+              <button
+                key={child.key}
+                id={childItemId}
+                type="button"
+                role="treeitem"
+                aria-selected={isActive}
+                aria-level={2}
+                tabIndex={activeProjectTreeItemId === childItemId ? 0 : -1}
+                data-project-tree-item
+                className={`project-switcher-option project-switcher-option-child${isActive ? " is-active" : ""}`}
+                onFocus={() => setActiveProjectTreeItemId(childItemId)}
+                onKeyDown={(event) => handleProjectTreeItemKeyDown(event, {
+                  parentGroupId: groupItemId
+                })}
+                onClick={() => handleProjectChange(child.optionId)}
+              >
+                <span className="project-switcher-option-main">
+                  <span className="project-switcher-option-label">{child.label}</span>
+                  {isActive ? <span className="project-switcher-option-state">{zhCN.projectSwitcher.currentTag}</span> : null}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
+    );
+  }
+
+  const globalNavigationModules = navModules.filter((module) => module.key === "dashboard");
+
+  function renderModuleNavigationLink(module: (typeof navModules)[number]) {
+    return (
+      <NavLink
+        key={module.key}
+        to={appendSiteIdToPath(module.defaultTo, currentSiteId)}
+        className={() => `nav-module-link${!isProjectSelectionRoute && currentNavModule.key === module.key ? " active" : ""}`}
+        onClick={closeMobileNav}
+        data-shell-nav-link
+        data-shell-nav-module={module.key}
+        data-shell-nav-target={module.defaultTo}
+      >
+        <span className="nav-module-icon">{module.icon}</span>
+        <span className="nav-module-copy">
+          <strong>{module.label}</strong>
+          <small>{module.description}</small>
+        </span>
+        <span className="nav-module-count">{module.items.length}</span>
+      </NavLink>
     );
   }
 
   return (
     <div className="app-shell" data-mobile-nav-open={isMobileNavOpen ? "true" : "false"}>
+      <a
+        className="shell-skip-link"
+        href="#app-shell-main-content"
+        tabIndex={isCompactViewport && isMobileNavOpen ? -1 : undefined}
+        aria-hidden={isCompactViewport && isMobileNavOpen ? "true" : undefined}
+      >
+        跳到主要内容
+      </a>
       <aside
+        ref={primaryNavRef}
         id="app-shell-primary-nav"
         className="left-nav"
+        role={isCompactViewport ? "dialog" : undefined}
+        aria-modal={isCompactViewport && isMobileNavOpen ? "true" : undefined}
+        aria-label={isCompactViewport ? zhCN.appShell.navigationDialog : undefined}
         data-shell-nav="primary"
         data-mobile-nav-state={isMobileNavOpen ? "open" : "closed"}
+        aria-hidden={isCompactViewport && !isMobileNavOpen ? "true" : undefined}
+        inert={isCompactViewport && !isMobileNavOpen ? true : undefined}
       >
         <div className="nav-brand" data-shell-nav-brand>
           <p className="nav-eyebrow">{zhCN.appShell.title}</p>
-          <h1>{shellTitle}</h1>
+          <div className="nav-project-title">{shellTitle}</div>
           <p className="nav-subtitle">{shellSubtitle}</p>
           {showRuntimeBadge || runtimeConfig.readOnlyMode ? (
             <div className="nav-status-row">
@@ -1207,11 +2361,20 @@ export default function AppShell() {
               ) : null}
             </div>
           ) : null}
+          <div
+            className="nav-perspective"
+            data-navigation-perspective={navigationPerspective.id}
+            title={navigationPerspective.description}
+          >
+            <span>工作视角</span>
+            <strong>{navigationPerspective.label}</strong>
+            <small>{navigationPerspective.description}</small>
+          </div>
           <button
             className="nav-close-button"
             type="button"
             onClick={closeMobileNav}
-            aria-label="关闭导航"
+            aria-label={zhCN.appShell.closeNavigation}
             data-mobile-nav-close
           >
             <X size={14} />
@@ -1219,24 +2382,367 @@ export default function AppShell() {
         </div>
         <div className="nav-scroll" data-shell-nav-scroll>
           <nav className="nav-links nav-module-list" data-shell-nav-links>
-            {navModules.map((module) => (
-              <NavLink
-                key={module.key}
-                to={appendSiteIdToPath(module.defaultTo, currentSiteId)}
-                className={() => `nav-module-link${currentNavModule.key === module.key ? " active" : ""}`}
-                onClick={closeMobileNav}
-                data-shell-nav-link
-                data-shell-nav-module={module.key}
-                data-shell-nav-target={module.defaultTo}
-              >
-                <span className="nav-module-icon">{module.icon}</span>
+            <section className="nav-menu-section" data-nav-section="global">
+              <p className="nav-menu-section-label">{zhCN.appShell.navGroupGlobal}</p>
+              {globalNavigationModules.map((module) => renderModuleNavigationLink(module))}
+            </section>
+
+            <section
+              className="nav-menu-section nav-station-group"
+              data-nav-section="stations"
+              data-shell-station-group
+            >
+              <p className="nav-menu-section-label">{zhCN.appShell.navGroupStations}</p>
+              <div className={`nav-station-group-heading${currentEnergyStation ? " is-active" : ""}`}>
+                <span className="nav-module-icon"><Box size={14} /></span>
                 <span className="nav-module-copy">
-                  <strong>{module.label}</strong>
-                  <small>{module.description}</small>
+                  <strong>{zhCN.appShell.navObjectDirectoryTitle}</strong>
+                  <small>{zhCN.appShell.navObjectDirectoryDescription}</small>
                 </span>
-                <span className="nav-module-count">{module.items.length}</span>
-              </NavLink>
-            ))}
+                <span
+                  className="nav-module-count nav-station-registry-count"
+                  title={zhCN.appShell.navStationRegistryCount
+                    .replace("{types}", String(visibleEnergyStationItems.length))
+                    .replace("{stations}", String(registeredStationInstances.length))}
+                >
+                  <span>{visibleEnergyStationItems.length}类</span>
+                  <span>{registeredStationInstances.length}站</span>
+                </span>
+              </div>
+              <div className="nav-station-list">
+                {visibleEnergyStationItems.length ? visibleEnergyStationGroups.map((semanticGroup) => (
+                  <section
+                    key={semanticGroup.key}
+                    className="nav-energy-object-group"
+                    aria-labelledby={`nav-energy-object-group-${semanticGroup.key}`}
+                    data-energy-object-semantic-group={semanticGroup.key}
+                  >
+                    <h3
+                      id={`nav-energy-object-group-${semanticGroup.key}`}
+                      className="nav-energy-object-group-label"
+                    >
+                      {semanticGroup.label}
+                    </h3>
+                    <div className="nav-energy-object-group-items">
+                      {semanticGroup.items.map((station) => {
+                  const isCurrentStation = currentEnergyStation?.subsystemType === station.subsystemType;
+                  const isExpanded = expandedStationType === station.subsystemType;
+                  const stationPanelId = `nav-station-instances-${station.subsystemType}`;
+                  const stationToggleId = `nav-station-toggle-${station.subsystemType}`;
+                  return (
+                    <div
+                      key={station.subsystemType}
+                      className={`nav-station-type${isCurrentStation ? " is-current" : ""}`}
+                      data-station-type-group={station.subsystemType}
+                      data-station-instance-count={station.instances.length}
+                    >
+                      <div className="nav-station-type-row">
+                        <NavLink
+                          to={appendSiteIdToPath(station.defaultTo, currentSiteId)}
+                          className={() => `nav-station-link${isCurrentStation ? " active" : ""}`}
+                          onClick={closeMobileNav}
+                          aria-current={isCurrentStation && !currentStationInstance ? "location" : undefined}
+                          title={`${station.label} · ${station.status.detailLabel}`}
+                          data-shell-station-link
+                          data-shell-nav-target={station.defaultTo}
+                          data-station-type={station.subsystemType}
+                        >
+                          <span className="nav-station-icon">{station.icon}</span>
+                          <span className="nav-station-copy">
+                            <strong>{station.label}</strong>
+                            <small title={station.summary}>
+                              {station.instances.length > 0
+                                ? zhCN.appShell.navStationInstanceCount.replace("{count}", String(station.instances.length))
+                                : station.summary}
+                            </small>
+                          </span>
+                          <span className="nav-station-meta">
+                            {station.alarmCount != null && station.alarmCount > 0 ? (
+                              <span className="nav-station-alarm" title={`${station.alarmCount} 条活动告警`}>
+                                {station.alarmCount > 99 ? "99+" : station.alarmCount}
+                              </span>
+                            ) : null}
+                            <span
+                              className="nav-station-status"
+                              data-shell-station-status
+                              data-status-kind={station.status.kind}
+                            >
+                              {station.status.compactLabel}
+                            </span>
+                          </span>
+                        </NavLink>
+                        {station.instances.length > 0 ? (
+                          <button
+                            id={stationToggleId}
+                            type="button"
+                            className="nav-station-instance-toggle"
+                            onClick={() => setExpandedStationType((current) => (
+                              current === station.subsystemType ? null : station.subsystemType
+                            ))}
+                            aria-expanded={isExpanded}
+                            aria-controls={stationPanelId}
+                            aria-label={zhCN.appShell.navStationInstanceToggle
+                              .replace("{station}", station.label)
+                              .replace("{count}", String(station.instances.length))}
+                            data-station-instance-toggle={station.subsystemType}
+                          >
+                            <ChevronDown size={13} aria-hidden="true" />
+                          </button>
+                        ) : null}
+                      </div>
+                      {station.instances.length > 0 ? (
+                        <div
+                          id={stationPanelId}
+                          className="nav-station-instance-list"
+                          role="group"
+                          aria-labelledby={stationToggleId}
+                          hidden={!isExpanded}
+                          data-station-instance-panel={station.subsystemType}
+                        >
+                          {station.instances.map((instance) => {
+                            const isCurrentInstance = currentStationInstance?.stationId === instance.stationId;
+                            return (
+                              <NavLink
+                                key={instance.stationId}
+                                to={appendSiteIdToPath(
+                                  appendEnergyStationContextToPath(
+                                    station.defaultTo,
+                                    station.subsystemType,
+                                    instance.stationId
+                                  ),
+                                  currentSiteId
+                                )}
+                                className={() => `nav-station-instance-link${isCurrentInstance ? " active" : ""}`}
+                                onClick={closeMobileNav}
+                                aria-current={isCurrentInstance ? "page" : undefined}
+                                title={`${instance.stationName} · ${formatStationInstanceBindingLabel(instance)} · ${instance.statusPresentation.detailLabel}`}
+                                data-shell-station-instance-link
+                                data-station-id={instance.stationId}
+                                data-parent-subsystem-type={station.subsystemType}
+                              >
+                                <span className="nav-station-instance-marker" aria-hidden="true" />
+                                <span className="nav-station-instance-copy">
+                                  <strong>{instance.stationName}</strong>
+                                  <small>{formatStationInstanceBindingLabel(instance)}</small>
+                                </span>
+                                {instance.alarmCount != null && instance.alarmCount > 0 ? (
+                                  <span className="nav-station-alarm" title={`${instance.alarmCount} 条活动告警`}>
+                                    {instance.alarmCount > 99 ? "99+" : instance.alarmCount}
+                                  </span>
+                                ) : (
+                                  <span
+                                    className="nav-station-status nav-station-instance-status"
+                                    data-status-kind={instance.statusPresentation.kind}
+                                  >
+                                    {instance.statusPresentation.compactLabel}
+                                  </span>
+                                )}
+                              </NavLink>
+                            );
+                          })}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                      })}
+                    </div>
+                  </section>
+                )) : (
+                  <p className="nav-station-empty">当前角色没有可用站房，请联系工程管理员核对接入配置。</p>
+                )}
+              </div>
+              {stationCapabilityLoadState === "ready" && registeredStationInstances.length === 0 ? (
+                <div className="nav-station-registry-note" data-station-registry-empty>
+                  <span>{zhCN.appShell.navStationRegistryEmpty}</span>
+                  <NavLink
+                    to={appendSiteIdToPath("/config-center", currentSiteId)}
+                    className="nav-station-registry-action"
+                    data-station-registry-action
+                    onClick={closeMobileNav}
+                  >
+                    {zhCN.appShell.navStationRegistryAction}
+                    <ChevronRight size={13} aria-hidden="true" />
+                  </NavLink>
+                </div>
+              ) : null}
+            </section>
+
+            <section
+              className="nav-menu-section nav-mobile-workspace"
+              data-nav-section="mobile-workspace"
+              data-shell-mobile-station-workspace
+              data-workspace-level={workspaceLevel}
+              data-station-context={stationWorkspaceScopeKey}
+            >
+              <p className="nav-menu-section-label">{workspaceTitle}</p>
+              <div className="nav-mobile-workspace-scope">
+                <span>{zhCN.appShell.navWorkspaceContext}</span>
+                <strong>{stationWorkspaceScopeLabel}</strong>
+                <small data-workspace-current-data-scope>
+                  {zhCN.appShell.navWorkspaceDataScope}：{currentPageDataScopeLabel}
+                </small>
+              </div>
+              <div className="nav-mobile-workspace-list">
+                {stationWorkspaceActions.map((action) => {
+                  const isOpen = openWorkspaceMenuKey === action.key;
+                  const panelId = `mobile-workspace-panel-${action.key}`;
+                  return (
+                    <div
+                      key={action.key}
+                      className={`nav-mobile-workspace-menu-root${isOpen ? " is-open" : ""}${action.isUnavailable ? " is-unavailable" : ""}`}
+                      data-workspace-menu-root
+                      data-workspace-availability={action.isUnavailable ? "unavailable" : "available"}
+                    >
+                      <button
+                        type="button"
+                        className={`nav-mobile-workspace-link${action.isActive ? " active is-current" : ""}`}
+                        onClick={() => toggleWorkspaceMenu(action.key)}
+                        disabled={action.isUnavailable}
+                        onKeyDown={(event) => {
+                          if (event.key !== "ArrowDown") {
+                            return;
+                          }
+                          event.preventDefault();
+                          setOpenWorkspaceMenuKey(action.key);
+                          window.requestAnimationFrame(() => {
+                            document.querySelector<HTMLElement>(`#${panelId} a[href]`)?.focus();
+                          });
+                        }}
+                        aria-expanded={isOpen}
+                        aria-controls={panelId}
+                        aria-label={formatWorkspaceActionAriaLabel(
+                          action.label,
+                          action.items.length,
+                          resolveWorkspaceActionScopeLabel(action.items),
+                          action.isUnavailable
+                        )}
+                        data-workspace-menu-trigger={action.key}
+                        data-shell-workspace-action
+                        data-workspace-module={action.key}
+                        data-workspace-scope={stationWorkspaceScopeKey}
+                      >
+                        {action.icon}
+                        <span className="nav-mobile-workspace-copy">
+                          <strong>{action.label}</strong>
+                          <small>{action.isUnavailable ? zhCN.appShell.navWorkspaceUnavailable : action.description}</small>
+                        </span>
+                        <span className="nav-mobile-workspace-count" aria-hidden="true">
+                          {action.isUnavailable ? zhCN.appShell.navWorkspaceUnavailable : action.items.length}
+                        </span>
+                        <ChevronDown className="nav-mobile-workspace-chevron" size={14} aria-hidden="true" />
+                      </button>
+                      {isOpen && !action.isUnavailable ? (
+                        <nav
+                          id={panelId}
+                          className="nav-mobile-workspace-panel"
+                          aria-label={`${stationWorkspaceScopeLabel} · ${action.label}`}
+                          data-workspace-panel={action.key}
+                        >
+                          {action.items.map((item) => (
+                            <NavLink
+                              key={item.to}
+                              to={item.to}
+                              end
+                              className={({ isActive }) => `nav-mobile-workspace-child${isActive ? " active is-current" : ""}`}
+                              onClick={() => {
+                                setOpenWorkspaceMenuKey(null);
+                                closeMobileNav();
+                              }}
+                              data-workspace-child-link
+                              data-workspace-module={action.key}
+                              data-workspace-data-scope={item.scopeLabel}
+                            >
+                              {item.icon}
+                              <span className="nav-mobile-workspace-child-copy">
+                                <strong>{item.label}</strong>
+                                <small>{zhCN.appShell.navWorkspaceDataScope}：{item.scopeLabel}</small>
+                              </span>
+                              <ChevronRight size={13} aria-hidden="true" />
+                            </NavLink>
+                          ))}
+                        </nav>
+                      ) : null}
+                    </div>
+                  );
+                })}
+                {configWorkspaceAction ? (() => {
+                  const isOpen = openWorkspaceMenuKey === configWorkspaceAction.key;
+                  const panelId = "mobile-workspace-panel-config";
+                  return (
+                    <div
+                      className={`nav-mobile-workspace-menu-root nav-mobile-workspace-config-root${isOpen ? " is-open" : ""}`}
+                      data-workspace-menu-root
+                    >
+                      <button
+                        type="button"
+                        className={`nav-mobile-workspace-link nav-mobile-workspace-config${configWorkspaceAction.isActive ? " active is-current" : ""}`}
+                        onClick={() => toggleWorkspaceMenu(configWorkspaceAction.key)}
+                        onKeyDown={(event) => {
+                          if (event.key !== "ArrowDown") {
+                            return;
+                          }
+                          event.preventDefault();
+                          setOpenWorkspaceMenuKey(configWorkspaceAction.key);
+                          window.requestAnimationFrame(() => {
+                            document.querySelector<HTMLElement>(`#${panelId} a[href]`)?.focus();
+                          });
+                        }}
+                        aria-expanded={isOpen}
+                        aria-controls={panelId}
+                        aria-label={formatWorkspaceActionAriaLabel(
+                          configWorkspaceAction.label,
+                          configWorkspaceAction.items.length,
+                          currentProjectDataScopeLabel
+                        )}
+                        data-workspace-menu-trigger="config"
+                        data-shell-global-config
+                        data-workspace-module="config"
+                        data-workspace-scope="global"
+                      >
+                        {configWorkspaceAction.icon}
+                        <span className="nav-mobile-workspace-copy">
+                          <strong>{configWorkspaceAction.label}</strong>
+                          <small>{configWorkspaceAction.description}</small>
+                        </span>
+                        <span className="nav-mobile-workspace-count" aria-hidden="true">{configWorkspaceAction.items.length}</span>
+                        <ChevronDown className="nav-mobile-workspace-chevron" size={14} aria-hidden="true" />
+                      </button>
+                      {isOpen ? (
+                        <nav
+                          id={panelId}
+                          className="nav-mobile-workspace-panel"
+                          aria-label={configWorkspaceAction.label}
+                          data-workspace-panel="config"
+                        >
+                          {configWorkspaceAction.items.map((item) => (
+                            <NavLink
+                              key={item.to}
+                              to={item.to}
+                              end
+                              className={({ isActive }) => `nav-mobile-workspace-child${isActive ? " active is-current" : ""}`}
+                              onClick={() => {
+                                setOpenWorkspaceMenuKey(null);
+                                closeMobileNav();
+                              }}
+                              data-workspace-child-link
+                              data-workspace-module="config"
+                              data-workspace-data-scope={item.scopeLabel}
+                            >
+                              {item.icon}
+                              <span className="nav-mobile-workspace-child-copy">
+                                <strong>{item.label}</strong>
+                                <small>{zhCN.appShell.navWorkspaceDataScope}：{item.scopeLabel}</small>
+                              </span>
+                              <ChevronRight size={13} aria-hidden="true" />
+                            </NavLink>
+                          ))}
+                        </nav>
+                      ) : null}
+                    </div>
+                  );
+                })() : null}
+              </div>
+            </section>
           </nav>
         </div>
         <button className="exit-link" type="button" onClick={handleSignOut} data-shell-nav-exit>
@@ -1247,19 +2753,24 @@ export default function AppShell() {
         type="button"
         className="nav-overlay"
         onClick={closeMobileNav}
-        aria-label="关闭导航"
-        aria-hidden={isMobileNavOpen ? "false" : "true"}
-        tabIndex={isMobileNavOpen ? 0 : -1}
+        aria-label={zhCN.appShell.closeNavigation}
+        aria-hidden="true"
+        tabIndex={-1}
         data-mobile-nav-overlay
       />
-      <main data-shell-main>
+      <main
+        ref={shellMainRef}
+        data-shell-main
+        inert={isCompactViewport && isMobileNavOpen ? true : undefined}
+      >
         <header className="top-bar" data-shell-topbar>
           <div className="top-left">
             <button
+              ref={mobileNavToggleRef}
               className="mobile-nav-toggle"
               type="button"
               onClick={toggleMobileNav}
-              aria-label={isMobileNavOpen ? "关闭导航" : "打开导航"}
+              aria-label={isMobileNavOpen ? zhCN.appShell.closeNavigation : zhCN.appShell.openNavigation}
               aria-expanded={isMobileNavOpen}
               aria-controls="app-shell-primary-nav"
               data-mobile-nav-toggle
@@ -1285,99 +2796,162 @@ export default function AppShell() {
                   <ArrowLeftRight size={14} />
                   {zhCN.appShell.projectSelectionButton}
                 </button>
-            <label className="project-switcher">
-              <span>{zhCN.appShell.projectLabel}</span>
-                  <div className="project-switcher-dropdown" ref={projectDropdownRef}>
+                <div className="project-switcher">
+                  <span id={PROJECT_SWITCHER_LABEL_ID}>{zhCN.appShell.projectLabel}</span>
+                  <div
+                    className="project-switcher-dropdown"
+                    ref={projectDropdownRef}
+                    onBlur={(event) => {
+                      const nextFocus = event.relatedTarget;
+                      if (!(nextFocus instanceof Node) || !event.currentTarget.contains(nextFocus)) {
+                        closeProjectDropdown(false);
+                      }
+                    }}
+                  >
                     <button
+                      id={PROJECT_SWITCHER_TRIGGER_ID}
+                      ref={projectDropdownTriggerRef}
                       type="button"
                       className={`project-switcher-trigger${isProjectDropdownOpen ? " is-open" : ""}`}
                       onClick={() => {
-                        setIsProjectDropdownOpen((current) => !current);
-                        setIsLocaleDropdownOpen(false);
+                        if (isProjectDropdownOpen) {
+                          closeProjectDropdown(false);
+                        } else {
+                          openProjectDropdown("current");
+                        }
                       }}
+                      onKeyDown={handleProjectDropdownTriggerKeyDown}
                       disabled={Boolean(switchingProjectId)}
-                      aria-haspopup="listbox"
+                      aria-haspopup="tree"
                       aria-expanded={isProjectDropdownOpen}
-                      aria-controls="top-project-switcher-listbox"
+                      aria-controls={PROJECT_SWITCHER_TREE_ID}
+                      aria-labelledby={`${PROJECT_SWITCHER_LABEL_ID} ${PROJECT_SWITCHER_VALUE_ID}`}
                     >
-                      <span className="project-switcher-trigger-text">
+                      <span id={PROJECT_SWITCHER_VALUE_ID} className="project-switcher-trigger-text">
                         {currentProject ? currentProjectDisplayName : zhCN.appShell.projectSelectPlaceholder}
                       </span>
-                      <ChevronDown size={14} />
+                      <ChevronDown size={14} aria-hidden="true" />
                     </button>
-                    {isProjectDropdownOpen ? (
-                      <div
-                        id="top-project-switcher-listbox"
-                        className="project-switcher-menu"
-                        role="listbox"
-                        aria-label={zhCN.appShell.projectLabel}
-                      >
-                        {projectDropdownEntries.map((entry) => renderProjectDropdownEntry(entry))}
-                      </div>
-                    ) : null}
+                    <div
+                      id={PROJECT_SWITCHER_TREE_ID}
+                      ref={projectTreeRef}
+                      className="project-switcher-menu"
+                      role="tree"
+                      aria-labelledby={PROJECT_SWITCHER_LABEL_ID}
+                      aria-orientation="vertical"
+                      hidden={!isProjectDropdownOpen}
+                    >
+                      {projectDropdownEntries.map((entry) => renderProjectDropdownEntry(entry))}
+                    </div>
                   </div>
-                </label>
+                </div>
               </div>
             ) : null}
             <div className="top-system-meta">
+              <span className="top-user-perspective" title={navigationPerspective.description}>
+                {navigationPerspective.label}
+              </span>
               <span className="top-user" title={`${zhCN.appShell.currentUserPrefix}${session?.username || zhCN.common.unknown}`}>
                 {session?.username || zhCN.common.unknown}
               </span>
               <span className="top-time" title={nowLabel}>{nowLabel}</span>
-              <label className="locale-switcher">
-                <span>{zhCN.appShell.languageLabel}</span>
-                <div className="locale-switcher-dropdown" ref={localeDropdownRef}>
+              <div className="locale-switcher">
+                <span id={LOCALE_SWITCHER_LABEL_ID}>{zhCN.appShell.languageLabel}</span>
+                <div
+                  className="locale-switcher-dropdown"
+                  ref={localeDropdownRef}
+                  onBlur={(event) => {
+                    const nextFocus = event.relatedTarget;
+                    if (!(nextFocus instanceof Node) || !event.currentTarget.contains(nextFocus)) {
+                      closeLocaleDropdown(false);
+                    }
+                  }}
+                >
                   <button
+                    id={LOCALE_SWITCHER_TRIGGER_ID}
+                    ref={localeDropdownTriggerRef}
                     type="button"
                     className={`locale-switcher-trigger${isLocaleDropdownOpen ? " is-open" : ""}`}
                     onClick={() => {
-                      setIsLocaleDropdownOpen((current) => !current);
-                      setIsProjectDropdownOpen(false);
+                      if (isLocaleDropdownOpen) {
+                        closeLocaleDropdown(false);
+                      } else {
+                        openLocaleDropdown("current");
+                      }
                     }}
+                    onKeyDown={handleLocaleDropdownTriggerKeyDown}
                     aria-haspopup="listbox"
                     aria-expanded={isLocaleDropdownOpen}
-                    aria-controls="top-locale-switcher-listbox"
+                    aria-controls={LOCALE_SWITCHER_LISTBOX_ID}
+                    aria-labelledby={`${LOCALE_SWITCHER_LABEL_ID} ${LOCALE_SWITCHER_VALUE_ID}`}
                   >
-                    <span className="locale-switcher-trigger-text">{currentLocaleOption?.label || locale}</span>
-                    <ChevronDown size={14} />
+                    <span id={LOCALE_SWITCHER_VALUE_ID} className="locale-switcher-trigger-text">
+                      {currentLocaleOption?.label || locale}
+                    </span>
+                    <ChevronDown size={14} aria-hidden="true" />
                   </button>
-                  {isLocaleDropdownOpen ? (
-                    <div
-                      id="top-locale-switcher-listbox"
-                      className="locale-switcher-menu"
-                      role="listbox"
-                      aria-label={zhCN.appShell.languageLabel}
-                    >
-                      {localeOptions.map((item) => {
-                        const isActive = item.value === locale;
-                        return (
-                          <button
-                            key={item.value}
-                            type="button"
-                            role="option"
-                            aria-selected={isActive}
-                            className={`locale-switcher-option${isActive ? " is-active" : ""}`}
-                            onClick={() => handleLocaleChange(item.value)}
-                          >
-                            <span className="locale-switcher-option-label">{item.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : null}
+                  <div
+                    id={LOCALE_SWITCHER_LISTBOX_ID}
+                    ref={localeListboxRef}
+                    className="locale-switcher-menu"
+                    role="listbox"
+                    aria-labelledby={LOCALE_SWITCHER_LABEL_ID}
+                    aria-orientation="vertical"
+                    hidden={!isLocaleDropdownOpen}
+                  >
+                    {localeOptions.map((item) => {
+                      const isActive = item.value === locale;
+                      const optionId = resolveLocaleOptionDomId(item.value);
+                      return (
+                        <button
+                          key={item.value}
+                          id={optionId}
+                          type="button"
+                          role="option"
+                          aria-selected={isActive}
+                          tabIndex={activeLocaleOptionId === optionId ? 0 : -1}
+                          data-locale-option
+                          className={`locale-switcher-option${isActive ? " is-active" : ""}`}
+                          onFocus={() => setActiveLocaleOptionId(optionId)}
+                          onKeyDown={handleLocaleOptionKeyDown}
+                          onClick={() => handleLocaleChange(item.value)}
+                        >
+                          <span className="locale-switcher-option-label">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </label>
+              </div>
             </div>
           </div>
         </header>
         {showSecondaryNav ? (
-          <nav className="secondary-nav" data-shell-secondary-nav aria-label={`${currentNavModule.label}二级导航`}>
-            <span className="secondary-nav-title">{currentNavModule.label}</span>
+          <nav
+            className="secondary-nav"
+            data-shell-secondary-nav
+            data-shell-internal-nav={routeEnergyStation ? "station" : undefined}
+            data-secondary-nav-scope={
+              routeEnergyStation
+                ? "station"
+                : currentEnergyStation
+                  ? "station-workspace"
+                  : "project"
+            }
+            aria-label={
+              locale === "en-US"
+                ? `${secondaryNavTitle} secondary navigation`
+                : locale === "vi-VN"
+                  ? `${secondaryNavTitle} điều hướng phụ`
+                  : `${secondaryNavTitle}二级导航`
+            }
+          >
+            <span className="secondary-nav-title">{secondaryNavTitle}</span>
             <div className="secondary-nav-links">
-              {currentNavModule.items.map((item) => (
+              {secondaryNavItems.map((item) => (
                 <NavLink
                   key={item.to}
-                  to={appendSiteIdToPath(item.to, currentSiteId)}
+                  to={buildContextualNavigationTarget(item.to)}
                   end
                   className={({ isActive }) => `secondary-nav-link${isActive ? " active is-current" : ""}`}
                   data-shell-secondary-nav-link
@@ -1388,16 +2962,247 @@ export default function AppShell() {
                 </NavLink>
               ))}
             </div>
-            <span className="secondary-nav-count">{currentNavModule.items.length} 项入口</span>
+            {currentEnergyStation ? (
+              <span
+                className="station-context-status"
+                data-status-kind={currentStationInstance?.statusPresentation.kind || currentEnergyStation.status.kind}
+                title={currentStationInstance?.statusPresentation.detailLabel || currentEnergyStation.status.detailLabel}
+              >
+                {currentStationInstance?.statusPresentation.detailLabel || currentEnergyStation.status.detailLabel}
+              </span>
+            ) : null}
+            <div
+              className="station-workspace-toolbar"
+              role="group"
+              data-shell-station-workspace
+              data-workspace-level={workspaceLevel}
+              data-station-context={stationWorkspaceScopeKey}
+              aria-label={`${workspaceTitle} · ${zhCN.appShell.navWorkspaceContext}: ${stationWorkspaceScopeLabel} · ${zhCN.appShell.navWorkspaceDataScope}: ${currentPageDataScopeLabel}`}
+            >
+              <span className="station-workspace-level" data-workspace-level-label>{workspaceTitle}</span>
+              <span className="station-workspace-context" title={`${zhCN.appShell.navWorkspaceContext}：${stationWorkspaceScopeLabel}`}>
+                <small>{zhCN.appShell.navWorkspaceContext}</small>
+                <strong>{stationWorkspaceScopeLabel}</strong>
+              </span>
+              <span
+                className="station-workspace-data-scope"
+                title={`${zhCN.appShell.navWorkspaceDataScope}：${currentPageDataScopeLabel}`}
+                data-workspace-current-data-scope
+              >
+                <small>{zhCN.appShell.navWorkspaceDataScope}</small>
+                <strong>{currentPageDataScopeLabel}</strong>
+              </span>
+              <div className="station-workspace-actions">
+                {stationWorkspaceActions.map((action) => {
+                  const isOpen = openWorkspaceMenuKey === action.key;
+                  const panelId = `desktop-workspace-panel-${action.key}`;
+                  return (
+                    <div
+                      key={action.key}
+                      className={`station-workspace-menu-root${isOpen ? " is-open" : ""}${action.isUnavailable ? " is-unavailable" : ""}`}
+                      data-workspace-menu-root
+                      data-workspace-availability={action.isUnavailable ? "unavailable" : "available"}
+                    >
+                      <button
+                        type="button"
+                        className={`station-workspace-link${action.isActive ? " active is-current" : ""}`}
+                        onClick={() => toggleWorkspaceMenu(action.key)}
+                        disabled={action.isUnavailable}
+                        onKeyDown={(event) => {
+                          if (event.key !== "ArrowDown") {
+                            return;
+                          }
+                          event.preventDefault();
+                          setOpenWorkspaceMenuKey(action.key);
+                          window.requestAnimationFrame(() => {
+                            document.querySelector<HTMLElement>(`#${panelId} a[href]`)?.focus();
+                          });
+                        }}
+                        aria-expanded={isOpen}
+                        aria-controls={panelId}
+                        aria-label={formatWorkspaceActionAriaLabel(
+                          action.label,
+                          action.items.length,
+                          resolveWorkspaceActionScopeLabel(action.items),
+                          action.isUnavailable
+                        )}
+                        title={`${action.label} · ${action.description}`}
+                        data-workspace-menu-trigger={action.key}
+                        data-shell-workspace-action
+                        data-workspace-module={action.key}
+                        data-workspace-scope={stationWorkspaceScopeKey}
+                      >
+                        {action.icon}
+                        <span>{action.label}</span>
+                        <span className="station-workspace-count" aria-hidden="true">
+                          {action.isUnavailable ? zhCN.appShell.navWorkspaceUnavailable : action.items.length}
+                        </span>
+                        <ChevronDown className="station-workspace-chevron" size={12} aria-hidden="true" />
+                      </button>
+                      {isOpen && !action.isUnavailable ? (
+                        <nav
+                          id={panelId}
+                          className="station-workspace-popover"
+                          aria-label={`${stationWorkspaceScopeLabel} · ${action.label}`}
+                          data-workspace-panel={action.key}
+                        >
+                          <div className="station-workspace-popover-header">
+                            <span>{zhCN.appShell.navWorkspaceContext} · {stationWorkspaceScopeLabel}</span>
+                            <strong>{action.label}</strong>
+                            <small>{action.description}</small>
+                          </div>
+                          <div className="station-workspace-popover-list">
+                            {action.items.map((item) => (
+                              <NavLink
+                                key={item.to}
+                                to={item.to}
+                                end
+                                className={({ isActive }) => `station-workspace-popover-link${isActive ? " active is-current" : ""}`}
+                                onClick={() => setOpenWorkspaceMenuKey(null)}
+                                data-workspace-child-link
+                                data-workspace-module={action.key}
+                                data-workspace-data-scope={item.scopeLabel}
+                              >
+                                {item.icon}
+                                <span className="station-workspace-popover-copy">
+                                  <strong>{item.label}</strong>
+                                  <small>{zhCN.appShell.navWorkspaceDataScope}：{item.scopeLabel}</small>
+                                </span>
+                                <ChevronRight size={12} aria-hidden="true" />
+                              </NavLink>
+                            ))}
+                          </div>
+                        </nav>
+                      ) : null}
+                    </div>
+                  );
+                })}
+                {configWorkspaceAction ? (() => {
+                  const isOpen = openWorkspaceMenuKey === configWorkspaceAction.key;
+                  const panelId = "desktop-workspace-panel-config";
+                  return (
+                    <div
+                      className={`station-workspace-menu-root station-workspace-config-root${isOpen ? " is-open" : ""}`}
+                      data-workspace-menu-root
+                    >
+                      <button
+                        type="button"
+                        className={`station-workspace-link station-workspace-config${configWorkspaceAction.isActive ? " active is-current" : ""}`}
+                        onClick={() => toggleWorkspaceMenu(configWorkspaceAction.key)}
+                        onKeyDown={(event) => {
+                          if (event.key !== "ArrowDown") {
+                            return;
+                          }
+                          event.preventDefault();
+                          setOpenWorkspaceMenuKey(configWorkspaceAction.key);
+                          window.requestAnimationFrame(() => {
+                            document.querySelector<HTMLElement>(`#${panelId} a[href]`)?.focus();
+                          });
+                        }}
+                        aria-expanded={isOpen}
+                        aria-controls={panelId}
+                        aria-label={formatWorkspaceActionAriaLabel(
+                          configWorkspaceAction.label,
+                          configWorkspaceAction.items.length,
+                          currentProjectDataScopeLabel
+                        )}
+                        title={`${configWorkspaceAction.label} · ${configWorkspaceAction.description}`}
+                        data-workspace-menu-trigger="config"
+                        data-shell-global-config
+                        data-workspace-module="config"
+                        data-workspace-scope="global"
+                      >
+                        {configWorkspaceAction.icon}
+                        <span>{configWorkspaceAction.compactLabel}</span>
+                        <span className="station-workspace-count" aria-hidden="true">{configWorkspaceAction.items.length}</span>
+                        <ChevronDown className="station-workspace-chevron" size={12} aria-hidden="true" />
+                      </button>
+                      {isOpen ? (
+                        <nav
+                          id={panelId}
+                          className="station-workspace-popover station-workspace-popover-global"
+                          aria-label={configWorkspaceAction.label}
+                          data-workspace-panel="config"
+                        >
+                          <div className="station-workspace-popover-header">
+                            <span>{zhCN.appShell.navWorkspaceGlobalConfig}</span>
+                            <strong>{configWorkspaceAction.compactLabel}</strong>
+                            <small>{configWorkspaceAction.description}</small>
+                          </div>
+                          <div className="station-workspace-popover-list">
+                            {configWorkspaceAction.items.map((item) => (
+                              <NavLink
+                                key={item.to}
+                                to={item.to}
+                                end
+                                className={({ isActive }) => `station-workspace-popover-link${isActive ? " active is-current" : ""}`}
+                                onClick={() => setOpenWorkspaceMenuKey(null)}
+                                data-workspace-child-link
+                                data-workspace-module="config"
+                                data-workspace-data-scope={item.scopeLabel}
+                              >
+                                {item.icon}
+                                <span className="station-workspace-popover-copy">
+                                  <strong>{item.label}</strong>
+                                  <small>{zhCN.appShell.navWorkspaceDataScope}：{item.scopeLabel}</small>
+                                </span>
+                                <ChevronRight size={12} aria-hidden="true" />
+                              </NavLink>
+                            ))}
+                          </div>
+                        </nav>
+                      ) : null}
+                    </div>
+                  );
+                })() : null}
+              </div>
+            </div>
           </nav>
         ) : null}
         <div
-          className={`content ${isDashboardRoute ? "is-dashboard-content" : "is-subpage-compact"}${isSceneControlRoute ? " is-scene-embed-content" : ""}${showSecondaryNav ? " has-secondary-nav" : ""}`}
+          id="app-shell-main-content"
+          tabIndex={-1}
+          className={`content ${isDashboardRoute ? "is-dashboard-content" : "is-subpage-compact"}${isSceneControlRoute ? " is-scene-embed-content" : ""}${isAutoTwinRoute ? " is-auto-twin-content" : ""}${showSecondaryNav ? " has-secondary-nav" : ""}`}
           data-shell-content
         >
-          <ShellProjectDisplayProvider value={currentProjectCardDisplayName}>
-            <Outlet />
-          </ShellProjectDisplayProvider>
+          {stationScopeGuardActive ? (
+            <section
+              className="station-scope-guard"
+              role="status"
+              data-station-scope-guard
+              data-rejected-station-type={rejectedQueryEnergyStation?.subsystemType}
+              data-rejected-station-id={stationInstanceContextBlocked ? queryStationInstanceId || undefined : undefined}
+              data-station-binding-state={stationRuntimeBindingBlocked ? stationBindingState : undefined}
+              data-station-runtime-mode={stationRuntimeBindingMode}
+            >
+              <span className="station-scope-guard-eyebrow">{zhCN.appShell.navWorkspaceDataScope}</span>
+              <h1>{unsupportedWorkspaceTitle}</h1>
+              <p>{unsupportedWorkspaceHint}</p>
+              <dl>
+                <div>
+                  <dt>{zhCN.appShell.navWorkspaceContext}</dt>
+                  <dd>{scopeGuardContextLabel}</dd>
+                </div>
+                <div>
+                  <dt>{zhCN.appShell.navWorkspaceDataScope}</dt>
+                  <dd>{currentPageDataScopeLabel}</dd>
+                </div>
+              </dl>
+              <NavLink
+                className="station-scope-guard-action"
+                to={scopeGuardBackTarget}
+              >
+                {unsupportedWorkspaceBackLabel}
+                <ChevronRight size={14} aria-hidden="true" />
+              </NavLink>
+            </section>
+          ) : (
+            <ShellProjectDisplayProvider value={currentProjectCardDisplayName}>
+              <StationRuntimeScopeProvider value={stationRuntimeScope}>
+                <Outlet />
+              </StationRuntimeScopeProvider>
+            </ShellProjectDisplayProvider>
+          )}
         </div>
       </main>
     </div>

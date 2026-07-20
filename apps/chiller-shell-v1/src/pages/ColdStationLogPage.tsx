@@ -1,4 +1,5 @@
 import { startTransition, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import "./ColdStationLogExtracted.css";
 import SectionCard from "../components/common/SectionCard";
 import { runtimeConfig } from "../config/runtimeConfig";
 import { buildSourceStatusLines, summarizeSourceStatus } from "../i18n/sourceStatusCN";
@@ -552,7 +553,7 @@ export default function ColdStationLogPage() {
       <section className="cold-log-header subpage-command-board">
         <div className="cold-log-command-copy subpage-command-copy">
           <p className="cold-log-eyebrow">{runtimeConfig.appModeLabel}</p>
-          <h2>{zhCN.coldStationLogPage.heading}</h2>
+          <h1>{zhCN.coldStationLogPage.heading}</h1>
           <p>按日期回看冷站逐小时电耗、供冷量与系统COP，先确认当日效率，再查看下方明细。</p>
           <div className="cold-log-command-summary-grid">
             {commandStats.map((item) => (
@@ -632,7 +633,13 @@ export default function ColdStationLogPage() {
           </div>
         </div>
         {items.length > 0 ? (
-          <div className="cold-log-table-shell">
+          <div
+            className="cold-log-table-shell"
+            role="region"
+            aria-label="逐小时明细表，可横向滚动查看更多指标"
+            tabIndex={0}
+          >
+            <span className="cold-log-table-scroll-hint">横向滑动查看更多指标</span>
             <table
               ref={tableRef}
               className="cold-log-table"

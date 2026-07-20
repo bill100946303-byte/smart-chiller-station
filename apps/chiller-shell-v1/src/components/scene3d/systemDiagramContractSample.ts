@@ -113,10 +113,10 @@ export const SYSTEM_DIAGRAM_CONTRACT_SAMPLE: SystemDiagramDto = {
     {
       id: "node-valve-cooling",
       nodeType: "valve",
-      label: "冷却回水阀门",
+      label: "冷却供水阀门",
       systemType: "valve",
       role: "main",
-      group: "cooling_return",
+      group: "cooling_supply",
       modelCategory: "valve",
       floor: "10楼",
       area: "冷机房",
@@ -209,7 +209,7 @@ export const SYSTEM_DIAGRAM_CONTRACT_SAMPLE: SystemDiagramDto = {
       from: "device-chp-1",
       to: "node-load-header",
       edgeType: "pipe",
-      pipeClass: "chilled_return",
+      pipeClass: "chilled_supply",
       routeHint: {
         points: [
           { x: -5.8, y: 0.9, z: 4.2 },
@@ -235,61 +235,61 @@ export const SYSTEM_DIAGRAM_CONTRACT_SAMPLE: SystemDiagramDto = {
       }
     },
     {
-      id: "edge-chiller-to-valve-cooling",
-      from: "device-ch-1",
-      to: "node-valve-cooling",
-      edgeType: "pipe",
-      pipeClass: "cooling_return",
-      routeHint: {
-        points: [
-          { x: 0, y: 0.9, z: 0 },
-          { x: 1.8, y: 0.9, z: 0.6 },
-          { x: 3.1, y: 0.9, z: 0.8 }
-        ]
-      }
-    },
-    {
-      id: "edge-valve-cooling-to-cwp",
+      id: "edge-valve-cooling-to-chiller",
       from: "node-valve-cooling",
-      to: "device-cwp-1",
-      edgeType: "pipe",
-      pipeClass: "cooling_return",
-      routeHint: {
-        points: [
-          { x: 3.1, y: 0.9, z: 0.8 },
-          { x: 4.8, y: 0.9, z: 1.6 },
-          { x: 5.8, y: 0.9, z: 2.7 }
-        ]
-      }
-    },
-    {
-      id: "edge-cwp-to-ct",
-      from: "device-cwp-1",
-      to: "device-ct-1",
-      edgeType: "pipe",
-      pipeClass: "cooling_supply",
-      routeHint: {
-        points: [
-          { x: 5.8, y: 0.9, z: 2.7 },
-          { x: 6.3, y: 0.9, z: 1.2 },
-          { x: 6.3, y: 0.9, z: -3.1 },
-          { x: 6.6, y: 0.9, z: -5.2 }
-        ]
-      }
-    },
-    {
-      id: "edge-ct-to-chiller",
-      from: "device-ct-1",
       to: "device-ch-1",
       edgeType: "pipe",
       pipeClass: "cooling_supply",
       routeHint: {
         points: [
-          { x: 6.6, y: 0.9, z: -5.2 },
-          { x: 3, y: 0.9, z: -6.1 },
-          { x: -0.2, y: 0.9, z: -3.8 },
-          { x: -0.2, y: 0.9, z: -0.8 },
+          { x: 3.1, y: 0.9, z: 0.8 },
+          { x: 1.8, y: 0.9, z: 0.6 },
           { x: 0, y: 0.9, z: 0 }
+        ]
+      }
+    },
+    {
+      id: "edge-cwp-to-valve-cooling",
+      from: "device-cwp-1",
+      to: "node-valve-cooling",
+      edgeType: "pipe",
+      pipeClass: "cooling_supply",
+      routeHint: {
+        points: [
+          { x: 5.8, y: 0.9, z: 2.7 },
+          { x: 4.8, y: 0.9, z: 1.6 },
+          { x: 3.1, y: 0.9, z: 0.8 }
+        ]
+      }
+    },
+    {
+      id: "edge-ct-to-cwp",
+      from: "device-ct-1",
+      to: "device-cwp-1",
+      edgeType: "pipe",
+      pipeClass: "cooling_supply",
+      routeHint: {
+        points: [
+          { x: 6.6, y: 0.9, z: -5.2 },
+          { x: 6.3, y: 0.9, z: -3.1 },
+          { x: 6.3, y: 0.9, z: 1.2 },
+          { x: 5.8, y: 0.9, z: 2.7 }
+        ]
+      }
+    },
+    {
+      id: "edge-chiller-to-ct",
+      from: "device-ch-1",
+      to: "device-ct-1",
+      edgeType: "pipe",
+      pipeClass: "cooling_return",
+      routeHint: {
+        points: [
+          { x: 0, y: 0.9, z: 0 },
+          { x: -0.2, y: 0.9, z: -0.8 },
+          { x: -0.2, y: 0.9, z: -3.8 },
+          { x: 3, y: 0.9, z: -6.1 },
+          { x: 6.6, y: 0.9, z: -5.2 }
         ]
       }
     }

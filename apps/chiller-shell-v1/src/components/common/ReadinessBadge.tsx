@@ -48,6 +48,7 @@ function resolveBadgeViewModel(
 
 export default function ReadinessBadge({ pageKey, liveViewModel = null }: ReadinessBadgeProps) {
   const [viewModel, setViewModel] = useState<BadgeViewModel | null>(null);
+  const [requestSettled, setRequestSettled] = useState(false);
 
   useEffect(() => {
     if (liveViewModel) {
@@ -67,6 +68,10 @@ export default function ReadinessBadge({ pageKey, liveViewModel = null }: Readin
           return;
         }
         setViewModel(null);
+      } finally {
+        if (active) {
+          setRequestSettled(true);
+        }
       }
     }
 
@@ -78,14 +83,21 @@ export default function ReadinessBadge({ pageKey, liveViewModel = null }: Readin
 
   const resolvedViewModel = liveViewModel || viewModel;
 
-  if (!resolvedViewModel) {
+  if (!resolvedViewModel && !requestSettled) {
     return null;
   }
 
+  const fallbackText = getCurrentLocale() === "en-US"
+    ? "Readiness pending confirmation"
+    : getCurrentLocale() === "vi-VN"
+      ? "Mức sẵn sàng chờ xác nhận"
+      : "就绪状态待确认";
+  const displayViewModel = resolvedViewModel || { pass: false, text: fallbackText };
+
   return (
     <div className="readiness-badge-row">
-      <span className={`status-pill readiness-badge-pill ${resolvedViewModel.pass ? "good" : "warn"}`}>
-        {resolvedViewModel.text}
+      <span className={`status-pill readiness-badge-pill ${displayViewModel.pass ? "good" : "warn"}`}>
+        {displayViewModel.text}
       </span>
     </div>
   );

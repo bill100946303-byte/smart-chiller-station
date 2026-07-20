@@ -1,47 +1,152 @@
 {
   "version": "v1",
-  "purpose": "chiller-shell model intake",
-  "status": "chiller_pump_valve_cooling_tower_ready",
+  "purpose": "approved digital-twin equipment models",
+  "status": "latest_chiller_pump_cooling_tower_plc_cabinet_solenoid_valve_pressure_gauge_temperature_gauge_supply_return_manifold_cooling_water_automatic_dosing_skid_pressurization_water_makeup_skid_plant_overview_latest_v2",
   "items": [
     {
       "id": "chiller-main",
       "category": "chiller",
-      "targetPath": "/models/chiller/chiller-main-v1.glb",
-      "displayName": "冷机主设备",
-      "sourceLabel": "CG模型网",
-      "sourceUrl": "https://www.cgmodel.com/model/889159.html",
-      "license": "企业授权/企业扩展授权",
-      "notes": "已完成 FBX 解包、GLB 转换与 Web 压缩，优先用于设备详情首屏和新 3D 预览"
+      "targetPath": "/models/chiller/chiller-centrifugal-generic-v1.glb",
+      "displayName": "离心式冷水机组",
+      "sourceLabel": "Blender生成",
+      "sourceUrl": "",
+      "license": "内部通用模型",
+      "notes": "无品牌标识；冷冻水右侧、冷却水左侧，同标高水平双口"
     },
     {
       "id": "cooling-tower",
       "category": "cooling-tower",
-      "targetPath": "/models/cooling-tower/cooling-tower-v1.glb",
-      "displayName": "冷却塔",
-      "sourceLabel": "CG模型网",
-      "sourceUrl": "https://www.cgmodel.com/model/711762.html",
-      "license": "企业授权/企业扩展授权",
-      "notes": "已完成 FBX 解包、GLB 转换与 Web 压缩，优先用于设备详情首屏和场景页实验区"
+      "targetPath": "/models/cooling-tower/cooling-tower-crossflow-generic-v1.glb",
+      "displayName": "横流式冷却塔",
+      "sourceLabel": "Blender生成",
+      "sourceUrl": "",
+      "license": "内部通用模型",
+      "notes": "无品牌标识；用于冷站数字孪生设备组件"
     },
     {
       "id": "pump-horizontal",
       "category": "pump",
-      "targetPath": "/models/pump/pump-horizontal-v1.glb",
-      "displayName": "卧式端吸离心泵",
-      "sourceLabel": "CG模型网",
-      "sourceUrl": "https://www.cgmodel.com/model/904190.html",
-      "license": "企业授权/企业扩展授权",
-      "notes": "已完成 FBX 解包、GLB 转换与 Web 压缩，优先用于设备详情首屏和场景页实验区"
+      "targetPath": "/models/pump/pump-horizontal-split-case-generic-v1.glb",
+      "displayName": "卧式中开双吸离心泵",
+      "sourceLabel": "Blender生成",
+      "sourceUrl": "",
+      "license": "内部通用模型",
+      "notes": "无品牌标识；进出水口同标高同中心线并与泵轴垂直"
     },
     {
-      "id": "valve-check",
-      "category": "valve",
-      "targetPath": "/models/valve/valve-check-v1.glb",
-      "displayName": "工业阀门",
-      "sourceLabel": "CG模型网",
-      "sourceUrl": "https://www.cgmodel.com/model/668247.html",
-      "license": "企业授权/企业扩展授权",
-      "notes": "已完成 FBX 解包、GLB 转换与 Web 压缩，优先用于设备详情首屏和场景页管路节点补件"
+      "id": "plc-control-cabinet",
+      "category": "plc-control-cabinet",
+      "targetPath": "/models/plc-control-cabinet/plc-control-cabinet-generic-v1.glb",
+      "displayName": "PLC控制柜",
+      "sourceLabel": "Blender生成",
+      "sourceUrl": "",
+      "license": "内部通用模型",
+      "notes": "无品牌标识；包含HMI、急停、指示灯、选择开关、散热结构和运行时绑定节点"
+    },
+    {
+      "id": "solenoid-valve-dn50",
+      "category": "solenoid-valve",
+      "targetPath": "/models/solenoid-valve/solenoid-valve-flanged-dn50-generic-v1.glb",
+      "displayName": "DN50法兰式电磁阀",
+      "sourceLabel": "Blender生成",
+      "sourceUrl": "",
+      "license": "内部通用模型",
+      "notes": "无品牌标识；水平同轴双法兰、常闭型、失电关闭，包含线圈执行与管口绑定节点"
+    },
+    {
+      "id": "pressure-gauge-dn100",
+      "category": "pressure-gauge",
+      "targetPath": "/models/pressure-gauge/pressure-gauge-radial-dn100-generic-v1.glb",
+      "displayName": "DN100径向压力表",
+      "sourceLabel": "Blender生成",
+      "sourceUrl": "",
+      "license": "内部通用模型",
+      "notes": "无品牌标识；0–1.6 MPa量程、底部G1/2取压接口，包含可绑定指针和仪表节点"
+    },
+    {
+      "id": "temperature-gauge-dn100",
+      "category": "temperature-gauge",
+      "targetPath": "/models/temperature-gauge/temperature-gauge-bimetal-dn100-generic-v1.glb",
+      "displayName": "DN100双金属温度计",
+      "sourceLabel": "Blender生成",
+      "sourceUrl": "",
+      "license": "内部通用模型",
+      "notes": "无品牌标识；−20～120°C量程、底部G1/2接口和100mm感温杆，包含可绑定指针和测温节点"
+    },
+    {
+      "id": "supply-return-manifold-four-branch",
+      "category": "supply-return-manifold",
+      "targetPath": "/models/supply-return-manifold/supply-return-manifold-four-branch-generic-v1.glb",
+      "displayName": "四路集分水器",
+      "sourceLabel": "Blender生成",
+      "sourceUrl": "",
+      "license": "内部通用模型",
+      "notes": "无品牌标识；DN300主接口、4+4路DN100支管，包含排污、排气、支架和完整管口绑定节点"
+    },
+    {
+      "id": "cooling-water-automatic-dosing-skid",
+      "category": "cooling-water-dosing-skid",
+      "targetPath": "/models/cooling-water-dosing-skid/cooling-water-automatic-dosing-skid-generic-v1.glb",
+      "displayName": "冷却水自动加药机组",
+      "sourceLabel": "Blender生成",
+      "sourceUrl": "",
+      "license": "内部通用模型",
+      "notes": "无品牌标识；双药箱、双计量泵、双搅拌器、在线水质采样和PLC/HMI撬装结构，含6个工艺口、2个电缆口、29个运行绑定节点及4条机械动画轨道；独立资产，尚未接入当前B25总览"
+    },
+    {
+      "id": "pressurization-water-makeup-skid",
+      "category": "pressurization-water-makeup-skid",
+      "targetPath": "/models/pressurization-water-makeup-skid/pressurization-water-makeup-skid-generic-v1.glb",
+      "displayName": "定压补水机组",
+      "sourceLabel": "Blender生成",
+      "sourceUrl": "",
+      "license": "内部通用模型",
+      "notes": "无品牌标识；立式隔膜定压罐、双立式多级补水泵（一用一备）、PLC/HMI、压力表、压力变送器和低水位保护，含4个工艺口、2个电缆口、36个只读运行绑定节点及2条泵轴动画轨道；独立资产，尚未接入当前B25总览"
+    },
+    {
+      "id": "plant-overview-latest-v2",
+      "category": "plant-overview",
+      "targetPath": "/models/plant-overview/chilled-water-plant-overview-latest-v2.glb",
+      "lodPaths": {
+        "LOD0": "/models/plant-overview/chilled-water-plant-overview-latest-v2.glb",
+        "LOD1": "/models/plant-overview/lod/chilled-water-plant-overview-latest-v2-lod1.glb",
+        "LOD2": "/models/plant-overview/lod/chilled-water-plant-overview-latest-v2-lod2.glb"
+      },
+      "lodDistanceMeters": {
+        "LOD0Max": 25,
+        "LOD1Max": 60,
+        "LOD2Min": 60
+      },
+      "bindingContractPath": "/models/plant-overview/bindings/b25-plant-overview-binding-v2.json",
+      "bindingContractStatus": "FORMAL_READ_ONLY_IDENTITY",
+      "authoritative": false,
+      "authority": {
+        "identity": true,
+        "telemetry": false,
+        "geometryTopology": false
+      },
+      "controlBoundary": {
+        "readOnly": true,
+        "allowedMethods": ["GET"],
+        "writeEndpoints": []
+      },
+      "siteIdentityCoverage": {
+        "explicitBindings": 54,
+        "chillers": 7,
+        "chilledWaterPumps": 7,
+        "coolingWaterPumps": 7,
+        "coolingTowerFans": 33
+      },
+      "lodAnimationBudget": {
+        "LOD0": {"embeddedAnimations": 63, "runtimeAnimationTargets": 62},
+        "LOD1": {"embeddedAnimations": 63, "runtimeAnimationTargets": 62},
+        "LOD2": {"embeddedAnimations": 63, "runtimeAnimationTargets": 62}
+      },
+      "displayName": "B25 冷冻机房总览（正式只读身份合同）",
+      "sourceLabel": "Blender生成",
+      "sourceUrl": "",
+      "license": "内部通用模型",
+      "notes": "无品牌标识；B25静态身份合同显式覆盖7台主机、7台冷冻泵、7台冷却泵和6组33台冷却塔风机，共54项；模型CHWP与现场CHP、模型CT与现场CTF均使用显式别名；身份映射可审计，但遥测和几何拓扑均非权威；仅允许GET读取，不提供BA/PLC写入；三级LOD统一要求63条内置动画和62个运行目标"
     }
   ]
 }

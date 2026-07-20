@@ -6,8 +6,35 @@ import path from "node:path";
 // must not collapse below the operator-readable size.
 
 const SHELL_ROOT = path.resolve(process.cwd());
-const STYLE_FILE = path.join(SHELL_ROOT, "src/styles/global.css");
+const STYLE_FILES = [
+  path.join(SHELL_ROOT, "src/styles/global.css"),
+  path.join(SHELL_ROOT, "src/pages/AlarmPageExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/WorkOrdersExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/EnergyEfficiencyExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/DashboardExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/OptimizeDemoExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/SceneControlExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/ReportRecordsExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/OperationRecordsExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/EnergyParametersExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/MeterReadingExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/PerformanceReportExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/ColdStationLogExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/EnvironmentConditionsExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/SystemOverviewExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/KnowledgeBaseExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/ProjectSelectionExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/AiOverviewExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/OperationalDiagnosticsExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/ConfigCenterEntryExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/HvacTerminalExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/EnergyAnalysisShared.css"),
+  path.join(SHELL_ROOT, "src/components/dashboard/TrendAnalysisShared.css"),
+  path.join(SHELL_ROOT, "src/pages/PowerMonitoringShared.css"),
+  path.join(SHELL_ROOT, "src/pages/DeviceOverviewShared.css")
+];
 const DASHBOARD_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/DashboardPage.tsx");
+const APP_SHELL_FILE = path.join(SHELL_ROOT, "src/layout/AppShell.tsx");
 const ALARM_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/AlarmPage.tsx");
 const SYSTEM_OVERVIEW_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/SystemOverviewPage.tsx");
 const OPTIMIZE_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/OptimizeDemoPage.tsx");
@@ -16,7 +43,9 @@ const COMPRESSED_AIR_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/CompressedAirM
 const HVAC_TERMINAL_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/HvacTerminalMonitoringPage.tsx");
 const AI_OVERVIEW_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/AiOverviewPage.tsx");
 const BFF_CLIENT_FILE = path.join(SHELL_ROOT, "src/services/bffClient.ts");
+const SUBSYSTEM_STATUS_FILE = path.join(SHELL_ROOT, "src/utils/subsystemStatus.ts");
 const QA_SEED_FILE = path.join(SHELL_ROOT, "public/qa-auth-seed.html");
+const COMPACT_MOBILE_SAFETY_FILE = path.join(SHELL_ROOT, "src/styles/compact-mobile-safety.css");
 
 const TREND_ACTIVE_MARKER =
   "/* Trend control active state: avoid dark text disappearing when gradient rendering is degraded. */";
@@ -34,6 +63,14 @@ const SYSTEM_VERDICT_MARKER =
   "/* System overview verdict badge: keep shadow-validation status readable on low-brightness displays. */";
 const SYSTEM_VERDICT_SELECTOR =
   ".system-overview-one-screen .system-overview-verdict em";
+const SYSTEM_OVERVIEW_768P_MARKER =
+  "/* System overview 768p terminal guard: keep topology, diagnosis and audit actions in one duty-screen viewport. */";
+const SYSTEM_OVERVIEW_768P_PAGE_SELECTOR =
+  "html body #root#root#root#root .content.is-subpage-compact > .system-page.system-overview-one-screen";
+const HVAC_OVERVIEW_NO_OVERLAP_MARKER =
+  "/* HVAC overview desktop no-overlap guard: align grid tracks with rendered hero/KPI minimum heights. */";
+const DEVICE_OVERVIEW_NO_OVERLAP_MARKER =
+  "/* Device overview desktop no-overlap guard: the title track must match the rendered header minimum height. */";
 const PROJECT_RANK_MARKER =
   "/* Project queue rank badge: avoid low-contrast green-on-green badges on the selected card. */";
 const PROJECT_RANK_SELECTOR =
@@ -65,6 +102,12 @@ const WORK_ORDER_HEADER_FINAL_MARKER =
   "/* Work-order header final no-overlap guard: top status metrics must not be covered by the query panel. */";
 const TREND_STATS_FINAL_MARKER =
   "/* Trend series stats final no-clip guard: show every metric statistic in the right panel at 1280x720. */";
+const TREND_MOBILE_TITLE_MARKER =
+  "/* Trend mobile title-row guard: keep the page title intact above long freshness copy. */";
+const TREND_MOBILE_TITLE_ROW_SELECTOR =
+  "html body #root#root#root#root .content.is-subpage-compact .trend-analysis-page--effect .trend-title-row";
+const TREND_MOBILE_H1_SELECTOR =
+  "html body #root#root#root#root .content.is-subpage-compact .trend-analysis-page--effect .trend-title-row h1";
 const OPTIMIZE_RESULT_SPOTLIGHT_MARKER =
   "/* Optimize advice result emphasis: make the generated outcome read as the primary result. */";
 const OPTIMIZE_RESULT_OVERLAP_MARKER =
@@ -95,6 +138,10 @@ const FINAL_FOOTER_ENERGY_ANALYSIS_PAGE_SELECTOR =
   "html body #root .content.is-subpage-compact > .energy-analysis-compact-page-v2";
 const FINAL_FOOTER_ENERGY_ANALYSIS_BOUNDARY_SELECTOR =
   "html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-boundary";
+const ENERGY_ANALYSIS_NO_OVERLAP_GRID_MARKER =
+  "/* Energy analysis grid no-overlap guard: final tracks must match the rendered hero and KPI minimum heights. */";
+const ENERGY_ANALYSIS_NO_OVERLAP_GRID_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact > .energy-analysis-compact-page-v2";
 const FINAL_FOOTER_ENERGY_PARAMETER_PAGE_SELECTOR =
   "html body #root .content.is-subpage-compact > .energy-parameter-compact-page-v2";
 const FINAL_FOOTER_ENERGY_PARAMETER_BOUNDARY_SELECTOR =
@@ -254,6 +301,37 @@ function findRuleBlock(source, selector, fromIndex = 0) {
   return null;
 }
 
+function findLastRuleBlock(source, selector) {
+  const selectorIndex = source.lastIndexOf(selector);
+  if (selectorIndex < 0) {
+    return null;
+  }
+  return findRuleBlock(source, selector, selectorIndex);
+}
+
+function findRuleBlockContaining(source, selector, needle) {
+  let fromIndex = 0;
+
+  while (fromIndex < source.length) {
+    const selectorIndex = source.indexOf(selector, fromIndex);
+    if (selectorIndex < 0) {
+      return null;
+    }
+
+    const block = findRuleBlock(source, selector, selectorIndex);
+    if (!block) {
+      return null;
+    }
+    if (block.text.includes(needle)) {
+      return block;
+    }
+
+    fromIndex = selectorIndex + selector.length;
+  }
+
+  return null;
+}
+
 function assertIncludes(source, needle, label, errors) {
   if (!source.includes(needle)) {
     errors.push(`${label}: missing \`${needle}\``);
@@ -275,8 +353,20 @@ function assertOrder(source, before, after, label, errors) {
 }
 
 function main() {
-  const styleSource = fs.readFileSync(STYLE_FILE, "utf8");
+  const styleSource = STYLE_FILES.map((file) => fs.readFileSync(file, "utf8")).join("\n");
+  const workOrderStyleSource = fs.readFileSync(STYLE_FILES[2], "utf8");
+  const optimizeStyleSource = fs.readFileSync(STYLE_FILES[5], "utf8");
+  const sceneStyleSource = fs.readFileSync(STYLE_FILES[6], "utf8");
+  const energyParameterStyleSource = fs.readFileSync(STYLE_FILES[9], "utf8");
+  const meterReadingStyleSource = fs.readFileSync(STYLE_FILES[10], "utf8");
+  const performanceReportStyleSource = fs.readFileSync(STYLE_FILES[11], "utf8");
+  const systemOverviewStyleSource = fs.readFileSync(STYLE_FILES[14], "utf8");
+  const projectSelectionStyleSource = fs.readFileSync(STYLE_FILES[16], "utf8");
+  const energyAnalysisStyleSource = fs.readFileSync(STYLE_FILES[21], "utf8");
+  const trendAnalysisStyleSource = fs.readFileSync(STYLE_FILES[22], "utf8");
+  const powerMonitorStyleSource = fs.readFileSync(STYLE_FILES[23], "utf8");
   const dashboardSource = fs.readFileSync(DASHBOARD_PAGE_FILE, "utf8");
+  const appShellSource = fs.readFileSync(APP_SHELL_FILE, "utf8");
   const alarmSource = fs.readFileSync(ALARM_PAGE_FILE, "utf8");
   const systemOverviewSource = fs.readFileSync(SYSTEM_OVERVIEW_PAGE_FILE, "utf8");
   const optimizeSource = fs.readFileSync(OPTIMIZE_PAGE_FILE, "utf8");
@@ -285,20 +375,58 @@ function main() {
   const hvacTerminalSource = fs.readFileSync(HVAC_TERMINAL_PAGE_FILE, "utf8");
   const aiOverviewSource = fs.readFileSync(AI_OVERVIEW_PAGE_FILE, "utf8");
   const bffClientSource = fs.readFileSync(BFF_CLIENT_FILE, "utf8");
+  const subsystemStatusSource = fs.readFileSync(SUBSYSTEM_STATUS_FILE, "utf8");
+  const compactMobileSafetySource = fs.readFileSync(COMPACT_MOBILE_SAFETY_FILE, "utf8");
   const errors = [];
 
   if (fs.existsSync(QA_SEED_FILE)) {
     errors.push("temporary QA auth seed file must not be committed: public/qa-auth-seed.html");
   }
 
-  assertIncludes(styleSource, TREND_ACTIVE_MARKER, "trend active readability guard", errors);
-  assertOrder(
+  assertIncludes(compactMobileSafetySource, TREND_MOBILE_TITLE_MARKER, "trend mobile title-row guard", errors);
+  const trendMobileTitleBlock = findRuleBlock(compactMobileSafetySource, TREND_MOBILE_TITLE_ROW_SELECTOR);
+  if (!trendMobileTitleBlock) {
+    errors.push("trend mobile title-row guard: selector block missing");
+  } else {
+    assertIncludes(trendMobileTitleBlock.text, "display: grid !important;", "trend mobile title grid", errors);
+    assertIncludes(
+      trendMobileTitleBlock.text,
+      "grid-template-columns: minmax(0, 1fr) !important;",
+      "trend mobile title single-column flow",
+      errors
+    );
+  }
+  const trendMobileH1Block = findRuleBlock(compactMobileSafetySource, TREND_MOBILE_H1_SELECTOR);
+  if (!trendMobileH1Block) {
+    errors.push("trend mobile H1 guard: selector block missing");
+  } else {
+    assertIncludes(trendMobileH1Block.text, "white-space: nowrap !important;", "trend mobile H1 no-break", errors);
+    assertIncludes(trendMobileH1Block.text, "max-width: 100% !important;", "trend mobile H1 width guard", errors);
+  }
+
+  assertIncludes(styleSource, HVAC_OVERVIEW_NO_OVERLAP_MARKER, "HVAC overview no-overlap guard", errors);
+  assertIncludes(
     styleSource,
-    TREND_GENERIC_BUTTON_SELECTOR,
-    TREND_ACTIVE_MARKER,
-    "trend active final cascade order",
+    "grid-template-rows: 148px 72px 42px minmax(120px, 1fr) 170px !important;",
+    "HVAC overview aligned desktop tracks",
     errors
   );
+  assertIncludes(styleSource, DEVICE_OVERVIEW_NO_OVERLAP_MARKER, "device overview no-overlap guard", errors);
+  assertIncludes(
+    styleSource,
+    "grid-template-rows: 66px 72px minmax(0, 1fr) !important;",
+    "device overview aligned desktop tracks",
+    errors
+  );
+
+  assertIncludes(styleSource, TREND_ACTIVE_MARKER, "trend active readability guard", errors);
+  const trendGenericButtonBlock = findRuleBlock(trendAnalysisStyleSource, TREND_GENERIC_BUTTON_SELECTOR);
+  if (!trendGenericButtonBlock) {
+    errors.push("trend generic button readability guard: selector block missing");
+  } else {
+    assertNotIncludes(trendGenericButtonBlock.text, "color:", "trend generic button must not override active text color", errors);
+    assertNotIncludes(trendGenericButtonBlock.text, "background:", "trend generic button must not override active background", errors);
+  }
 
   const trendGuardStart = styleSource.indexOf(TREND_ACTIVE_MARKER);
   const trendActiveBlock = findRuleBlock(styleSource, TREND_ACTIVE_SELECTOR, trendGuardStart);
@@ -354,6 +482,20 @@ function main() {
     assertIncludes(systemVerdictBlock.text, "text-shadow:", "system overview verdict badge text-shadow", errors);
   }
 
+  assertIncludes(systemOverviewStyleSource, SYSTEM_OVERVIEW_768P_MARKER, "system overview 768p terminal guard", errors);
+  const systemOverview768pBlock = findRuleBlockContaining(
+    systemOverviewStyleSource,
+    SYSTEM_OVERVIEW_768P_PAGE_SELECTOR,
+    "grid-template-rows: 36px 64px minmax(0, 1fr) 78px !important;"
+  );
+  if (!systemOverview768pBlock) {
+    errors.push("system overview 768p terminal guard: page selector block missing");
+  } else {
+    assertIncludes(systemOverview768pBlock.text, "height: 100% !important;", "system overview 768p page height", errors);
+    assertIncludes(systemOverview768pBlock.text, "min-height: 0 !important;", "system overview 768p min-height reset", errors);
+    assertIncludes(systemOverview768pBlock.text, "overflow: hidden !important;", "system overview 768p overflow guard", errors);
+  }
+
   assertIncludes(styleSource, PROJECT_RANK_MARKER, "project queue rank readability guard", errors);
   const projectRankStart = styleSource.indexOf(PROJECT_RANK_MARKER);
   const projectRankBlock = findRuleBlock(styleSource, PROJECT_RANK_SELECTOR, projectRankStart);
@@ -377,14 +519,22 @@ function main() {
     assertIncludes(navCountBlock.text, "text-shadow:", "nav module count text-shadow", errors);
   }
 
-  const projectPageBlock = findRuleBlock(styleSource, PROJECT_PAGE_SELECTOR, denseGuardStart);
+  const projectPageBlock = findRuleBlockContaining(
+    projectSelectionStyleSource,
+    PROJECT_PAGE_SELECTOR,
+    "grid-template-rows: 120px 86px minmax(0, 1fr) !important;"
+  );
   if (!projectPageBlock) {
     errors.push("dense page final no-clip guard: project page selector block missing");
   } else {
     assertIncludes(projectPageBlock.text, "grid-template-rows: 120px 86px minmax(0, 1fr) !important;", "project page compact grid rows", errors);
   }
 
-  const performanceSideBlock = findRuleBlock(styleSource, PERFORMANCE_SIDE_SELECTOR, denseGuardStart);
+  const performanceSideBlock = findRuleBlockContaining(
+    performanceReportStyleSource,
+    PERFORMANCE_SIDE_SELECTOR,
+    "grid-template-rows: 152px minmax(0, 1fr) 88px !important;"
+  );
   if (!performanceSideBlock) {
     errors.push("dense page final no-clip guard: performance side selector block missing");
   } else {
@@ -407,7 +557,11 @@ function main() {
     assertIncludes(workOrderPageBlock.text, "grid-template-rows: 132px 156px minmax(0, 1fr) !important;", "work-order compact grid rows", errors);
   }
 
-  const energyAnalysisMetricBlock = findRuleBlock(styleSource, ENERGY_ANALYSIS_METRIC_SELECTOR, highestGuardStart);
+  const energyAnalysisMetricBlock = findRuleBlockContaining(
+    energyAnalysisStyleSource,
+    ENERGY_ANALYSIS_METRIC_SELECTOR,
+    "height: 64px !important;"
+  );
   if (!energyAnalysisMetricBlock) {
     errors.push("highest priority 720p no-clip correction: energy-analysis metric selector block missing");
   } else {
@@ -443,7 +597,11 @@ function main() {
     errors
   );
   const renderedGuardStart = styleSource.indexOf(RENDERED_720P_NO_CLIP_MARKER);
-  const energyParameterFinalGridBlock = findRuleBlock(styleSource, ENERGY_PARAMETER_FINAL_GRID_SELECTOR, renderedGuardStart);
+  const energyParameterFinalGridBlock = findRuleBlockContaining(
+    energyParameterStyleSource,
+    ENERGY_PARAMETER_FINAL_GRID_SELECTOR,
+    "grid-template-rows: 68px 70px minmax(0, 1fr) 34px !important;"
+  );
   if (!energyParameterFinalGridBlock) {
     errors.push("rendered 720p no-clip pass: energy-parameter final grid selector block missing");
   } else {
@@ -455,7 +613,11 @@ function main() {
     );
   }
 
-  const meterReadingFinalGridBlock = findRuleBlock(styleSource, METER_READING_FINAL_GRID_SELECTOR, renderedGuardStart);
+  const meterReadingFinalGridBlock = findRuleBlockContaining(
+    meterReadingStyleSource,
+    METER_READING_FINAL_GRID_SELECTOR,
+    "grid-template-rows: 64px 70px minmax(0, 1fr) 34px !important;"
+  );
   if (!meterReadingFinalGridBlock) {
     errors.push("rendered 720p no-clip pass: meter-reading final grid selector block missing");
   } else {
@@ -467,7 +629,11 @@ function main() {
     );
   }
 
-  const performanceFinalSideBlock = findRuleBlock(styleSource, PERFORMANCE_FINAL_SIDE_SELECTOR, renderedGuardStart);
+  const performanceFinalSideBlock = findRuleBlockContaining(
+    performanceReportStyleSource,
+    PERFORMANCE_FINAL_SIDE_SELECTOR,
+    "grid-template-rows: 148px minmax(0, 1fr) 112px !important;"
+  );
   if (!performanceFinalSideBlock) {
     errors.push("rendered 720p no-clip pass: performance final side selector block missing");
   } else {
@@ -479,7 +645,11 @@ function main() {
     );
   }
 
-  const performanceFinalQueryBlock = findRuleBlock(styleSource, PERFORMANCE_FINAL_QUERY_SELECTOR, renderedGuardStart);
+  const performanceFinalQueryBlock = findRuleBlockContaining(
+    performanceReportStyleSource,
+    PERFORMANCE_FINAL_QUERY_SELECTOR,
+    "grid-template-columns: minmax(98px, 1fr) minmax(98px, 1fr) 176px !important;"
+  );
   if (!performanceFinalQueryBlock) {
     errors.push("rendered 720p no-clip pass: performance query selector block missing");
   } else {
@@ -493,10 +663,10 @@ function main() {
 
   assertIncludes(styleSource, PERFORMANCE_SUMMARY_FINAL_MARKER, "performance report summary final two-row guard", errors);
   const performanceSummaryFinalStart = styleSource.indexOf(PERFORMANCE_SUMMARY_FINAL_MARKER);
-  const performanceFinalSummaryGridBlock = findRuleBlock(
-    styleSource,
+  const performanceFinalSummaryGridBlock = findRuleBlockContaining(
+    performanceReportStyleSource,
     PERFORMANCE_FINAL_SUMMARY_GRID_SELECTOR,
-    performanceSummaryFinalStart
+    "grid-template-columns: repeat(2, minmax(0, 1fr)) !important;"
   );
   if (!performanceFinalSummaryGridBlock) {
     errors.push("rendered 720p no-clip pass: performance summary grid selector block missing");
@@ -581,7 +751,11 @@ function main() {
 
   assertIncludes(styleSource, WORK_ORDER_HEADER_FINAL_MARKER, "work-order header final no-overlap guard", errors);
   const workOrderHeaderFinalStart = styleSource.indexOf(WORK_ORDER_HEADER_FINAL_MARKER);
-  const workOrderFinalPageBlock = findRuleBlock(styleSource, WORK_ORDER_FINAL_PAGE_SELECTOR, workOrderHeaderFinalStart);
+  const workOrderFinalPageBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_PAGE_SELECTOR,
+    "gap: 6px !important;"
+  );
   if (!workOrderFinalPageBlock) {
     errors.push("work-order header final no-overlap guard: page grid selector block missing");
   } else {
@@ -594,7 +768,11 @@ function main() {
     assertIncludes(workOrderFinalPageBlock.text, "gap: 6px !important;", "work-order final page gap", errors);
   }
 
-  const workOrderCommandCopyBlock = findRuleBlock(styleSource, WORK_ORDER_FINAL_COMMAND_COPY_SELECTOR, workOrderHeaderFinalStart);
+  const workOrderCommandCopyBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_COMMAND_COPY_SELECTOR,
+    "grid-template-rows: 13px 25px 24px 50px !important;"
+  );
   if (!workOrderCommandCopyBlock) {
     errors.push("work-order header final no-overlap guard: command copy selector block missing");
   } else {
@@ -607,14 +785,22 @@ function main() {
     assertIncludes(workOrderCommandCopyBlock.text, "overflow: hidden !important;", "work-order command copy bounded overflow", errors);
   }
 
-  const workOrderDescriptionBlock = findRuleBlock(styleSource, WORK_ORDER_FINAL_DESCRIPTION_SELECTOR, workOrderHeaderFinalStart);
+  const workOrderDescriptionBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_DESCRIPTION_SELECTOR,
+    "display: none !important;"
+  );
   if (!workOrderDescriptionBlock) {
     errors.push("work-order header final no-overlap guard: redundant description hide selector missing");
   } else {
     assertIncludes(workOrderDescriptionBlock.text, "display: none !important;", "work-order redundant header copy hidden", errors);
   }
 
-  const workOrderSummaryGridBlock = findRuleBlock(styleSource, WORK_ORDER_FINAL_SUMMARY_GRID_SELECTOR, workOrderHeaderFinalStart);
+  const workOrderSummaryGridBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_SUMMARY_GRID_SELECTOR,
+    "height: 50px !important;"
+  );
   if (!workOrderSummaryGridBlock) {
     errors.push("work-order header final no-overlap guard: summary grid selector block missing");
   } else {
@@ -622,7 +808,11 @@ function main() {
     assertIncludes(workOrderSummaryGridBlock.text, "overflow: hidden !important;", "work-order summary grid bounded overflow", errors);
   }
 
-  const workOrderSideBlock = findRuleBlock(styleSource, WORK_ORDER_FINAL_SIDE_SELECTOR, workOrderHeaderFinalStart);
+  const workOrderSideBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_SIDE_SELECTOR,
+    "grid-template-rows: 13px 28px minmax(0, 1fr) !important;"
+  );
   if (!workOrderSideBlock) {
     errors.push("work-order header final no-overlap guard: side selector block missing");
   } else {
@@ -634,7 +824,11 @@ function main() {
     );
   }
 
-  const workOrderStatStrongBlock = findRuleBlock(styleSource, WORK_ORDER_FINAL_STAT_STRONG_SELECTOR, workOrderHeaderFinalStart);
+  const workOrderStatStrongBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_STAT_STRONG_SELECTOR,
+    "min-height: 21px !important;"
+  );
   if (!workOrderStatStrongBlock) {
     errors.push("work-order header final no-overlap guard: stat strong selector block missing");
   } else {
@@ -642,7 +836,11 @@ function main() {
     assertIncludes(workOrderStatStrongBlock.text, "line-height: 21px !important;", "work-order stat value no-cut line-height", errors);
   }
 
-  const workOrderSideStrongBlock = findRuleBlock(styleSource, WORK_ORDER_FINAL_SIDE_STRONG_SELECTOR, workOrderHeaderFinalStart);
+  const workOrderSideStrongBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_SIDE_STRONG_SELECTOR,
+    "min-height: 28px !important;"
+  );
   if (!workOrderSideStrongBlock) {
     errors.push("work-order header final no-overlap guard: side strong selector block missing");
   } else {
@@ -650,14 +848,22 @@ function main() {
     assertIncludes(workOrderSideStrongBlock.text, "line-height: 28px !important;", "work-order side status no-cut line-height", errors);
   }
 
-  const workOrderSideCopyBlock = findRuleBlock(styleSource, WORK_ORDER_FINAL_SIDE_COPY_SELECTOR, workOrderHeaderFinalStart);
+  const workOrderSideCopyBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_SIDE_COPY_SELECTOR,
+    "display: none !important;"
+  );
   if (!workOrderSideCopyBlock) {
     errors.push("work-order header final no-overlap guard: side copy hide selector missing");
   } else {
     assertIncludes(workOrderSideCopyBlock.text, "display: none !important;", "work-order redundant side copy hidden", errors);
   }
 
-  const workOrderFilterCopyBlock = findRuleBlock(styleSource, WORK_ORDER_FINAL_FILTER_COPY_SELECTOR, workOrderHeaderFinalStart);
+  const workOrderFilterCopyBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_FILTER_COPY_SELECTOR,
+    "display: none !important;"
+  );
   if (!workOrderFilterCopyBlock) {
     errors.push("work-order header final no-overlap guard: filter copy hide selector missing");
   } else {
@@ -712,7 +918,11 @@ function main() {
 
   assertIncludes(styleSource, OPTIMIZE_RESULT_SPOTLIGHT_MARKER, "optimize result spotlight final guard", errors);
   const optimizeResultSpotlightStart = styleSource.indexOf(OPTIMIZE_RESULT_SPOTLIGHT_MARKER);
-  const optimizeResultStageBlock = findRuleBlock(styleSource, OPTIMIZE_RESULT_STAGE_SELECTOR, optimizeResultSpotlightStart);
+  const optimizeResultStageBlock = findRuleBlockContaining(
+    optimizeStyleSource,
+    OPTIMIZE_RESULT_STAGE_SELECTOR,
+    "height: 124px !important;"
+  );
   if (!optimizeResultStageBlock) {
     errors.push("optimize result spotlight final guard: result stage selector block missing");
   } else {
@@ -786,10 +996,10 @@ function main() {
     errors
   );
 
-  const optimizeResultCardGridBlock = findRuleBlock(
-    styleSource,
+  const optimizeResultCardGridBlock = findRuleBlockContaining(
+    optimizeStyleSource,
     OPTIMIZE_RESULT_CARD_GRID_SELECTOR,
-    optimizeResultSpotlightStart
+    "grid-template-columns: minmax(242px, 1.36fr) minmax(172px, 1fr) repeat(3, minmax(0, 0.76fr)) !important;"
   );
   if (!optimizeResultCardGridBlock) {
     errors.push("optimize result spotlight final guard: result card grid selector block missing");
@@ -802,10 +1012,10 @@ function main() {
     );
   }
 
-  const optimizeResultCardStrongBlock = findRuleBlock(
-    styleSource,
+  const optimizeResultCardStrongBlock = findRuleBlockContaining(
+    optimizeStyleSource,
     OPTIMIZE_RESULT_CARD_STRONG_SELECTOR,
-    optimizeResultSpotlightStart
+    "font-size: 18px !important;"
   );
   if (!optimizeResultCardStrongBlock) {
     errors.push("optimize result spotlight final guard: result card strong selector block missing");
@@ -814,10 +1024,10 @@ function main() {
     assertIncludes(optimizeResultCardStrongBlock.text, "line-height: 34px !important;", "optimize result value no-cut line-height", errors);
   }
 
-  const optimizeResultPrimaryCardBlock = findRuleBlock(
-    styleSource,
+  const optimizeResultPrimaryCardBlock = findRuleBlockContaining(
+    optimizeStyleSource,
     OPTIMIZE_RESULT_PRIMARY_CARD_SELECTOR,
-    optimizeResultSpotlightStart
+    "grid-template-rows: 17px 43px 21px !important;"
   );
   if (!optimizeResultPrimaryCardBlock) {
     errors.push("optimize result spotlight final guard: primary result card selector block missing");
@@ -826,10 +1036,10 @@ function main() {
     assertIncludes(optimizeResultPrimaryCardBlock.text, "border-width: 2px !important;", "optimize result primary card emphasis", errors);
   }
 
-  const optimizeResultPrimaryStrongBlock = findRuleBlock(
-    styleSource,
+  const optimizeResultPrimaryStrongBlock = findRuleBlockContaining(
+    optimizeStyleSource,
     OPTIMIZE_RESULT_PRIMARY_STRONG_SELECTOR,
-    optimizeResultSpotlightStart
+    "font-size: 28px !important;"
   );
   if (!optimizeResultPrimaryStrongBlock) {
     errors.push("optimize result spotlight final guard: primary result value selector block missing");
@@ -840,7 +1050,11 @@ function main() {
 
   assertIncludes(styleSource, OPTIMIZE_RESULT_OVERLAP_MARKER, "optimize generated-result overlap guard", errors);
   const optimizeResultOverlapStart = styleSource.indexOf(OPTIMIZE_RESULT_OVERLAP_MARKER);
-  const optimizePageGridBlock = findRuleBlock(styleSource, OPTIMIZE_PAGE_GRID_SELECTOR, optimizeResultOverlapStart);
+  const optimizePageGridBlock = findRuleBlockContaining(
+    optimizeStyleSource,
+    OPTIMIZE_PAGE_GRID_SELECTOR,
+    "grid-template-rows: 66px 124px 164px auto auto !important;"
+  );
   if (!optimizePageGridBlock) {
     errors.push("optimize generated-result overlap guard: page grid selector block missing");
   } else {
@@ -933,10 +1147,10 @@ function main() {
 
   assertIncludes(styleSource, OPTIMIZE_RESULT_CARD_NO_CLIP_MARKER, "optimize result card no-clip guard", errors);
   const optimizeResultCardNoClipStart = styleSource.indexOf(OPTIMIZE_RESULT_CARD_NO_CLIP_MARKER);
-  const optimizeResultCardNoClipStageBlock = findRuleBlock(
-    styleSource,
+  const optimizeResultCardNoClipStageBlock = findRuleBlockContaining(
+    optimizeStyleSource,
     OPTIMIZE_RESULT_STAGE_SELECTOR,
-    optimizeResultCardNoClipStart
+    "grid-template-columns: 138px minmax(0, 1fr) !important;"
   );
   if (!optimizeResultCardNoClipStageBlock) {
     errors.push("optimize result card no-clip guard: result stage selector block missing");
@@ -949,10 +1163,10 @@ function main() {
     );
   }
 
-  const optimizeResultStageCopyBlock = findRuleBlock(
-    styleSource,
+  const optimizeResultStageCopyBlock = findRuleBlockContaining(
+    optimizeStyleSource,
     OPTIMIZE_RESULT_STAGE_COPY_SELECTOR,
-    optimizeResultCardNoClipStart
+    "grid-template-rows: 18px 44px !important;"
   );
   if (!optimizeResultStageCopyBlock) {
     errors.push("optimize result card no-clip guard: stage copy selector block missing");
@@ -965,10 +1179,10 @@ function main() {
     );
   }
 
-  const optimizeResultStageCopyBodyBlock = findRuleBlock(
-    styleSource,
+  const optimizeResultStageCopyBodyBlock = findRuleBlockContaining(
+    optimizeStyleSource,
     OPTIMIZE_RESULT_STAGE_COPY_BODY_SELECTOR,
-    optimizeResultCardNoClipStart
+    "display: none !important;"
   );
   if (!optimizeResultStageCopyBodyBlock) {
     errors.push("optimize result card no-clip guard: stage copy body selector block missing");
@@ -976,10 +1190,10 @@ function main() {
     assertIncludes(optimizeResultStageCopyBodyBlock.text, "display: none !important;", "optimize result stage copy removes clipped explanation", errors);
   }
 
-  const optimizeResultCardNoClipGridBlock = findRuleBlock(
-    styleSource,
+  const optimizeResultCardNoClipGridBlock = findRuleBlockContaining(
+    optimizeStyleSource,
     OPTIMIZE_RESULT_CARD_GRID_SELECTOR,
-    optimizeResultCardNoClipStart
+    "minmax(204px, 1.15fr)"
   );
   if (!optimizeResultCardNoClipGridBlock) {
     errors.push("optimize result card no-clip guard: result card grid selector block missing");
@@ -1058,10 +1272,10 @@ function main() {
 
   assertIncludes(styleSource, ENERGY_CALENDAR_VALUE_FINAL_MARKER, "energy calendar value final guard", errors);
   const energyCalendarValueFinalStart = styleSource.indexOf(ENERGY_CALENDAR_VALUE_FINAL_MARKER);
-  const energyCalendarValueDivBlock = findRuleBlock(
+  const energyCalendarValueDivBlock = findRuleBlockContaining(
     styleSource,
     ENERGY_CALENDAR_VALUE_DIV_SELECTOR,
-    energyCalendarValueFinalStart
+    "grid-template-columns: 20px minmax(0, 1fr) !important;"
   );
   if (!energyCalendarValueDivBlock) {
     errors.push("energy calendar value final guard: metrics row selector block missing");
@@ -1075,10 +1289,10 @@ function main() {
     assertIncludes(energyCalendarValueDivBlock.text, "height: 12px !important;", "energy calendar value row height", errors);
   }
 
-  const energyCalendarValueStrongBlock = findRuleBlock(
+  const energyCalendarValueStrongBlock = findRuleBlockContaining(
     styleSource,
     ENERGY_CALENDAR_VALUE_STRONG_SELECTOR,
-    energyCalendarValueFinalStart
+    "font-variant-numeric: tabular-nums !important;"
   );
   if (!energyCalendarValueStrongBlock) {
     errors.push("energy calendar value final guard: numeric value selector block missing");
@@ -1149,10 +1363,10 @@ function main() {
   assertIncludes(sceneSource, "const SCENE_NATIVE_2D_EFFECTIVE_HEIGHT = 730;", "scene native 2D effective height", errors);
   assertIncludes(sceneSource, "preset: SCENE_NATIVE_COMPACT_2D_VIEWPORT", "scene native generic 2D viewport fallback", errors);
   const finalFooterClearanceStart = styleSource.indexOf(FINAL_FOOTER_CLEARANCE_MARKER);
-  const finalFooterEnergyAnalysisPageBlock = findRuleBlock(
-    styleSource,
+  const finalFooterEnergyAnalysisPageBlock = findRuleBlockContaining(
+    energyAnalysisStyleSource,
     FINAL_FOOTER_ENERGY_ANALYSIS_PAGE_SELECTOR,
-    finalFooterClearanceStart
+    "grid-template-rows: 82px 58px minmax(0, 1fr) 68px 28px !important;"
   );
   if (!finalFooterEnergyAnalysisPageBlock) {
     errors.push("rendered 720p final footer clearance guard: energy-analysis page selector block missing");
@@ -1171,10 +1385,10 @@ function main() {
     );
   }
 
-  const finalFooterEnergyAnalysisBoundaryBlock = findRuleBlock(
-    styleSource,
+  const finalFooterEnergyAnalysisBoundaryBlock = findRuleBlockContaining(
+    energyAnalysisStyleSource,
     FINAL_FOOTER_ENERGY_ANALYSIS_BOUNDARY_SELECTOR,
-    finalFooterClearanceStart
+    "transform: translateY(-6px) !important;"
   );
   if (!finalFooterEnergyAnalysisBoundaryBlock) {
     errors.push("rendered 720p final footer clearance guard: energy-analysis boundary selector block missing");
@@ -1183,10 +1397,32 @@ function main() {
     assertIncludes(finalFooterEnergyAnalysisBoundaryBlock.text, "transform: translateY(-6px) !important;", "energy-analysis boundary lift", errors);
   }
 
-  const finalFooterEnergyParameterPageBlock = findRuleBlock(
-    styleSource,
+  assertIncludes(
+    energyAnalysisStyleSource,
+    ENERGY_ANALYSIS_NO_OVERLAP_GRID_MARKER,
+    "energy-analysis no-overlap grid guard",
+    errors
+  );
+  const energyAnalysisNoOverlapGridBlock = findRuleBlockContaining(
+    energyAnalysisStyleSource,
+    ENERGY_ANALYSIS_NO_OVERLAP_GRID_SELECTOR,
+    "grid-template-rows: 88px 70px minmax(0, 1fr) 104px 28px !important;"
+  );
+  if (!energyAnalysisNoOverlapGridBlock) {
+    errors.push("energy-analysis no-overlap grid guard: final page selector block missing");
+  } else {
+    assertIncludes(
+      energyAnalysisNoOverlapGridBlock.text,
+      "grid-template-rows: 88px 70px minmax(0, 1fr) 104px 28px !important;",
+      "energy-analysis no-overlap final tracks",
+      errors
+    );
+  }
+
+  const finalFooterEnergyParameterPageBlock = findRuleBlockContaining(
+    energyParameterStyleSource,
     FINAL_FOOTER_ENERGY_PARAMETER_PAGE_SELECTOR,
-    finalFooterClearanceStart
+    "height: calc(100% - 12px) !important;"
   );
   if (!finalFooterEnergyParameterPageBlock) {
     errors.push("rendered 720p final footer clearance guard: energy-parameter page selector block missing");
@@ -1205,10 +1441,10 @@ function main() {
     );
   }
 
-  const finalFooterEnergyParameterBoundaryBlock = findRuleBlock(
-    styleSource,
+  const finalFooterEnergyParameterBoundaryBlock = findRuleBlockContaining(
+    energyParameterStyleSource,
     FINAL_FOOTER_ENERGY_PARAMETER_BOUNDARY_SELECTOR,
-    finalFooterClearanceStart
+    "transform: translateY(-8px) !important;"
   );
   if (!finalFooterEnergyParameterBoundaryBlock) {
     errors.push("rendered 720p final footer clearance guard: energy-parameter boundary selector block missing");
@@ -1217,14 +1453,22 @@ function main() {
     assertIncludes(finalFooterEnergyParameterBoundaryBlock.text, "transform: translateY(-8px) !important;", "energy-parameter boundary lift", errors);
   }
 
-  const finalFooterScenePageBlock = findRuleBlock(styleSource, FINAL_FOOTER_SCENE_PAGE_SELECTOR, finalFooterClearanceStart);
+  const finalFooterScenePageBlock = findRuleBlockContaining(
+    sceneStyleSource,
+    FINAL_FOOTER_SCENE_PAGE_SELECTOR,
+    "height: calc(100% - 16px) !important;"
+  );
   if (!finalFooterScenePageBlock) {
     errors.push("rendered 720p final footer clearance guard: scene page selector block missing");
   } else {
     assertIncludes(finalFooterScenePageBlock.text, "height: calc(100% - 16px) !important;", "scene page final bottom clearance", errors);
   }
 
-  const finalFooterSceneSwitchbarBlock = findRuleBlock(styleSource, FINAL_FOOTER_SCENE_SWITCHBAR_SELECTOR, finalFooterClearanceStart);
+  const finalFooterSceneSwitchbarBlock = findRuleBlockContaining(
+    sceneStyleSource,
+    FINAL_FOOTER_SCENE_SWITCHBAR_SELECTOR,
+    "transform: translateY(-12px) !important;"
+  );
   if (!finalFooterSceneSwitchbarBlock) {
     errors.push("rendered 720p final footer clearance guard: scene switchbar selector block missing");
   } else {
@@ -1243,7 +1487,11 @@ function main() {
     assertIncludes(finalFooterSceneCurrentStrongBlock.text, "line-height: 16px !important;", "scene current title readable line-height", errors);
   }
 
-  const finalFooterMeterPageBlock = findRuleBlock(styleSource, FINAL_FOOTER_METER_PAGE_SELECTOR, finalFooterClearanceStart);
+  const finalFooterMeterPageBlock = findRuleBlockContaining(
+    meterReadingStyleSource,
+    FINAL_FOOTER_METER_PAGE_SELECTOR,
+    "grid-template-rows: 74px 56px minmax(0, 1fr) 30px !important;"
+  );
   if (!finalFooterMeterPageBlock) {
     errors.push("rendered 720p final footer clearance guard: meter-reading page selector block missing");
   } else {
@@ -1255,7 +1503,11 @@ function main() {
     );
   }
 
-  const finalFooterMeterBoundaryBlock = findRuleBlock(styleSource, FINAL_FOOTER_METER_BOUNDARY_SELECTOR, finalFooterClearanceStart);
+  const finalFooterMeterBoundaryBlock = findRuleBlockContaining(
+    meterReadingStyleSource,
+    FINAL_FOOTER_METER_BOUNDARY_SELECTOR,
+    "transform: translateY(-8px) !important;"
+  );
   if (!finalFooterMeterBoundaryBlock) {
     errors.push("rendered 720p final footer clearance guard: meter-reading boundary selector block missing");
   } else {
@@ -1339,7 +1591,13 @@ function main() {
   }
 
   const energyStationDashboardPageBlock =
-    energyStationGuardStart >= 0 ? findRuleBlock(styleSource, ENERGY_STATION_DASHBOARD_PAGE_SELECTOR, energyStationGuardStart) : null;
+    energyStationGuardStart >= 0
+      ? findRuleBlockContaining(
+          styleSource,
+          ENERGY_STATION_DASHBOARD_PAGE_SELECTOR,
+          "grid-template-rows: 29px 50px 64px 72px minmax(0, 1fr) 74px !important;"
+        )
+      : null;
   if (!energyStationDashboardPageBlock) {
     errors.push("3001 energy station 720p acceptance guard: dashboard page selector block missing");
   } else {
@@ -1352,7 +1610,13 @@ function main() {
   }
 
   const energyStationAirPageBlock =
-    energyStationGuardV2Start >= 0 ? findRuleBlock(styleSource, ENERGY_STATION_AIR_PAGE_SELECTOR, energyStationGuardV2Start) : null;
+    energyStationGuardV2Start >= 0
+      ? findRuleBlockContaining(
+          styleSource,
+          ENERGY_STATION_AIR_PAGE_SELECTOR,
+          "grid-template-rows: 116px 80px minmax(0, 1fr) !important;"
+        )
+      : null;
   if (!energyStationAirPageBlock) {
     errors.push("3001 energy station 720p acceptance guard v2: air page selector block missing");
   } else {
@@ -1365,7 +1629,13 @@ function main() {
   }
 
   const energyStationAirKpiBlock =
-    energyStationGuardV2Start >= 0 ? findRuleBlock(styleSource, ENERGY_STATION_AIR_KPI_CARD_SELECTOR, energyStationGuardV2Start) : null;
+    energyStationGuardV2Start >= 0
+      ? findRuleBlockContaining(
+          styleSource,
+          ENERGY_STATION_AIR_KPI_CARD_SELECTOR,
+          "grid-template-rows: 15px 25px 20px !important;"
+        )
+      : null;
   if (!energyStationAirKpiBlock) {
     errors.push("3001 energy station 720p acceptance guard v2: air KPI card selector block missing");
   } else {
@@ -1480,14 +1750,18 @@ function main() {
     );
   }
 
-  assertIncludes(dashboardSource, "综合能源站总览", "dashboard integrated energy station title", errors);
+  assertIncludes(dashboardSource, "data-dashboard-lifecycle-mode", "dashboard lifecycle mode hook", errors);
+  assertIncludes(dashboardSource, "项目接入总览", "dashboard onboarding title", errors);
+  assertIncludes(dashboardSource, "项目联调总览", "dashboard commissioning title", errors);
+  assertIncludes(dashboardSource, "综合运行总览", "dashboard operation title", errors);
+  assertIncludes(appShellSource, "shellMainRef.current.scrollTop = 0", "route change resets shell scroll position", errors);
   assertIncludes(
     dashboardSource,
     "配置已发布但实时待接的子系统不显示假 KPI、不参与统计",
     "dashboard unavailable subsystem no-fake-KPI copy",
     errors
   );
-  assertIncludes(dashboardSource, "待接实时", "dashboard waiting-for-real-data subsystem status copy", errors);
+  assertIncludes(subsystemStatusSource, "待接实时", "shared waiting-for-real-data subsystem status copy", errors);
   assertIncludes(compressedAirSource, "未接入实时数据不显示假 KPI", "compressed-air no-fake-KPI copy", errors);
   assertIncludes(
     compressedAirSource,
@@ -1529,10 +1803,17 @@ function main() {
     errors
   );
   assertIncludes(aiOverviewSource, "影子建议模式", "AI overview shadow mode copy", errors);
-  assertIncludes(aiOverviewSource, "PLC安全边界在线", "AI overview PLC safety boundary copy", errors);
-  assertIncludes(aiOverviewSource, "人工确认后下发", "AI overview assisted boundary copy", errors);
+  assertIncludes(aiOverviewSource, "安全边界待站点确认", "AI overview unconfirmed safety boundary copy", errors);
+  assertIncludes(aiOverviewSource, "人工确认仅形成评审记录", "AI overview shadow review boundary copy", errors);
+  assertIncludes(aiOverviewSource, "暂无可评审的 AI 优化建议", "AI overview missing-data recommendation guard", errors);
+  assertIncludes(aiOverviewSource, "趋势数据待接入", "AI overview missing trend evidence guard", errors);
   assertIncludes(aiOverviewSource, "跨系统 AI 建议中心", "AI overview cross-system advice center copy", errors);
-  assertIncludes(aiOverviewSource, "待接实时", "AI overview waiting-for-real-data status copy", errors);
+  assertIncludes(
+    aiOverviewSource,
+    "getSubsystemStatusPresentation",
+    "AI overview shared subsystem status model",
+    errors
+  );
   assertIncludes(aiOverviewSource, "真实空压/子系统实时数据未接入", "AI overview real-data-not-connected copy", errors);
   assertIncludes(aiOverviewSource, "不生成假 KPI、不推送节能建议", "AI overview unavailable subsystem no-fake-advice copy", errors);
 
@@ -1556,6 +1837,7 @@ function main() {
   console.log("- checked performance report summary two-row guard");
   console.log("- checked work-order header no-overlap guard");
   console.log("- checked trend series stats no-clip guard");
+  console.log("- checked trend mobile page-title no-break guard");
   console.log("- checked optimize result spotlight guard");
   console.log("- checked energy efficiency calendar value width guard");
   console.log("- checked 720p bottom safe-area guard");

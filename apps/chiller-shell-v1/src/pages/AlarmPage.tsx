@@ -1,5 +1,9 @@
 import { startTransition, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import AlarmClosureRail from "../components/alarm/AlarmClosureRail";
+import OperationalTruthBadges, {
+  resolveOperationalDataState
+} from "../components/common/OperationalTruthBadges";
 import { runtimeConfig } from "../config/runtimeConfig";
 import { getSeverityCopy } from "../i18n/hvacCopybook";
 import { buildSourceStatusLines, summarizeSourceStatus } from "../i18n/sourceStatusCN";
@@ -13,6 +17,8 @@ import {
 } from "../services/bffClient";
 import { getDisplayAnomalySourceLabel, getDisplayAnomalyTitle } from "../utils/anomalyPresentation";
 import { resolveUnifiedStatusTone } from "../utils/statusTone";
+import "./AlarmPageExtracted.css";
+import "./AlarmMobile.css";
 
 type OptimizeGate = {
   label: string;
@@ -299,6 +305,22 @@ function formatAlarmRowDetail(item: AnomalyListItemDto, alarmExplain: string): s
   return alarmExplain;
 }
 
+function buildAlarmWorkOrderDraftPath(item: AnomalyListItemDto, siteId: string): string {
+  const params = new URLSearchParams({
+    siteId,
+    source: "alarm",
+    create: "1",
+    alarmSiteId: siteId,
+    alarmId: String(item.id || ""),
+    regId: String(item.regId || ""),
+    alarmTitle: getDisplayAnomalyTitle({ title: item.title, regId: item.regId }),
+    alarmSeverity: String(item.severity || ""),
+    alarmOccurredAt: String(item.occurredAt || ""),
+    alarmDetail: formatAlarmRowDetail(item, formatAlarmExplain(item.alarmExplain))
+  });
+  return `/work-orders?${params.toString()}`;
+}
+
 function buildOptimizeGate(summary: AnomalySummaryDto | null, loadError: string | null): OptimizeGate {
   const counts = summary?.counts;
   const stale = Boolean(summary?.freshness?.stale);
@@ -538,6 +560,21 @@ export default function AlarmPage() {
       : zhCN.alarmPage.freshnessWarn;
   const freshnessTimestamp =
     summary?.freshness?.latestTimestamp || visibleAlarmList?.generatedAt || visibleAlarmList?.freshness?.latestTimestamp || null;
+  const hasRealtimeAlarmSummary = Boolean(summary);
+  const alarmDataState = resolveOperationalDataState({
+    requestFailed: Boolean(loadError),
+    sourceWarn: sourceSummary.warn,
+    stale: Boolean(freshness?.stale),
+    hasData: Boolean(summary || visibleAlarmList)
+  });
+  const alarmTruthMessage =
+    alarmDataState === "live"
+      ? "实时告警摘要与历史列表来源已通过当前链路校验。"
+      : alarmDataState === "stale"
+        ? "当前告警数据已陈旧，不能据此判定现场无告警。"
+        : alarmDataState === "offline"
+          ? "告警链路不可用，当前告警数量不可判定。"
+          : "告警链路部分降级，零告警不代表现场确认无告警。";
   const activeSeverityLabel = alarmLevelFilterLabel(severityFilter);
   const sourceSummaryText = loadError ? loadError : sourceSummary.text;
   const statusDigestLines = Array.from(new Set(sourceStatusLinesCompact.filter(Boolean))).slice(0, 4);
@@ -578,16 +615,25 @@ export default function AlarmPage() {
   ).sort((left, right) => right.count - left.count);
   const focusIssue = issueGroups[0] || null;
   const focusAction = focusIssue ? buildAlarmAction(focusIssue.sample) : null;
+  const focusDraftItem = items.find((item) => String(item.state || "") === "1") || items[0] || null;
+  const focusDraftPath = focusDraftItem ? buildAlarmWorkOrderDraftPath(focusDraftItem, runtimeConfig.siteId) : null;
+  const recoveredHistoryCount = items.filter((item) => String(item.state || "") === "0").length;
   const kpiCards = [
     {
       title: "当前活跃告警",
-      value: `${toDisplayNumber(currentActiveCount)}${zhCN.common.unitItem}`,
-      detail: currentActiveCount > 0 ? "存在需先确认的实时告警" : "当前无闭锁告警"
+      value: hasRealtimeAlarmSummary ? `${toDisplayNumber(currentActiveCount)}${zhCN.common.unitItem}` : "--",
+      detail: !hasRealtimeAlarmSummary
+        ? "实时摘要不可用，不能判定无告警"
+        : currentActiveCount > 0
+          ? "存在需先确认的实时告警"
+          : "当前链路确认无闭锁告警"
     },
     {
       title: "优化闭锁告警",
-      value: `${toDisplayNumber(optimizeBlockCount)}${zhCN.common.unitItem}`,
-      detail: `紧急 ${currentCriticalCount} · 严重 ${currentMajorCount}`
+      value: hasRealtimeAlarmSummary ? `${toDisplayNumber(optimizeBlockCount)}${zhCN.common.unitItem}` : "--",
+      detail: hasRealtimeAlarmSummary
+        ? `紧急 ${currentCriticalCount} · 严重 ${currentMajorCount}`
+        : "闭锁状态待实时摘要恢复"
     },
     {
       title: "历史告警事件",
@@ -673,6 +719,9 @@ export default function AlarmPage() {
         <div className="alarm-queue-action">
           <strong>{action.title}</strong>
           <span>{action.detail}</span>
+          <Link className="alarm-queue-draft-link" to={buildAlarmWorkOrderDraftPath(item, runtimeConfig.siteId)}>
+            转工单草稿
+          </Link>
         </div>
       </article>
     );
@@ -683,14 +732,18 @@ export default function AlarmPage() {
       <section className="alarm-command-hero">
         <div className="alarm-hero-copy">
           <p className="alarm-eyebrow">{runtimeConfig.appModeLabel}</p>
-          <h2>告警处置中心</h2>
+          <h1>告警处置中心</h1>
           <p>先确认当前闭锁告警，再复核历史高频事件；AI 优化仅在准入放行后进入人工评审，不直接下发。</p>
         </div>
         <div className="alarm-hero-actions" aria-label="告警页面快捷入口">
-          <span className="alarm-hero-chip tone-good">云端实时</span>
+          <OperationalTruthBadges
+            state={alarmDataState}
+            sourceTime={formatClockLabel(freshnessTimestamp)}
+            controlMode={runtimeConfig.readOnlyMode ? "只读监视" : "待服务端授权"}
+            message={alarmTruthMessage}
+          />
           <span className="alarm-hero-chip">AI 建议需审批</span>
-          <span className="alarm-hero-chip">PLC 保护在线</span>
-          <span className="alarm-hero-chip">10 分钟刷新</span>
+          <span className="alarm-hero-chip">进入页面时加载</span>
         </div>
       </section>
 
@@ -718,6 +771,14 @@ export default function AlarmPage() {
           </div>
         </article>
       </section>
+
+      <AlarmClosureRail
+        dataReady={Boolean(summary || visibleAlarmList)}
+        activeCount={hasRealtimeAlarmSummary ? currentActiveCount : null}
+        recoveredHistoryCount={recoveredHistoryCount}
+        draftPath={focusDraftPath}
+        siteId={runtimeConfig.siteId}
+      />
 
       <div className="alarm-workbench">
         <section className="alarm-queue-panel">

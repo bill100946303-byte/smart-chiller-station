@@ -24,10 +24,12 @@ Current scope:
 - `/devices`
 - `/power-monitoring`
 - `/compressed-air`
+- `/boiler-room`
 - `/hvac-terminal`
 - `/ai-overview`
 - `/optimize-demo`
 - `/scene-control`
+- `/auto-twin`
 - `/video-monitor`
 - `/system-overview`
 

@@ -1,15 +1,13 @@
 import { startTransition, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import chillerUnitImage from "../assets/dashboard-chain/chiller-unit.png";
-import chilledPumpImage from "../assets/dashboard-chain/chilled-pump.png";
+import OperationalTruthBadges, {
+  type OperationalDataState,
+  resolveOperationalDataState
+} from "../components/common/OperationalTruthBadges";
 import controlLinkSchematicImage from "../assets/dashboard-chain/control-link-schematic.png";
-import coolingPumpImage from "../assets/dashboard-chain/cooling-pump.png";
-import coolingTowerImage from "../assets/dashboard-chain/cooling-tower.png";
-import edgeGatewayImage from "../assets/dashboard-chain/edge-gateway.png";
-import onlineCloudImage from "../assets/dashboard-chain/online-cloud.png";
-import plcControllerImage from "../assets/dashboard-chain/plc-controller.png";
-import terminalLoadImage from "../assets/dashboard-chain/terminal-load.png";
 import { runtimeConfig } from "../config/runtimeConfig";
+import { controlPolicyPresentation } from "../config/controlPolicy";
 import useAiDigest from "../hooks/useAiDigest";
 import useRecommendationDiagnostics from "../hooks/useRecommendationDiagnostics";
 import { getAuthSession, getCurrentProject, resolveEnergyConfigSiteId } from "../services/auth";
@@ -32,7 +30,7 @@ import {
   type EnvironmentBuildingListDto,
   type EnvironmentConditionListDto,
   type RecommendationDto,
-  type RuntimeSubsystemCapabilityDto,
+  type RuntimeStationInstanceDto,
   type RuntimeSubsystemCapabilityListDto,
   type SourceStatusDto,
   type WorkOrderListDto,
@@ -49,10 +47,88 @@ import {
 } from "../services/bffClient";
 import { getDisplayAnomalySource, getDisplayAnomalyTitle } from "../utils/anomalyPresentation";
 import { safeLocalStorageGet, safeLocalStorageSet } from "../utils/browserStorage";
+import { getSubsystemStatusPresentation } from "../utils/subsystemStatus";
+import { appendSiteIdToPath, normalizeRouteSiteId } from "../services/siteRouting";
+import {
+  appendEnergyStationContextToPath,
+  isPhysicalStationParentType,
+  type EnergyStationType,
+  resolveUniqueStationInstanceId
+} from "../config/energyStationNavigation";
+import "./DashboardExtracted.css";
+import "./DashboardMobile.css";
+
+const ENERGY_OBJECT_DEFINITIONS = [
+  { subsystemType: "chilled_plant", displayName: "冷冻站", route: "/scene-control", semanticGroup: "supply_station" },
+  { subsystemType: "compressed_air", displayName: "空压站", route: "/compressed-air", semanticGroup: "supply_station" },
+  { subsystemType: "boiler_room", displayName: "锅炉房", route: "/boiler-room", semanticGroup: "supply_station" },
+  { subsystemType: "power_monitoring", displayName: "电力", route: "/power-monitoring", semanticGroup: "distribution_consumption" },
+  { subsystemType: "hvac_terminal", displayName: "空调末端", route: "/hvac-terminal", semanticGroup: "distribution_consumption" }
+] as const;
+
+const ENERGY_OBJECT_GROUP_DEFINITIONS = [
+  {
+    key: "supply_station",
+    label: "供能站房",
+    detail: "冷冻 / 空压 / 锅炉"
+  },
+  {
+    key: "distribution_consumption",
+    label: "配用能",
+    detail: "电力 / 空调末端"
+  }
+] as const;
+
+type EnergyObjectMatrixItem = {
+  subsystemType: (typeof ENERGY_OBJECT_DEFINITIONS)[number]["subsystemType"];
+  displayName: string;
+  route: string;
+  semanticGroup: (typeof ENERGY_OBJECT_GROUP_DEFINITIONS)[number]["key"];
+  to: string;
+  stationCount: number | null;
+  scopeLabel: string;
+  kind:
+    | "live"
+    | "demo"
+    | "waiting"
+    | "stale"
+    | "error"
+    | "not_configured"
+    | "not_applicable"
+    | "unknown"
+    | "syncing";
+  statusCode: "LIVE" | "DEMO" | "WAITING" | "STALE" | "ERROR" | "NOT CONFIGURED" | "N/A" | "CHECK" | "SYNCING";
+  statusLabel: string;
+  detail: string;
+  tone: "good" | "warn" | "neutral";
+  participatesInKpi: boolean;
+  evidenceConflict?: boolean;
+};
+
+const ENERGY_OBJECT_STATUS_PRIMARY: Record<EnergyObjectMatrixItem["statusCode"], string> = {
+  LIVE: "实时",
+  DEMO: "演示",
+  WAITING: "待接",
+  STALE: "过期",
+  ERROR: "异常",
+  "NOT CONFIGURED": "未配置",
+  "N/A": "不适用",
+  CHECK: "待核",
+  SYNCING: "同步中"
+};
 
 type Tone = "good" | "warn" | "neutral";
 type TrendRange = "24h" | "7d" | "30d";
 type SystemType = "chiller" | "chilledPump" | "coolingPump" | "coolingTower";
+type DashboardLifecycleMode = "project_onboarding" | "commissioning" | "operation";
+type DashboardAudienceView = "management" | "operations";
+
+const DASHBOARD_AUDIENCE_VIEW_STORAGE_KEY = "chiller-shell-dashboard-audience-view-v1";
+
+function resolveDashboardAudienceView(defaultView: DashboardAudienceView): DashboardAudienceView {
+  const stored = safeLocalStorageGet(DASHBOARD_AUDIENCE_VIEW_STORAGE_KEY);
+  return stored === "management" || stored === "operations" ? stored : defaultView;
+}
 
 type ControlSignalView = {
   key: string;
@@ -112,6 +188,7 @@ type AnomalyQueueItem = {
   id: string;
   title: string;
   severity: string;
+  severityRank: number;
   tone: Tone;
   impactLabel: string;
   occurredAt: string;
@@ -231,6 +308,7 @@ const FEATURED_COP_MIN_DOMAIN_SPAN = 1.2;
 const TOWER_APPROACH_MAX_PLAUSIBLE_C = 20;
 const DASHBOARD_AUTO_REFRESH_MS = 10_000;
 const DASHBOARD_RECOVERY_RETRY_MS = 5_000;
+const DASHBOARD_CAPABILITY_TIMEOUT_MS = 8_000;
 const DASHBOARD_OVERVIEW_SNAPSHOT_KEY_PREFIX = "chiller-dashboard-overview-snapshot-v1";
 const DASHBOARD_TRENDS_SNAPSHOT_KEY_PREFIX = "chiller-dashboard-trends-snapshot-v4";
 const DASHBOARD_TRENDS_HISTORY_KEY_PREFIX = "chiller-dashboard-trends-history-v4";
@@ -238,6 +316,24 @@ const TREND_WINDOW_24H_MS = 24 * 60 * 60 * 1000;
 const TREND_NEAR_FULL_24H_COVERAGE_MS = 23 * 60 * 60 * 1000;
 const DASHBOARD_PENDING_REVIEW_LABEL = "待复核";
 const DASHBOARD_NOT_RETURNED_LABEL = "未传回";
+
+async function fetchDashboardCapabilities(siteId: string): Promise<RuntimeSubsystemCapabilityListDto> {
+  let timeoutId: number | null = null;
+  try {
+    return await Promise.race([
+      fetchSiteCapabilities(siteId),
+      new Promise<never>((_resolve, reject) => {
+        timeoutId = window.setTimeout(() => {
+          reject(new Error("能源对象能力配置读取超过 8 秒，已停止等待。"));
+        }, DASHBOARD_CAPABILITY_TIMEOUT_MS);
+      })
+    ]);
+  } finally {
+    if (timeoutId != null) {
+      window.clearTimeout(timeoutId);
+    }
+  }
+}
 
 const DASHBOARD_TEXT = {
   commandCenter: "值班总判台",
@@ -939,6 +1035,27 @@ function divideOrNull(numerator: number | null | undefined, denominator: number 
   return numerator / denominator;
 }
 
+function calculateLoadFluctuationPct(
+  points: TrendMetricView["points"] | undefined,
+  decisionReady: boolean
+): number | null {
+  if (!decisionReady || !points || points.length < 3) {
+    return null;
+  }
+  const values = points
+    .map((point) => point.value)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 1);
+  if (values.length < 3 || values.length < Math.ceil(points.length * 0.6)) {
+    return null;
+  }
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  if (!Number.isFinite(mean) || mean <= 1) {
+    return null;
+  }
+  const fluctuationPct = ((Math.max(...values) - Math.min(...values)) / mean) * 100;
+  return Number.isFinite(fluctuationPct) && fluctuationPct <= 300 ? fluctuationPct : null;
+}
+
 function assessThresholdMetric(
   value: number | null | undefined,
   excellentMin: number,
@@ -979,6 +1096,19 @@ function formatGeneratedAt(value: string | null | undefined): string {
     return zhCN.common.timeUnknown;
   }
   return parsed.toLocaleString();
+}
+
+function resolveLatestSourceTimestamp(
+  ...values: Array<string | null | undefined>
+): string | null {
+  const candidates = values
+    .map((value) => {
+      const timestamp = typeof value === "string" ? Date.parse(value) : Number.NaN;
+      return Number.isFinite(timestamp) ? { value: value as string, timestamp } : null;
+    })
+    .filter((item): item is { value: string; timestamp: number } => item !== null)
+    .sort((left, right) => right.timestamp - left.timestamp);
+  return candidates[0]?.value || null;
 }
 
 function formatShortDateTime(value: string | null | undefined): string {
@@ -2006,7 +2136,7 @@ function buildAnomalyQueue(
           occurredAt: formatShortDateTime(item.occurredAt),
           occurredAtRaw: item.occurredAt || null,
           source: getDisplayAnomalySource(item.source),
-          value: item.value || null
+        value: item.value || null
         }))
       : (anomalySummary?.latestEvents || []).map((item, index) => ({
           id: item.id || `anomaly-${index + 1}`,
@@ -2016,7 +2146,7 @@ function buildAnomalyQueue(
           occurredAt: formatShortDateTime(item.occurredAt),
           occurredAtRaw: item.occurredAt || null,
           source: getDisplayAnomalySource(item.source),
-          value: item.value || null
+        value: item.value || null
         }));
 
   return baseItems
@@ -2028,6 +2158,7 @@ function buildAnomalyQueue(
         id: item.id,
         title: localizedTitle,
         severity: item.severity,
+        severityRank: severityRank(item.severityRaw),
         tone: toneFromSeverity(item.severityRaw),
         impactLabel: impact.label,
         occurredAt: item.occurredAt,
@@ -2038,14 +2169,13 @@ function buildAnomalyQueue(
           value: item.value
         }),
         to: impact.to,
-        _severityRank: severityRank(item.severityRaw),
         _impactRank: impact.rank,
         _occurredAtRaw: item.occurredAtRaw
       };
     })
-    .sort((a, b) => a._severityRank - b._severityRank || a._impactRank - b._impactRank || String(b._occurredAtRaw || "").localeCompare(String(a._occurredAtRaw || "")))
+    .sort((a, b) => a.severityRank - b.severityRank || a._impactRank - b._impactRank || String(b._occurredAtRaw || "").localeCompare(String(a._occurredAtRaw || "")))
     .slice(0, 6)
-    .map(({ _severityRank, _impactRank, _occurredAtRaw, ...item }) => item);
+    .map(({ _impactRank, _occurredAtRaw, ...item }) => item);
 }
 
 function deriveVerdict(options: {
@@ -2304,6 +2434,9 @@ export default function DashboardPage() {
     currentProject?.modelKey || authSession?.defaultProjectKey || activeSiteId || currentProject?.databaseKey;
   const activeProjectTemplate = currentProject?.template || authSession?.defaultProjectTemplate || "";
   const dashboardProjectScopeKey = `${activeSiteId}|${activeProjectKey || "default"}|${activeProjectTemplate || "default"}`;
+  const [dashboardAudienceView, setDashboardAudienceView] = useState<DashboardAudienceView>(() => (
+    resolveDashboardAudienceView(authSession?.role === "edit" ? "operations" : "management")
+  ));
   const { aiDigest } = useAiDigest(activeSiteId);
   const [overview, setOverview] = useState<DashboardOverviewDto | null>(null);
   const [trends, setTrends] = useState<DashboardTrendsDto | null>(null);
@@ -2313,6 +2446,9 @@ export default function DashboardPage() {
   const [environmentCooled, setEnvironmentCooled] = useState<EnvironmentConditionListDto | null>(null);
   const [workOrders, setWorkOrders] = useState<WorkOrderListDto | null>(null);
   const [siteCapabilities, setSiteCapabilities] = useState<RuntimeSubsystemCapabilityListDto | null>(null);
+  const [siteCapabilitiesLoadState, setSiteCapabilitiesLoadState] = useState<"loading" | "loaded" | "failed">(
+    "loading"
+  );
   const [, setDeviceSourceStatus] = useState<SourceStatusDto | null>(null);
   const [mainLoopDevices, setMainLoopDevices] = useState<MainLoopDeviceView[]>([]);
   const [comfortTerminalAvailable, setComfortTerminalAvailable] = useState(false);
@@ -2373,15 +2509,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let active = true;
+    setSiteCapabilities(null);
+    setSiteCapabilitiesLoadState("loading");
     async function loadCapabilities() {
       try {
-        const result = await fetchSiteCapabilities(activeConfigSiteId);
+        const result = await fetchDashboardCapabilities(activeConfigSiteId);
         if (active) {
           setSiteCapabilities(result);
+          setSiteCapabilitiesLoadState("loaded");
         }
       } catch {
         if (active) {
           setSiteCapabilities(null);
+          setSiteCapabilitiesLoadState("failed");
         }
       }
     }
@@ -2817,27 +2957,21 @@ export default function DashboardPage() {
     coolingPumpConveyingCoefficientRaw ?? divideOrNull(totalCoolingCapacity, coolingPumpPowerKw);
   const coolingTowerConveyingCoefficient =
     coolingTowerConveyingCoefficientRaw ?? divideOrNull(totalCoolingCapacity, coolingTowerPowerKw);
-  const unitCoolingPower = divideOrNull(totalPower, totalCoolingCapacity);
-  const baselinePowerKw =
+  const rawUnitCoolingPower = divideOrNull(totalPower, totalCoolingCapacity);
+  const rawBaselinePowerKw =
     isFiniteNumber(totalPower) && isFiniteNumber(savingPotentialPct) && savingPotentialPct < 99
       ? totalPower / (1 - savingPotentialPct / 100)
       : null;
-  const baselineCop =
-    isFiniteNumber(totalCoolingCapacity) && isFiniteNumber(baselinePowerKw) && baselinePowerKw > 0
-      ? totalCoolingCapacity / baselinePowerKw
+  const rawBaselineCop =
+    isFiniteNumber(totalCoolingCapacity) && isFiniteNumber(rawBaselinePowerKw) && rawBaselinePowerKw > 0
+      ? totalCoolingCapacity / rawBaselinePowerKw
       : null;
-  const copBenchmarkDeltaPct =
-    isFiniteNumber(currentCop) && isFiniteNumber(baselineCop) && baselineCop > 0
-      ? ((currentCop - baselineCop) / baselineCop) * 100
+  const rawCopBenchmarkDeltaPct =
+    isFiniteNumber(currentCop) && isFiniteNumber(rawBaselineCop) && rawBaselineCop > 0
+      ? ((currentCop - rawBaselineCop) / rawBaselineCop) * 100
       : null;
-  const savingPowerKw =
-    isFiniteNumber(baselinePowerKw) && isFiniteNumber(totalPower) ? Math.max(baselinePowerKw - totalPower, 0) : null;
-  const stationCopAssessment = assessThresholdMetric(currentCop, 5, 4.15);
-  const chillerCopAssessment = assessThresholdMetric(chillerCop, 5.7, 5.2);
-  const chilledPumpAssessment = assessThresholdMetric(chilledPumpConveyingCoefficient, 45.9, 41.7);
-  const coolingPumpAssessment = assessThresholdMetric(coolingPumpConveyingCoefficient, 53.5, 48.6);
-  const coolingTowerAssessment = assessThresholdMetric(coolingTowerConveyingCoefficient, 108.5, 98.6);
-  const heatBalanceAssessment = assessHeatBalanceMetric(thermalUnbalanceRate);
+  const rawSavingPowerKw =
+    isFiniteNumber(rawBaselinePowerKw) && isFiniteNumber(totalPower) ? Math.max(rawBaselinePowerKw - totalPower, 0) : null;
   const recommendationCount = recommendation?.summary?.total ?? Math.max(recommendationItems.filter((item) => item.id !== "rec-empty").length, 0);
   const hasCoreMetrics = [currentCop, totalPower, chilledDeltaT, coolingDeltaT].some((item) => item != null);
   const coreRealtimeUnavailable = loadErrors.includes("overview") || loadErrors.includes("trends");
@@ -2868,7 +3002,95 @@ export default function DashboardPage() {
   const coreSourceWarnActive =
     [overview?.freshness?.stale, trends?.freshness?.stale, anomalySummary?.diagnosisFlags?.staleAlarmFeed].some(Boolean) ||
     coreSourceStatuses.some((item) => hasSourceFailure(item));
+  // generatedAt is the BFF aggregation time, not field telemetry evidence.
+  // Only freshness.latestTimestamp may populate the visible source-time badge.
   const heroGeneratedAt = formatGeneratedAt(overview?.generatedAt || trends?.generatedAt || workOrders?.generatedAt);
+  const heroSourceTimestamp = resolveLatestSourceTimestamp(
+    overview?.freshness?.latestTimestamp,
+    trends?.freshness?.latestTimestamp
+  );
+  const heroSourceTime = heroSourceTimestamp ? formatGeneratedAt(heroSourceTimestamp) : null;
+  const chilledPlantMetricsFieldScope = overview?.fieldScopes?.chilledPlantMetrics;
+  const chilledPlantMetricsDataScope = chilledPlantMetricsFieldScope?.dataScope;
+  const chilledPlantMetricFieldPaths = chilledPlantMetricsFieldScope?.fieldPaths || [];
+  const chilledPlantMetricCoverageVerified = [
+    "energyCards.currentCop",
+    "energyCards.totalPowerKw",
+    "energyCards.totalCoolingCapacity",
+    "energyCards.savingPotentialPct"
+  ].every((fieldPath) => chilledPlantMetricFieldPaths.includes(fieldPath));
+  const chilledPlantMetricsScopeVerified =
+    chilledPlantMetricsDataScope?.applied === true &&
+    chilledPlantMetricsDataScope?.effectiveSubsystemType === "chilled_plant" &&
+    chilledPlantMetricsDataScope?.filterMode === "fixed_subsystem" &&
+    chilledPlantMetricsDataScope?.siteId === activeSiteId &&
+    chilledPlantMetricCoverageVerified;
+  const chilledPlantTrendDataScope = trends?.dataScope;
+  const chilledPlantTrendScopeVerified =
+    chilledPlantTrendDataScope?.applied === true &&
+    chilledPlantTrendDataScope?.effectiveSubsystemType === "chilled_plant" &&
+    chilledPlantTrendDataScope?.filterMode === "fixed_subsystem" &&
+    chilledPlantTrendDataScope?.siteId === activeSiteId;
+  const chilledPlantScopeVerified = chilledPlantMetricsScopeVerified && chilledPlantTrendScopeVerified;
+  const chilledPlantMetricsScopeLabel = chilledPlantMetricsScopeVerified
+    ? "冷站指标 · 固定范围"
+    : "冷站指标 · 范围待核";
+  const chilledPlantTrendScopeLabel = chilledPlantTrendScopeVerified
+    ? "冷站趋势 · 固定范围"
+    : "冷站趋势 · 范围待核";
+  const chilledPlantScopeDetail = chilledPlantScopeVerified
+    ? "概览字段级证据与趋势接口均证明当前数据来自冷冻站"
+    : `作用域证据不完整：${chilledPlantMetricsScopeLabel}；${chilledPlantTrendScopeLabel}，数值仅供复核`;
+  const mainLoopScopeDetail = "设备目录仅在前端按冷机、冷冻泵、冷却泵和冷却塔类型归类；后端接口尚未返回物理站实例过滤证据";
+  const dashboardDataState = resolveOperationalDataState({
+    requestFailed: coreRealtimeUnavailable,
+    sourceWarn: coreSourceWarnActive || !chilledPlantScopeVerified,
+    stale: Boolean(overview?.freshness?.stale || trends?.freshness?.stale || overviewUsingSnapshot),
+    hasData: hasCoreMetrics
+  });
+  const chilledPlantCapability = (siteCapabilities?.items || []).find(
+    (item) => item.reserved !== true && item.subsystemType === "chilled_plant"
+  );
+  const chilledPlantCapabilityPresentation = getSubsystemStatusPresentation(chilledPlantCapability || null);
+  const coldOperationalEvidenceReady =
+    chilledPlantCapabilityPresentation.kind === "live" &&
+    dashboardDataState === "live" &&
+    chilledPlantScopeVerified &&
+    !overviewUsingSnapshot &&
+    !nearIdleSnapshot &&
+    !missingCoolingTelemetry &&
+    isFiniteNumber(currentCop) &&
+    currentCop > 0 &&
+    isFiniteNumber(totalPower) &&
+    totalPower > 1 &&
+    isFiniteNumber(totalCoolingCapacity) &&
+    totalCoolingCapacity > 0;
+  const unitCoolingPower = coldOperationalEvidenceReady ? rawUnitCoolingPower : null;
+  const baselineCop = coldOperationalEvidenceReady ? rawBaselineCop : null;
+  const copBenchmarkDeltaPct = coldOperationalEvidenceReady ? rawCopBenchmarkDeltaPct : null;
+  const savingPowerKw = coldOperationalEvidenceReady ? rawSavingPowerKw : null;
+  const stationCopAssessment = coldOperationalEvidenceReady ? assessThresholdMetric(currentCop, 5, 4.15) : null;
+  const chillerCopAssessment = coldOperationalEvidenceReady ? assessThresholdMetric(chillerCop, 5.7, 5.2) : null;
+  const chilledPumpAssessment = coldOperationalEvidenceReady
+    ? assessThresholdMetric(chilledPumpConveyingCoefficient, 45.9, 41.7)
+    : null;
+  const coolingPumpAssessment = coldOperationalEvidenceReady
+    ? assessThresholdMetric(coolingPumpConveyingCoefficient, 53.5, 48.6)
+    : null;
+  const coolingTowerAssessment = coldOperationalEvidenceReady
+    ? assessThresholdMetric(coolingTowerConveyingCoefficient, 108.5, 98.6)
+    : null;
+  const heatBalanceAssessment = coldOperationalEvidenceReady ? assessHeatBalanceMetric(thermalUnbalanceRate) : null;
+  const dashboardTruthMessage =
+    dashboardDataState === "live"
+      ? `核心指标与趋势来源已通过当前链路校验。${chilledPlantScopeDetail}。`
+      : dashboardDataState === "stale"
+        ? `当前显示最近一次成功快照，禁止据此直接执行控制决策。${chilledPlantScopeDetail}。`
+        : dashboardDataState === "offline"
+          ? "核心实时数据不可用，当前运行状态不可判定。"
+          : dashboardDataState === "degraded"
+            ? `核心链路部分降级，当前数值仅供复核。${chilledPlantScopeDetail}。`
+            : "尚未取得足够数据，当前运行状态不可判定。";
 
   const localVerdict = deriveVerdict({
     sourceWarn: coreSourceWarnActive,
@@ -2926,58 +3148,58 @@ export default function DashboardPage() {
   const efficiencyFeaturedCard: OpsMetric = {
     key: "cop",
     label: DASHBOARD_TEXT.efficiencyStationCop,
-    value: formatMetricValue(currentCop, 2),
+    value: formatMetricValue(coldOperationalEvidenceReady ? currentCop : null, 2),
     tone: stationCopAssessment?.tone ?? "neutral",
     hint: "整体能效主指标",
     assessment: stationCopAssessment?.label,
     thresholdHint: "优秀 >= 5.0，良好 >= 4.15",
-    isMissing: currentCop == null
+    isMissing: !coldOperationalEvidenceReady
   };
 
   const efficiencyChainCards: OpsMetric[] = [
     {
       key: "chillerCop",
       label: DASHBOARD_TEXT.efficiencyChillerCop,
-      value: formatMetricValue(chillerCop, 2, undefined, DASHBOARD_NOT_RETURNED_LABEL),
+      value: formatMetricValue(coldOperationalEvidenceReady ? chillerCop : null, 2, undefined, DASHBOARD_NOT_RETURNED_LABEL),
       tone: chillerCopAssessment?.tone ?? "neutral",
       hint: "主机效率核心值",
       assessment: chillerCopAssessment?.label,
       thresholdHint: "优秀 >= 5.7，良好 >= 5.2",
       stageLabel: "主机段",
-      isMissing: chillerCop == null
+      isMissing: !coldOperationalEvidenceReady || chillerCop == null
     },
     {
       key: "chilledPumpCoefficient",
       label: DASHBOARD_TEXT.efficiencyChilledPumpCoefficient,
-      value: formatMetricValue(chilledPumpConveyingCoefficient, 2, undefined, DASHBOARD_NOT_RETURNED_LABEL),
+      value: formatMetricValue(coldOperationalEvidenceReady ? chilledPumpConveyingCoefficient : null, 2, undefined, DASHBOARD_NOT_RETURNED_LABEL),
       tone: chilledPumpAssessment?.tone ?? "neutral",
       hint: "输送侧效率",
       assessment: chilledPumpAssessment?.label,
       thresholdHint: "优秀 >= 45.9，良好 >= 41.7",
       stageLabel: "冷冻输送",
-      isMissing: chilledPumpConveyingCoefficient == null
+      isMissing: !coldOperationalEvidenceReady || chilledPumpConveyingCoefficient == null
     },
     {
       key: "coolingPumpCoefficient",
       label: DASHBOARD_TEXT.efficiencyCoolingPumpCoefficient,
-      value: formatMetricValue(coolingPumpConveyingCoefficient, 2, undefined, DASHBOARD_NOT_RETURNED_LABEL),
+      value: formatMetricValue(coldOperationalEvidenceReady ? coolingPumpConveyingCoefficient : null, 2, undefined, DASHBOARD_NOT_RETURNED_LABEL),
       tone: coolingPumpAssessment?.tone ?? "neutral",
       hint: "输送侧效率",
       assessment: coolingPumpAssessment?.label,
       thresholdHint: "优秀 >= 53.5，良好 >= 48.6",
       stageLabel: "冷却输送",
-      isMissing: coolingPumpConveyingCoefficient == null
+      isMissing: !coldOperationalEvidenceReady || coolingPumpConveyingCoefficient == null
     },
     {
       key: "coolingTowerCoefficient",
       label: DASHBOARD_TEXT.efficiencyCoolingTowerCoefficient,
-      value: formatMetricValue(coolingTowerConveyingCoefficient, 2, undefined, DASHBOARD_NOT_RETURNED_LABEL),
+      value: formatMetricValue(coldOperationalEvidenceReady ? coolingTowerConveyingCoefficient : null, 2, undefined, DASHBOARD_NOT_RETURNED_LABEL),
       tone: coolingTowerAssessment?.tone ?? "neutral",
       hint: "散热端效率",
       assessment: coolingTowerAssessment?.label,
       thresholdHint: "优秀 >= 108.5，良好 >= 98.6",
       stageLabel: "散热末端",
-      isMissing: coolingTowerConveyingCoefficient == null
+      isMissing: !coldOperationalEvidenceReady || coolingTowerConveyingCoefficient == null
     }
   ];
 
@@ -3042,6 +3264,11 @@ export default function DashboardPage() {
 
   const copTrendCard = buildTrendMetricView(trends, "currentCop", DASHBOARD_TEXT.efficiencyCop, runtimeConfig.trendRange);
   const totalPowerTrendCard = buildTrendMetricView(trends, "totalPowerKw", DASHBOARD_TEXT.efficiencyPower, runtimeConfig.trendRange);
+  const coldTrendDecisionReady =
+    coldOperationalEvidenceReady &&
+    chilledPlantTrendScopeVerified &&
+    !trends?.freshness?.stale &&
+    !overviewUsingSnapshot;
   const featuredCopSpark = copTrendCard
     ? buildSparkModel(copTrendCard.points, runtimeConfig.trendRange, FEATURED_TREND_SPARK_WIDTH, FEATURED_TREND_SPARK_HEIGHT, {
       paddingTop: 10,
@@ -3052,20 +3279,19 @@ export default function DashboardPage() {
       })
     : buildSparkModel([], runtimeConfig.trendRange, FEATURED_TREND_SPARK_WIDTH, FEATURED_TREND_SPARK_HEIGHT);
   const featuredCopHasFull24hCoverage = hasNearFull24hTrendCoverage(copTrendCard?.points, runtimeConfig.trendRange);
-  const loadFluctuationPct =
-    totalPowerTrendCard?.max != null && totalPowerTrendCard?.min != null && totalPowerTrendCard.latest
-      ? ((totalPowerTrendCard.max - totalPowerTrendCard.min) / totalPowerTrendCard.latest) * 100
-      : null;
-  const featuredCopDelta = describeTrendDelta(
-    copTrendCard?.points,
-    2,
-    "good",
-    runtimeConfig.trendRange === "24h"
-      ? featuredCopHasFull24hCoverage
-        ? "24小时较昨日"
-        : "24小时窗口较起点"
-      : `${formatRangeLabel(runtimeConfig.trendRange)}较起点`
-  );
+  const loadFluctuationPct = calculateLoadFluctuationPct(totalPowerTrendCard?.points, coldTrendDecisionReady);
+  const featuredCopDelta = coldTrendDecisionReady
+    ? describeTrendDelta(
+        copTrendCard?.points,
+        2,
+        "good",
+        runtimeConfig.trendRange === "24h"
+          ? featuredCopHasFull24hCoverage
+            ? "24小时较昨日"
+            : "24小时窗口较起点"
+          : `${formatRangeLabel(runtimeConfig.trendRange)}较起点`
+      )
+    : null;
   const featuredCopActivePoint = copTrendCard ? findActiveTrendPoint(copTrendCard.points, linkedTrendHoverTime) : null;
   const featuredCopActiveSparkPoint =
     featuredCopSpark.plottedPoints.find((point) => point.time === featuredCopActivePoint?.time) ||
@@ -3093,11 +3319,15 @@ export default function DashboardPage() {
       : !isFiniteNumber(currentCop)
         ? "缺实时COP"
         : "基准待复核");
-  const featuredCopBadgeTone: Tone =
-    isFiniteNumber(copBenchmarkDeltaPct) ? (copBenchmarkDeltaPct >= 0 ? "good" : "warn") : efficiencyFeaturedCard.tone;
-  const featuredCopBadgeText =
-    copBenchmarkDeltaCopy || efficiencyFeaturedCard.assessment || toneToAssessmentCopy(efficiencyFeaturedCard.tone);
-  const featuredCopActiveValue = featuredCopActivePoint?.value ?? currentCop;
+  const featuredCopBadgeTone: Tone = !coldTrendDecisionReady
+    ? "warn"
+    : isFiniteNumber(copBenchmarkDeltaPct)
+      ? copBenchmarkDeltaPct >= 0 ? "good" : "warn"
+      : efficiencyFeaturedCard.tone;
+  const featuredCopBadgeText = !coldTrendDecisionReady
+    ? "趋势待复核"
+    : copBenchmarkDeltaCopy || efficiencyFeaturedCard.assessment || toneToAssessmentCopy(efficiencyFeaturedCard.tone);
+  const featuredCopActiveValue = coldTrendDecisionReady ? featuredCopActivePoint?.value ?? currentCop : null;
   const featuredCopActiveValueLabel = formatMetricValue(featuredCopActiveValue, 2, undefined, DASHBOARD_PENDING_REVIEW_LABEL, false);
   const featuredCopHoverTimeLabel = featuredCopHoverActive ? formatTrendHoverLabel(featuredCopActivePoint?.time) : "";
   const featuredCopHoverValueLabel = featuredCopHoverActive ? `COP ${featuredCopActiveValueLabel}` : "";
@@ -3122,7 +3352,9 @@ export default function DashboardPage() {
         FEATURED_TREND_SPARK_HEIGHT - featuredCopHoverTooltipHeight - 4
       )
     : null;
-  const featuredCopBandNote = `当前位于${efficiencyFeaturedCard.assessment || toneToAssessmentCopy(efficiencyFeaturedCard.tone)}区间`;
+  const featuredCopBandNote = coldOperationalEvidenceReady
+    ? `当前位于${efficiencyFeaturedCard.assessment || toneToAssessmentCopy(efficiencyFeaturedCard.tone)}区间`
+    : "实时运行证据不足，不判定能效等级";
   const efficiencyScaleCards = [
     ...efficiencySupportCards.filter((item) => item.group === "scale"),
     {
@@ -3303,10 +3535,14 @@ export default function DashboardPage() {
     : coreSourceWarnActive
       ? "需复核"
       : "可用";
+  const highestDiagnosticSeverityRank = anomalyQueue.reduce(
+    (current, item) => Math.min(current, item.severityRank),
+    Number.POSITIVE_INFINITY
+  );
   const riskHighestLevelLabel =
-    criticalCount > 0
+    criticalCount > 0 || highestDiagnosticSeverityRank <= 1
       ? "高"
-      : activeAlarmCount > 0 || activeEventCount > 0 || manualAttentionCount > 0
+      : activeAlarmCount > 0 || highestDiagnosticSeverityRank === 2 || activeEventCount > 0 || manualAttentionCount > 0
         ? "中"
         : "低";
   const controlModeResolvedDevices = mainLoopDevices.filter(
@@ -3429,7 +3665,7 @@ export default function DashboardPage() {
   const aiReviewActionClassName = `dashboard-cockpit-action-button ${hasExecutableRecommendation ? "is-primary" : "is-secondary"}`;
   const aiStateCards = [
     { label: "输出边界", value: "仅建议值", tone: "good" as Tone },
-    { label: "审批状态", value: aiApprovalStateText, tone: aiApprovalTone },
+    { label: "新建议审批", value: aiApprovalStateText, tone: aiApprovalTone },
     { label: "预计收益", value: aiBenefitText, tone: "neutral" as Tone },
     { label: "风险等级", value: aiRiskText, tone: recommendationPrimary?.tone === "warn" ? "warn" as Tone : "good" as Tone }
   ];
@@ -3442,6 +3678,7 @@ export default function DashboardPage() {
   const emptyAlarmItem: AnomalyQueueItem = {
     id: "empty",
     severity: "低",
+    severityRank: 3,
     title: "当前无高优先级告警",
     impactLabel: "值班",
     tone: "good",
@@ -3489,59 +3726,353 @@ export default function DashboardPage() {
       tone: handoverItems[0]?.tone || "good"
     }
   ];
-  const subsystemCapabilityItems = (siteCapabilities?.items || [])
-    .filter((item) => item.reserved !== true)
-    .slice(0, 6);
-  const isSubsystemWaitingForRealData = (item: RuntimeSubsystemCapabilityDto): boolean =>
-    item.status === "enabled" && item.sourceStatus === "waiting_points";
-  const isSubsystemDemoData = (item: RuntimeSubsystemCapabilityDto): boolean =>
-    item.status === "enabled" && item.sourceStatus === "demo_data";
-  const liveSubsystemCount = subsystemCapabilityItems.filter(
-    (item) => item.status === "enabled" && !isSubsystemWaitingForRealData(item) && !isSubsystemDemoData(item)
+  const subsystemCapabilityByType = new Map(
+    (siteCapabilities?.items || [])
+      .filter((item) => item.reserved !== true)
+      .map((item) => [item.subsystemType, item] as const)
+  );
+  const publishedStationInstances = (siteCapabilities?.stationInstances || []).filter(
+    (instance) => instance.published !== false && instance.enabled !== false
+  );
+  const publishedPhysicalStationInstances = (siteCapabilities?.stationInstances || [])
+    .filter(
+      (instance): instance is RuntimeStationInstanceDto & { parentSubsystemType: EnergyStationType } =>
+        instance.published !== false && isPhysicalStationParentType(instance.parentSubsystemType)
+    )
+    .sort((left, right) => {
+      const orderDifference = (left.sortOrder ?? Number.MAX_SAFE_INTEGER) - (right.sortOrder ?? Number.MAX_SAFE_INTEGER);
+      if (orderDifference !== 0) {
+        return orderDifference;
+      }
+      return left.stationName.localeCompare(right.stationName, "zh-CN");
+    });
+  const physicalStationRuntimeEvidenceBoundaryLabel = "运行证据需进入站房页验证";
+  const physicalStationMatrixItems = publishedPhysicalStationInstances.map((instance) => {
+    const parentDefinition = ENERGY_OBJECT_DEFINITIONS.find(
+      (definition) => definition.subsystemType === instance.parentSubsystemType
+    );
+    const bindingVersion = instance.publishedBindingVersion ?? instance.bindingVersion ?? null;
+    const bindingState = instance.bindingState || "unconfigured";
+    const bindingVersionLabel = typeof bindingVersion === "number" ? `v${bindingVersion}` : "版本待核";
+    const isDisabled = instance.enabled === false || bindingState === "disabled";
+    const hasPublishedBinding = bindingState === "published" && typeof bindingVersion === "number";
+    const bindingStateLabel = isDisabled
+      ? "站房已停用"
+      : hasPublishedBinding
+        ? `绑定已发布 · ${bindingVersionLabel}`
+        : bindingState === "validated"
+          ? "绑定已校验 · 待发布"
+          : bindingState === "draft"
+            ? "绑定草稿 · 待发布"
+            : bindingState === "published"
+              ? "绑定发布信息待核"
+              : "运行绑定未配置";
+    const bindingTone = isDisabled ? "neutral" : hasPublishedBinding ? "good" : "warn";
+    const attentionPriority = isDisabled ? 1 : hasPublishedBinding ? 2 : 0;
+    const runtimeEvidenceActionLabel = isDisabled
+      ? "查看停用范围"
+      : hasPublishedBinding
+        ? "进入站房验运行"
+        : "查看绑定阻断";
+    const to = appendEnergyStationContextToPath(
+      appendSiteIdToPath(
+        parentDefinition?.route || "/dashboard",
+        normalizeRouteSiteId(activeSiteId) || activeSiteId
+      ),
+      instance.parentSubsystemType,
+      instance.stationId
+    );
+    return {
+      ...instance,
+      parentLabel: parentDefinition?.displayName || instance.parentSubsystemType,
+      bindingState,
+      bindingStateLabel,
+      bindingTone,
+      bindingVersionLabel,
+      isDisabled,
+      hasPublishedBinding,
+      attentionPriority,
+      runtimeEvidenceActionLabel,
+      to
+    };
+  }).sort((left, right) => {
+    const priorityDifference = left.attentionPriority - right.attentionPriority;
+    if (priorityDifference !== 0) {
+      return priorityDifference;
+    }
+    const orderDifference = (left.sortOrder ?? Number.MAX_SAFE_INTEGER) - (right.sortOrder ?? Number.MAX_SAFE_INTEGER);
+    if (orderDifference !== 0) {
+      return orderDifference;
+    }
+    return left.stationName.localeCompare(right.stationName, "zh-CN");
+  });
+  const physicalStationBoundCount = physicalStationMatrixItems.filter((station) => station.hasPublishedBinding && !station.isDisabled).length;
+  const physicalStationDisabledCount = physicalStationMatrixItems.filter((station) => station.isDisabled).length;
+  const physicalStationPendingCount = Math.max(
+    physicalStationMatrixItems.length - physicalStationBoundCount - physicalStationDisabledCount,
+    0
+  );
+  const physicalStationBindingSummary = [
+    `已绑定 ${physicalStationBoundCount}`,
+    physicalStationPendingCount > 0 ? `待处理 ${physicalStationPendingCount}` : null,
+    physicalStationDisabledCount > 0 ? `停用 ${physicalStationDisabledCount}` : null
+  ].filter((item): item is string => Boolean(item)).join(" · ");
+  const energyObjectItems: EnergyObjectMatrixItem[] = ENERGY_OBJECT_DEFINITIONS.map((definition) => {
+    const capability = subsystemCapabilityByType.get(definition.subsystemType);
+    const matchingStationInstances = publishedStationInstances.filter(
+      (instance) => instance.parentSubsystemType === definition.subsystemType
+    );
+    const stationCount = isPhysicalStationParentType(definition.subsystemType)
+      ? matchingStationInstances.length
+      : null;
+    const scopeLabel = stationCount == null
+      ? "配用能对象"
+      : stationCount > 0
+        ? `${formatCountValue(stationCount)}个站房`
+        : "类型级";
+    const to = appendEnergyStationContextToPath(
+      appendSiteIdToPath(definition.route, normalizeRouteSiteId(activeSiteId) || activeSiteId),
+      definition.subsystemType,
+      resolveUniqueStationInstanceId(matchingStationInstances)
+    );
+    const objectBase = {
+      ...definition,
+      to,
+      stationCount,
+      scopeLabel
+    };
+    if (!capability) {
+      if (siteCapabilitiesLoadState === "loading") {
+        return {
+          ...objectBase,
+          kind: "syncing",
+          statusCode: "SYNCING",
+          statusLabel: "状态同步中",
+          detail: "能力配置尚未返回 · 不计KPI",
+          tone: "neutral",
+          participatesInKpi: false
+        };
+      }
+      if (siteCapabilitiesLoadState === "failed") {
+        return {
+          ...objectBase,
+          kind: "error",
+          statusCode: "ERROR",
+          statusLabel: "能力链路异常",
+          detail: "配置状态不可判定 · 不计KPI",
+          tone: "warn",
+          participatesInKpi: false
+        };
+      }
+      return {
+        ...objectBase,
+        kind: "not_configured",
+        statusCode: "NOT CONFIGURED",
+        statusLabel: "未配置",
+        detail: "项目未发布该能源对象 · 不计KPI",
+        tone: "warn",
+        participatesInKpi: false
+      };
+    }
+
+    const presentation = getSubsystemStatusPresentation(capability);
+    if (
+      definition.subsystemType === "chilled_plant" &&
+      dashboardDataState === "live" &&
+      presentation.kind !== "live"
+    ) {
+      return {
+        ...objectBase,
+        kind: "unknown",
+        statusCode: "CHECK",
+        statusLabel: "配置 / 运行证据冲突",
+        detail: `能力登记为${presentation.dataLabel} · 实时接口已确认 · 不计综合KPI`,
+        tone: "warn",
+        participatesInKpi: false,
+        evidenceConflict: true
+      };
+    }
+    const statusCodeByKind: Record<typeof presentation.kind, EnergyObjectMatrixItem["statusCode"]> = {
+      live: "LIVE",
+      demo: "DEMO",
+      waiting: "WAITING",
+      stale: "STALE",
+      error: "ERROR",
+      not_configured: "NOT CONFIGURED",
+      not_applicable: "N/A",
+      unknown: "CHECK"
+    };
+    const mappingLabel =
+      typeof capability.pointMappingProgress === "number"
+        ? `映射 ${capability.pointMappingProgress}%`
+        : "映射进度待回传";
+    const alarmLabel =
+      presentation.kind === "live" && typeof capability.alarmCount === "number"
+        ? ` · 告警 ${formatCountValue(capability.alarmCount)}`
+        : "";
+    const participationLabel = presentation.participatesInKpi ? "可计对象KPI" : "不计综合KPI";
+    return {
+      ...objectBase,
+      kind: presentation.kind,
+      statusCode: statusCodeByKind[presentation.kind],
+      statusLabel: presentation.detailLabel,
+      detail: `${mappingLabel}${alarmLabel} · ${participationLabel}`,
+      tone: presentation.tone,
+      participatesInKpi: presentation.participatesInKpi
+    };
+  });
+  const liveSubsystemCount = energyObjectItems.filter((item) => item.kind === "live").length;
+  const demoSubsystemCount = energyObjectItems.filter((item) => item.kind === "demo").length;
+  const waitingSubsystemCount = energyObjectItems.filter((item) => item.kind === "waiting").length;
+  const notConfiguredSubsystemCount = energyObjectItems.filter((item) => item.kind === "not_configured").length;
+  const unverifiedSubsystemCount = energyObjectItems.filter((item) => item.kind === "unknown").length;
+  const abnormalSubsystemCount = energyObjectItems.filter((item) =>
+    ["stale", "error"].includes(item.kind)
   ).length;
-  const demoSubsystemCount = subsystemCapabilityItems.filter(isSubsystemDemoData).length;
-  const waitingSubsystemCount = subsystemCapabilityItems.filter(isSubsystemWaitingForRealData).length;
-  const configuredSubsystemLabel = siteCapabilities
-    ? demoSubsystemCount > 0
-      ? `${demoSubsystemCount}演示`
-      : `${liveSubsystemCount}/${subsystemCapabilityItems.length || siteCapabilities.items?.length || 0}`
-    : "--";
-  const subsystemCapabilitySummary = siteCapabilities
-    ? `实时 ${liveSubsystemCount} / 演示 ${demoSubsystemCount} / 待接 ${waitingSubsystemCount}；待接不计KPI`
-    : "配置中心同步中";
-  const formatSubsystemStatus = (item: RuntimeSubsystemCapabilityDto): string => {
-    if (isSubsystemDemoData(item)) {
-      return "演示数据";
+  const capabilityEvidenceReady = siteCapabilitiesLoadState === "loaded";
+  const configuredSubsystemLabel =
+    siteCapabilitiesLoadState === "loading"
+      ? "同步中"
+      : siteCapabilitiesLoadState === "failed"
+        ? "链路异常"
+        : `实时 ${liveSubsystemCount}/${ENERGY_OBJECT_DEFINITIONS.length}`;
+  const subsystemCapabilitySummary =
+    siteCapabilitiesLoadState === "loading"
+      ? "能力配置同步中，未返回前不计入运行总数"
+      : siteCapabilitiesLoadState === "failed"
+        ? "能力配置读取失败，已停止等待 · 不计运行总数"
+      : `实时 ${liveSubsystemCount} · 演示 ${demoSubsystemCount} · 待接 ${waitingSubsystemCount} · 未配置 ${notConfiguredSubsystemCount}${unverifiedSubsystemCount > 0 ? ` · 待核 ${unverifiedSubsystemCount}` : ""}${abnormalSubsystemCount > 0 ? ` · 异常 ${abnormalSubsystemCount}` : ""}`;
+  const registeredStationCount = capabilityEvidenceReady
+    ? siteCapabilities?.stationTotal ?? publishedStationInstances.length
+    : null;
+  const hasRegisteredStations = typeof registeredStationCount === "number" && registeredStationCount > 0;
+  const registeredStationDisplay = capabilityEvidenceReady
+    ? `${formatCountValue(registeredStationCount)}个`
+    : "待确认";
+  const mappingProgressValues = (siteCapabilities?.items || [])
+    .map((item) => item.pointMappingProgress)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  const projectMappingProgress = mappingProgressValues.length > 0
+    ? mappingProgressValues.reduce((sum, value) => sum + value, 0) / mappingProgressValues.length
+    : null;
+  const dashboardLifecycleMode: DashboardLifecycleMode = liveSubsystemCount > 0
+    ? "operation"
+    : hasRegisteredStations || waitingSubsystemCount > 0
+      ? "commissioning"
+      : "project_onboarding";
+  const dashboardScopeLevel = !capabilityEvidenceReady
+    ? "unverified"
+    : hasRegisteredStations
+      ? "physical_station"
+      : "energy_type";
+  const dashboardModeTitle = siteCapabilitiesLoadState === "loading"
+    ? "项目状态同步中"
+    : siteCapabilitiesLoadState === "failed"
+      ? "项目状态待确认"
+      : dashboardLifecycleMode === "operation"
+        ? "综合运行总览"
+        : dashboardLifecycleMode === "commissioning"
+          ? "项目联调总览"
+          : "项目接入总览";
+  const dashboardModeLabel = siteCapabilitiesLoadState === "loading"
+    ? "状态同步"
+    : siteCapabilitiesLoadState === "failed"
+      ? "状态待核"
+      : dashboardLifecycleMode === "operation"
+        ? "运行阶段"
+        : dashboardLifecycleMode === "commissioning"
+          ? "联调阶段"
+          : "接入阶段";
+  const dashboardScopeCopy = siteCapabilitiesLoadState === "loading"
+    ? "站房登记状态同步中"
+    : siteCapabilitiesLoadState === "failed"
+      ? "站房登记状态未返回"
+      : hasRegisteredStations
+        ? `已登记 ${formatCountValue(registeredStationCount)} 个物理站房`
+        : "当前为能源类型级，物理站房待登记";
+  const projectTruthState: OperationalDataState = siteCapabilitiesLoadState === "failed"
+    ? "degraded"
+    : !capabilityEvidenceReady
+      ? "unknown"
+      : dashboardLifecycleMode === "operation"
+        ? dashboardDataState
+        : demoSubsystemCount > 0
+          ? "sample"
+          : "unknown";
+  const projectTruthMessage = siteCapabilitiesLoadState === "loading"
+    ? "能源对象能力配置正在同步；返回前不判定项目阶段、站房数量或综合运行KPI。"
+    : siteCapabilitiesLoadState === "failed"
+      ? "能源对象能力配置读取失败；已停止等待，项目阶段、站房数量和综合运行KPI均保持待确认。"
+      : dashboardLifecycleMode === "operation"
+        ? `${dashboardTruthMessage}${registeredStationCount === 0 ? " 当前仅确认能源类型级运行证据，未证明具体物理站房。" : ""}`
+        : dashboardLifecycleMode === "commissioning"
+          ? `项目已有站房或待接对象，但尚无实时运行对象；运行能效结论关闭。${dashboardScopeCopy}。`
+          : `项目仍处接入阶段，演示与历史快照不参与运行能效判定。${dashboardScopeCopy}。`;
+  const configuredEnergyObjectCount = ENERGY_OBJECT_DEFINITIONS.filter(
+    (definition) => subsystemCapabilityByType.has(definition.subsystemType)
+  ).length;
+  const configuredEnergyObjectDisplay = capabilityEvidenceReady
+    ? `${configuredEnergyObjectCount}/${ENERGY_OBJECT_DEFINITIONS.length} 已发布`
+    : "待确认";
+  const energyObjectGroups = ENERGY_OBJECT_GROUP_DEFINITIONS.map((group) => {
+    const items = energyObjectItems.filter((item) => item.semanticGroup === group.key);
+    const stationCount = items.reduce((sum, item) => sum + (item.stationCount || 0), 0);
+    return {
+      ...group,
+      items,
+      stationCount
+    };
+  });
+  const demoOrWaitingSubsystemCount = demoSubsystemCount + waitingSubsystemCount;
+  const controlModeEvidenceCount = controlModeResolvedDevices.length;
+  const focusStationName = "冷冻站";
+  const focusStationScopeLabel = "冷站类型级";
+  const projectReadinessRows = [
+    {
+      label: "站房登记",
+      value: !capabilityEvidenceReady ? "待确认" : hasRegisteredStations ? `${formatCountValue(registeredStationCount)}个已登记` : "待登记",
+      detail: !capabilityEvidenceReady ? "能力配置未返回，不能判定站房登记数量" : hasRegisteredStations ? "可按站房绑定设备、点位和权限" : "先登记冷冻站、空压站、锅炉房等物理站房",
+      tone: hasRegisteredStations ? "good" as Tone : "warn" as Tone
+    },
+    {
+      label: "实时链路",
+      value: !capabilityEvidenceReady ? "待确认" : liveSubsystemCount > 0 ? `${formatCountValue(liveSubsystemCount)}个实时` : "未接通",
+      detail: !capabilityEvidenceReady ? "能力配置未返回，运行链路状态保持未知" : liveSubsystemCount > 0 ? "实时对象可进入运行判断" : "演示与快照仅用于联调，不生成运行结论",
+      tone: liveSubsystemCount > 0 ? "good" as Tone : "warn" as Tone
+    },
+    {
+      label: "点位映射",
+      value: formatPercentValue(projectMappingProgress, 0),
+      detail: projectMappingProgress != null ? "按已发布能源对象计算平均进度" : "能力接口尚未返回映射进度",
+      tone: projectMappingProgress != null && projectMappingProgress >= 90 ? "good" as Tone : "warn" as Tone
+    },
+    {
+      label: "控制边界",
+      value: runtimeConfig.readOnlyMode ? "只读监视" : "待授权",
+      detail: "AI只给建议值，PLC保留安全联锁与最终执行权",
+      tone: "good" as Tone
     }
-    if (isSubsystemWaitingForRealData(item)) {
-      return "待接实时";
+  ];
+  const onboardingTaskRows = [
+    {
+      label: "P0",
+      text: !capabilityEvidenceReady ? "恢复能源对象能力配置链路并重新读取" : hasRegisteredStations ? "核对站房与能源对象绑定关系" : "登记物理站房并绑定所属能源类型",
+      status: !capabilityEvidenceReady ? "阻断" : hasRegisteredStations ? "复核" : "待办",
+      tone: "warn" as Tone
+    },
+    {
+      label: "P0",
+      text: liveSubsystemCount > 0 ? "复核实时源时间与数据范围证据" : "接通实时数据源并校验源时间",
+      status: liveSubsystemCount > 0 ? "复核" : "待办",
+      tone: "warn" as Tone
+    },
+    {
+      label: "P1",
+      text: projectMappingProgress != null ? "补齐关键点位映射与质量校验" : "建立点位清单、单位和质量规则",
+      status: projectMappingProgress != null && projectMappingProgress >= 90 ? "接近完成" : "待办",
+      tone: projectMappingProgress != null && projectMappingProgress >= 90 ? "good" as Tone : "warn" as Tone
     }
-    if (item.status === "enabled") {
-      return "已接入";
-    }
-    if (item.status === "not_configured") {
-      return "未配置";
-    }
-    if (item.status === "not_applicable") {
-      return "不适用";
-    }
-    return item.status || "未知";
-  };
-  const subsystemTone = (item: RuntimeSubsystemCapabilityDto): "good" | "warn" | "neutral" => {
-    if (isSubsystemDemoData(item)) {
-      return "neutral";
-    }
-    if (isSubsystemWaitingForRealData(item)) {
-      return "warn";
-    }
-    if (item.status === "enabled") {
-      return "good";
-    }
-    if (item.status === "not_configured") {
-      return "warn";
-    }
-    return "neutral";
-  };
+  ];
 
   void toFixedOrDash;
   void formatCountDisplayValue;
@@ -3557,16 +4088,60 @@ export default function DashboardPage() {
     <div
       className="dashboard-duty dashboard-cockpit-v2 page-enter"
       data-main-height={comfortCardHeight ?? undefined}
+      data-dashboard-overview-scope="project"
+      data-dashboard-lifecycle-mode={dashboardLifecycleMode}
+      data-dashboard-scope-level={dashboardScopeLevel}
+      data-dashboard-capability-state={siteCapabilitiesLoadState}
+      data-chilled-plant-scope={chilledPlantScopeVerified ? "verified" : "unverified"}
+      data-dashboard-view-mode={dashboardAudienceView}
     >
       <header className="dashboard-cockpit-topbar">
         <div className="dashboard-cockpit-title-row">
-          <h1>综合能源站总览</h1>
-          <span className="dashboard-cockpit-badge is-good">云端实时</span>
-          <span className={`dashboard-cockpit-badge ${aiApprovalTone === "warn" ? "is-warn" : "is-good"}`}>{aiBadgeText}</span>
-          <span className="dashboard-cockpit-badge">PLC保护在线</span>
+          <h1>{dashboardModeTitle}</h1>
+          <OperationalTruthBadges
+            state={projectTruthState}
+            sourceTime={heroSourceTime}
+            sourceTimePendingLabel="待证"
+            controlMode={runtimeConfig.readOnlyMode ? "只读监视" : "待服务端授权"}
+            message={projectTruthMessage}
+          />
+          <span
+            className={`dashboard-cockpit-badge dashboard-scope-badge ${hasRegisteredStations ? "is-good" : "is-warn"}`}
+            title={`${dashboardModeLabel} · ${dashboardScopeCopy}`}
+          >
+            {dashboardModeLabel} · {!capabilityEvidenceReady ? "范围待核" : hasRegisteredStations ? "站房级" : "类型级"}
+          </span>
+          {dashboardLifecycleMode === "operation" ? (
+            <span className={`dashboard-cockpit-badge dashboard-ai-observation-badge ${aiApprovalTone === "warn" ? "is-warn" : "is-good"}`}>{aiBadgeText}</span>
+          ) : null}
         </div>
         <div className="dashboard-cockpit-toolbar">
-          <span className="dashboard-cockpit-badge">{heroGeneratedAt}</span>
+          <div className="dashboard-view-switch" role="group" aria-label="总览信息视角">
+            <button
+              type="button"
+              className={dashboardAudienceView === "management" ? "is-active" : undefined}
+              aria-pressed={dashboardAudienceView === "management"}
+              onClick={() => {
+                setDashboardAudienceView("management");
+                safeLocalStorageSet(DASHBOARD_AUDIENCE_VIEW_STORAGE_KEY, "management");
+              }}
+              title="保留项目结论、能源对象、核心指标、趋势、AI边界和最高优先级事项"
+            >
+              管理摘要
+            </button>
+            <button
+              type="button"
+              className={dashboardAudienceView === "operations" ? "is-active" : undefined}
+              aria-pressed={dashboardAudienceView === "operations"}
+              onClick={() => {
+                setDashboardAudienceView("operations");
+                safeLocalStorageSet(DASHBOARD_AUDIENCE_VIEW_STORAGE_KEY, "operations");
+              }}
+              title="显示设备链路、控制约束和交接班等工程运行明细"
+            >
+              运行明细
+            </button>
+          </div>
           {refreshMetaItems.map((item) => (
             <span key={item.key} className={`dashboard-cockpit-badge ${item.className}`}>
               {item.value.replace(/^每/, "").replace(/自动/, "")}
@@ -3576,100 +4151,262 @@ export default function DashboardPage() {
       </header>
 
       <section className="dashboard-cockpit-status-strip">
-        <article className="dashboard-cockpit-status">
-          <span>值班结论</span>
-          <strong>{dutyConclusionTitle}</strong>
-          <small>{dutyConclusionHint}</small>
-        </article>
-        <article className="dashboard-cockpit-status">
-          <span>室外工况边界</span>
-          <strong>{outdoorBoundarySummary}</strong>
-          <small>湿度 {formatPercentValue(outdoorHumidity, 0)} · 塔控按接近度约束</small>
-        </article>
-        <article className="dashboard-cockpit-status">
-          <span>风险与本地接管</span>
-          <strong className={activeAlarmCount > 0 || activeEventCount > 0 || manualAttentionCount > 0 ? "is-warn" : "is-good"}>
-            P1 {formatCountValue(criticalCount)}项 · 告警{formatCountValue(activeAlarmCount)}条 · 事件{formatCountValue(activeEventCount)}项
-          </strong>
-          <small>最高 {riskHighestLevelLabel} · 本地/手动 {formatCountValue(manualAttentionCount)}台</small>
-        </article>
-        <article className="dashboard-cockpit-status">
-          <span>数据完整率</span>
-          <strong className={serviceChainWarnActive ? "is-warn" : "is-good"}>{dataIntegrityValue}</strong>
-          <small>链路 {serviceChainLabel} · 缺测{formatCountValue(dataIssueCount, "0")} · 异常{formatCountValue(dataAbnormalCount, "0")}</small>
-        </article>
-      </section>
-
-      <section className="dashboard-subsystem-strip">
-        <article className="dashboard-subsystem-summary">
-          <span>子系统配置状态</span>
-          <strong>{configuredSubsystemLabel}</strong>
-          <small title="配置已发布但实时待接的子系统不显示假 KPI、不参与统计">{subsystemCapabilitySummary}</small>
-        </article>
-        <div className="dashboard-subsystem-list">
-          {subsystemCapabilityItems.length ? (
-            subsystemCapabilityItems.map((item) => (
-              <article key={item.subsystemType} className={`dashboard-subsystem-chip tone-${subsystemTone(item)}`}>
-                <span>{item.displayName}</span>
-                <strong>{formatSubsystemStatus(item)}</strong>
-                <small>
-                  {item.status === "enabled"
-                    ? isSubsystemWaitingForRealData(item)
-                      ? `模板 ${item.pointMappingProgress || 0}% · 实时待接`
-                      : isSubsystemDemoData(item)
-                        ? `模板 ${item.pointMappingProgress || 0}% · 演示数据`
-                      : `映射 ${item.pointMappingProgress || 0}%`
-                    : "可接入"}
-                </small>
-              </article>
-            ))
-          ) : (
-            <article className="dashboard-subsystem-chip tone-neutral">
-              <span>配置中心</span>
-              <strong>待同步</strong>
-              <small>当前不影响冷站运行页</small>
+        {dashboardLifecycleMode === "operation" ? (
+          <>
+            <article className="dashboard-cockpit-status">
+              <span>当前重点对象 · 值班结论</span>
+              <strong>{dutyConclusionTitle}</strong>
+              <small>{dutyConclusionHint}</small>
             </article>
-          )}
-        </div>
+            <article className="dashboard-cockpit-status">
+              <span>冷冻站 · 室外工况边界</span>
+              <strong>{outdoorBoundarySummary}</strong>
+              <small>湿度 {formatPercentValue(outdoorHumidity, 0)} · 塔控按接近度约束</small>
+            </article>
+            <article
+              className="dashboard-cockpit-status"
+              data-project-highest-risk={riskHighestLevelLabel}
+              data-project-diagnostic-highest-rank={Number.isFinite(highestDiagnosticSeverityRank) ? highestDiagnosticSeverityRank : "none"}
+            >
+              <span>当前项目 · 告警 / 诊断事件</span>
+              <strong className={activeAlarmCount > 0 || activeEventCount > 0 || manualAttentionCount > 0 ? "is-warn" : "is-good"}>
+                P1 {formatCountValue(criticalCount)}项 · 告警{formatCountValue(activeAlarmCount)}条 · 诊断{formatCountValue(activeEventCount)}项
+              </strong>
+              <small>最高 {riskHighestLevelLabel} · 本地/手动 {formatCountValue(manualAttentionCount)}台</small>
+            </article>
+            <article className="dashboard-cockpit-status">
+              <span>当前重点对象 · 数据完整率</span>
+              <strong className={serviceChainWarnActive ? "is-warn" : "is-good"}>{dataIntegrityValue}</strong>
+              <small>链路 {serviceChainLabel} · 缺测{formatCountValue(dataIssueCount, "0")} · 异常{formatCountValue(dataAbnormalCount, "0")}</small>
+            </article>
+          </>
+        ) : (
+          <>
+            <article className="dashboard-cockpit-status">
+              <span>当前项目 · 阶段判定</span>
+              <strong>{dashboardModeTitle}</strong>
+              <small>{liveSubsystemCount > 0 ? "已有实时对象" : "尚未形成实时运行证据"}</small>
+            </article>
+            <article className="dashboard-cockpit-status">
+              <span>当前项目 · 物理站房</span>
+              <strong className={hasRegisteredStations ? "is-good" : "is-warn"}>{registeredStationDisplay}</strong>
+              <small>{dashboardScopeCopy}</small>
+            </article>
+            <article className="dashboard-cockpit-status">
+              <span>当前项目 · 能源对象</span>
+              <strong>{configuredEnergyObjectDisplay}</strong>
+              <small>{capabilityEvidenceReady ? `实时 ${liveSubsystemCount} · 演示/待接 ${demoOrWaitingSubsystemCount}` : subsystemCapabilitySummary}</small>
+            </article>
+            <article className="dashboard-cockpit-status">
+              <span>当前项目 · 运行结论边界</span>
+              <strong className="is-warn">能效判定已关闭</strong>
+              <small>演示、快照和未绑定站房数据不参与运行KPI</small>
+            </article>
+          </>
+        )}
       </section>
 
-      <section className="dashboard-cockpit-kpis">
-        <article className="dashboard-cockpit-kpi">
-          <span>冷站COP</span>
+      <section className="dashboard-subsystem-strip dashboard-energy-object-matrix" aria-label="当前项目能源对象状态矩阵">
+        <article className="dashboard-subsystem-summary">
+          <span>能源对象状态</span>
+          <strong>{configuredSubsystemLabel}</strong>
+          <small title="配置已发布但实时待接的子系统不显示假 KPI、不参与统计">
+            {subsystemCapabilitySummary}
+          </small>
+        </article>
+        <div className="dashboard-energy-object-groups">
+          {energyObjectGroups.map((group) => (
+            <section
+              key={group.key}
+              className="dashboard-energy-object-group"
+              data-energy-object-group={group.key}
+              aria-labelledby={`dashboard-energy-object-group-${group.key}`}
+            >
+              <header className="dashboard-energy-object-group-head">
+                <span id={`dashboard-energy-object-group-${group.key}`}>{group.label}</span>
+                <strong>
+                  {!capabilityEvidenceReady
+                    ? "待核"
+                    : group.key === "supply_station" && group.stationCount > 0
+                      ? `${formatCountValue(group.stationCount)}站`
+                      : `${formatCountValue(group.items.length)}类`}
+                </strong>
+                <small>{group.detail}</small>
+              </header>
+              <div className="dashboard-subsystem-list" role="list">
+                {group.items.map((item) => (
+                  <Link
+                    key={item.subsystemType}
+                    to={item.to}
+                    className={`dashboard-subsystem-chip tone-${item.tone} state-${item.kind}`}
+                    aria-label={`进入${item.displayName}，${item.scopeLabel}，当前状态${item.statusLabel}，${item.detail}`}
+                    title={`${item.scopeLabel} · ${item.statusLabel} · ${item.detail}`}
+                    data-subsystem-type={item.subsystemType}
+                    data-energy-object-status={item.kind}
+                    data-energy-object-code={item.statusCode}
+                    data-energy-object-kpi={item.participatesInKpi ? "included" : "excluded"}
+                    data-energy-object-station-count={item.stationCount ?? undefined}
+                    data-energy-object-evidence-conflict={item.evidenceConflict ? "true" : undefined}
+                    role="listitem"
+                  >
+                    <span>{item.displayName}<em className="dashboard-subsystem-scope">{item.scopeLabel}</em></span>
+                    <strong>{ENERGY_OBJECT_STATUS_PRIMARY[item.statusCode]}</strong>
+                    <small><span className="dashboard-subsystem-technical-code">{item.statusCode}</span> · {item.detail}</small>
+                    <ChevronRight className="dashboard-subsystem-enter" size={15} aria-hidden="true" />
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+        <section
+          className="dashboard-physical-station-matrix"
+          aria-label="当前项目物理站房登记与绑定状态"
+          data-physical-station-matrix-state={
+            !capabilityEvidenceReady
+              ? "unverified"
+              : physicalStationMatrixItems.length > 0
+                ? "registered"
+                : "empty"
+          }
+        >
+          <header className="dashboard-physical-station-matrix-head">
+            <span>物理站房</span>
+            <strong>{capabilityEvidenceReady ? `${formatCountValue(physicalStationMatrixItems.length)}站` : "待核"}</strong>
+            <small>{capabilityEvidenceReady ? physicalStationBindingSummary || "登记 / 绑定状态待核" : "登记 / 绑定状态待核"}</small>
+          </header>
+          <div className="dashboard-physical-station-list" role="list">
+            {!capabilityEvidenceReady ? (
+              <div className="dashboard-physical-station-empty" role="status">能力配置未返回，站房身份与绑定状态待确认</div>
+            ) : physicalStationMatrixItems.length === 0 ? (
+              <div className="dashboard-physical-station-empty" data-physical-station-empty-action>
+                <span role="status">物理站房实例未登记 · 当前仍按能源类型导航</span>
+                <Link
+                  to={buildSiteScopedRoute("/config-center")}
+                  className="dashboard-physical-station-empty-action"
+                  aria-label="查看当前项目物理站房登记状态"
+                >
+                  查看站房登记
+                  <ChevronRight size={13} aria-hidden="true" />
+                </Link>
+              </div>
+            ) : (
+              physicalStationMatrixItems.map((station) => (
+                <Link
+                  key={`${station.parentSubsystemType}:${station.stationId}`}
+                  to={station.to}
+                  className={`dashboard-physical-station-card tone-${station.bindingTone}`}
+                  role="listitem"
+                  aria-label={`${station.stationName}，${station.parentLabel}，${station.bindingStateLabel}；${station.runtimeEvidenceActionLabel}；${physicalStationRuntimeEvidenceBoundaryLabel}`}
+                  title={`${station.parentLabel} · ${station.bindingStateLabel} · ${station.runtimeEvidenceActionLabel} · ${physicalStationRuntimeEvidenceBoundaryLabel}`}
+                  data-physical-station-id={station.stationId}
+                  data-physical-station-type={station.parentSubsystemType}
+                  data-physical-station-binding={station.bindingState}
+                  data-physical-station-binding-version={station.bindingVersionLabel}
+                  data-physical-station-attention-priority={station.attentionPriority}
+                  data-physical-station-runtime-evidence="page_required"
+                >
+                  <span className="dashboard-physical-station-identity">
+                    <strong>{station.stationName}</strong>
+                    <small>{station.parentLabel}</small>
+                  </span>
+                  <span className="dashboard-physical-station-binding">{station.bindingStateLabel}</span>
+                  <small className="dashboard-physical-station-evidence">{station.runtimeEvidenceActionLabel}</small>
+                  <ChevronRight size={13} aria-hidden="true" />
+                </Link>
+              ))
+            )}
+          </div>
+        </section>
+      </section>
+
+      {dashboardLifecycleMode === "operation" ? (
+      <section
+        className="dashboard-cockpit-kpis"
+        aria-label={`当前重点冷站指标、冷站设备类主链路与项目级告警：${chilledPlantMetricsScopeLabel}`}
+        data-data-scope={coldOperationalEvidenceReady ? "chilled_plant" : "unverified"}
+      >
+        <article className="dashboard-cockpit-kpi" data-scope={chilledPlantMetricsScopeVerified ? "chilled_plant" : "unverified"}>
+          <span>冷冻站 · COP</span>
           {renderValueParts(efficiencyFeaturedCard.value)}
           <small>{featuredCopDelta ? `${featuredCopDelta.label} ${featuredCopDelta.value}` : featuredCopBandNote}</small>
         </article>
-        <article className="dashboard-cockpit-kpi">
-          <span>节能复核状态</span>
-          {renderValueParts(formatPercentValue(savingPotentialPct, 1))}
+        <article className="dashboard-cockpit-kpi" data-scope={chilledPlantMetricsScopeVerified ? "chilled_plant" : "unverified"}>
+          <span>冷冻站 · 节能复核</span>
+          {renderValueParts(formatPercentValue(coldOperationalEvidenceReady ? savingPotentialPct : null, 1))}
           <small>{isFiniteNumber(savingPowerKw) ? `较基线省功率 ${formatMetricValue(savingPowerKw, 1, "kW")}` : copBenchmarkStatusCopy}</small>
         </article>
-        <article className="dashboard-cockpit-kpi">
-          <span>总制冷量</span>
+        <article className="dashboard-cockpit-kpi" data-scope={chilledPlantMetricsScopeVerified ? "chilled_plant" : "unverified"}>
+          <span>冷冻站 · 总制冷量</span>
           {renderValueParts(scaleMetricByKey.get("coolingCapacity")?.value || formatMetricValue(totalCoolingCapacity, 1, "kW"))}
           <small>{scaleMetricByKey.get("coolingCapacity")?.hint || "负荷规模"}</small>
         </article>
-        <article className="dashboard-cockpit-kpi">
-          <span>总站功率</span>
+        <article className="dashboard-cockpit-kpi" data-scope={chilledPlantMetricsScopeVerified ? "chilled_plant" : "unverified"}>
+          <span>冷冻站 · 总功率</span>
           {renderValueParts(scaleMetricByKey.get("power")?.value || formatMetricValue(totalPower, 1, "kW"))}
           <small>{scaleMetricByKey.get("power")?.hint || `主机 ${formatMetricValue(chillerPowerKw, 1, "kW", "--")}`}</small>
         </article>
-        <article className="dashboard-cockpit-kpi">
-          <span>主链路运行</span>
+        <article className="dashboard-cockpit-kpi" data-scope="client_device_type" title={mainLoopScopeDetail}>
+          <span>冷站设备类 · 运行设备</span>
           {renderValueParts(formatCountRatioValue(runningMainLoopCount, mainLoopTotalCount))}
-          <small>远程 {remotePermissionDisplay.fullValue} · 本地/手动 {localManualDisplay.fullValue}</small>
+          <small>控制模式已判 {formatCountRatioValue(controlModeEvidenceCount, mainLoopDevices.length)} · 远程 {remotePermissionDisplay.fullValue} · 本地 {localManualDisplay.fullValue}</small>
         </article>
-        <article className="dashboard-cockpit-kpi">
-          <span>告警 / 事件</span>
+        <article className="dashboard-cockpit-kpi" data-scope="project_unfiltered">
+          <span>当前项目 · 告警 / 事件</span>
           {renderValueParts(`${formatCountValue(activeAlarmCount)} / ${formatCountValue(activeEventCount)}`, `dashboard-cockpit-value ${activeAlarmCount > 0 || activeEventCount > 0 ? "is-warn" : "is-good"}`)}
           <small>P1 {formatCountValue(criticalCount)} · P2 {formatCountValue(p2AlarmCount)} · 事件 {formatCountValue(activeEventCount)}</small>
         </article>
       </section>
+      ) : (
+        <section className="dashboard-cockpit-kpis dashboard-project-readiness-kpis" aria-label="项目接入与联调就绪指标" data-data-scope="project_readiness">
+          <article className="dashboard-cockpit-kpi" data-scope="project_registry">
+            <span>物理站房登记</span>
+            {renderValueParts(registeredStationDisplay)}
+            <small>{capabilityEvidenceReady ? `能源类型 ${configuredEnergyObjectCount}/${ENERGY_OBJECT_DEFINITIONS.length} 已发布` : "能力配置未返回，站房数量保持待确认"}</small>
+          </article>
+          <article className="dashboard-cockpit-kpi" data-scope="project_capability">
+            <span>实时能源对象</span>
+            {renderValueParts(`${formatCountValue(liveSubsystemCount)}个`)}
+            <small>无实时对象时不生成运行能效结论</small>
+          </article>
+          <article className="dashboard-cockpit-kpi" data-scope="project_capability">
+            <span>演示 / 待接对象</span>
+            {renderValueParts(`${formatCountValue(demoOrWaitingSubsystemCount)}个`, "dashboard-cockpit-value is-warn")}
+            <small>演示 {demoSubsystemCount} · 待接 {waitingSubsystemCount}</small>
+          </article>
+          <article className="dashboard-cockpit-kpi" data-scope="project_mapping">
+            <span>点位映射进度</span>
+            {renderValueParts(formatPercentValue(projectMappingProgress, 0))}
+            <small>按已返回能源对象取平均值</small>
+          </article>
+          <article className="dashboard-cockpit-kpi" data-scope="project_unfiltered">
+            <span>当前项目 · 告警 / 诊断</span>
+            {renderValueParts(`${formatCountValue(activeAlarmCount)} / ${formatCountValue(activeEventCount)}`, `dashboard-cockpit-value ${activeAlarmCount > 0 || activeEventCount > 0 ? "is-warn" : "is-good"}`)}
+            <small>告警与诊断分开统计，避免混用</small>
+          </article>
+          <article className="dashboard-cockpit-kpi" data-scope="project_work_order">
+            <span>开放工单</span>
+            {renderValueParts(`${formatCountValue(workOrders?.total ?? 0)}项`)}
+            <small>接入任务与运维任务统一闭环</small>
+          </article>
+        </section>
+      )}
 
       <section className="dashboard-cockpit-workbench" ref={dutyMainRef}>
-        <article className="dashboard-cockpit-panel dashboard-cockpit-trend">
+        {dashboardLifecycleMode === "operation" ? (
+        <>
+        <article
+          className="dashboard-cockpit-panel dashboard-cockpit-trend"
+          data-scope={chilledPlantTrendScopeVerified ? "chilled_plant" : "unverified"}
+        >
           <div className="dashboard-cockpit-panel-head">
-            <h2>冷站COP趋势与对标</h2>
+            <h2>冷冻站COP趋势与对标</h2>
+            <span
+              className={`dashboard-cockpit-badge ${chilledPlantTrendScopeVerified ? "is-good" : "is-warn"}`}
+              title={chilledPlantScopeDetail}
+            >
+              {chilledPlantTrendScopeLabel}
+            </span>
             <span className={`dashboard-cockpit-badge ${featuredCopBadgeTone === "good" ? "is-good" : featuredCopBadgeTone === "warn" ? "is-warn" : ""}`}>
               {featuredCopBadgeText}
             </span>
@@ -3773,7 +4510,7 @@ export default function DashboardPage() {
             <div className="dashboard-cockpit-trend-facts">
               <article>
                 <span>当前COP</span>
-                <strong>{formatMetricValue(currentCop, 2, undefined, DASHBOARD_PENDING_REVIEW_LABEL, false)}</strong>
+                <strong>{formatMetricValue(coldOperationalEvidenceReady ? currentCop : null, 2, undefined, DASHBOARD_PENDING_REVIEW_LABEL, false)}</strong>
                 <small>单位电耗 {formatMetricValue(unitCoolingPower, 3, "kW/kW", "--", false)}</small>
               </article>
               <article>
@@ -3784,163 +4521,53 @@ export default function DashboardPage() {
               <article>
                 <span>负荷波动</span>
                 <strong>{formatPercentValue(loadFluctuationPct, 1)}</strong>
-                <small>{isFiniteNumber(loadFluctuationPct) && loadFluctuationPct > 20 ? "负荷波动偏大，需按同工况对标" : "负荷波动可控"}</small>
+                <small>{!isFiniteNumber(loadFluctuationPct) ? "样本不可比，暂不判定" : loadFluctuationPct > 20 ? "负荷波动偏大，需按同工况对标" : "负荷波动可控"}</small>
               </article>
             </div>
           </div>
         </article>
 
-        <article className="dashboard-cockpit-panel dashboard-cockpit-chain">
-          <img
-            className="dashboard-cockpit-full-map"
-            src={controlLinkSchematicImage}
-            alt=""
-            aria-hidden="true"
-          />
-          <div className="dashboard-cockpit-full-map-live" aria-hidden="true">
-            <span className="is-chilled-loop">{chilledLoopTempLabel}</span>
-            <span className="is-cooling-loop">{coolingLoopTempLabel}</span>
-            <span className="is-online-value">{returnCoverageMapValue}</span>
-            <span className="is-remote-count"><b>{remotePermissionDisplay.compactValue}</b>{remotePermissionDisplay.hasValue ? <em>{remotePermissionDisplay.unit}</em> : null}</span>
-            <span className="is-manual-count"><b>{localManualDisplay.compactValue}</b>{localManualDisplay.hasValue ? <em>{localManualDisplay.unit}</em> : null}</span>
-            <span className="is-fault-count"><b>{faultIsolationDisplay.compactValue}</b>{faultIsolationDisplay.hasValue ? <em>{faultIsolationDisplay.unit}</em> : null}</span>
-            <span className="is-boundary-count"><b>{boundaryAttentionDisplay.compactValue}</b>{boundaryAttentionDisplay.hasValue ? <em>{boundaryAttentionDisplay.unit}</em> : null}</span>
-          </div>
+        <article
+          className="dashboard-cockpit-panel dashboard-focus-station"
+          data-scope="client_device_type"
+          data-dashboard-audience-detail="true"
+        >
           <div className="dashboard-cockpit-panel-head">
-            <h2>设备控制链路</h2>
-            <span className="dashboard-cockpit-badge">蓝：冷冻水 · 绿：冷却水 · 虚线：数据</span>
+            <h2>当前重点对象 · {focusStationName}</h2>
+            <span className="dashboard-cockpit-badge is-warn" title={mainLoopScopeDetail}>
+              {focusStationScopeLabel}
+            </span>
           </div>
-          <div className="dashboard-cockpit-panel-body">
-            <div className="dashboard-cockpit-flow dashboard-cockpit-schematic" aria-label="设备控制链路示意图">
-              <img
-                className="dashboard-cockpit-schematic-base"
-                src={controlLinkSchematicImage}
-                alt=""
-                aria-hidden="true"
-              />
-              <svg className="dashboard-cockpit-schematic-pipes" viewBox="0 0 1000 260" preserveAspectRatio="none" role="img" aria-label="冷冻水、冷却水与数据链路">
-                <defs>
-                  <filter id="dashboardCockpitPipeGlow" x="-20%" y="-40%" width="140%" height="180%">
-                    <feGaussianBlur stdDeviation="3" result="blur" />
-                    <feMerge>
-                      <feMergeNode in="blur" />
-                      <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                  </filter>
-                  <marker id="dashboardCockpitChilledArrow" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
-                    <path d="M0,0 L7,2.5 L0,5 Z" />
-                  </marker>
-                  <marker id="dashboardCockpitCoolingArrow" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
-                    <path d="M0,0 L7,2.5 L0,5 Z" />
-                  </marker>
-                  <marker id="dashboardCockpitDataArrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
-                    <path d="M0,0 L10,4 L0,8 Z" />
-                  </marker>
-                </defs>
-                <path className="dashboard-cockpit-pipe-halo is-chilled" d="M 424 110 H 126 V 168 H 424" />
-                <path className="dashboard-cockpit-pipe-main is-chilled" d="M 424 110 H 126 V 168 H 424" />
-                <path className="dashboard-cockpit-pipe-halo is-cooling" d="M 576 110 H 892 V 168 H 576" />
-                <path className="dashboard-cockpit-pipe-main is-cooling" d="M 576 110 H 892 V 168 H 576" />
-                <path className="dashboard-cockpit-flow-arrow is-chilled is-top" d="M 330 110 H 244" markerEnd="url(#dashboardCockpitChilledArrow)" />
-                <path className="dashboard-cockpit-flow-arrow is-chilled is-bottom" d="M 244 168 H 330" markerEnd="url(#dashboardCockpitChilledArrow)" />
-                <path className="dashboard-cockpit-flow-arrow is-cooling is-top" d="M 790 110 H 704" markerEnd="url(#dashboardCockpitCoolingArrow)" />
-                <path className="dashboard-cockpit-flow-arrow is-cooling is-bottom" d="M 704 168 H 790" markerEnd="url(#dashboardCockpitCoolingArrow)" />
-                <path className="dashboard-cockpit-data-line" d="M 188 214 H 468 Q 500 214 500 184 V 145" />
-                <path className="dashboard-cockpit-data-line" d="M 512 214 H 635" markerEnd="url(#dashboardCockpitDataArrow)" />
-                <path className="dashboard-cockpit-data-line" d="M 718 214 H 820" markerEnd="url(#dashboardCockpitDataArrow)" />
-              </svg>
-
-              <div className="dashboard-cockpit-loop-label is-chilled">
-                <b>冷冻水回路</b>
+          <div className="dashboard-cockpit-panel-body dashboard-focus-station-body">
+            <div className="dashboard-focus-station-map">
+              <img src={controlLinkSchematicImage} alt="冷冻站设备链路缩略图" />
+              <div className="dashboard-focus-station-map-copy">
                 <span>{chilledLoopTempLabel}</span>
-              </div>
-              <div className="dashboard-cockpit-loop-label is-cooling">
-                <b>冷却水回路</b>
                 <span>{coolingLoopTempLabel}</span>
-              </div>
-
-              <article className="dashboard-cockpit-chain-node is-load">
-                <img className="dashboard-cockpit-chain-photo" src={terminalLoadImage} alt="" aria-hidden="true" />
-                <span className="dashboard-cockpit-chain-icon is-load" aria-hidden="true" />
-                <b>末端负荷</b>
-                <strong>空调系统</strong>
-                <small>{loadCapacityChainLabel}</small>
-              </article>
-
-              <article className="dashboard-cockpit-chain-node is-chilled-pump">
-                <img className="dashboard-cockpit-chain-photo" src={chilledPumpImage} alt="" aria-hidden="true" />
-                <span className="dashboard-cockpit-chain-icon is-pump" aria-hidden="true" />
-                <b>冷冻水泵</b>
-                <strong>变频控制</strong>
-                <small>{chilledPumpControlCompactLabel}</small>
-              </article>
-
-              <article className="dashboard-cockpit-chain-node is-chiller">
-                <img className="dashboard-cockpit-chain-photo" src={chillerUnitImage} alt="" aria-hidden="true" />
-                <header>
-                  <b>冷机</b>
-                </header>
-                <strong>蒸发器·冷凝器</strong>
-                <div className="dashboard-cockpit-chiller-core">
-                  <span className="is-evaporator"><b>蒸发器</b><small>冷冻侧</small></span>
-                  <span className="is-condenser"><b>冷凝器</b><small>冷却侧</small></span>
-                </div>
-                <small>{chillerChainFootnote}</small>
-              </article>
-
-              <article className="dashboard-cockpit-chain-node is-cooling-pump">
-                <img className="dashboard-cockpit-chain-photo" src={coolingPumpImage} alt="" aria-hidden="true" />
-                <span className="dashboard-cockpit-chain-icon is-pump" aria-hidden="true" />
-                <b>冷却水泵</b>
-                <strong>变频控制</strong>
-                <small>{coolingPumpControlCompactLabel}</small>
-              </article>
-
-              <article className="dashboard-cockpit-chain-node is-tower">
-                <img className="dashboard-cockpit-chain-photo" src={coolingTowerImage} alt="" aria-hidden="true" />
-                <span className="dashboard-cockpit-chain-icon is-tower" aria-hidden="true" />
-                <b>冷却塔</b>
-                <strong>风机变频</strong>
-                <small>{coolingTowerControlCompactLabel}</small>
-              </article>
-
-              <div className="dashboard-cockpit-telemetry-strip" aria-label="采集点">
-                <span>温度</span>
-                <span>压力</span>
-                <span>流量</span>
-                <span>能耗</span>
-                <span>阀门</span>
-              </div>
-
-              <article className="dashboard-cockpit-data-node is-plc">
-                <img className="dashboard-cockpit-data-photo" src={plcControllerImage} alt="" aria-hidden="true" />
-                <b>PLC/控制器</b>
-                <small>逻辑控制</small>
-              </article>
-              <article className="dashboard-cockpit-data-node is-gateway">
-                <img className="dashboard-cockpit-data-photo" src={edgeGatewayImage} alt="" aria-hidden="true" />
-                <b>边缘网关</b>
-                <small>数据汇聚</small>
-              </article>
-              <article className="dashboard-cockpit-data-node is-online">
-                <img className="dashboard-cockpit-data-photo" src={onlineCloudImage} alt="" aria-hidden="true" />
-                <b>点位在线</b>
-                <strong>{returnCoverageCompactValue}</strong>
+                <strong>点位在线 {returnCoverageMapValue}</strong>
                 <small>{returnCoverageNote}</small>
-              </article>
+              </div>
             </div>
-            <div className="dashboard-cockpit-control-row">
-              <article className="is-remote"><i aria-hidden="true" /><span>远程权限</span><strong>{remotePermissionDisplay.fullValue}</strong><small>远程/自动</small></article>
-              <article className="is-manual"><i aria-hidden="true" /><span>本地/手动</span><strong>{localManualDisplay.fullValue}</strong><small>人工确认</small></article>
-              <article className="is-fault"><i aria-hidden="true" /><span>故障隔离</span><strong>{faultIsolationDisplay.fullValue}</strong><small>隔离调度</small></article>
-              <article className="is-boundary"><i aria-hidden="true" /><span>约束提示</span><strong>{boundaryAttentionDisplay.fullValue}</strong><small>{boundaryAttentionScopeText}</small></article>
+            <div className="dashboard-focus-station-facts">
+              <article><span>冷机</span><strong>{chillerChainFootnote}</strong><small>当前制冷量 {loadCapacityChainLabel}</small></article>
+              <article><span>冷冻泵</span><strong>{chilledPumpControlCompactLabel}</strong><small>控制值/运行台数</small></article>
+              <article><span>冷却泵</span><strong>{coolingPumpControlCompactLabel}</strong><small>控制值/运行台数</small></article>
+              <article><span>冷却塔</span><strong>{coolingTowerControlCompactLabel}</strong><small>控制值/运行台数</small></article>
+            </div>
+            <div className="dashboard-focus-station-footer">
+              <span>控制模式已判 {formatCountRatioValue(controlModeEvidenceCount, mainLoopDevices.length)}</span>
+              <span>远程 {remotePermissionDisplay.fullValue}</span>
+              <span>本地 {localManualDisplay.fullValue}</span>
+              <span>故障 {faultIsolationDisplay.fullValue}</span>
+              <span title={boundaryAttentionScopeText}>约束 {boundaryAttentionDisplay.fullValue}</span>
+              <Link to={buildSiteScopedRoute("/scene-control")} className="dashboard-cockpit-action-button is-secondary">进入冷冻站工作台</Link>
             </div>
           </div>
         </article>
 
         <article className="dashboard-cockpit-panel dashboard-cockpit-ai">
           <div className="dashboard-cockpit-panel-head">
-            <h2>AI建议与审批</h2>
+            <h2>冷冻站AI建议与审批</h2>
             <span className="dashboard-cockpit-badge is-warn">仅输出建议值</span>
           </div>
           <div className="dashboard-cockpit-panel-body dashboard-cockpit-ai-stack">
@@ -3954,7 +4581,7 @@ export default function DashboardPage() {
             </div>
             <section className="dashboard-cockpit-ai-row">
               <h3>回退条件</h3>
-              <p>10分钟 COP下降&gt;0.15 / 冷冻出水&gt;9.2°C / 告警升级 / 设备切本地</p>
+              <p>{`10分钟 COP下降>0.15 / ${controlPolicyPresentation.chilledSupplyRollback} / 告警升级 / 设备切本地`}</p>
             </section>
             <section className="dashboard-cockpit-ai-row">
               <h3>优先动作</h3>
@@ -3966,47 +4593,115 @@ export default function DashboardPage() {
             </div>
           </div>
         </article>
+        </>
+        ) : (
+        <>
+          <article className="dashboard-cockpit-panel dashboard-project-readiness-panel">
+            <div className="dashboard-cockpit-panel-head">
+              <h2>项目接入就绪矩阵</h2>
+              <span className="dashboard-cockpit-badge is-warn">{dashboardModeLabel}</span>
+            </div>
+            <div className="dashboard-cockpit-panel-body dashboard-project-readiness-grid">
+              {projectReadinessRows.map((item) => (
+                <article key={item.label} className={`tone-${item.tone}`}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                  <small>{item.detail}</small>
+                </article>
+              ))}
+            </div>
+          </article>
+          <article className="dashboard-cockpit-panel dashboard-integration-blockers-panel">
+            <div className="dashboard-cockpit-panel-head">
+              <h2>数据可信度与联调阻断</h2>
+              <span className="dashboard-cockpit-badge is-warn">运行结论关闭</span>
+            </div>
+            <div className="dashboard-cockpit-list dashboard-integration-blocker-list">
+              <div><span>站房边界</span><small>{dashboardScopeCopy}</small><b className={hasRegisteredStations ? "is-good" : "is-warn"}>{!capabilityEvidenceReady ? "待确认" : hasRegisteredStations ? "已建立" : "阻断"}</b></div>
+              <div><span>数据源</span><small>实时 {liveSubsystemCount} · 演示 {demoSubsystemCount} · 待接 {waitingSubsystemCount}</small><b className={liveSubsystemCount > 0 ? "is-good" : "is-warn"}>{liveSubsystemCount > 0 ? "可复核" : "阻断"}</b></div>
+              <div><span>点位映射</span><small>{projectMappingProgress != null ? `平均 ${formatPercentValue(projectMappingProgress, 0)}` : "映射进度未返回"}</small><b className={projectMappingProgress != null && projectMappingProgress >= 90 ? "is-good" : "is-warn"}>{projectMappingProgress != null && projectMappingProgress >= 90 ? "接近就绪" : "待补齐"}</b></div>
+              <div><span>指标判定</span><small>演示、快照、零冷量和缺测场景全部失败关闭</small><b className="is-good">已保护</b></div>
+            </div>
+          </article>
+          <article className="dashboard-cockpit-panel dashboard-project-boundary-panel">
+            <div className="dashboard-cockpit-panel-head">
+              <h2>控制与责任边界</h2>
+              <span className="dashboard-cockpit-badge is-good">安全优先</span>
+            </div>
+            <div className="dashboard-cockpit-panel-body dashboard-project-boundary-stack">
+              <section><span>数据采集</span><strong>只读校验</strong><small>源时间、范围、单位、质量码必须可追溯</small></section>
+              <section><span>AI优化</span><strong>仅建议值</strong><small>没有实时证据时不输出运行能效结论</small></section>
+              <section><span>PLC执行</span><strong>安全联锁</strong><small>PLC保留最终执行、回退和异常保护权</small></section>
+              <Link to={buildSiteScopedRoute("/config-center")} className="dashboard-cockpit-action-button is-secondary">进入能源配置</Link>
+            </div>
+          </article>
+        </>
+        )}
       </section>
 
       <section className="dashboard-cockpit-bottom-grid">
-        <article className="dashboard-cockpit-panel">
+        {dashboardLifecycleMode === "operation" ? (
+        <article className="dashboard-cockpit-panel" data-dashboard-audience-detail="true">
           <div className="dashboard-cockpit-panel-head">
-            <h2>关键约束阈值</h2>
-            <span className="dashboard-cockpit-badge is-good">PLC保护</span>
+            <h2>冷冻站关键约束阈值</h2>
+            <span className="dashboard-cockpit-badge is-warn">{controlPolicyPresentation.statusLabel}</span>
           </div>
           <div className="dashboard-cockpit-list">
-            <div><span>冷冻出水</span><b>{diagnosticMetricByKey.get("chilledSupplyTemp")?.value || formatTemperatureValue(chilledSupplyTemp)}</b><small>目标 8.5-9.0°C，上限 9.2°C</small></div>
+            <div><span>冷冻出水</span><b>{diagnosticMetricByKey.get("chilledSupplyTemp")?.value || formatTemperatureValue(chilledSupplyTemp)}</b><small>{controlPolicyPresentation.chilledSupplyBoundary}</small></div>
             <div><span>冷却接近度</span><b className={coolingApproachOutOfBand ? "is-warn" : "is-good"}>{formatTemperatureValue(coolingApproach)}</b><small>{coolingApproachConstraintText}</small></div>
-            <div><span>频率下限</span><b>{inefficientAreaCount > 0 ? "受限" : "正常"}</b><small>泵 ≥35Hz，塔风机 ≥30Hz</small></div>
+            <div><span>频率下限</span><b>{inefficientAreaCount > 0 ? "受限" : "待确认"}</b><small>{controlPolicyPresentation.frequencyBoundary}</small></div>
           </div>
         </article>
+        ) : (
         <article className="dashboard-cockpit-panel">
           <div className="dashboard-cockpit-panel-head">
-            <h2>待处理事件 Top3</h2>
+            <h2>下一步接入任务</h2>
+            <span className="dashboard-cockpit-badge is-warn">按优先级</span>
+          </div>
+          <div className="dashboard-cockpit-list">
+            {onboardingTaskRows.map((item, index) => (
+              <Link key={`${item.label}-${index}`} to={buildSiteScopedRoute("/config-center")} className="dashboard-cockpit-row-link">
+                <span>{item.label}</span>
+                <small>{item.text}</small>
+                <b className={item.tone === "warn" ? "is-warn" : "is-good"}>{item.status}</b>
+              </Link>
+            ))}
+          </div>
+        </article>
+        )}
+        <article
+          className="dashboard-cockpit-panel"
+          data-queue-empty={topAlarmRows.length === 1 && topAlarmRows[0]?.id === "empty" ? "true" : undefined}
+        >
+          <div className="dashboard-cockpit-panel-head">
+            <h2>待处理告警与诊断 Top3</h2>
             <span className={`dashboard-cockpit-badge ${activeAlarmCount > 0 || activeEventCount > 0 ? "is-warn" : "is-good"}`}>
-              事件{formatCountValue(activeEventCount)} · 告警{formatCountValue(activeAlarmCount)}
+              告警{formatCountValue(activeAlarmCount)} · 诊断{formatCountValue(activeEventCount)}
             </span>
           </div>
           <div className="dashboard-cockpit-list">
             {topAlarmRows.map((item) => (
               <Link key={item.id} to={buildSiteScopedRoute(item.to)} className="dashboard-cockpit-row-link">
-                <span>{item.severity}</span>
-                <small>{item.repeatCount > 1 ? `${item.title} · ${item.repeatCount}条` : item.title}</small>
+                <span>{activeAlarmCount === 0 && item.id !== "empty" ? `诊断${item.severity === "紧急" ? "高" : item.severity}` : item.severity}</span>
+                <small>{item.id === "empty" ? `${item.title} · ${item.summary}` : item.repeatCount > 1 ? `${item.title} · ${item.repeatCount}条` : item.title}</small>
                 <b className={item.tone === "warn" ? "is-warn" : item.tone === "good" ? "is-good" : ""}>{item.impactLabel}</b>
               </Link>
             ))}
           </div>
         </article>
-        <article className="dashboard-cockpit-panel">
+        <article
+          className="dashboard-cockpit-panel"
+          data-dashboard-audience-detail={dashboardLifecycleMode === "operation" ? "true" : undefined}
+        >
           <div className="dashboard-cockpit-panel-head">
-            <h2>交接班条带</h2>
-            <span className="dashboard-cockpit-badge">最近事件</span>
+            <h2>{dashboardLifecycleMode === "operation" ? "交接班条带" : "项目交接与审计"}</h2>
+            <span className="dashboard-cockpit-badge">最近记录</span>
           </div>
           <div className="dashboard-cockpit-list">
             {handoverRows.map((item) => (
               <div key={`${item.label}-${item.text}`}>
                 <span>{item.label}</span>
-                <small>{item.text}</small>
+                <small title={item.text}>{item.text}</small>
                 <b className={item.tone === "warn" ? "is-warn" : item.tone === "good" ? "is-good" : ""}>{item.status}</b>
               </div>
             ))}

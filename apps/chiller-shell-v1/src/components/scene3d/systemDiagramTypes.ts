@@ -40,6 +40,9 @@ export type SystemDiagramEdge = {
   to: string;
   kind: SystemDiagramEdgeKind;
   via?: Array<[number, number, number]>;
+  flowM3h?: number | null;
+  flowDirection?: "forward" | "reverse";
+  flowActive?: boolean;
 };
 
 export type SystemDiagramTopology = {

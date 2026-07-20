@@ -58,3 +58,29 @@ export function buildScopedLocationPath(
 ): string {
   return appendSiteIdToPath(`${pathname}${search}${hash}`, siteId);
 }
+
+const ALARM_DRAFT_TRANSIENT_QUERY_KEYS = [
+  "source",
+  "create",
+  "alarmSiteId",
+  "alarmId",
+  "regId",
+  "alarmTitle",
+  "alarmSeverity",
+  "alarmOccurredAt",
+  "alarmDetail"
+] as const;
+
+/**
+ * Removes route state that is only valid inside the project that created it.
+ * Persistent filters may survive a project switch, but an alarm-derived work
+ * order draft must never be carried into a different project.
+ */
+export function clearCrossProjectTransientContextFromSearch(search: string): string {
+  const params = new URLSearchParams(search);
+  if (params.get("source") === "alarm") {
+    ALARM_DRAFT_TRANSIENT_QUERY_KEYS.forEach((key) => params.delete(key));
+  }
+  const nextSearch = params.toString();
+  return nextSearch ? `?${nextSearch}` : "";
+}

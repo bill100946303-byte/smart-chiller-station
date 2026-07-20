@@ -26,6 +26,7 @@ import {
   PerspectiveCamera,
   PlaneGeometry,
   Raycaster,
+  RepeatWrapping,
   RingGeometry,
   Scene,
   SphereGeometry,
@@ -46,7 +47,15 @@ import {
   type DeviceModelCategory
 } from "../../config/modelRegistry";
 import { zhCN } from "../../i18n/zhCN";
+import {
+  resolveSystemDiagramFlowVisualState,
+  type SystemDiagramFlowVisualState
+} from "./systemDiagramFlow";
 import { buildSystemDiagramLayout } from "./systemDiagramLayout";
+import SystemDiagramInspector, {
+  getSystemDiagramStatusLabel,
+  getSystemDiagramTypeLabel
+} from "./SystemDiagramInspector";
 import type {
   SystemDiagramEdgeKind,
   SystemDiagramRenderableCategory,
@@ -60,6 +69,7 @@ type SystemDiagram3DProps = {
   selectedNodeId?: string | null;
   onNodeSelect?: (node: SystemDiagramResolvedNode) => void;
   devicePageHref?: string | null;
+  operationalEvidence?: boolean;
 };
 
 type SystemDiagramViewMode = "all" | "chilled" | "cooling";
@@ -70,11 +80,30 @@ type HoverState = {
   y: number;
 } | null;
 
-type FlowPulse = {
+type FlowMaterialAnimation = {
   mesh: Mesh;
-  curve: CatmullRomCurve3;
+  texture: CanvasTexture;
+  material: MeshBasicMaterial;
   offset: number;
   speed: number;
+  direction: 1 | -1;
+  active: boolean;
+  activeOpacity: number;
+};
+
+type DiagramLabelEntry = {
+  sprite: Sprite;
+  node: SystemDiagramResolvedNode;
+  selected: boolean;
+  worldPosition: Vector3;
+  projectedPosition: Vector3;
+};
+
+type ScreenLabelBox = {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
 };
 
 const PIPE_COLORS: Record<SystemDiagramEdgeKind, number> = {
@@ -113,16 +142,6 @@ function loadModelPrototype(category: DeviceModelCategory): Promise<Object3D> {
   return pending;
 }
 
-function getNodeStatusLabel(status: SystemDiagramResolvedNode["status"]) {
-  if (status === "running") {
-    return zhCN.topologyStatus.running;
-  }
-  if (status === "alert") {
-    return zhCN.topologyStatus.alert;
-  }
-  return zhCN.topologyStatus.stable;
-}
-
 function getViewModeLabel(viewMode: SystemDiagramViewMode) {
   if (viewMode === "chilled") {
     return zhCN.sceneControl.systemDiagramFilterChilled;
@@ -133,7 +152,7 @@ function getViewModeLabel(viewMode: SystemDiagramViewMode) {
   return zhCN.sceneControl.systemDiagramFilterAll;
 }
 
-function createLabelSprite(title: string, subtitle: string, color: string) {
+function createLabelSprite(title: string, subtitle: string, color: string, selected = false) {
   const canvas = document.createElement("canvas");
   canvas.width = 640;
   canvas.height = 184;
@@ -143,9 +162,9 @@ function createLabelSprite(title: string, subtitle: string, color: string) {
   }
 
   context.clearRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = "rgba(6, 22, 41, 0.86)";
-  context.strokeStyle = "rgba(105, 228, 255, 0.22)";
-  context.lineWidth = 4;
+  context.fillStyle = selected ? "rgba(8, 38, 55, 0.96)" : "rgba(6, 22, 41, 0.86)";
+  context.strokeStyle = selected ? color : "rgba(105, 228, 255, 0.22)";
+  context.lineWidth = selected ? 8 : 4;
   context.beginPath();
   context.roundRect(10, 10, canvas.width - 20, canvas.height - 20, 26);
   context.fill();
@@ -180,6 +199,77 @@ function createLabelSprite(title: string, subtitle: string, color: string) {
   const sprite = new Sprite(material);
   sprite.scale.set(3.4, 0.98, 1);
   return sprite;
+}
+
+function screenLabelBoxesOverlap(left: ScreenLabelBox, right: ScreenLabelBox, gap = 8): boolean {
+  return !(
+    left.right + gap <= right.left ||
+    left.left >= right.right + gap ||
+    left.bottom + gap <= right.top ||
+    left.top >= right.bottom + gap
+  );
+}
+
+function updateDiagramLabelVisibility(
+  entries: DiagramLabelEntry[],
+  camera: PerspectiveCamera,
+  renderer: WebGLRenderer
+) {
+  const viewportWidth = renderer.domElement.clientWidth || 320;
+  const viewportHeight = renderer.domElement.clientHeight || 260;
+  const compactViewport = viewportWidth < 760;
+  const maxDistance = compactViewport ? 22 : 30;
+  const acceptedBoxes: ScreenLabelBox[] = [];
+
+  const projectedEntries = entries
+    .map((entry) => {
+      entry.sprite.getWorldPosition(entry.worldPosition);
+      entry.projectedPosition.copy(entry.worldPosition).project(camera);
+      return {
+        entry,
+        distance: camera.position.distanceTo(entry.worldPosition),
+        x: (entry.projectedPosition.x * 0.5 + 0.5) * viewportWidth,
+        y: (-entry.projectedPosition.y * 0.5 + 0.5) * viewportHeight,
+        depth: entry.projectedPosition.z
+      };
+    })
+    .sort((left, right) => {
+      if (left.entry.selected !== right.entry.selected) {
+        return left.entry.selected ? -1 : 1;
+      }
+      const leftAlert = left.entry.node.status === "alert";
+      const rightAlert = right.entry.node.status === "alert";
+      if (leftAlert !== rightAlert) {
+        return leftAlert ? -1 : 1;
+      }
+      return left.distance - right.distance;
+    });
+
+  projectedEntries.forEach(({ entry, distance, x, y, depth }) => {
+    const labelWidth = entry.selected ? (compactViewport ? 142 : 176) : (compactViewport ? 112 : 146);
+    const labelHeight = entry.selected ? 48 : 40;
+    const box: ScreenLabelBox = {
+      left: x - labelWidth / 2,
+      right: x + labelWidth / 2,
+      top: y - labelHeight / 2,
+      bottom: y + labelHeight / 2
+    };
+    const outsideViewport =
+      depth < -1 ||
+      depth > 1 ||
+      box.right < 8 ||
+      box.left > viewportWidth - 8 ||
+      box.bottom < 8 ||
+      box.top > viewportHeight - 8;
+    const distanceHidden = !entry.selected && distance > maxDistance;
+    const collisionHidden = !entry.selected && acceptedBoxes.some((accepted) => screenLabelBoxesOverlap(box, accepted));
+    const visible = !outsideViewport && !distanceHidden && !collisionHidden;
+
+    entry.sprite.visible = visible;
+    if (visible) {
+      acceptedBoxes.push(box);
+    }
+  });
 }
 
 function createPipeCurve(points: Vector3[]) {
@@ -243,15 +333,52 @@ function createLoopDeck(width: number, depth: number, color: number) {
   return group;
 }
 
-function createFlowPulse(color: number) {
-  return new Mesh(
-    new SphereGeometry(0.14, 18, 18),
-    new MeshBasicMaterial({
-      color,
-      transparent: true,
-      opacity: 0.84
-    })
-  );
+function createFlowArrowTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 64;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("Unable to create water-flow arrow texture");
+  }
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.strokeStyle = "rgba(255,255,255,0.96)";
+  context.lineWidth = 9;
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  for (let x = 12; x <= 236; x += 56) {
+    context.beginPath();
+    context.moveTo(x, 12);
+    context.lineTo(x + 24, 32);
+    context.lineTo(x, 52);
+    context.stroke();
+  }
+  const texture = new CanvasTexture(canvas);
+  texture.wrapS = RepeatWrapping;
+  texture.wrapT = RepeatWrapping;
+  texture.colorSpace = SRGBColorSpace;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function createScrollingFlowOverlay(
+  curve: CatmullRomCurve3,
+  color: number,
+  state: SystemDiagramFlowVisualState,
+  offset: number
+): FlowMaterialAnimation {
+  const texture = createFlowArrowTexture();
+  texture.repeat.set(Math.max(2, curve.getLength() / 1.5), 1);
+  const material = new MeshBasicMaterial({
+    map: texture,
+    color,
+    transparent: true,
+    opacity: state.active ? state.activeOpacity : 0.1,
+    depthWrite: false
+  });
+  const mesh = new Mesh(new TubeGeometry(curve, 64, 0.108, 10, false), material);
+  mesh.renderOrder = 5;
+  return { mesh, texture, material, offset, ...state };
 }
 
 function fitModelToNode(model: Object3D, targetHeight: number) {
@@ -326,7 +453,8 @@ export default function SystemDiagram3D({
   topology,
   selectedNodeId = null,
   onNodeSelect,
-  devicePageHref = null
+  devicePageHref = null,
+  operationalEvidence = true
 }: SystemDiagram3DProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [viewMode, setViewMode] = useState<SystemDiagramViewMode>("all");
@@ -356,8 +484,20 @@ export default function SystemDiagram3D({
   const edgeCount = resolved.edges.length;
   const selectedNode = resolved.nodes.find((node) => node.id === selectedNodeId) || resolved.nodes[0] || null;
   const hoveredNode = hoverState ? resolved.nodes.find((node) => node.id === hoverState.nodeId) || null : null;
-  const selectedNodeStatusLabel = selectedNode ? getNodeStatusLabel(selectedNode.status) : zhCN.topologyStatus.stable;
-  const shellDeviceValue = selectedNode?.primaryDeviceId || selectedNode?.systemType || resolved.title;
+  const selectedNodeStatusLabel = getSystemDiagramStatusLabel(selectedNode, operationalEvidence);
+  const modelBindingState = !operationalEvidence
+    ? "sample-generic"
+    : selectedNode?.primaryDeviceId
+      ? "bound-generic"
+      : "unbound-generic";
+  const modelBindingLabel = modelBindingState === "sample-generic"
+    ? "样例拓扑 · 通用设备模型"
+    : modelBindingState === "bound-generic"
+      ? "现场点位已关联 · 通用设备模型"
+      : "设备绑定待确认 · 通用设备模型";
+  const shellDeviceValue = operationalEvidence
+    ? selectedNode?.primaryDeviceId || getSystemDiagramTypeLabel(selectedNode)
+    : zhCN.sceneControl.systemDiagramSampleDevice;
   const hoverLeft = hoverState
     ? Math.max(14, Math.min(hoverState.x + 14, (mountRef.current?.clientWidth || 360) - 236))
     : 14;
@@ -461,9 +601,10 @@ export default function SystemDiagram3D({
     }
 
     const nodesById = new Map(resolved.nodes.map((node) => [node.id, node]));
-    const flowPulses: FlowPulse[] = [];
+    const flowMaterials: FlowMaterialAnimation[] = [];
     const animatedRings: Array<{ mesh: Mesh; baseScale: number }> = [];
     const animatedBeacons: Mesh[] = [];
+    const diagramLabels: DiagramLabelEntry[] = [];
 
     resolved.edges.forEach((edge, edgeIndex) => {
       const points = buildEdgePoints(edge, nodesById);
@@ -474,17 +615,14 @@ export default function SystemDiagram3D({
       const curve = createPipeCurve(points);
       root.add(createPipeMesh(curve, color));
       root.add(createPipeMesh(curve, color, { radius: 0.16, opacity: 0.12 }));
-
-      for (let index = 0; index < 2; index += 1) {
-        const pulse = createFlowPulse(color);
-        root.add(pulse);
-        flowPulses.push({
-          mesh: pulse,
-          curve,
-          offset: edgeIndex * 0.17 + index * 0.37,
-          speed: 0.06 + index * 0.012
-        });
-      }
+      const flowOverlay = createScrollingFlowOverlay(
+        curve,
+        color,
+        resolveSystemDiagramFlowVisualState(edge),
+        (edgeIndex * 0.173) % 1
+      );
+      root.add(flowOverlay.mesh);
+      flowMaterials.push(flowOverlay);
     });
 
     let disposed = false;
@@ -496,7 +634,8 @@ export default function SystemDiagram3D({
       anchor.position.set(node.position[0], node.position[1], node.position[2]);
       root.add(anchor);
       const isSelected = selectedNodeId === node.id;
-      const statusColor = new Color(NODE_STATUS_COLORS[node.status]);
+      const nodeStatusColor = operationalEvidence ? NODE_STATUS_COLORS[node.status] : "#e4b464";
+      const statusColor = new Color(nodeStatusColor);
 
       const pad = new Mesh(
         new CylinderGeometry(0.88, 1, 0.14, 24),
@@ -517,7 +656,7 @@ export default function SystemDiagram3D({
         new MeshBasicMaterial({
           color: statusColor,
           transparent: true,
-          opacity: isSelected ? 0.28 : 0.14,
+          opacity: isSelected ? 0.62 : 0.14,
           side: DoubleSide
         })
       );
@@ -530,7 +669,7 @@ export default function SystemDiagram3D({
         new MeshBasicMaterial({
           color: statusColor,
           transparent: true,
-          opacity: isSelected ? 1 : 0.9
+          opacity: isSelected ? 1 : 0.82
         })
       );
       ring.rotation.x = Math.PI / 2;
@@ -564,10 +703,22 @@ export default function SystemDiagram3D({
       anchor.add(beacon);
       animatedBeacons.push(beacon);
 
-      const label = createLabelSprite(node.label, `${node.systemType} · ${node.instanceCount || 1}台`, NODE_STATUS_COLORS[node.status]);
+      const label = createLabelSprite(
+        node.label,
+        `${isSelected ? `${zhCN.sceneControl.systemDiagramSelected} · ` : ""}${getSystemDiagramTypeLabel(node)} · ${node.instanceCount || 1} ${zhCN.sceneControl.systemDiagramUnit}`,
+        nodeStatusColor,
+        isSelected
+      );
       if (label) {
         label.position.set(0, node.targetHeight + 1.55, 0);
         anchor.add(label);
+        diagramLabels.push({
+          sprite: label,
+          node,
+          selected: isSelected,
+          worldPosition: new Vector3(),
+          projectedPosition: new Vector3()
+        });
       }
       const instanceOffsets = buildInstanceOffsets(node.instanceCount || 1);
 
@@ -700,6 +851,9 @@ export default function SystemDiagram3D({
       camera.position.x = cameraBaseX + Math.sin(time * 0.00031) * 0.38;
       camera.position.z = cameraBaseZ + Math.cos(time * 0.00024) * 0.22;
       camera.lookAt(focusX, 1.8, focusZ);
+      camera.updateMatrixWorld();
+      root.updateMatrixWorld(true);
+      updateDiagramLabelVisibility(diagramLabels, camera, renderer);
 
       animatedRings.forEach((item, index) => {
         const pulse = 1 + Math.sin(time * 0.004 + index) * 0.04;
@@ -711,12 +865,12 @@ export default function SystemDiagram3D({
         beacon.scale.setScalar(pulse);
       });
 
-      flowPulses.forEach((pulse, index) => {
-        const progress = (time * 0.0001 * pulse.speed + pulse.offset) % 1;
-        const point = pulse.curve.getPointAt(progress);
-        pulse.mesh.position.copy(point);
-        pulse.mesh.position.y += 0.04 + Math.sin(time * 0.004 + index) * 0.025;
-        pulse.mesh.scale.setScalar(0.9 + Math.sin(time * 0.006 + index) * 0.16);
+      flowMaterials.forEach((flow) => {
+        flow.material.opacity = flow.active ? flow.activeOpacity : 0.1;
+        if (flow.active) {
+          const nextOffset = flow.offset - time * 0.0001 * flow.speed * flow.direction;
+          flow.texture.offset.x = ((nextOffset % 1) + 1) % 1;
+        }
       });
 
       renderer.render(scene, camera);
@@ -746,11 +900,16 @@ export default function SystemDiagram3D({
       renderer.domElement.removeEventListener("pointerdown", handlePointerDown);
       renderer.domElement.removeEventListener("pointermove", handlePointerMove);
       renderer.domElement.removeEventListener("pointerleave", handlePointerLeave);
+      flowMaterials.forEach((flow) => {
+        flow.texture.dispose();
+        flow.material.dispose();
+        flow.mesh.geometry.dispose();
+      });
       renderer.dispose();
       root.clear();
       mountNode.innerHTML = "";
     };
-  }, [onNodeSelect, resolved, selectedNodeId]);
+  }, [onNodeSelect, operationalEvidence, resolved, selectedNodeId]);
 
   return (
     <section className="scene-system-diagram-card">
@@ -808,20 +967,25 @@ export default function SystemDiagram3D({
             <strong>{selectedNode ? selectedNode.label : resolved.title}</strong>
             <small>
               {selectedNode
-                ? `${selectedNode.systemType} · ${selectedNode.primaryDeviceLabel || zhCN.sceneControl.systemDiagramSelectionNotBound}`
+                ? `${getSystemDiagramTypeLabel(selectedNode)} · ${operationalEvidence
+                  ? selectedNode.primaryDeviceLabel || zhCN.sceneControl.systemDiagramSelectionNotBound
+                  : zhCN.sceneControl.systemDiagramSampleDevice}`
                 : resolved.description}
             </small>
           </div>
           <div className="scene-system-diagram-shell-chip-group">
             <span className="scene-system-diagram-shell-chip">{selectedNodeStatusLabel}</span>
             <span className="scene-system-diagram-shell-chip">{shellDeviceValue}</span>
+            <span className="scene-system-diagram-shell-chip" data-model-binding={modelBindingState}>
+              {modelBindingLabel}
+            </span>
           </div>
         </div>
         <div className="scene-system-diagram-shell-zones">
           <span className={viewMode === "cooling" ? "scene-system-diagram-shell-zone is-muted" : "scene-system-diagram-shell-zone"}>
             {zhCN.sceneControl.systemDiagramFilterChilled}
           </span>
-          <span className="scene-system-diagram-shell-zone">负荷侧</span>
+          <span className="scene-system-diagram-shell-zone">{zhCN.sceneControl.systemDiagramLoadSide}</span>
           <span className={viewMode === "chilled" ? "scene-system-diagram-shell-zone is-muted" : "scene-system-diagram-shell-zone"}>
             {zhCN.sceneControl.systemDiagramFilterCooling}
           </span>
@@ -836,84 +1000,30 @@ export default function SystemDiagram3D({
             }}
           >
             <strong>{hoveredNode.label}</strong>
-            <small>{hoveredNode.systemType}</small>
+            <small>{getSystemDiagramTypeLabel(hoveredNode)}</small>
             <div className="scene-system-diagram-hover-meta">
-              <span>{getNodeStatusLabel(hoveredNode.status)}</span>
-              {hoveredNode.primaryDeviceId ? <span>{hoveredNode.primaryDeviceId}</span> : null}
+              <span>{getSystemDiagramStatusLabel(hoveredNode, operationalEvidence)}</span>
+              {operationalEvidence && hoveredNode.primaryDeviceId ? <span>{hoveredNode.primaryDeviceId}</span> : null}
             </div>
           </div>
         ) : null}
         <div className="scene-system-diagram-shell-footer">
-          <span>{selectedNode?.primaryDeviceLabel || resolved.title}</span>
+          <span>
+            {operationalEvidence
+              ? selectedNode?.primaryDeviceLabel || resolved.title
+              : zhCN.sceneControl.systemDiagramSampleDevice}
+          </span>
           <strong>
             {nodeCount} {zhCN.sceneControl.systemDiagramNodes} / {edgeCount} {zhCN.sceneControl.systemDiagramEdges}
           </strong>
         </div>
       </div>
 
-      {selectedNode ? (
-        <div className="scene-system-diagram-selection">
-          <div className="scene-system-diagram-selection-header">
-            <span>{zhCN.sceneControl.systemDiagramSelectionEyebrow}</span>
-            <strong>{selectedNode.label}</strong>
-          </div>
-          <div className="scene-system-diagram-selection-grid">
-            <div className="scene-system-diagram-selection-item">
-              <label>{zhCN.sceneControl.systemDiagramSelectionSystemType}</label>
-              <strong>{selectedNode.systemType}</strong>
-            </div>
-            <div className="scene-system-diagram-selection-item">
-              <label>{zhCN.sceneControl.systemDiagramSelectionInstances}</label>
-              <strong>{selectedNode.instanceCount || 1}</strong>
-            </div>
-            <div className="scene-system-diagram-selection-item">
-              <label>{zhCN.sceneControl.systemDiagramSelectionPrimaryDevice}</label>
-              <strong>
-                {selectedNode.primaryDeviceId
-                  ? `${selectedNode.primaryDeviceLabel || zhCN.common.unknown} · ${selectedNode.primaryDeviceId}`
-                  : zhCN.sceneControl.systemDiagramSelectionNotBound}
-              </strong>
-            </div>
-            <div className="scene-system-diagram-selection-item">
-              <label>{zhCN.systemOverview.labels.status}</label>
-              <strong>{getNodeStatusLabel(selectedNode.status)}</strong>
-            </div>
-          </div>
-          {devicePageHref ? (
-            <a className="scene-system-diagram-link" href={devicePageHref}>
-              {zhCN.sceneControl.systemDiagramOpenDevicePage}
-            </a>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className="scene-system-diagram-legend">
-        <div className="scene-system-diagram-legend-item">
-          <span style={{ background: "#69e4ff" }} />
-          <small>{zhCN.sceneControl.systemDiagramLegendChilledSupply}</small>
-        </div>
-        <div className="scene-system-diagram-legend-item">
-          <span style={{ background: "#38a9ff" }} />
-          <small>{zhCN.sceneControl.systemDiagramLegendChilledReturn}</small>
-        </div>
-        <div className="scene-system-diagram-legend-item">
-          <span style={{ background: "#8ff7d7" }} />
-          <small>{zhCN.sceneControl.systemDiagramLegendCoolingSupply}</small>
-        </div>
-        <div className="scene-system-diagram-legend-item">
-          <span style={{ background: "#ffc56d" }} />
-          <small>{zhCN.sceneControl.systemDiagramLegendCoolingReturn}</small>
-        </div>
-      </div>
-
-      <div className="scene-system-diagram-reading-note">
-        <strong>{zhCN.sceneControl.systemDiagramReadingTitle}</strong>
-        <ul>
-          <li>{zhCN.sceneControl.systemDiagramReadingCluster}</li>
-          <li>{zhCN.sceneControl.systemDiagramReadingPrimary}</li>
-          <li>{zhCN.sceneControl.systemDiagramReadingValve}</li>
-        </ul>
-      </div>
+      <SystemDiagramInspector
+        selectedNode={selectedNode}
+        devicePageHref={devicePageHref}
+        operationalEvidence={operationalEvidence}
+      />
     </section>
   );
 }

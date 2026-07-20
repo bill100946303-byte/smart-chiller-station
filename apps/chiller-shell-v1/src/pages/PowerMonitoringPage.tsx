@@ -1,5 +1,7 @@
 import { Activity, AlertTriangle, ClipboardCheck, Download, ListChecks, PlugZap, RefreshCw, ShieldCheck, Table2, Zap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import "./PowerMonitoringShared.css";
+import "./DistributionEnergyWorkspace.css";
 import { runtimeConfig } from "../config/runtimeConfig";
 import { getCurrentProject, resolveEnergyConfigSiteId } from "../services/auth";
 import {
@@ -15,6 +17,11 @@ import {
   type RuntimeSubsystemCapabilityDto,
   type RuntimeSubsystemCapabilityListDto
 } from "../services/bffClient";
+import {
+  getSubsystemStatusPresentation,
+  isSubsystemDemoData
+} from "../utils/subsystemStatus";
+import { formatControlBoundaryMode, resolveStationMetric } from "../utils/stationWorkspacePresentation";
 
 type Tone = "good" | "warn" | "neutral";
 type PowerDetailTab = "overview" | "quality" | "analysis" | "assignment" | "devices";
@@ -25,46 +32,15 @@ const FRESHNESS_WARN_MS = 2 * 60 * 1000;
 const FRESHNESS_BAD_MS = 5 * 60 * 1000;
 
 function isDemoData(item: RuntimeSubsystemCapabilityDto | null): boolean {
-  return item?.status === "enabled" && item.sourceStatus === "demo_data";
+  return isSubsystemDemoData(item);
 }
 
 function formatStatus(item: RuntimeSubsystemCapabilityDto | null): string {
-  if (isDemoData(item)) {
-    return "只读数据";
-  }
-  if (item?.status === "enabled") {
-    return "已接入";
-  }
-  if (item?.status === "not_configured") {
-    return "未配置 / 可接入";
-  }
-  if (item?.status === "not_applicable") {
-    return "不适用";
-  }
-  return item?.status || "未知";
+  return getSubsystemStatusPresentation(item).detailLabel;
 }
 
 function statusTone(item: RuntimeSubsystemCapabilityDto | null): Tone {
-  if (isDemoData(item)) {
-    return "neutral";
-  }
-  if (item?.status === "enabled") {
-    return "good";
-  }
-  if (item?.status === "not_configured") {
-    return "warn";
-  }
-  return "neutral";
-}
-
-function metricValue(enabled: boolean, demoData: boolean, value: string, demoValue: string): string {
-  if (!enabled) {
-    return "未配置";
-  }
-  if (demoData) {
-    return demoValue;
-  }
-  return value;
+  return getSubsystemStatusPresentation(item).tone;
 }
 
 function formatNumber(value: number | null | undefined, digits = 1): string {
@@ -118,23 +94,6 @@ function trendDelta(latest: number | null, previous: number | null): number | nu
     return null;
   }
   return Number(latest) - Number(previous);
-}
-
-function metricNote(enabled: boolean, demoData: boolean, waitingText: string): string {
-  if (!enabled) {
-    return "未接入";
-  }
-  if (demoData) {
-    return "只读数据";
-  }
-  return waitingText;
-}
-
-function metricTone(enabled: boolean, demoData: boolean): Tone {
-  if (demoData) {
-    return "neutral";
-  }
-  return enabled ? "warn" : "neutral";
 }
 
 function sanitizePowerProviderCopy(value: string): string {
@@ -289,49 +248,57 @@ export default function PowerMonitoringPage() {
   const [assignmentCheck, setAssignmentCheck] = useState<ByxPowerAssignmentCheckDto | null>(null);
   const [categoryHistory, setCategoryHistory] = useState<ByxPowerHistorySampleDto[]>([]);
   const [activeDetailTab, setActiveDetailTab] = useState<PowerDetailTab>("overview");
+  const [loadedSiteId, setLoadedSiteId] = useState("");
 
   async function loadData() {
     setLoading(true);
     setErrorText("");
     setCapabilityWarning("");
     setAssignmentCheck(null);
+    if (loadedSiteId !== siteId) {
+      setCapabilities(null);
+      setPowerData(null);
+      setCategoryHistory([]);
+    }
     try {
-      const [byxResult, capabilityResult] = await Promise.allSettled([
-        fetchByxPowerMonitoring(siteId),
-        fetchSiteCapabilities(siteId)
-      ]);
+      const capabilityData = await fetchSiteCapabilities(siteId);
+      const scopedPowerSubsystem = capabilityData.items?.find((item) => item.subsystemType === "power_monitoring") || null;
+      setCapabilities(capabilityData);
 
-      if (capabilityResult.status === "fulfilled") {
-        setCapabilities(capabilityResult.value);
-      } else {
-        setCapabilities(null);
-        setCapabilityWarning("配置中心未找到该站点能力表，当前仅展示电力实时只读数据。");
+      if (scopedPowerSubsystem?.status !== "enabled") {
+        setPowerData(null);
+        setCategoryHistory([]);
+        setLoadedSiteId(siteId);
+        return;
       }
 
-      if (byxResult.status === "fulfilled") {
-        setPowerData(byxResult.value);
-        if (byxResult.value.ok) {
-          const [historyResult, assignmentCheckResult] = await Promise.allSettled([
-            captureByxPowerHistorySnapshot(siteId),
-            fetchByxPowerAssignmentCheck(siteId)
-          ]);
-          if (historyResult.status === "fulfilled") {
-            const history = historyResult.value;
-            setCategoryHistory(history.samples || []);
-          } else {
-            setCapabilityWarning((current) => current || "电力趋势快照暂未写入，当前仅展示实时数据。");
-          }
-          if (assignmentCheckResult.status === "fulfilled") {
-            setAssignmentCheck(assignmentCheckResult.value);
-          } else {
-            setCapabilityWarning((current) => current || "电力归属校验暂不可用，当前仅展示实时电参。");
-          }
+      const nextPowerData = await fetchByxPowerMonitoring(siteId);
+      setPowerData(nextPowerData);
+      if (nextPowerData.ok) {
+        const [historyResult, assignmentCheckResult] = await Promise.allSettled([
+          captureByxPowerHistorySnapshot(siteId),
+          fetchByxPowerAssignmentCheck(siteId)
+        ]);
+        if (historyResult.status === "fulfilled") {
+          const history = historyResult.value;
+          setCategoryHistory(history.samples || []);
+        } else {
+          setCapabilityWarning((current) => current || "电力趋势快照暂未写入，当前仅展示实时数据。");
+        }
+        if (assignmentCheckResult.status === "fulfilled") {
+          setAssignmentCheck(assignmentCheckResult.value);
+        } else {
+          setCapabilityWarning((current) => current || "电力归属校验暂不可用，当前仅展示实时电参。");
         }
       } else {
-        setPowerData(null);
-        setErrorText(sanitizePowerProviderCopy(byxResult.reason instanceof Error ? byxResult.reason.message : "电力监控读取失败"));
+        setCategoryHistory([]);
       }
+      setLoadedSiteId(siteId);
     } catch (error) {
+      setCapabilities(null);
+      setPowerData(null);
+      setCategoryHistory([]);
+      setLoadedSiteId("");
       setErrorText(sanitizePowerProviderCopy(error instanceof Error ? error.message : "电力监控配置读取失败"));
     } finally {
       setLoading(false);
@@ -348,6 +315,9 @@ export default function PowerMonitoringPage() {
   }, [siteId]);
 
   async function exportAssignmentCsv() {
+    if (!byxReady) {
+      return;
+    }
     setExportingAssignment(true);
     setErrorText("");
     try {
@@ -360,20 +330,39 @@ export default function PowerMonitoringPage() {
     }
   }
 
+  const scopeReady = loadedSiteId === siteId;
   const powerSubsystem: RuntimeSubsystemCapabilityDto | null = useMemo(() => {
+    if (!scopeReady) {
+      return null;
+    }
     return capabilities?.items?.find((item) => item.subsystemType === "power_monitoring") || null;
-  }, [capabilities]);
+  }, [capabilities, scopeReady]);
 
+  const statusPresentation = getSubsystemStatusPresentation(powerSubsystem);
   const enabled = powerSubsystem?.status === "enabled";
   const demoData = isDemoData(powerSubsystem);
-  const byxReady = Boolean(powerData?.ok && powerData.configured);
+  const byxPayloadReady = Boolean(scopeReady && enabled && powerData?.ok && powerData.configured);
+  const generatedAtMs = Number.isFinite(Date.parse(powerData?.generatedAt || ""))
+    ? Date.parse(powerData?.generatedAt || "")
+    : null;
+  const dataAgeMs = generatedAtMs == null ? null : Math.max(0, Date.now() - generatedAtMs);
+  const byxReady = Boolean(byxPayloadReady && dataAgeMs != null && dataAgeMs <= FRESHNESS_BAD_MS);
+  const byxStale = Boolean(byxPayloadReady && !byxReady);
   const byxWaitingConfig = powerData?.configured === false;
   const initialLoading = loading && !powerData;
   const runtimeReady = byxReady || enabled;
-  const displayedStatusLabel = byxReady ? "电力网关已接入" : initialLoading ? "加载中" : formatStatus(powerSubsystem);
-  const displayedStatusTone: Tone = byxReady ? "good" : initialLoading ? "neutral" : statusTone(powerSubsystem);
+  const displayedStatusLabel = byxReady
+    ? "电力网关已接入"
+    : byxStale
+      ? "数据陈旧 / 停止判读"
+      : initialLoading
+        ? "加载中"
+        : formatStatus(powerSubsystem);
+  const displayedStatusTone: Tone = byxReady ? "good" : byxStale ? "warn" : initialLoading ? "neutral" : statusTone(powerSubsystem);
   const boundaryMode = powerSubsystem?.controlBoundary?.mode || "read_only";
-  const boundaryLabel = byxReady || boundaryMode === "read_only" ? "控制未接入" : boundaryMode;
+  const boundaryLabel = byxReady || boundaryMode === "read_only"
+    ? "控制未接入"
+    : formatControlBoundaryMode(boundaryMode);
   const powerDevices = useMemo<ByxPowerDeviceDto[]>(() => {
     return (powerData?.projects || []).flatMap((project) => project.devices || []);
   }, [powerData]);
@@ -383,10 +372,6 @@ export default function PowerMonitoringPage() {
   const rankedPowerDevices = useMemo(() => {
     return [...powerDevices].sort((left, right) => (right.activePowerKw || 0) - (left.activePowerKw || 0));
   }, [powerDevices]);
-  const generatedAtMs = Number.isFinite(Date.parse(powerData?.generatedAt || ""))
-    ? Date.parse(powerData?.generatedAt || "")
-    : null;
-  const dataAgeMs = generatedAtMs == null ? null : Math.max(0, Date.now() - generatedAtMs);
   const projectNodes = (powerData?.projects || []).slice(0, 2);
   const diagnosticDeviceCount = powerData?.summary?.diagnosticDeviceCount || 0;
   const confirmedAssignmentCount = powerData?.assignmentMap?.confirmedDeviceCount || 0;
@@ -394,6 +379,32 @@ export default function PowerMonitoringPage() {
   const onlineDeviceCount = powerData?.summary?.onlineDeviceCount || 0;
   const offlineDeviceCount = powerData?.summary?.offlineDeviceCount ?? Math.max(0, totalDeviceCount - onlineDeviceCount);
   const projectCount = powerData?.summary?.projectCount || 0;
+  const fallbackMetric = (demoValue: string, demoUnit: string, waitingNote: string) => {
+    if (byxStale) {
+      return { value: "不可用", note: "数据陈旧，停止判读", tone: "warn" as const };
+    }
+    return resolveStationMetric({
+      status: statusPresentation,
+      loading: initialLoading,
+      errorText,
+      demoValue,
+      demoUnit,
+      waitingNote,
+      liveNote: waitingNote
+    });
+  };
+  const totalPowerMetric = byxReady
+    ? { value: formatNumber(powerData?.summary?.totalActivePowerKw), unit: "kW", note: "实时数据", tone: "good" as const }
+    : fallbackMetric("1,286", "kW", "等待电力接口");
+  const totalEnergyMetric = byxReady
+    ? { value: formatNumber(powerData?.summary?.totalEnergyKwh), unit: "kWh", note: "累计电量", tone: "good" as const }
+    : fallbackMetric("18,420", "kWh", "等待累计电量");
+  const onlineDeviceMetric = byxReady
+    ? { value: String(powerData?.summary?.onlineDeviceCount ?? 0), unit: "台", note: "电表/断路器在线", tone: "good" as const }
+    : fallbackMetric("12", "台", "等待设备清单");
+  const powerFactorMetric = byxReady
+    ? { value: formatNumber(powerData?.summary?.avgPowerFactor, 3), note: "带负荷设备平均", tone: "good" as const }
+    : fallbackMetric("0.96", "", "等待功率因数");
   const assignmentSummary = assignmentCheck?.summary;
   const assignmentEntryCount = assignmentSummary?.assignmentEntryCount ?? powerData?.assignmentMap?.entryCount ?? 0;
   const matchedAssignmentCount = assignmentSummary?.matchedDeviceCount ?? powerData?.assignmentMap?.matchedDeviceCount ?? 0;
@@ -521,11 +532,17 @@ export default function PowerMonitoringPage() {
   ];
 
   return (
-    <div className="power-monitor-page">
+    <div
+      className="power-monitor-page distribution-energy-workspace power-distribution-workspace"
+      data-distribution-energy-workspace
+      data-subsystem-type="power_monitoring"
+      data-subsystem-status={byxReady ? "live" : byxStale ? "stale" : statusPresentation.kind}
+      data-object-scope="project_aggregate"
+    >
       <section className="section-card power-monitor-hero">
         <header className="section-card-header">
           <div>
-            <h3>电力监控</h3>
+            <h1 className="distribution-workspace-title">电力监控</h1>
             <p className="power-monitor-subtitle">电力只读电参｜用途分项｜归属门禁</p>
           </div>
           <div className="section-action">
@@ -554,6 +571,9 @@ export default function PowerMonitoringPage() {
               电力接口待配置：{formatPowerMissingConfig(powerData?.missingConfig)}。
             </div>
           ) : null}
+          {byxStale ? (
+            <div className="source-banner warn">电力网关返回的数据已超过 5 分钟，当前停止能耗与诊断判读；请恢复刷新链路后再使用。</div>
+          ) : null}
           {byxReady ? (
             <div className={`source-banner power-status-summary ${assignmentCheck?.ok ? "good" : "warn"}`}>
               <span>电力网关已接入</span>
@@ -563,17 +583,17 @@ export default function PowerMonitoringPage() {
             </div>
           ) : null}
           <div className="power-monitor-summary">
-            <div>
-              <span>数据来源</span>
-              <strong>{byxReady ? "实时数据" : capabilities?.sourceStatus?.overall || (loading ? "loading" : "unknown")}</strong>
+            <div data-power-scope-summary>
+              <span>当前范围</span>
+              <strong>当前项目电力汇总</strong>
             </div>
             <div>
               <span>设备总数</span>
-              <strong>{powerData?.summary?.deviceCount ?? "--"} 台</strong>
+              <strong>{byxReady ? `${powerData?.summary?.deviceCount ?? 0} 台` : "--"}</strong>
             </div>
             <div>
               <span>在线</span>
-              <strong>{powerData?.summary?.onlineDeviceCount ?? "--"} 台</strong>
+              <strong>{byxReady ? `${powerData?.summary?.onlineDeviceCount ?? 0} 台` : "--"}</strong>
             </div>
             <div>
               <span>诊断关注</span>
@@ -588,10 +608,10 @@ export default function PowerMonitoringPage() {
       </section>
 
       <div className="kpi-grid power-kpi-grid">
-        <StatTile title="总有功功率" value={byxReady ? formatNumber(powerData?.summary?.totalActivePowerKw) : initialLoading ? "加载中" : metricValue(enabled, demoData, "待配置", "1,286")} unit={byxReady || (!initialLoading && enabled) ? "kW" : undefined} note={byxReady ? "实时数据" : initialLoading ? "读取中" : metricNote(enabled, demoData, "等待电力接口")} tone={byxReady ? "good" : initialLoading ? "neutral" : metricTone(enabled, demoData)} />
-        <StatTile title="累计电量" value={byxReady ? formatNumber(powerData?.summary?.totalEnergyKwh) : initialLoading ? "加载中" : metricValue(enabled, demoData, "待配置", "18,420")} unit={byxReady || (!initialLoading && enabled) ? "kWh" : undefined} note={byxReady ? "累计电量" : initialLoading ? "读取中" : metricNote(enabled, demoData, "等待累计电量")} tone={byxReady ? "good" : initialLoading ? "neutral" : metricTone(enabled, demoData)} />
-        <StatTile title="在线设备" value={byxReady ? String(powerData?.summary?.onlineDeviceCount ?? 0) : initialLoading ? "加载中" : metricValue(enabled, demoData, "待配置", "12")} unit={byxReady || (!initialLoading && enabled) ? "台" : undefined} note={byxReady ? "电表/断路器在线" : initialLoading ? "读取中" : metricNote(enabled, demoData, "等待设备清单")} tone={byxReady ? "good" : initialLoading ? "neutral" : metricTone(enabled, demoData)} />
-        <StatTile title="平均功率因数" value={byxReady ? formatNumber(powerData?.summary?.avgPowerFactor, 3) : initialLoading ? "加载中" : metricValue(enabled, demoData, "待配置", "0.96")} note={byxReady ? "带负荷设备平均" : initialLoading ? "读取中" : metricNote(enabled, demoData, "等待功率因数")} tone={byxReady ? "good" : initialLoading ? "neutral" : metricTone(enabled, demoData)} />
+        <StatTile title="总有功功率" {...totalPowerMetric} />
+        <StatTile title="累计电量" {...totalEnergyMetric} />
+        <StatTile title="在线设备" {...onlineDeviceMetric} />
+        <StatTile title="平均功率因数" {...powerFactorMetric} />
       </div>
 
       <section className="power-detail-stage" data-active-tab={activeDetailTab}>
@@ -941,7 +961,7 @@ export default function PowerMonitoringPage() {
           {activeDetailTab === "devices" ? (
             <div className="power-detail-panel power-detail-panel-devices" role="tabpanel">
               {byxReady && rankedPowerDevices.length > 0 ? (
-                <div className="power-device-table-wrap">
+                <div className="power-device-table-wrap" role="region" aria-label="电力设备明细表，可横向滚动查看更多字段" tabIndex={0}>
                   <table className="power-device-table">
                     <thead>
                       <tr>

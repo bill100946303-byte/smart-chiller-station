@@ -1,0 +1,90 @@
+{
+  "version": "v1",
+  "site": {
+    "siteId": "140",
+    "aliases": ["140", "btwentyfive", "140btwentyfive"],
+    "displayName": "观澜B25"
+  },
+  "assetId": "plant-overview-latest-v2",
+  "status": "PARTIAL_READ_ONLY",
+  "authoritative": false,
+  "bindingMode": "explicit_id_only",
+  "controlBoundary": "visualization_only_no_ba_plc_write",
+  "modelInventory": {
+    "chillers": 6,
+    "chilledWaterPumps": 6,
+    "coolingWaterPumps": 6,
+    "coolingTowerGroups": 4,
+    "coolingTowerFans": 16
+  },
+  "b25InventorySnapshot": {
+    "chillers": 7,
+    "chilledWaterPumps": 7,
+    "coolingWaterPumps": 7,
+    "coolingTowerGroups": 6,
+    "coolingTowerFans": 33,
+    "evidence": "B25 runtime summary and point-table audit; revalidate before promoting bindings"
+  },
+  "rules": [
+    "Only an explicit equipmentId-to-deviceId entry may drive runtime state.",
+    "Unlisted model objects remain UNBOUND and keep schematic animation only.",
+    "Missing B25 equipment must not be copied onto another model object.",
+    "This contract must never enable BA or PLC dispatch."
+  ],
+  "coverage": {
+    "chillers": "6/7",
+    "chilledWaterPumps": "6/7",
+    "coolingWaterPumps": "6/7",
+    "coolingTowerGroups": "4/6",
+    "coolingTowerFans": "16/33"
+  },
+  "bindings": [
+    {"equipmentId": "CH1", "runtimeGroup": "chillers", "runtimeId": "CH1", "deviceId": "7", "match": "exact"},
+    {"equipmentId": "CH2", "runtimeGroup": "chillers", "runtimeId": "CH2", "deviceId": "8", "match": "exact"},
+    {"equipmentId": "CH3", "runtimeGroup": "chillers", "runtimeId": "CH3", "deviceId": "9", "match": "exact"},
+    {"equipmentId": "CH4", "runtimeGroup": "chillers", "runtimeId": "CH4", "deviceId": "10", "match": "exact"},
+    {"equipmentId": "CH5", "runtimeGroup": "chillers", "runtimeId": "CH5", "deviceId": "11", "match": "exact"},
+    {"equipmentId": "CH6", "runtimeGroup": "chillers", "runtimeId": "CH6", "deviceId": "12", "match": "exact"},
+
+    {"equipmentId": "CHWP1", "runtimeGroup": "chilledPumps", "runtimeId": "CHP1", "deviceId": "1", "match": "explicit_alias"},
+    {"equipmentId": "CHWP2", "runtimeGroup": "chilledPumps", "runtimeId": "CHP2", "deviceId": "2", "match": "explicit_alias"},
+    {"equipmentId": "CHWP3", "runtimeGroup": "chilledPumps", "runtimeId": "CHP3", "deviceId": "3", "match": "explicit_alias"},
+    {"equipmentId": "CHWP4", "runtimeGroup": "chilledPumps", "runtimeId": "CHP4", "deviceId": "4", "match": "explicit_alias"},
+    {"equipmentId": "CHWP5", "runtimeGroup": "chilledPumps", "runtimeId": "CHP5", "deviceId": "5", "match": "explicit_alias"},
+    {"equipmentId": "CHWP6", "runtimeGroup": "chilledPumps", "runtimeId": "CHP6", "deviceId": "6", "match": "explicit_alias"},
+
+    {"equipmentId": "CWP1", "runtimeGroup": "coolingPumps", "runtimeId": "CWP1", "deviceId": "47", "match": "exact"},
+    {"equipmentId": "CWP2", "runtimeGroup": "coolingPumps", "runtimeId": "CWP2", "deviceId": "48", "match": "exact"},
+    {"equipmentId": "CWP3", "runtimeGroup": "coolingPumps", "runtimeId": "CWP3", "deviceId": "49", "match": "exact"},
+    {"equipmentId": "CWP4", "runtimeGroup": "coolingPumps", "runtimeId": "CWP4", "deviceId": "50", "match": "exact"},
+    {"equipmentId": "CWP5", "runtimeGroup": "coolingPumps", "runtimeId": "CWP5", "deviceId": "51", "match": "exact"},
+    {"equipmentId": "CWP6", "runtimeGroup": "coolingPumps", "runtimeId": "CWP6", "deviceId": "52", "match": "exact"},
+
+    {"equipmentId": "CT01", "runtimeGroup": "coolingTowers", "runtimeId": "CTF11", "deviceId": "13", "match": "explicit_alias"},
+    {"equipmentId": "CT02", "runtimeGroup": "coolingTowers", "runtimeId": "CTF12", "deviceId": "14", "match": "explicit_alias"},
+    {"equipmentId": "CT03", "runtimeGroup": "coolingTowers", "runtimeId": "CTF13", "deviceId": "15", "match": "explicit_alias"},
+    {"equipmentId": "CT04", "runtimeGroup": "coolingTowers", "runtimeId": "CTF14", "deviceId": "16", "match": "explicit_alias"},
+    {"equipmentId": "CT05", "runtimeGroup": "coolingTowers", "runtimeId": "CTF21", "deviceId": "19", "match": "explicit_alias"},
+    {"equipmentId": "CT06", "runtimeGroup": "coolingTowers", "runtimeId": "CTF22", "deviceId": "20", "match": "explicit_alias"},
+    {"equipmentId": "CT07", "runtimeGroup": "coolingTowers", "runtimeId": "CTF23", "deviceId": "21", "match": "explicit_alias"},
+    {"equipmentId": "CT08", "runtimeGroup": "coolingTowers", "runtimeId": "CTF24", "deviceId": "22", "match": "explicit_alias"},
+    {"equipmentId": "CT09", "runtimeGroup": "coolingTowers", "runtimeId": "CTF31", "deviceId": "25", "match": "explicit_alias"},
+    {"equipmentId": "CT10", "runtimeGroup": "coolingTowers", "runtimeId": "CTF32", "deviceId": "26", "match": "explicit_alias"},
+    {"equipmentId": "CT11", "runtimeGroup": "coolingTowers", "runtimeId": "CTF33", "deviceId": "27", "match": "explicit_alias"},
+    {"equipmentId": "CT12", "runtimeGroup": "coolingTowers", "runtimeId": "CTF34", "deviceId": "28", "match": "explicit_alias"},
+    {"equipmentId": "CT13", "runtimeGroup": "coolingTowers", "runtimeId": "CTF41", "deviceId": "31", "match": "explicit_alias"},
+    {"equipmentId": "CT14", "runtimeGroup": "coolingTowers", "runtimeId": "CTF42", "deviceId": "32", "match": "explicit_alias"},
+    {"equipmentId": "CT15", "runtimeGroup": "coolingTowers", "runtimeId": "CTF43", "deviceId": "33", "match": "explicit_alias"},
+    {"equipmentId": "CT16", "runtimeGroup": "coolingTowers", "runtimeId": "CTF44", "deviceId": "34", "match": "explicit_alias"}
+  ],
+  "knownAliases": {
+    "modelPrefix": "CHWP",
+    "b25Prefix": "CHP",
+    "status": "REQUIRES_EXPLICIT_DEVICE_ID_CONFIRMATION"
+  },
+  "knownGaps": [
+    "Model has no CH7, CHP7 or CWP7 geometry.",
+    "Model has 16 tower fans while B25 currently reports 33 tower fans across 6 groups.",
+    "B25 device IDs and telemetry tags are not yet approved as a model binding truth source."
+  ]
+}

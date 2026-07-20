@@ -1,4 +1,5 @@
 import { startTransition, useEffect, useRef, useState, type PointerEvent } from "react";
+import "./EnergyAnalysisShared.css";
 import { ChevronDown } from "lucide-react";
 import { runtimeConfig } from "../config/runtimeConfig";
 import { formatSourceStatusLineCompact, summarizeSourceStatus } from "../i18n/sourceStatusCN";
@@ -323,6 +324,28 @@ function hasVisibleEnergyAnalysisSeriesValue(series: NonNullable<EnergyAnalysisD
 
 function isFiniteEnergyValue(value: number | null | undefined): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+function isNegativeEnergyValue(value: number | null | undefined): boolean {
+  return isFiniteEnergyValue(value) && value < -0.001;
+}
+
+function countNegativeEnergyEvidence(data: EnergyAnalysisDto | null): number {
+  const summaryValues = (data?.summaries || []).flatMap((row) => [
+    row.sumValue,
+    row.maxValue,
+    row.minValue,
+    row.average
+  ]);
+  const seriesValues = (data?.series || []).flatMap((series) => (
+    (series.points || []).map((point) => point.value)
+  ));
+  return [...summaryValues, ...seriesValues].filter(isNegativeEnergyValue).length;
+}
+
+function formatEnergyEvidenceValue(value: number | null | undefined): string {
+  const formatted = formatValue(value);
+  return isNegativeEnergyValue(value) ? `待核 ${formatted}` : formatted;
 }
 
 function sumSeriesPoints(series: NonNullable<EnergyAnalysisDto["series"]>[number]): number | null {
@@ -734,12 +757,22 @@ export default function EnergyAnalysisPage() {
   const querySet = new Set(query?.selectedNodeIds || []);
   const queriedDevices = resolveSelectedDevices(collectSelectionRoots(treeItems, querySet));
   const sourceSummary = summarizeSourceStatus([tree?.sourceStatus, data?.sourceStatus]);
+  const negativeEnergyEvidenceCount = countNegativeEnergyEvidence(data);
+  const energyStatisticsReady = Boolean(data && negativeEnergyEvidenceCount === 0);
+  const energyQualityWarning = negativeEnergyEvidenceCount > 0
+    ? `检测到 ${formatCount(negativeEnergyEvidenceCount)} 个负能耗值，已停止总量、峰谷和平均值判读；曲线与明细仅保留用于数据排查。`
+    : null;
   const bannerText =
     exportError
     || loadError
     || treeError
+    || energyQualityWarning
     || (loading ? zhCN.energyAnalysisPage.loading : sourceSummary.text);
-  const sourceStateLabel = sourceSummary.warn ? zhCN.energyAnalysisPage.stateFallback : zhCN.energyAnalysisPage.stateReady;
+  const sourceStateLabel = energyQualityWarning
+    ? "数据异常"
+    : sourceSummary.warn
+      ? zhCN.energyAnalysisPage.stateFallback
+      : zhCN.energyAnalysisPage.stateReady;
   const intervalLabel = formatDateType(filters.dateType);
   const intervalOptions: Array<{ value: DateTypeValue; label: string }> = [
     { value: "1", label: zhCN.energyAnalysisPage.intervalHour },
@@ -783,27 +816,29 @@ export default function EnergyAnalysisPage() {
     },
     {
       title: "总能耗",
-      value: formatValue(energyStats.totalValue),
-      detail: `${energyUnit}，当前范围`,
-      tone: "good"
+      value: energyStatisticsReady ? formatValue(energyStats.totalValue) : "不可用",
+      detail: energyStatisticsReady ? `${energyUnit}，当前范围` : "负值待核，停止判读",
+      tone: energyStatisticsReady ? "good" : "warn"
     },
     {
       title: zhCN.energyAnalysisPage.tablePeak,
-      value: formatValue(energyStats.peakValue),
-      detail: energyStats.peakTime,
+      value: energyStatisticsReady ? formatValue(energyStats.peakValue) : "不可用",
+      detail: energyStatisticsReady ? energyStats.peakTime : "负值待核，停止判读",
       tone: "warn"
     },
     {
       title: zhCN.energyAnalysisPage.tableValley,
-      value: formatValue(energyStats.valleyValue),
-      detail: energyStats.valleyTime,
-      tone: "neutral"
+      value: energyStatisticsReady ? formatValue(energyStats.valleyValue) : "不可用",
+      detail: energyStatisticsReady ? energyStats.valleyTime : "负值待核，停止判读",
+      tone: energyStatisticsReady ? "neutral" : "warn"
     },
     {
       title: zhCN.energyAnalysisPage.tableAverage,
-      value: formatValue(energyStats.averageValue),
-      detail: energyUnit === "--" ? "--" : `${energyUnit} / ${queryIntervalLabel}`,
-      tone: "neutral"
+      value: energyStatisticsReady ? formatValue(energyStats.averageValue) : "不可用",
+      detail: energyStatisticsReady
+        ? (energyUnit === "--" ? "--" : `${energyUnit} / ${queryIntervalLabel}`)
+        : "负值待核，停止判读",
+      tone: energyStatisticsReady ? "neutral" : "warn"
     }
   ];
 
@@ -963,11 +998,14 @@ export default function EnergyAnalysisPage() {
   }
 
   return (
-    <div className="energy-analysis-compact-page-v2 page-enter">
+    <div
+      className="energy-analysis-compact-page-v2 page-enter"
+      data-energy-analysis-quality={energyStatisticsReady ? "ready" : negativeEnergyEvidenceCount > 0 ? "invalid" : "pending"}
+    >
       <section className="energy-analysis-compact-hero">
         <div className="energy-analysis-compact-hero-copy">
           <span className="energy-analysis-compact-label">{runtimeConfig.appModeLabel}</span>
-          <h2>{zhCN.energyAnalysisPage.heading}</h2>
+          <h1>{zhCN.energyAnalysisPage.heading}</h1>
           <div className="energy-analysis-compact-tags" aria-label={zhCN.energyAnalysisPage.sectionFilters}>
             {commandTags.map((item) => (
               <span key={item.label}>
@@ -977,7 +1015,7 @@ export default function EnergyAnalysisPage() {
             ))}
           </div>
         </div>
-        <aside className="energy-analysis-compact-status" aria-label={zhCN.energyAnalysisPage.summaryState}>
+        <aside className={`energy-analysis-compact-status${energyQualityWarning ? " is-quality-invalid" : ""}`} aria-label={zhCN.energyAnalysisPage.summaryState}>
           <span className="energy-analysis-compact-label">{zhCN.energyAnalysisPage.summaryState}</span>
           <strong>{sourceStateLabel}</strong>
           <p>{bannerText}</p>
@@ -1097,7 +1135,7 @@ export default function EnergyAnalysisPage() {
           </header>
           <div className="energy-analysis-compact-panel-body">
             <div className="energy-analysis-compact-chart-top">
-              <article><span>{zhCN.energyAnalysisPage.chartRangeLabel}</span><strong>{`${formatValue(energyStats.valleyValue)} / ${formatValue(energyStats.peakValue)}`}</strong></article>
+              <article><span>{zhCN.energyAnalysisPage.chartRangeLabel}</span><strong>{energyStatisticsReady ? `${formatValue(energyStats.valleyValue)} / ${formatValue(energyStats.peakValue)}` : "不可用"}</strong></article>
               <article><span>{zhCN.energyAnalysisPage.rangeUnitLabel}</span><strong>{energyUnit}</strong></article>
               <article><span>返回对象</span><strong>{`${formatCount(objectCount)}${zhCN.energyAnalysisPage.unitObjects}`}</strong></article>
               <article><span>聚合粒度</span><strong>{queryIntervalLabel}</strong></article>
@@ -1110,9 +1148,9 @@ export default function EnergyAnalysisPage() {
               <EnergyAnalysisTrendChart data={data} loadError={loadError} />
             </div>
             <div className="energy-analysis-compact-rank-grid">
-              <article><span>峰值对象</span><strong>{energyStats.peakObject}</strong></article>
-              <article><span>谷值对象</span><strong>{energyStats.valleyObject}</strong></article>
-              <article><span>最大占比</span><strong>{energyStats.majorObject}</strong></article>
+              <article><span>峰值对象</span><strong>{energyStatisticsReady ? energyStats.peakObject : "待核"}</strong></article>
+              <article><span>谷值对象</span><strong>{energyStatisticsReady ? energyStats.valleyObject : "待核"}</strong></article>
+              <article><span>最大占比</span><strong>{energyStatisticsReady ? energyStats.majorObject : "待核"}</strong></article>
             </div>
           </div>
         </article>
@@ -1170,7 +1208,7 @@ export default function EnergyAnalysisPage() {
           <h3>{zhCN.energyAnalysisPage.sectionTable}</h3>
           <span>{`${zhCN.energyAnalysisPage.rangeLatestFetch} ${latestFetchText} · ${zhCN.energyAnalysisPage.rangeUnitLabel} ${energyUnit} · 汇总 ${formatCount(data?.summaries?.length || 0)} 项`}</span>
         </header>
-        <div className="energy-analysis-compact-table-wrap">
+        <div className="energy-analysis-compact-table-wrap" role="region" aria-label="能耗分析汇总表，可横向滚动查看更多字段" tabIndex={0}>
           <table className="energy-analysis-compact-table">
             <colgroup>
               <col className="energy-analysis-table-col-object" />
@@ -1195,14 +1233,17 @@ export default function EnergyAnalysisPage() {
             <tbody>
               {(data?.summaries || []).length > 0 ? (
                 (data?.summaries || []).map((row, index) => (
-                  <tr key={row.id || `${row.objectName || "summary"}-${index + 1}`}>
+                  <tr
+                    key={row.id || `${row.objectName || "summary"}-${index + 1}`}
+                    className={[row.sumValue, row.maxValue, row.minValue, row.average].some(isNegativeEnergyValue) ? "is-data-invalid" : undefined}
+                  >
                     <td>{row.objectName || "--"}</td>
-                    <td>{formatValue(row.sumValue)}</td>
-                    <td>{formatValue(row.maxValue)}</td>
+                    <td>{formatEnergyEvidenceValue(row.sumValue)}</td>
+                    <td>{formatEnergyEvidenceValue(row.maxValue)}</td>
                     <td>{row.maxTime || "--"}</td>
-                    <td>{formatValue(row.minValue)}</td>
+                    <td>{formatEnergyEvidenceValue(row.minValue)}</td>
                     <td>{row.minTime || "--"}</td>
-                    <td>{formatValue(row.average)}</td>
+                    <td>{formatEnergyEvidenceValue(row.average)}</td>
                   </tr>
                 ))
               ) : (

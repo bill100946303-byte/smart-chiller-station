@@ -1,4 +1,5 @@
 import { startTransition, useEffect, useState, type PointerEvent } from "react";
+import "./PerformanceReportExtracted.css";
 import { runtimeConfig } from "../config/runtimeConfig";
 import { getCurrentLocale, zhCN } from "../i18n/zhCN";
 import { getAuthSession } from "../services/auth";
@@ -595,7 +596,7 @@ export default function PerformanceReportPage() {
       <section className="performance-report-compact-head" aria-labelledby="performance-report-title">
         <div>
           <p className="performance-report-eyebrow">{`${runtimeConfig.appModeLabel} / 分析 / 性能报告`}</p>
-          <h2 id="performance-report-title">{zhCN.performanceReportPage.heading}</h2>
+          <h1 id="performance-report-title">{zhCN.performanceReportPage.heading}</h1>
         </div>
         <div className="performance-report-compact-status" aria-label="性能报告状态">
           <span className={querySourceHealthy ? "is-good" : "is-warn"}>{interfaceStatusText}</span>

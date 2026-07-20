@@ -1,4 +1,5 @@
 import { startTransition, useEffect, useState } from "react";
+import "./KnowledgeBaseExtracted.css";
 import StatusPill from "../components/common/StatusPill";
 import { runtimeConfig } from "../config/runtimeConfig";
 import { formatSourceStatusLineCompact, summarizeSourceStatus } from "../i18n/sourceStatusCN";
@@ -443,7 +444,7 @@ export default function KnowledgeBasePage() {
       <section className="knowledge-compact-head" aria-label={zhCN.knowledgePage.heading}>
         <div>
           <p className="knowledge-eyebrow">{`${runtimeConfig.appModeLabel} / 配置与知识 / ${zhCN.knowledgePage.heading}`}</p>
-          <h2>{zhCN.knowledgePage.heading}</h2>
+          <h1>{zhCN.knowledgePage.heading}</h1>
         </div>
         <div className="knowledge-compact-status">
           <span className={sourceReady ? "is-good" : "is-warn"}>{loading ? "加载中" : sourceReady ? "来源正常" : "来源异常"}</span>
@@ -511,7 +512,7 @@ export default function KnowledgeBasePage() {
             <h3>{zhCN.knowledgePage.sectionList}</h3>
             <span>名称 / 类型 / 描述 / 文件 / 操作</span>
           </header>
-          <div className="knowledge-table-shell">
+          <div className="knowledge-table-shell" role="region" aria-label="知识库文档列表，可横向滚动查看更多字段" tabIndex={0}>
             <table className="knowledge-table">
               <thead>
                 <tr>

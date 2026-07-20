@@ -22,6 +22,7 @@ const ColdStationLogPage = lazy(() => import("./pages/ColdStationLogPage"));
 const DeviceOverviewPage = lazy(() => import("./pages/DeviceOverviewPage"));
 const PowerMonitoringPage = lazy(() => import("./pages/PowerMonitoringPage"));
 const CompressedAirMonitoringPage = lazy(() => import("./pages/CompressedAirMonitoringPage"));
+const BoilerRoomMonitoringPage = lazy(() => import("./pages/BoilerRoomMonitoringPage"));
 const HvacTerminalMonitoringPage = lazy(() => import("./pages/HvacTerminalMonitoringPage"));
 const EnergyAnalysisPage = lazy(() => import("./pages/EnergyAnalysisPage"));
 const EnergyEfficiencyPage = lazy(() => import("./pages/EnergyEfficiencyPage"));
@@ -35,6 +36,7 @@ const AiOverviewPage = lazy(() => import("./pages/AiOverviewPage"));
 const OptimizeDemoPage = lazy(() => import("./pages/OptimizeDemoPage"));
 const OperationalDiagnosticsPage = lazy(() => import("./pages/OperationalDiagnosticsPage"));
 const SceneControlPage = lazy(() => import("./pages/SceneControlPage"));
+const AutoTwinPage = lazy(() => import("./pages/AutoTwinPage"));
 const VideoLegacyPage = lazy(() => import("./pages/VideoLegacyPage"));
 const KnowledgeBasePage = lazy(() => import("./pages/KnowledgeBasePage"));
 const WorkOrdersPage = lazy(() => import("./pages/WorkOrdersPage"));
@@ -354,11 +356,13 @@ export default function App() {
         <Route path="/devices" element={renderLazyPage(DeviceOverviewPage)} />
         <Route path="/power-monitoring" element={renderLazyPage(PowerMonitoringPage)} />
         <Route path="/compressed-air" element={renderLazyPage(CompressedAirMonitoringPage)} />
+        <Route path="/boiler-room" element={renderLazyPage(BoilerRoomMonitoringPage)} />
         <Route path="/hvac-terminal" element={renderLazyPage(HvacTerminalMonitoringPage)} />
         <Route path="/operational-diagnostics" element={renderLazyPage(OperationalDiagnosticsPage)} />
         <Route path="/ai-overview" element={renderLazyPage(AiOverviewPage)} />
         <Route path="/optimize-demo" element={renderLazyPage(OptimizeDemoPage)} />
         <Route path="/scene-control" element={renderLazyPage(SceneControlPage)} />
+        <Route path="/auto-twin" element={renderLazyPage(AutoTwinPage)} />
         <Route path="/video-monitor" element={renderLazyPage(VideoLegacyPage)} />
         <Route path="/system-overview" element={renderLazyPage(SystemOverviewPage)} />
         <Route path="/systemhomepage" element={<LegacyPathRedirect to="/dashboard" />} />

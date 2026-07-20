@@ -1,4 +1,5 @@
 import { startTransition, useEffect, useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import SectionCard from "../components/common/SectionCard";
 import useAiDigest from "../hooks/useAiDigest";
 import { runtimeConfig } from "../config/runtimeConfig";
@@ -21,6 +22,10 @@ import {
   updateWorkOrder
 } from "../services/bffClient";
 import { getAuthSession } from "../services/auth";
+import { siteIdsEquivalent } from "../services/siteRouting";
+import "./WorkOrdersExtracted.css";
+import "./WorkOrderAlarmContext.css";
+import "./WorkOrdersMobile.css";
 
 type FilterState = {
   startDate: string;
@@ -56,6 +61,16 @@ type SelectOption = {
   label: string;
 };
 
+type AlarmDraftContext = {
+  sourceSiteId: string;
+  alarmId: string;
+  regId: string;
+  title: string;
+  severity: string;
+  occurredAt: string;
+  detail: string;
+};
+
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 const WORK_LEVEL_OPTIONS: SelectOption[] = [
   { id: "1", label: "紧急" },
@@ -67,6 +82,51 @@ const WORK_STATE_OPTIONS: SelectOption[] = [
   { id: "2", label: "处理中" },
   { id: "3", label: "已完成" }
 ];
+
+function readAlarmDraftContext(searchParams: URLSearchParams, activeSiteId: string): AlarmDraftContext | null {
+  if (searchParams.get("source") !== "alarm" || searchParams.get("create") !== "1") {
+    return null;
+  }
+  const sourceSiteId = String(searchParams.get("alarmSiteId") || "").trim();
+  if (!sourceSiteId || !siteIdsEquivalent(sourceSiteId, activeSiteId)) {
+    return null;
+  }
+  const title = String(searchParams.get("alarmTitle") || "").trim();
+  const regId = String(searchParams.get("regId") || "").trim();
+  if (!title && !regId) {
+    return null;
+  }
+  return {
+    sourceSiteId,
+    alarmId: String(searchParams.get("alarmId") || "").trim(),
+    regId,
+    title: title || "未命名告警",
+    severity: String(searchParams.get("alarmSeverity") || "").trim(),
+    occurredAt: String(searchParams.get("alarmOccurredAt") || "").trim(),
+    detail: String(searchParams.get("alarmDetail") || "").trim()
+  };
+}
+
+function resolveAlarmWorkLevel(severity: string): string {
+  if (severity === "critical") {
+    return "1";
+  }
+  if (severity === "major") {
+    return "2";
+  }
+  return "3";
+}
+
+function buildAlarmDraftDescription(context: AlarmDraftContext): string {
+  return [
+    "[告警转工单草稿]",
+    context.title,
+    context.regId ? `点位 ${context.regId}` : "",
+    context.alarmId ? `告警ID ${context.alarmId}` : "",
+    context.occurredAt ? `发生时间 ${context.occurredAt}` : "",
+    context.detail
+  ].filter(Boolean).join("；");
+}
 
 function toDateTimeInput(value: string | null | undefined): string {
   const normalized = String(value || "").trim();
@@ -281,6 +341,7 @@ function buildFilterSummary(query: FilterState): string {
 }
 
 export default function WorkOrdersPage() {
+  const [searchParams] = useSearchParams();
   const session = getAuthSession();
   const currentUsername = session?.username || zhCN.common.unknown;
   const initialFilters: FilterState = {
@@ -307,6 +368,14 @@ export default function WorkOrdersPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const { aiDigest } = useAiDigest(runtimeConfig.siteId);
+  const activeSiteId = runtimeConfig.siteId;
+  const alarmDraftRequested = searchParams.get("source") === "alarm" && searchParams.get("create") === "1";
+  const alarmDraftSourceSiteId = String(searchParams.get("alarmSiteId") || "").trim();
+  const alarmDraftContext = useMemo(
+    () => readAlarmDraftContext(searchParams, activeSiteId),
+    [activeSiteId, searchParams]
+  );
+  const alarmDraftRejected = alarmDraftRequested && !alarmDraftContext;
 
   useEffect(() => {
     let active = true;
@@ -346,7 +415,7 @@ export default function WorkOrdersPage() {
     return () => {
       active = false;
     };
-  }, [page, pageSize, query]);
+  }, [activeSiteId, page, pageSize, query]);
 
   useEffect(() => {
     let active = true;
@@ -401,7 +470,7 @@ export default function WorkOrdersPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [activeSiteId]);
 
   const deviceRows = devices?.items || [];
   const typeOptions = useMemo(() => buildTypeOptions(deviceRows), [deviceRows]);
@@ -460,7 +529,7 @@ export default function WorkOrdersPage() {
     },
     {
       title: zhCN.workOrderPage.summaryAssignees,
-      value: `${assignees?.items?.length || 0}${zhCN.common.unitItem}`,
+      value: `${assignees?.items?.length || 0}${zhCN.common.unitPerson}`,
       detail: zhCN.workOrderPage.summaryAssigneesHint
     },
     {
@@ -554,10 +623,17 @@ export default function WorkOrdersPage() {
     setActionState(null);
   }
 
-  function openCreateDialog() {
+  function openCreateDialog(context: AlarmDraftContext | null = null) {
     const initialTypeId = typeOptions[0]?.id || "";
     const initialDeviceOptions = buildDeviceOptions(deviceRows, initialTypeId);
-    setDialog(buildEditorState("create", currentUsername, typeOptions, initialDeviceOptions));
+    const initialEditor = buildEditorState("create", currentUsername, typeOptions, initialDeviceOptions);
+    setDialog(context ? {
+      ...initialEditor,
+      workTime: toDateTimeInput(context.occurredAt),
+      workLevel: resolveAlarmWorkLevel(context.severity),
+      state: "1",
+      workExplain: buildAlarmDraftDescription(context)
+    } : initialEditor);
     setActionState(null);
   }
 
@@ -754,7 +830,7 @@ export default function WorkOrdersPage() {
       <section className="work-order-header subpage-command-board">
         <div className="subpage-command-copy work-order-command-copy">
           <p className="work-order-eyebrow">{runtimeConfig.appModeLabel}</p>
-          <h2>{zhCN.workOrderPage.heading}</h2>
+          <h1>{zhCN.workOrderPage.heading}</h1>
           <p>先筛选再导出，编辑和删除保留在表格内处理，减少在列表和弹窗之间来回跳转。</p>
           <div className="work-order-command-tags" aria-label={zhCN.workOrderPage.sectionFilters}>
             {commandTags.map((item) => (
@@ -789,6 +865,49 @@ export default function WorkOrdersPage() {
           ) : null}
         </div>
       </section>
+
+      {alarmDraftContext ? (
+        <section className="work-order-alarm-context" aria-labelledby="work-order-alarm-context-title">
+          <div className="work-order-alarm-context-copy">
+            <span>告警处置上下文</span>
+            <strong id="work-order-alarm-context-title">{alarmDraftContext.title}</strong>
+            <p>
+              告警信息仅用于预填工单草稿；设备、执行人、处置时间和关闭证据必须人工核对。
+              {runtimeConfig.readOnlyMode ? " 当前为只读模式，不能提交。" : " 提交前仍需人工确认。"}
+            </p>
+            <div className="work-order-alarm-context-meta">
+              <span>{`点位 ${alarmDraftContext.regId || "待确认"}`}</span>
+              <span>{`等级 ${alarmDraftContext.severity || "待确认"}`}</span>
+              <span>{`时间 ${alarmDraftContext.occurredAt || "待确认"}`}</span>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="work-order-button is-primary"
+            onClick={() => openCreateDialog(alarmDraftContext)}
+            disabled={submitting}
+          >
+            检查预填草稿
+          </button>
+        </section>
+      ) : null}
+
+      {alarmDraftRejected ? (
+        <section className="work-order-alarm-context is-rejected" role="alert">
+          <div className="work-order-alarm-context-copy">
+            <span>告警草稿已停止预填</span>
+            <strong>来源站点与当前项目不一致</strong>
+            <p>
+              {alarmDraftSourceSiteId
+                ? `来源站点 ${alarmDraftSourceSiteId}，当前站点 ${activeSiteId}；为防止跨项目误派单，旧告警内容已隐藏。`
+                : "当前链接缺少告警来源站点证明；为防止跨项目误派单，告警内容已隐藏。"}
+            </p>
+          </div>
+          <Link className="work-order-button" to={`/alarms?siteId=${encodeURIComponent(activeSiteId)}`}>
+            返回当前站点告警
+          </Link>
+        </section>
+      ) : null}
 
       <SectionCard
         title={zhCN.workOrderPage.sectionFilters}
@@ -831,7 +950,7 @@ export default function WorkOrdersPage() {
                 <button type="button" className="work-order-button is-primary" onClick={handleSearch}>
                   {zhCN.workOrderPage.search}
                 </button>
-                <button type="button" className="work-order-button is-primary" onClick={openCreateDialog} disabled={submitting || deviceRows.length === 0 || assigneeError !== null}>
+                <button type="button" className="work-order-button is-primary" onClick={() => openCreateDialog()} disabled={submitting || deviceRows.length === 0 || assigneeError !== null}>
                   {zhCN.workOrderPage.create}
                 </button>
                 <button type="button" className="work-order-button" onClick={handleExport} disabled={loading || submitting || exporting}>
@@ -883,7 +1002,7 @@ export default function WorkOrdersPage() {
         </div>
 
         {rows.length > 0 ? (
-          <div className="work-order-table-shell">
+          <div className="work-order-table-shell" role="region" aria-label="运维工单列表，可横向滚动查看更多字段" tabIndex={0}>
             <table className="work-order-table">
               <thead>
                 <tr>
@@ -926,7 +1045,7 @@ export default function WorkOrdersPage() {
                             type="button"
                             title={zhCN.workOrderPage.actionEdit}
                             onClick={() => openEditDialog(item)}
-                            disabled={isDeleting || submitting}
+                            disabled={isDeleting || submitting || runtimeConfig.readOnlyMode}
                           >
                             {zhCN.workOrderPage.actionEdit}
                           </button>
@@ -934,7 +1053,7 @@ export default function WorkOrdersPage() {
                             type="button"
                             title={zhCN.workOrderPage.actionDelete}
                             onClick={() => handleDelete(item)}
-                            disabled={isDeleting || submitting}
+                            disabled={isDeleting || submitting || runtimeConfig.readOnlyMode}
                           >
                             {isDeleting ? zhCN.workOrderPage.deleting : zhCN.workOrderPage.actionDelete}
                           </button>
@@ -1082,8 +1201,10 @@ export default function WorkOrdersPage() {
               <button type="button" className="work-order-button" onClick={() => setDialog(null)} disabled={submitting}>
                 {zhCN.workOrderPage.cancel}
               </button>
-              <button type="button" className="work-order-button is-primary" onClick={handleSubmit} disabled={submitting}>
-                {submitting
+              <button type="button" className="work-order-button is-primary" onClick={handleSubmit} disabled={submitting || runtimeConfig.readOnlyMode}>
+                {runtimeConfig.readOnlyMode
+                  ? "只读模式不可提交"
+                  : submitting
                   ? dialog.mode === "create"
                     ? zhCN.workOrderPage.creating
                     : zhCN.workOrderPage.saving

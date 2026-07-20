@@ -5,7 +5,8 @@ import StatusPill from "../components/common/StatusPill";
 import { runtimeConfig } from "../config/runtimeConfig";
 import { summarizeSourceStatus } from "../i18n/sourceStatusCN";
 import { getCurrentLocale, type LocaleCode, zhCN } from "../i18n/zhCN";
-import { getAuthSession, getCurrentProject } from "../services/auth";
+import { getAuthSession, getCurrentProject, resolveAuthProjectDisplayName } from "../services/auth";
+import "./OptimizeDemoExtracted.css";
 import {
   type DashboardOverviewDto,
   type OptimizeDraftDetailsDto,
@@ -2980,6 +2981,7 @@ export default function OptimizeDemoPage() {
   ensureOptimizeDemoLocaleText();
   const currentProject = getCurrentProject(getAuthSession());
   const activeSiteId = resolveOptimizeActiveSiteId(currentProject);
+  const activeProjectLabel = resolveAuthProjectDisplayName(currentProject, "当前项目");
   const operationalDiagnosticsHref = `/operational-diagnostics?siteId=${encodeURIComponent(activeSiteId)}`;
   const showInlineOperationalDiagnosticsDetails = false;
   const activeProjectContextKey = [
@@ -3528,9 +3530,9 @@ export default function OptimizeDemoPage() {
   const benefitEstimateConfidenceLabel = localizeBenefitConfidence(benefitEstimate?.confidence);
   const readOnlyMode = runtimeConfig.readOnlyMode;
   const executionPermissions = executionHub?.permissions;
-  const canApproveByPermission = executionPermissions ? executionPermissions.canApprove !== false : true;
-  const canRollbackByPermission = executionPermissions ? executionPermissions.canRollback !== false : true;
-  const canDispatchByPermission = executionPermissions ? executionPermissions.canDispatch !== false : true;
+  const canApproveByPermission = executionPermissions?.canApprove === true;
+  const canRollbackByPermission = executionPermissions?.canRollback === true;
+  const canDispatchByPermission = executionPermissions?.canDispatch === true;
   const towerApproachLifecycleMode = localizeTowerApproachExecutionMode(
     towerApproachAdvisor?.advisorResult?.lifecycleMode || towerApproachAdvisor?.executionMode || towerApproachAdvisor?.dispatchMode
   );
@@ -5153,7 +5155,7 @@ export default function OptimizeDemoPage() {
       <section className="optimize-page-header subpage-command-board">
         <div className="optimize-command-copy subpage-command-copy">
           <p className="optimize-command-eyebrow">{runtimeConfig.appModeLabel}</p>
-          <h2>{zhCN.optimizeDemo.heading}</h2>
+          <h1>{zhCN.optimizeDemo.heading}</h1>
           <p>{headerSubtitle}</p>
           <div className="optimize-command-tags">
             {optimizeCommandTags.map((item) => (
@@ -5671,7 +5673,7 @@ export default function OptimizeDemoPage() {
         <div className="optimize-response">
           <div className="optimize-response-header">
             <div>
-              <strong>现有 140/B25 数据能支撑哪些诊断</strong>
+              <strong>现有 {activeProjectLabel} 数据能支撑哪些诊断</strong>
               <p>A档可做 V1；B档只能疑似判断；C档暂不能做，只进入补点清单。所有内容只读诊断，不判定设备故障，不写 PLC。</p>
             </div>
             <StatusPill label="真实 PLC 下发锁定" tone="warn" />

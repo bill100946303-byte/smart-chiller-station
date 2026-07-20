@@ -1,0 +1,185 @@
+.alarm-closure-panel {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(98, 184, 255, 0.2);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(8, 34, 54, 0.94), rgba(6, 22, 37, 0.96));
+}
+
+.alarm-closure-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.alarm-closure-header h3 {
+  margin: 0;
+  color: #f2f9ff;
+  font-size: 15px;
+}
+
+.alarm-closure-header p {
+  margin: 4px 0 0;
+  color: #9fb4c5;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.alarm-closure-header-actions {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
+}
+
+.alarm-closure-safety {
+  flex: none;
+  color: #ffd28a;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.alarm-closure-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+}
+
+.alarm-closure-stage {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  min-height: 112px;
+  padding: 12px 14px;
+  border: 1px solid rgba(142, 183, 213, 0.16);
+  background: rgba(6, 27, 44, 0.68);
+}
+
+.alarm-closure-stage:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 27px;
+  right: -6px;
+  z-index: 2;
+  width: 10px;
+  height: 10px;
+  border-top: 1px solid #4ca7e8;
+  border-right: 1px solid #4ca7e8;
+  background: #08243a;
+  transform: rotate(45deg);
+}
+
+.alarm-closure-stage:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.alarm-closure-stage:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.alarm-closure-stage > span {
+  color: #7fc8ff;
+  font-size: 11px;
+}
+
+.alarm-closure-stage > strong {
+  color: #f2f9ff;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.alarm-closure-stage > small {
+  color: #9fb4c5;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.alarm-closure-stage.is-complete {
+  border-color: rgba(62, 211, 145, 0.28);
+  background: rgba(12, 55, 49, 0.58);
+}
+
+.alarm-closure-stage.is-action {
+  border-color: rgba(255, 183, 77, 0.34);
+  background: rgba(66, 45, 15, 0.54);
+}
+
+.alarm-closure-stage.is-unknown {
+  border-style: dashed;
+}
+
+.alarm-closure-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.alarm-closure-link,
+.alarm-queue-draft-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(98, 184, 255, 0.3);
+  border-radius: 6px;
+  color: #bfe6ff;
+  background: rgba(18, 70, 106, 0.44);
+  font-size: 11px;
+  text-decoration: none;
+}
+
+.alarm-closure-link:hover,
+.alarm-queue-draft-link:hover {
+  border-color: rgba(98, 184, 255, 0.58);
+  background: rgba(24, 91, 136, 0.58);
+}
+
+.alarm-queue-draft-link {
+  margin-top: 6px;
+}
+
+@media (max-width: 900px) {
+  .alarm-closure-header {
+    display: grid;
+  }
+
+  .alarm-closure-safety {
+    white-space: normal;
+  }
+
+  .alarm-closure-header-actions {
+    justify-items: start;
+  }
+
+  .alarm-closure-actions {
+    justify-content: flex-start;
+  }
+
+  .alarm-closure-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .alarm-closure-stage,
+  .alarm-closure-stage:first-child,
+  .alarm-closure-stage:last-child {
+    min-height: 0;
+    border-radius: 8px;
+  }
+
+  .alarm-closure-stage:not(:last-child)::after {
+    top: auto;
+    right: 24px;
+    bottom: -6px;
+    transform: rotate(135deg);
+  }
+
+  .alarm-closure-link,
+  .alarm-queue-draft-link {
+    min-height: 44px;
+  }
+}

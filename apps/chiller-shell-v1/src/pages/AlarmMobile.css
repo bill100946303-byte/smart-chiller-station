@@ -1,0 +1,78 @@
+@media (max-width: 900px) {
+  html body #root .content.is-subpage-compact.has-secondary-nav > .alarm-page-v2 {
+    height: auto;
+    min-height: 0;
+    grid-template-rows: none;
+    gap: 12px;
+    overflow: visible;
+  }
+
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-command-hero {
+    display: grid;
+    height: auto;
+    min-height: 0;
+    gap: 10px;
+  }
+
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-hero-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-content: stretch;
+  }
+
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-kpi-grid {
+    height: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px;
+  }
+
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-kpi-card {
+    width: auto;
+    min-height: 104px;
+    padding: 10px;
+  }
+
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-kpi-card-wide {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-gate-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-workbench {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) !important;
+    overflow: visible;
+  }
+
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-queue-panel {
+    grid-template-rows: none;
+  }
+
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-gate-link,
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-closure-link,
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-queue-draft-link,
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-filter-button,
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-pagination button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-filter-actions,
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-page-size,
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-pagination {
+    gap: 8px;
+  }
+
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-filter-button {
+    padding: 0 12px;
+  }
+
+  html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-pagination button {
+    padding: 0 14px;
+  }
+}

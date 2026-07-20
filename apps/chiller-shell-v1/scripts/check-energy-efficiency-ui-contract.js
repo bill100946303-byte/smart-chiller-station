@@ -6,7 +6,11 @@ import path from "node:path";
 
 const SHELL_ROOT = path.resolve(process.cwd());
 const PAGE_FILE = path.join(SHELL_ROOT, "src/pages/EnergyEfficiencyPage.tsx");
-const STYLE_FILE = path.join(SHELL_ROOT, "src/styles/global.css");
+const STYLE_FILES = [
+  path.join(SHELL_ROOT, "src/styles/global.css"),
+  path.join(SHELL_ROOT, "src/pages/EnergyEfficiencyExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/EnergyAnalysisShared.css")
+];
 const I18N_FILE = path.join(SHELL_ROOT, "src/i18n/zhCN.ts");
 
 const REQUIRED_TABS = ["calendar", "search", "compare", "proportion", "imbalance"];
@@ -21,6 +25,7 @@ const CALENDAR_LOAD_FINAL_NO_CLIP_MARKER = "/* Energy efficiency calendar load-b
 const ENERGY_EFFICIENCY_FINAL_NO_CLIP_MARKER = "/* Final energy-efficiency no-clip guard after all compact overrides. */";
 const ENERGY_EFFICIENCY_FINAL_READABILITY_MARKER = "/* Final energy-efficiency readability pass: load-band labels should remain legible at 1280x720. */";
 const ENERGY_EFFICIENCY_VIEWPORT_GUARD_MARKER = "/* Energy efficiency viewport guard: keep the outer content box inside the 720p shell. */";
+const SEARCH_COMPARE_DESKTOP_VIEWPORT_GUARD_MARKER = "/* Energy efficiency search/compare desktop viewport guard: keep the statistics table above the shell footer. */";
 const SEARCH_COMPARE_1280_FIT_MARKER = "/* Energy efficiency search/compare 1280x720 fit guard: keep left table fully visible. */";
 const PROPORTION_1280_CHART_FIT_MARKER = "/* Energy efficiency proportion 1280x720 chart fit guard: keep chart, bars, and axes inside the viewport. */";
 const FORBIDDEN_COPY_PATTERNS = [
@@ -59,7 +64,8 @@ function assertPattern(source, pattern, label, errors) {
 
 function main() {
   const pageSource = fs.readFileSync(PAGE_FILE, "utf8");
-  const styleSource = fs.readFileSync(STYLE_FILE, "utf8");
+  const energyStyleSource = fs.readFileSync(STYLE_FILES[1], "utf8");
+  const styleSource = STYLE_FILES.map((file) => fs.readFileSync(file, "utf8")).join("\n");
   const i18nSource = fs.readFileSync(I18N_FILE, "utf8");
   const combinedSource = `${pageSource}\n${styleSource}\n${i18nSource}`;
   const errors = [];
@@ -80,7 +86,7 @@ function main() {
   assertIncludes(pageSource, "nextParams.set(\"tab\", tab);", "tab switch URL update", errors);
   assertIncludes(pageSource, "setSearchParams(nextParams);", "tab switch history push", errors);
 
-  assertIncludes(pageSource, "/ 能效 ${formatCop(displayRatio)} / 电量 ${formatNumber(displayPower, 1)} / 冷量 ${formatNumber(displayCooling, 1)}", "calendar title labels", errors);
+  assertIncludes(pageSource, "/ 数据 ${quality.label} / 能效 ${formatCop(displayRatio)} / 电量 ${powerAuditText} / 冷量 ${formatNumber(displayCooling, 1)}", "calendar title labels and quality status", errors);
   assertIncludes(pageSource, "<span>能效</span>", "calendar efficiency label", errors);
   assertIncludes(pageSource, "<span>电量</span>", "calendar power label", errors);
   assertIncludes(pageSource, "<span>冷量</span>", "calendar cooling label", errors);
@@ -91,12 +97,12 @@ function main() {
   assertIncludes(pageSource, "const overviewDonutTotal = overviewPieTotal > 0 ? overviewPieTotal : null;", "calendar pie total equals segment sum", errors);
   assertIncludes(pageSource, "const overviewPieIsMonthScope = calendarPieQuery?.dateType !== \"1\";", "calendar pie month scope flag", errors);
   assertIncludes(pageSource, "const calendarMonthDayCount = /^\\d{4}-\\d{2}$/.test(overviewMonth)", "calendar month day-count status guard", errors);
-  assertIncludes(pageSource, "const calendarMonthStatusLabel = partialToday", "calendar month status label", errors);
+  assertIncludes(pageSource, "const calendarMonthStatusLabel = calendarPowerGateBlocked", "calendar month status quality gate", errors);
   assertIncludes(pageSource, "completedCalendarItems.length >= calendarMonthDayCount", "calendar complete-month status", errors);
   assertIncludes(pageSource, "? \"完整\"", "calendar complete status copy", errors);
   assertIncludes(pageSource, ": \"缺数\"", "calendar missing status copy", errors);
   assertIncludes(pageSource, "const trendWindowLabel = trendPoints.length > 0 ? `近${formatCount(trendPoints.length)}日` : \"近11日\";", "calendar trend window label", errors);
-  assertIncludes(pageSource, "const trendBadgeLabel = completedCalendarItems.length > trendPoints.length", "calendar trend badge window guard", errors);
+  assertIncludes(pageSource, "const trendBadgeLabel = calendarNegativePowerItems.length > 0", "calendar trend badge data-quality guard", errors);
   assertIncludes(pageSource, "<h3>{`${trendWindowLabel} COP 趋势`}</h3>", "calendar trend title window label", errors);
   assertIncludes(pageSource, "<span>{trendBadgeLabel}</span>", "calendar trend badge visible label", errors);
   assertIncludes(pageSource, "function formatCop(value: number | null | undefined): string", "fixed two-decimal COP formatter", errors);
@@ -117,8 +123,8 @@ function main() {
   assertIncludes(pageSource, "const scopeAuditStatusLabel = typeof scopeAuditDiffPct === \"number\"", "calendar scope audit dynamic status", errors);
   assertIncludes(pageSource, "`差异 ${formatNumber(scopeAuditDiffPct, 1)}%`", "calendar scope audit visible difference", errors);
   assertIncludes(pageSource, "<section className=\"energy-efficiency-overview-card energy-efficiency-overview-pie-card\">", "calendar pie card class", errors);
-  assertIncludes(pageSource, "<span>{overviewPieCopLabel}</span>", "calendar pie visible COP association", errors);
-  assertIncludes(pageSource, "<span>{overviewDonutScopeLabel}</span>", "calendar pie center label", errors);
+  assertIncludes(pageSource, "<span>{calendarPieScopeBlocked ? \"数据待校核\" : overviewPieCopLabel}</span>", "calendar pie visible COP association and blocked state", errors);
+  assertIncludes(pageSource, "<span>{calendarPieScopeBlocked ? \"分项构成已阻断\" : overviewDonutScopeLabel}</span>", "calendar pie center scope and blocked state", errors);
   assertIncludes(pageSource, "function formatCalendarPieSegmentName(", "calendar pie display-name helper", errors);
   assertIncludes(pageSource, "return \"冷却塔风机\";", "calendar pie cooling tower fan wording", errors);
   assertIncludes(pageSource, "const overviewPieLegendRows = [...overviewPieSlices].sort", "calendar pie sorted legend rows", errors);
@@ -159,9 +165,28 @@ function main() {
   assertIncludes(pageSource, "<span>月平均 COP</span>", "calendar monthly average KPI label", errors);
   assertIncludes(pageSource, "累计折算 COP ${formatCop(monthCoolingPowerRatio)}", "calendar cumulative COP helper", errors);
   assertIncludes(pageSource, "· 月口径 · 均值 ${formatCop(averageRatio)}", "calendar month scope average header pill", errors);
-  assertIncludes(pageSource, "const hasDayData = quality.tone !== \"future\" && quality.tone !== \"missing\";", "calendar missing-day display guard", errors);
+  assertIncludes(pageSource, "function hasNegativeCalendarPower(item: EnergyEfficiencyCalendarDayDto | null | undefined): boolean", "calendar negative-power detector", errors);
+  assertIncludes(pageSource, "if (hasNegativeCalendarPower(item))", "calendar COP negative-power gate", errors);
+  assertIncludes(pageSource, "&& !hasNegativeCalendarPower(item)", "calendar completed-day negative-power exclusion", errors);
+  assertIncludes(pageSource, "if (sourceMonthItems.some(hasNegativeCalendarPower) || hasNegativeCalendarPower(summary))", "calendar month aggregation hard gate", errors);
+  assertIncludes(pageSource, "const monthItems = sourceMonthItems.filter((item) => !hasNegativeCalendarPower(item));", "calendar month aggregation negative-power exclusion", errors);
+  assertIncludes(pageSource, "const trustedSummary = summary;", "calendar trusted month-summary after gate", errors);
+  assertIncludes(pageSource, "const calendarPowerGateBlocked = calendarNegativePowerItems.length > 0 || calendarSummaryHasNegativePower;", "calendar visible aggregate gate", errors);
+  assertIncludes(pageSource, "const calendarPieScopeBlocked = calendarPieQuery?.dateType === \"1\"", "calendar pie scope quality gate", errors);
+  assertIncludes(pageSource, "const calendarPieDisplayData = calendarPieScopeBlocked ? null : calendarPieData;", "calendar pie blocked-data display gate", errors);
+  assertIncludes(pageSource, "const completedPower = calendarPowerGateBlocked", "calendar cumulative-power gate", errors);
+  assertIncludes(pageSource, "const completedCooling = calendarPowerGateBlocked", "calendar paired cooling-total gate", errors);
+  assertIncludes(pageSource, "const monthCoolingPowerRatio = calendarPowerGateBlocked", "calendar cumulative COP gate", errors);
+  assertIncludes(pageSource, "const averageRatio = !calendarPowerGateBlocked && completeRatioValues.length > 0", "calendar average COP gate", errors);
+  assertIncludes(pageSource, "负值电耗已阻断 · 待校核", "calendar cumulative KPI blocked copy", errors);
+  assertIncludes(pageSource, "分项构成已阻断", "calendar pie blocked copy", errors);
+  assertIncludes(pageSource, "异常批次不参与月度分项汇总", "calendar pie aggregate truth boundary", errors);
+  assertIncludes(pageSource, "负值电耗异常，待校核", "calendar invalid-day visible quality copy", errors);
+  assertIncludes(pageSource, "（异常，仅校核）", "calendar invalid raw-power audit copy", errors);
+  assertIncludes(pageSource, "if (tone === \"invalid\")", "calendar invalid-day short label", errors);
+  assertIncludes(pageSource, "const hasDayData = quality.tone !== \"future\" && quality.tone !== \"missing\" && quality.tone !== \"invalid\";", "calendar invalid-day display gate", errors);
   assertIncludes(pageSource, "const displayRatio = hasDayData ? ratio : null;", "calendar missing-day COP display guard", errors);
-  assertIncludes(pageSource, "const title = `${item.date || \"--\"} / 能效 ${formatCop(displayRatio)}", "calendar title fixed COP label", errors);
+  assertIncludes(pageSource, "const title = `${item.date || \"--\"} / 数据 ${quality.label} / 能效 ${formatCop(displayRatio)} / 电量 ${powerAuditText}", "calendar title fixed COP and quality label", errors);
   assertIncludes(pageSource, "<span>达标线 6.50</span>", "calendar COP target-line copy", errors);
   assertNotIncludes(pageSource, "<span>阈值 6.50</span>", "calendar COP old threshold copy", errors);
   assertIncludes(pageSource, "const LOAD_BAND_LABELS = Array.from({ length: 10 }", "complete load-band label set", errors);
@@ -232,10 +257,7 @@ function main() {
   if (searchCompare1280Start < 0) {
     errors.push("search/compare 1280x720 fit guard: marker missing");
   } else {
-    const searchCompare1280End = styleSource.indexOf(".energy-efficiency-page[data-tab=\"calendar\"] .energy-efficiency-overview-kpi", searchCompare1280Start);
-    const searchCompare1280Source = searchCompare1280End > searchCompare1280Start
-      ? styleSource.slice(searchCompare1280Start, searchCompare1280End)
-      : styleSource.slice(searchCompare1280Start);
+    const searchCompare1280Source = energyStyleSource;
     assertIncludes(searchCompare1280Source, "@media (max-width: 1320px) and (max-height: 760px)", "search/compare 1280x720 viewport guard", errors);
     assertIncludes(searchCompare1280Source, ".energy-efficiency-page:is([data-tab=\"search\"], [data-tab=\"compare\"]) > .section-card:nth-child(4)", "search/compare compact table selector", errors);
     assertIncludes(searchCompare1280Source, "height: 142px !important;", "search/compare compact table height", errors);
@@ -249,7 +271,7 @@ function main() {
   if (finalCalendarFitStart < 0) {
     errors.push("calendar final 720p fit: marker missing");
   } else {
-    const finalCalendarFitSource = styleSource.slice(finalCalendarFitStart);
+    const finalCalendarFitSource = energyStyleSource;
     assertIncludes(finalCalendarFitSource, "height: 272px !important;", "calendar final main height", errors);
     assertIncludes(finalCalendarFitSource, "height: 160px !important;", "calendar final bottom height", errors);
     assertIncludes(finalCalendarFitSource, "grid-template-rows: 30px minmax(0, 76px) 46px !important;", "calendar final COP card rows", errors);
@@ -261,7 +283,7 @@ function main() {
   if (terminalViewportStart < 0) {
     errors.push("calendar terminal viewport guard: marker missing");
   } else {
-    const terminalViewportSource = styleSource.slice(terminalViewportStart);
+    const terminalViewportSource = energyStyleSource;
     assertIncludes(terminalViewportSource, "grid-template-rows: 70px 272px 160px !important;", "calendar terminal overview rows", errors);
     assertIncludes(terminalViewportSource, "align-content: start !important;", "calendar terminal fixed grid alignment", errors);
     assertIncludes(terminalViewportSource, "height: 70px !important;", "calendar terminal KPI height", errors);
@@ -273,7 +295,7 @@ function main() {
   if (kpiReadabilityStart < 0) {
     errors.push("calendar KPI readability guard: marker missing");
   } else {
-    const kpiReadabilitySource = styleSource.slice(kpiReadabilityStart);
+    const kpiReadabilitySource = energyStyleSource;
     assertIncludes(kpiReadabilitySource, "grid-template-rows: 70px 332px 131px !important;", "calendar KPI readable overview rows", errors);
     assertIncludes(kpiReadabilitySource, "grid-template-rows: 16px 22px 16px 3px !important;", "calendar KPI readable card rows", errors);
     assertIncludes(kpiReadabilitySource, "font-size: 11.5px !important;", "calendar KPI readable title size", errors);
@@ -286,7 +308,7 @@ function main() {
   if (monthQueryStart < 0) {
     errors.push("calendar month query: marker missing");
   } else {
-    const monthQuerySource = styleSource.slice(monthQueryStart);
+    const monthQuerySource = energyStyleSource;
     assertIncludes(monthQuerySource, ".energy-efficiency-calendar-query", "calendar month query container style", errors);
     assertIncludes(monthQuerySource, ".energy-efficiency-calendar-month-field", "calendar month field style", errors);
     assertIncludes(monthQuerySource, ".energy-efficiency-calendar-query-button", "calendar month query button style", errors);
@@ -298,7 +320,7 @@ function main() {
   if (pieAssociationStart < 0) {
     errors.push("calendar pie association: marker missing");
   } else {
-    const pieAssociationSource = styleSource.slice(pieAssociationStart);
+    const pieAssociationSource = energyStyleSource;
     assertIncludes(pieAssociationSource, ".energy-efficiency-overview-pie-card .energy-efficiency-overview-card-head", "calendar pie association card head", errors);
     assertIncludes(pieAssociationSource, "max-width: 182px !important;", "calendar pie association label width", errors);
     assertIncludes(pieAssociationSource, "text-overflow: ellipsis !important;", "calendar pie association overflow guard", errors);
@@ -308,7 +330,7 @@ function main() {
   if (donutRankingStart < 0) {
     errors.push("calendar donut ranking: marker missing");
   } else {
-    const donutRankingSource = styleSource.slice(donutRankingStart);
+    const donutRankingSource = energyStyleSource;
     assertIncludes(donutRankingSource, ".energy-efficiency-overview-pie-card .energy-efficiency-overview-donut-body", "calendar donut ranking body selector", errors);
     assertIncludes(donutRankingSource, "grid-template-rows: 136px minmax(0, 1fr) !important;", "calendar donut ranking compact rows", errors);
     assertIncludes(donutRankingSource, "width: 120px !important;", "calendar donut ranking compact donut size", errors);
@@ -320,11 +342,11 @@ function main() {
     assertIncludes(donutRankingSource, "width: var(--segment-share) !important;", "calendar donut ranking bar dynamic width", errors);
     assertIncludes(donutRankingSource, ".energy-efficiency-overview-donut-ranking-summary", "calendar donut ranking summary style", errors);
     assertIncludes(donutRankingSource, "container-type: inline-size !important;", "calendar donut ranking card container", errors);
-    assertIncludes(donutRankingSource, "/* Energy efficiency calendar donut wide-card layout: restore side-by-side composition when the pie card has room. */", "calendar donut wide-card marker", errors);
+    assertIncludes(styleSource, "/* Energy efficiency calendar donut wide-card layout: restore side-by-side composition when the pie card has room. */", "calendar donut wide-card marker", errors);
     assertIncludes(donutRankingSource, "@container (min-width: 520px)", "calendar donut wide-card container query", errors);
     assertIncludes(donutRankingSource, "grid-template-columns: minmax(230px, 0.92fr) minmax(0, 1.08fr) !important;", "calendar donut wide-card columns", errors);
     assertIncludes(donutRankingSource, "width: 208px !important;", "calendar donut wide-card donut size", errors);
-    assertIncludes(donutRankingSource, "/* Energy efficiency calendar donut wide-card specificity closeout. */", "calendar donut wide-card specificity closeout", errors);
+    assertIncludes(styleSource, "/* Energy efficiency calendar donut wide-card specificity closeout. */", "calendar donut wide-card specificity closeout", errors);
     assertIncludes(donutRankingSource, ".energy-efficiency-page[data-tab=\"calendar\"] .energy-efficiency-overview-pie-card .energy-efficiency-overview-donut-body", "calendar donut wide-card scoped selector", errors);
     assertIncludes(donutRankingSource, "grid-template-columns: minmax(206px, 0.78fr) minmax(0, 1.22fr) !important;", "calendar donut scoped wide-card columns favor ranking", errors);
     assertIncludes(donutRankingSource, "grid-template-columns: 10px minmax(92px, 0.78fr) minmax(72px, 1fr) 78px !important;", "calendar donut scoped row percentage fit", errors);
@@ -338,7 +360,7 @@ function main() {
   if (proportion1280ChartFitStart < 0) {
     errors.push("proportion 1280x720 chart fit guard: marker missing");
   } else {
-    const proportion1280ChartFitSource = styleSource.slice(proportion1280ChartFitStart);
+    const proportion1280ChartFitSource = energyStyleSource;
     assertIncludes(proportion1280ChartFitSource, "@media (max-width: 1320px) and (max-height: 760px)", "proportion 1280x720 media guard", errors);
     assertIncludes(proportion1280ChartFitSource, "grid-template-rows: 264px 52px !important;", "proportion shell fixed rows", errors);
     assertIncludes(proportion1280ChartFitSource, "height: 316px !important;", "proportion shell fixed height", errors);
@@ -355,7 +377,7 @@ function main() {
   if (internalClipStart < 0) {
     errors.push("calendar 1280x720 internal clip guard: marker missing");
   } else {
-    const internalClipSource = styleSource.slice(internalClipStart);
+    const internalClipSource = energyStyleSource;
     assertIncludes(internalClipSource, "height: 130px !important;", "calendar internal card height", errors);
     assertIncludes(internalClipSource, "grid-template-rows: 24px minmax(0, 1fr) !important;", "calendar load/coverage rows fit", errors);
     assertIncludes(internalClipSource, "min-height: 8px !important;", "calendar load row compact height", errors);
@@ -368,7 +390,7 @@ function main() {
   if (loadFinalNoClipStart < 0) {
     errors.push("calendar load-band final no-clip guard: marker missing");
   } else {
-    const loadFinalNoClipSource = styleSource.slice(loadFinalNoClipStart);
+    const loadFinalNoClipSource = energyStyleSource;
     assertIncludes(loadFinalNoClipSource, "grid-template-rows: repeat(10, 8px) !important;", "calendar load final row grid", errors);
     assertIncludes(loadFinalNoClipSource, "height: 8px !important;", "calendar load final row height", errors);
     assertIncludes(loadFinalNoClipSource, "font-size: 7.4px !important;", "calendar load final text size", errors);
@@ -379,10 +401,7 @@ function main() {
   if (finalNoClipStart < 0) {
     errors.push("final energy-efficiency no-clip guard: marker missing");
   } else {
-    const finalNoClipEnd = styleSource.indexOf(".cold-log-cop-page .cold-log-header", finalNoClipStart);
-    const finalNoClipSource = finalNoClipEnd > finalNoClipStart
-      ? styleSource.slice(finalNoClipStart, finalNoClipEnd)
-      : styleSource.slice(finalNoClipStart);
+    const finalNoClipSource = energyStyleSource;
     assertIncludes(finalNoClipSource, "grid-template-rows: 13px minmax(33px, 1fr) !important;", "final no-clip day cell rows", errors);
     assertIncludes(finalNoClipSource, "grid-auto-rows: 11px !important;", "final no-clip day metric rows", errors);
     assertIncludes(finalNoClipSource, "height: 100% !important;", "final no-clip proportion chart height inheritance", errors);
@@ -402,10 +421,7 @@ function main() {
   if (finalReadabilityStart < 0) {
     errors.push("final energy-efficiency readability pass: marker missing");
   } else {
-    const finalReadabilityEnd = styleSource.indexOf(ENERGY_EFFICIENCY_VIEWPORT_GUARD_MARKER, finalReadabilityStart);
-    const finalReadabilitySource = finalReadabilityEnd > finalReadabilityStart
-      ? styleSource.slice(finalReadabilityStart, finalReadabilityEnd)
-      : styleSource.slice(finalReadabilityStart);
+    const finalReadabilitySource = energyStyleSource;
     assertIncludes(finalReadabilitySource, "grid-template-rows: repeat(10, 10px) !important;", "final readability load rows", errors);
     assertIncludes(finalReadabilitySource, "height: 10px !important;", "final readability load row height", errors);
     assertIncludes(finalReadabilitySource, "font-size: 10px !important;", "final readability load row font size", errors);
@@ -419,10 +435,21 @@ function main() {
   if (viewportGuardStart < 0) {
     errors.push("energy-efficiency viewport guard: marker missing");
   } else {
-    const viewportGuardSource = styleSource.slice(viewportGuardStart);
+    const viewportGuardSource = energyStyleSource;
     assertIncludes(viewportGuardSource, ".content.is-subpage-compact.has-secondary-nav:has(> .energy-efficiency-page)", "energy-efficiency outer viewport selector", errors);
     assertIncludes(viewportGuardSource, "height: calc(100vh - 99px) !important;", "energy-efficiency outer viewport height", errors);
     assertIncludes(viewportGuardSource, "overflow: hidden !important;", "energy-efficiency outer viewport overflow guard", errors);
+  }
+
+  const searchCompareDesktopViewportGuardStart = energyStyleSource.indexOf(SEARCH_COMPARE_DESKTOP_VIEWPORT_GUARD_MARKER);
+  if (searchCompareDesktopViewportGuardStart < 0) {
+    errors.push("energy-efficiency search/compare desktop viewport guard: marker missing");
+  } else {
+    const searchCompareDesktopViewportSource = energyStyleSource.slice(searchCompareDesktopViewportGuardStart);
+    assertIncludes(searchCompareDesktopViewportSource, "@media (min-width: 1181px) and (max-height: 800px)", "search/compare desktop viewport media", errors);
+    assertIncludes(searchCompareDesktopViewportSource, "height: calc(100vh - 119px) !important;", "search/compare desktop viewport height", errors);
+    assertIncludes(searchCompareDesktopViewportSource, "grid-template-rows: 60px minmax(0, 1fr) 160px !important;", "search/compare desktop viewport rows", errors);
+    assertIncludes(searchCompareDesktopViewportSource, "height: 100% !important;", "search/compare desktop card height inheritance", errors);
   }
 
   if (
@@ -465,6 +492,7 @@ function main() {
   console.log("- checked URL tab sync and invalid-tab normalization");
   console.log("- checked calendar labels: 能效 / 电量 / 冷量");
   console.log("- checked calendar default month scope, month query and monthly average COP");
+  console.log("- checked negative daily/monthly power is blocked from display, COP, trend and aggregation");
   console.log("- checked calendar pie month/COP association");
   console.log("- checked calendar donut true-share bars, sorted legend and no scattered callouts");
   console.log("- checked cumulative COP helper wording: 累计折算 COP");

@@ -309,7 +309,7 @@ export default function VideoLegacyPage() {
       <section className="video-legacy-header subpage-command-board">
         <div className="video-command-copy subpage-command-copy">
           <p className="video-command-eyebrow">视频接入状态</p>
-          <h2>{zhCN.videoLegacyPage.heading}</h2>
+          <h1>{zhCN.videoLegacyPage.heading}</h1>
           <p>先看接入状态，再看每路通道是否已播放，最后处理摄像头或网络异常。</p>
           <div className="video-command-tags">
             {videoCommandTags.map((item) => (

@@ -35,6 +35,9 @@ const WARN_KEYWORDS = [
   "stale",
   "pending",
   "degraded",
+  "disconnected",
+  "not connected",
+  "unavailable",
   "attention",
   "issue",
   "recovering",
@@ -44,11 +47,23 @@ const WARN_KEYWORDS = [
   "报警",
   "异常",
   "离线",
+  "断开",
+  "未连接",
   "回退",
   "陈旧",
   "谨慎",
   "一般",
   "待机"
+];
+
+const EXPLICIT_NO_ALARM_KEYWORDS = [
+  "no alarm",
+  "not alarming",
+  "not in alarm",
+  "无告警",
+  "无报警",
+  "不报警",
+  "未告警"
 ];
 
 const GOOD_KEYWORDS = [
@@ -84,6 +99,10 @@ export function resolveUnifiedStatusTone(value: string | null | undefined): Unif
   const normalized = String(value || "").trim().toLowerCase();
   if (!normalized) {
     return "neutral";
+  }
+
+  if (includesAnyKeyword(normalized, EXPLICIT_NO_ALARM_KEYWORDS)) {
+    return "good";
   }
 
   if (includesAnyKeyword(normalized, DANGER_KEYWORDS)) {

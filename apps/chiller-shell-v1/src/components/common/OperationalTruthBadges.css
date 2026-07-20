@@ -1,0 +1,70 @@
+.operational-truth-badges {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.operational-truth-badge {
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border: 1px solid rgba(125, 204, 255, 0.28);
+  border-radius: 999px;
+  background: rgba(8, 21, 34, 0.78);
+  color: #c9dced;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.operational-truth-badge.tone-good {
+  border-color: rgba(99, 240, 171, 0.48);
+  background: rgba(35, 136, 99, 0.28);
+  color: #87ffd0;
+}
+
+.operational-truth-badge.tone-warn {
+  border-color: rgba(247, 194, 96, 0.5);
+  background: rgba(112, 73, 16, 0.32);
+  color: #ffd58a;
+}
+
+.operational-truth-badge.tone-danger {
+  border-color: rgba(255, 105, 120, 0.56);
+  background: rgba(126, 31, 43, 0.32);
+  color: #ffadb6;
+}
+
+.operational-truth-badge.tone-neutral {
+  border-color: rgba(125, 204, 255, 0.28);
+  background: rgba(8, 21, 34, 0.78);
+  color: #c9dced;
+}
+
+html body #root#root#root .operational-truth-badge {
+  min-height: 26px !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+}
+
+@media (max-width: 720px) {
+  .operational-truth-badges {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .operational-truth-badge {
+    width: 100%;
+    min-height: 44px;
+    justify-content: flex-start;
+    padding: 0 14px;
+    border-radius: 10px;
+    font-size: 13px;
+  }
+}

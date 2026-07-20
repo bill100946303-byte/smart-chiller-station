@@ -1,4 +1,5 @@
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import "./EnvironmentConditionsExtracted.css";
 import { ChevronDown, RotateCcw, Search } from "lucide-react";
 import { runtimeConfig } from "../config/runtimeConfig";
 import { formatSourceStatusLineCompact, summarizeSourceStatus } from "../i18n/sourceStatusCN";
@@ -548,7 +549,7 @@ export default function EnvironmentConditionsPage() {
       <section className="environment-compact-hero">
         <div className="environment-compact-hero-copy">
           <span className="environment-compact-label">{runtimeConfig.appModeLabel || "运行审计"}</span>
-          <h2>{zhCN.environmentPage.heading}</h2>
+          <h1>{zhCN.environmentPage.heading}</h1>
           <div className="environment-compact-tags" aria-label="环境工况当前筛选">
             <span><strong>{zhCN.environmentPage.filterBuilding}</strong><em>{selectedBuildingLabel}</em></span>
             <span><strong>{zhCN.environmentPage.filterMonitoringSite}</strong><em>{monitoringTagValue}</em></span>
@@ -753,7 +754,7 @@ export default function EnvironmentConditionsPage() {
               </article>
             </div>
           </div>
-          <div className="environment-compact-table-wrap">
+          <div className="environment-compact-table-wrap" role="region" aria-label="环境条件监测表，可横向滚动查看更多字段" tabIndex={0}>
             <div className="environment-compact-tabs">
               <span className="is-active">全部 {conditionEntries.length}</span>
               <span>冷却侧 {coolingPoints}</span>

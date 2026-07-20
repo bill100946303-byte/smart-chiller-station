@@ -1,4 +1,5 @@
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import "./OperationRecordsExtracted.css";
 import { ChevronDown, RotateCcw, Search } from "lucide-react";
 import SectionCard from "../components/common/SectionCard";
 import StatusPill from "../components/common/StatusPill";
@@ -752,7 +753,7 @@ export default function OperationRecordsPage() {
       <section className="operation-record-header operation-record-command-board subpage-command-board">
         <div className="subpage-command-copy operation-record-command-copy">
           <p className="operation-record-eyebrow">{runtimeConfig.appModeLabel || "运行审计"}</p>
-          <h2>{zhCN.operationRecordPage.heading}</h2>
+          <h1>{zhCN.operationRecordPage.heading}</h1>
           <p>统一归档人工操作、AI建议、审批结果与 PLC 执行回执，形成可追溯审计链。</p>
           <div className="operation-record-command-tags" aria-label={zhCN.operationRecordPage.sectionFilters}>
             {appliedTags.map((item) => (

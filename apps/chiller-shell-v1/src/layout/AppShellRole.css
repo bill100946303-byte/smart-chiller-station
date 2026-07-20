@@ -1,0 +1,101 @@
+.nav-perspective {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(98, 184, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(8, 34, 54, 0.64);
+}
+
+.nav-perspective > span {
+  grid-row: 1 / span 2;
+  color: #7fc8ff;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.nav-perspective > strong {
+  color: #f2f9ff;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.nav-perspective > small {
+  color: #9fb4c5;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.top-user-perspective {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 8px;
+  border: 1px solid rgba(98, 184, 255, 0.22);
+  border-radius: 6px;
+  color: #b7dfff;
+  background: rgba(8, 34, 54, 0.56);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .nav-perspective {
+    margin-top: 8px;
+    min-height: 44px;
+  }
+
+  .top-user-perspective {
+    min-height: 44px;
+  }
+}
+
+/* Desktop shell readability floor: the operator perspective is persistent
+   context and must not render as annotation-sized text. */
+@media (min-width: 901px) {
+  .nav-perspective > small {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+}
+
+/* Keyboard users can bypass the dense multi-station navigation without
+   removing any station, scope or safety context from the visual shell. */
+.shell-skip-link {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 1200;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 2px solid #7dd7ff;
+  border-radius: 8px;
+  background: #071b2b;
+  color: #f4fbff;
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 1;
+  text-decoration: none;
+  transform: translateY(calc(-100% - 20px));
+  transition: transform 120ms ease-out;
+}
+
+.shell-skip-link:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+  transform: translateY(0);
+}
+
+#app-shell-main-content {
+  scroll-margin-top: 12px;
+}
+
+#app-shell-main-content:focus {
+  outline: none;
+}

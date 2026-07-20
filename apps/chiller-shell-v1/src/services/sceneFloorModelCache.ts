@@ -12,11 +12,12 @@ import { safeLocalStorageGet, safeLocalStorageSet } from "../utils/browserStorag
 const SCENE_FLOOR_MODEL_CACHE_KEY = "chiller-shell-scene-floor-models-v1";
 
 type SceneFloorModelCachePayload = {
+  siteId: string;
   cachedAt: string;
   items: SceneFloorModelItemDto[];
 };
 
-let memoryItems: SceneFloorModelItemDto[] | null = null;
+const memoryItemsBySiteId = new Map<string, SceneFloorModelItemDto[]>();
 
 function normalizeText(value: unknown): string {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -28,34 +29,52 @@ function normalizeText(value: unknown): string {
   return value.trim();
 }
 
-function readStoredItems(): SceneFloorModelItemDto[] {
+function resolveSceneFloorModelCacheKey(siteId: string): string {
+  return `${SCENE_FLOOR_MODEL_CACHE_KEY}:${encodeURIComponent(siteId)}`;
+}
+
+function readStoredItems(siteId: string): SceneFloorModelItemDto[] {
+  if (!siteId) {
+    return [];
+  }
+  const memoryItems = memoryItemsBySiteId.get(siteId);
   if (memoryItems) {
     return memoryItems;
   }
-  const raw = safeLocalStorageGet(SCENE_FLOOR_MODEL_CACHE_KEY);
+  const raw = safeLocalStorageGet(resolveSceneFloorModelCacheKey(siteId));
   if (!raw) {
-    memoryItems = [];
-    return memoryItems;
+    memoryItemsBySiteId.set(siteId, []);
+    return [];
   }
   try {
     const parsed = JSON.parse(raw) as Partial<SceneFloorModelCachePayload>;
-    memoryItems = Array.isArray(parsed.items) ? parsed.items : [];
+    const storedItems = parsed.siteId === siteId && Array.isArray(parsed.items) ? parsed.items : [];
+    memoryItemsBySiteId.set(siteId, storedItems);
+    return storedItems;
   } catch {
-    memoryItems = [];
+    memoryItemsBySiteId.set(siteId, []);
+    return [];
   }
-  return memoryItems;
 }
 
-export function getCachedSceneFloorModels(): SceneFloorModelItemDto[] {
-  return readStoredItems();
+export function getCachedSceneFloorModels(siteId: string | null | undefined): SceneFloorModelItemDto[] {
+  return readStoredItems(normalizeText(siteId));
 }
 
-export function storeSceneFloorModels(result: SceneFloorModelListDto | SceneFloorModelItemDto[]): SceneFloorModelItemDto[] {
+export function storeSceneFloorModels(
+  siteId: string,
+  result: SceneFloorModelListDto | SceneFloorModelItemDto[]
+): SceneFloorModelItemDto[] {
+  const normalizedSiteId = normalizeText(siteId);
+  if (!normalizedSiteId) {
+    return [];
+  }
   const nextItems = Array.isArray(result) ? result : result.items || [];
-  memoryItems = nextItems;
+  memoryItemsBySiteId.set(normalizedSiteId, nextItems);
   safeLocalStorageSet(
-    SCENE_FLOOR_MODEL_CACHE_KEY,
+    resolveSceneFloorModelCacheKey(normalizedSiteId),
     JSON.stringify({
+      siteId: normalizedSiteId,
       cachedAt: new Date().toISOString(),
       items: nextItems
     } satisfies SceneFloorModelCachePayload)
@@ -65,7 +84,7 @@ export function storeSceneFloorModels(result: SceneFloorModelListDto | SceneFloo
 
 export async function preloadSceneFloorModels(siteId: string): Promise<SceneFloorModelItemDto[]> {
   const result = await fetchSceneFloorModels(siteId);
-  return storeSceneFloorModels(result);
+  return storeSceneFloorModels(siteId, result);
 }
 
 function findProjectByOptionId(projects: AuthProject[], optionId: string): AuthProject | null {
@@ -156,7 +175,7 @@ export function buildSceneProjectKeyCandidates(project: AuthProject | null | und
 
 export function findSceneFloorModelForProject(
   project: AuthProject | null | undefined,
-  items: SceneFloorModelItemDto[] = getCachedSceneFloorModels()
+  items: SceneFloorModelItemDto[] = getCachedSceneFloorModels(project?.siteId)
 ): SceneFloorModelItemDto | null {
   const candidates = buildSceneProjectKeyCandidates(project);
   if (candidates.length === 0) {

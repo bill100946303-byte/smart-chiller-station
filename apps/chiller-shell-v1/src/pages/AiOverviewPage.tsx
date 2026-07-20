@@ -11,7 +11,12 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { runtimeConfig } from "../config/runtimeConfig";
 import {
+  isAppliedStationRuntimeScope,
+  useStationRuntimeScope
+} from "../context/StationRuntimeScopeContext";
+import {
   fetchDashboardOverview,
+  fetchDashboardOverviewForProject,
   fetchRuntimePointSummary,
   fetchSiteCapabilities,
   type DashboardOverviewDto,
@@ -19,9 +24,40 @@ import {
   type RuntimeSubsystemCapabilityListDto,
   type RuntimePointSummaryDto
 } from "../services/bffClient";
-import { getCurrentProject, resolveEnergyConfigSiteId } from "../services/auth";
+import {
+  getCurrentProject,
+  resolveAuthProjectDisplayName,
+  resolveEnergyConfigSiteId
+} from "../services/auth";
+import { siteIdsEquivalent } from "../services/siteRouting";
+import {
+  getSubsystemStatusPresentation,
+  isSubsystemDemoData,
+  isSubsystemRealDataReady,
+  isSubsystemWaitingForRealData
+} from "../utils/subsystemStatus";
+import { formatControlBoundaryMode } from "../utils/stationWorkspacePresentation";
+import "./AiOverviewExtracted.css";
+import "./AiOverviewTruth.css";
 
 type Tone = "good" | "warn" | "info";
+
+function formatAdvisorStatus(value: string): string {
+  switch (value) {
+    case "ready":
+      return "已就绪";
+    case "enabled":
+      return "已启用";
+    case "disabled":
+      return "已停用";
+    case "error":
+      return "异常";
+    case "not_configured":
+      return "未配置";
+    default:
+      return value || "未配置";
+  }
+}
 
 type KpiCard = {
   label: string;
@@ -162,7 +198,11 @@ function getCoolingTowerCellStats(summary: RuntimePointSummaryDto | null): { tot
   };
 }
 
-function buildKpiCards(overview: DashboardOverviewDto | null, summary: RuntimePointSummaryDto | null): KpiCard[] {
+function buildKpiCards(
+  overview: DashboardOverviewDto | null,
+  summary: RuntimePointSummaryDto | null,
+  scopeLabel: string
+): KpiCard[] {
   const energy = overview?.energyCards;
   const registerPoints = summary?.counts?.registerPoints ?? null;
   const runtimeStatus = runtimeReady(summary) ? "实时" : "待接通";
@@ -200,7 +240,7 @@ function buildKpiCards(overview: DashboardOverviewDto | null, summary: RuntimePo
       unit: registerPoints != null ? "点" : undefined,
       note: isFiniteNumber(summary?.counts?.deviceRows)
         ? `设备行 ${formatInteger(summary.counts.deviceRows, "--")} 行`
-        : "B25实时寄存器待恢复",
+        : `${scopeLabel}实时点位待恢复`,
       status: runtimeStatus,
       tone: runtimeReady(summary) ? "good" : "warn"
     }
@@ -333,54 +373,34 @@ function buildRecommendations(summary: RuntimePointSummaryDto | null): Recommend
 }
 
 function isWaitingForRealData(item: RuntimeSubsystemCapabilityDto): boolean {
-  return item.status === "enabled" && item.sourceStatus === "waiting_points";
+  return isSubsystemWaitingForRealData(item);
 }
 
 function isDemoData(item: RuntimeSubsystemCapabilityDto): boolean {
-  return item.status === "enabled" && item.sourceStatus === "demo_data";
+  return isSubsystemDemoData(item);
 }
 
 function formatSubsystemStatus(item: RuntimeSubsystemCapabilityDto): string {
-  if (isDemoData(item)) {
-    return "演示数据";
-  }
-  if (isWaitingForRealData(item)) {
-    return "待接实时";
-  }
-  if (item.status === "enabled") {
-    return "已接入";
-  }
-  if (item.status === "not_configured") {
-    return "未配置";
-  }
-  if (item.status === "not_applicable") {
-    return "不适用";
-  }
-  return item.status || "未知";
+  return getSubsystemStatusPresentation(item).compactLabel;
 }
 
 function getSubsystemTone(item: RuntimeSubsystemCapabilityDto): Tone {
-  if (isDemoData(item)) {
-    return "info";
-  }
-  if (isWaitingForRealData(item)) {
-    return "warn";
-  }
-  if (item.status === "enabled") {
-    return "good";
-  }
-  if (item.status === "not_configured") {
-    return "warn";
-  }
-  return "info";
+  const tone = getSubsystemStatusPresentation(item).tone;
+  return tone === "neutral" ? "info" : tone;
 }
 
-function buildSubsystemAdvice(capabilities: RuntimeSubsystemCapabilityListDto | null): SubsystemAdvice[] {
+function buildSubsystemAdvice(
+  capabilities: RuntimeSubsystemCapabilityListDto | null,
+  projectLabel: string
+): SubsystemAdvice[] {
   const items = capabilities?.items || [];
   return items.map((item) => {
     const configEnabled = item.status === "enabled";
     const demoData = isDemoData(item);
-    const realDataReady = configEnabled && !isWaitingForRealData(item) && !demoData;
+    const waitingForData = isWaitingForRealData(item);
+    const realDataReady = isSubsystemRealDataReady(item);
+    const statusView = getSubsystemStatusPresentation(item);
+    const sourceFault = statusView.kind === "stale" || statusView.kind === "error" || statusView.kind === "unknown";
     const reserved = item.reserved || item.status === "not_applicable";
     const boundaryMode = item.controlBoundary?.mode || "read_only";
     const advisorStatus = configEnabled ? item.advisorPluginStatus || "not_configured" : "不参与";
@@ -393,25 +413,31 @@ function buildSubsystemAdvice(capabilities: RuntimeSubsystemCapabilityListDto | 
         ? "可进入跨系统分析"
         : demoData
           ? "演示建议，不接入真实控制"
-        : configEnabled
+        : waitingForData
           ? "配置已发布，待现场数据"
+        : sourceFault && configEnabled
+          ? "数据状态异常，暂停建议"
         : reserved
           ? "预留，不参与"
           : "待点位映射",
-      boundaryLabel: `${boundaryMode} / ${item.controlBoundary?.writeEnabled ? "write" : "no PLC write"}`,
+      boundaryLabel: `${formatControlBoundaryMode(boundaryMode)} / ${item.controlBoundary?.writeEnabled ? "写入配置已开启" : "不写 PLC"}`,
       mappingLabel: configEnabled
         ? realDataReady
           ? `映射 ${item.pointMappingProgress || 0}%`
           : demoData
             ? `演示模板 ${item.pointMappingProgress || 0}%`
-          : `模板 ${item.pointMappingProgress || 0}%`
+          : waitingForData
+            ? `模板 ${item.pointMappingProgress || 0}%`
+            : `映射 ${item.pointMappingProgress || 0}% · ${statusView.compactLabel}`
         : "不参与统计",
       detail: realDataReady
-        ? `Advisor ${advisorStatus}，可作为 AI 建议输入；控制边界仍以配置中心发布版本为准。`
+        ? `建议器${formatAdvisorStatus(advisorStatus)}，可作为 AI 建议输入；控制边界仍以配置中心发布版本为准。`
         : demoData
-          ? `Advisor ${advisorStatus} 只用于盛世绿能办公楼演示；输出为只读建议，不代表真实现场数据，不触发 PLC 写入。`
-        : configEnabled
+          ? `建议器${formatAdvisorStatus(advisorStatus)}只用于${projectLabel}演示；输出为只读建议，不代表真实现场数据，不触发 PLC 写入。`
+        : waitingForData
           ? "已发布只读点位模板，但真实空压/子系统实时数据未接入；不生成实时 KPI、不参与节能统计，先完成 PLC/网关点位绑定。"
+        : sourceFault && configEnabled
+          ? `当前${statusView.detailLabel}；暂停实时 KPI、节能统计与 AI 建议，先恢复数据链路并复核时间戳。`
         : reserved
           ? "当前项目不适用，仅保留未来扩展入口，不计入运行 KPI 和建议数量。"
           : "当前未配置，不生成假 KPI、不推送节能建议；先在 3002 完成点位角色映射和发布。"
@@ -421,8 +447,11 @@ function buildSubsystemAdvice(capabilities: RuntimeSubsystemCapabilityListDto | 
 
 export default function AiOverviewPage() {
   const currentProject = getCurrentProject();
+  const stationRuntimeScope = useStationRuntimeScope();
+  const runtimeStationId = stationRuntimeScope.runtimeStationId;
   const siteId = currentProject?.siteId || runtimeConfig.siteId;
   const configSiteId = resolveEnergyConfigSiteId(currentProject, runtimeConfig.siteId);
+  const projectLabel = resolveAuthProjectDisplayName(currentProject, "当前项目");
   const [overview, setOverview] = useState<DashboardOverviewDto | null>(null);
   const [runtimeSummary, setRuntimeSummary] = useState<RuntimePointSummaryDto | null>(null);
   const [capabilities, setCapabilities] = useState<RuntimeSubsystemCapabilityListDto | null>(null);
@@ -431,37 +460,83 @@ export default function AiOverviewPage() {
   const [expandedId, setExpandedId] = useState<string>("");
 
   useEffect(() => {
+    setOverview(null);
+    setRuntimeSummary(null);
+    setCapabilities(null);
+    setLoadError(null);
+    setApprovedIds([]);
+    setExpandedId("");
+  }, [stationRuntimeScope.scopeKey]);
+
+  useEffect(() => {
     let active = true;
     let timer: number | null = null;
 
     async function load() {
-      void fetchSiteCapabilities(configSiteId)
-        .then((capabilityResult) => {
-          if (active) {
-            setCapabilities(capabilityResult);
-          }
-        })
-        .catch(() => {
-          if (active) {
-            setCapabilities(null);
-          }
-        });
+      if (!runtimeStationId) {
+        void fetchSiteCapabilities(configSiteId)
+          .then((capabilityResult) => {
+            if (active) {
+              setCapabilities(
+                siteIdsEquivalent(capabilityResult.site?.siteId, configSiteId)
+                  ? capabilityResult
+                  : null
+              );
+            }
+          })
+          .catch(() => {
+            if (active) {
+              setCapabilities(null);
+            }
+          });
+      }
+
+      const runtimeSiteId = runtimeStationId
+        ? stationRuntimeScope.runtimeBindingSiteId
+        : siteId;
+      if (!runtimeSiteId) {
+        if (active) {
+          setLoadError("站房运行绑定缺少数据源站点");
+        }
+        return;
+      }
 
       const [overviewResult, runtimeResult] = await Promise.allSettled([
-        fetchDashboardOverview(siteId),
-        fetchRuntimePointSummary(siteId)
+        runtimeStationId
+          ? Promise.resolve(null)
+          : currentProject
+            ? fetchDashboardOverviewForProject(currentProject)
+            : fetchDashboardOverview(siteId),
+        fetchRuntimePointSummary(runtimeSiteId, { stationId: runtimeStationId })
       ]);
 
       if (!active) {
         return;
       }
 
-      const nextOverview = overviewResult.status === "fulfilled" ? overviewResult.value : null;
-      const nextRuntime = runtimeResult.status === "fulfilled" ? runtimeResult.value : null;
+      const overviewCandidate = overviewResult.status === "fulfilled" ? overviewResult.value : null;
+      const overviewScopeVerified = !overviewCandidate || siteIdsEquivalent(overviewCandidate.site?.siteId, siteId);
+      const nextOverview = overviewScopeVerified ? overviewCandidate : null;
+      const runtimeCandidate = runtimeResult.status === "fulfilled" ? runtimeResult.value : null;
+      const runtimeSiteScopeVerified = !runtimeCandidate || siteIdsEquivalent(runtimeCandidate.site?.siteId, runtimeSiteId);
+      const stationScopeVerified = runtimeSiteScopeVerified && (
+        !runtimeStationId || isAppliedStationRuntimeScope(runtimeCandidate?.dataScope, stationRuntimeScope)
+      );
+      const nextRuntime = stationScopeVerified ? runtimeCandidate : null;
       setOverview(nextOverview);
       setRuntimeSummary(nextRuntime);
 
-      if (!nextOverview && !nextRuntime) {
+      if (!overviewScopeVerified) {
+        setLoadError("能效总览未证明当前项目范围，已拒绝展示");
+      } else if (!runtimeSiteScopeVerified) {
+        setLoadError("实时摘要未证明当前数据源站点，已拒绝展示");
+      } else if (runtimeStationId && !stationScopeVerified) {
+        setLoadError("站房实时摘要未证明当前物理站房筛选，已拒绝展示");
+      } else if (runtimeStationId && !nextRuntime) {
+        setLoadError("站房实时摘要未回传");
+      } else if (runtimeStationId) {
+        setLoadError(null);
+      } else if (!nextOverview && !nextRuntime) {
         setLoadError("实时链路暂不可用");
       } else if (!nextRuntime) {
         setLoadError("设备实时摘要未回传");
@@ -482,10 +557,25 @@ export default function AiOverviewPage() {
         window.clearTimeout(timer);
       }
     };
-  }, [configSiteId, siteId]);
+  }, [
+    configSiteId,
+    runtimeStationId,
+    siteId,
+    stationRuntimeScope.runtimeBindingSiteId,
+    stationRuntimeScope.scopeKey
+  ]);
 
-  const recommendations = useMemo(() => buildRecommendations(runtimeSummary), [runtimeSummary]);
-  const subsystemAdvice = useMemo(() => buildSubsystemAdvice(capabilities), [capabilities]);
+  const runtimeOnline = runtimeReady(runtimeSummary);
+  const recommendations = useMemo(
+    () => runtimeStationId && stationRuntimeScope.stationType !== "chilled_plant"
+      ? []
+      : buildRecommendations(runtimeSummary),
+    [runtimeStationId, runtimeSummary, stationRuntimeScope.stationType]
+  );
+  const subsystemAdvice = useMemo(
+    () => buildSubsystemAdvice(capabilities, projectLabel),
+    [capabilities, projectLabel]
+  );
   const enabledSubsystemCount = subsystemAdvice.filter((item) => item.statusLabel === "已接入").length;
   const demoSubsystemCount = subsystemAdvice.filter((item) => item.statusLabel === "演示数据").length;
   const waitingSubsystemCount = subsystemAdvice.filter((item) => item.statusLabel === "待接实时").length;
@@ -493,30 +583,33 @@ export default function AiOverviewPage() {
   const subsystemCapabilitySummary = capabilities
     ? `${enabledSubsystemCount} 实时接入 / ${demoSubsystemCount} 演示数据 / ${waitingSubsystemCount} 待接实时 / ${configurableSubsystemCount} 待配置`
     : "配置读取中";
-  const pendingCount = recommendations.length - approvedIds.length;
+  const pendingCount = runtimeOnline ? recommendations.length - approvedIds.length : 0;
   const primaryKpis = useMemo(
     () => [
-      ...buildKpiCards(overview, runtimeSummary),
+      ...buildKpiCards(overview, runtimeSummary, projectLabel),
       {
         label: "待确认建议",
-        value: String(Math.max(0, pendingCount)),
-        unit: "条",
+        value: runtimeOnline ? String(Math.max(0, pendingCount)) : "--",
+        unit: runtimeOnline ? "条" : undefined,
         note: runtimeReady(runtimeSummary) ? "基于实时摘要的影子建议" : "等待实时摘要恢复",
-        status: pendingCount > 0 ? "需处理" : "已收口",
-        tone: pendingCount > 0 ? "warn" as const : "good" as const
+        status: runtimeOnline ? (pendingCount > 0 ? "需处理" : "已收口") : "不可判定",
+        tone: runtimeOnline && pendingCount === 0 ? "good" as const : "warn" as const
       }
     ],
-    [overview, pendingCount, runtimeSummary]
+    [overview, pendingCount, projectLabel, runtimeOnline, runtimeSummary]
   );
   const equipmentCards = useMemo(() => buildEquipmentCards(overview, runtimeSummary), [overview, runtimeSummary]);
-  const runtimeOnline = runtimeReady(runtimeSummary);
   const chilledWater = runtimeSummary?.keySignals?.chilledWater;
   const coolingWater = runtimeSummary?.keySignals?.coolingWater;
   const weather = runtimeSummary?.keySignals?.weather;
   const copLabel = formatCop(overview?.energyCards?.currentCop);
   const generatedAt = runtimeSummary?.generatedAt || overview?.generatedAt || "";
+  const stationScopeLabel = stationRuntimeScope.stationName || "当前物理站房";
 
   function toggleApprove(id: string) {
+    if (!runtimeOnline) {
+      return;
+    }
     const wasApproved = approvedIds.includes(id);
     setApprovedIds((current) =>
       current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
@@ -528,16 +621,26 @@ export default function AiOverviewPage() {
     <div className="ai-overview-page page-enter">
       <header className="ai-overview-header">
         <div>
-          <span className="ai-overview-kicker">B25 中央空调能源站 · AI节能控制演示</span>
-          <h2>智慧冷冻站 AI优化总览</h2>
+          <span className="ai-overview-kicker">
+            {runtimeStationId ? `${stationScopeLabel} · 站房运行摘要` : `${projectLabel} · 项目级 AI 节能建议`}
+          </span>
+          <h1>{runtimeStationId ? `${stationScopeLabel} AI只读建议` : "智慧冷冻站 AI优化总览"}</h1>
         </div>
         <div className="ai-overview-mode-row" aria-label="运行模式">
           <span className="ai-mode-chip warn"><Sparkles size={14} />影子建议模式</span>
-          <span className="ai-mode-chip good"><ShieldCheck size={14} />PLC安全边界在线</span>
+          <span className="ai-mode-chip warn"><ShieldCheck size={14} />安全边界待站点确认</span>
           <span className={`ai-mode-chip ${runtimeOnline ? "good" : "warn"}`}>
             <Activity size={14} />{runtimeOnline ? "实时寄存器在线" : "实时摘要待恢复"}
           </span>
-          <span className="ai-mode-chip">人工确认后下发</span>
+          {runtimeStationId ? (
+            <span className={`ai-mode-chip ${runtimeSummary ? "good" : "warn"}`}>
+              <ShieldCheck size={14} />
+              {runtimeSummary
+                ? `站房筛选已验证 · v${stationRuntimeScope.bindingVersion ?? "-"}`
+                : "站房筛选待验证"}
+            </span>
+          ) : null}
+          <span className="ai-mode-chip">人工确认仅形成评审记录</span>
         </div>
       </header>
 
@@ -560,7 +663,7 @@ export default function AiOverviewPage() {
       <section className="ai-overview-main">
         <div className="ai-plant-panel">
           <div className="ai-panel-title">
-            <h3>冷站设备链路与运行状态</h3>
+            <h3>{runtimeStationId ? `${stationScopeLabel}设备链路与运行状态` : "当前项目冷站设备链路与运行状态"}</h3>
             <span>{loadError || (generatedAt ? `实时摘要 ${new Date(generatedAt).toLocaleTimeString("zh-CN", { hour12: false })}` : "冷冻水环路 / 冷却水环路 / 数据回传链路")}</span>
           </div>
           <div className="ai-plant-network" aria-label="冷站设备链路">
@@ -605,13 +708,25 @@ export default function AiOverviewPage() {
               <p>AI只建议不接管，PLC保留低温、防冻、启停间隔等硬保护。</p>
             </div>
           </div>
-          <div className="ai-subsystem-advice-panel" aria-label="跨系统AI建议中心">
+          <div className="ai-subsystem-advice-panel" aria-label={runtimeStationId ? "站房AI范围" : "跨系统AI建议中心"}>
             <div className="ai-subsystem-advice-title">
-              <strong>跨系统 AI 建议中心</strong>
-              <span>{subsystemCapabilitySummary}</span>
+              <strong>{runtimeStationId ? "当前站房 AI 范围" : "跨系统 AI 建议中心"}</strong>
+              <span>{runtimeStationId ? "不混入项目级或其他站房数据" : subsystemCapabilitySummary}</span>
             </div>
             <div className="ai-subsystem-advice-grid">
-              {subsystemAdvice.map((item) => (
+              {runtimeStationId ? (
+                <article className={`ai-subsystem-advice-card tone-${runtimeSummary ? "good" : "warn"}`}>
+                  <div className="ai-subsystem-advice-head">
+                    <strong>{stationScopeLabel}</strong>
+                    <span>{runtimeSummary ? "筛选已验证" : "等待证据"}</span>
+                  </div>
+                  <div className="ai-subsystem-advice-meta">
+                    <em>绑定版本 v{stationRuntimeScope.bindingVersion ?? "-"}</em>
+                    <em>只读影子建议</em>
+                  </div>
+                  <p>当前仅使用站房运行摘要；项目 COP、项目告警和跨系统能力不会作为该站房建议输入。</p>
+                </article>
+              ) : subsystemAdvice.map((item) => (
                 <article className={`ai-subsystem-advice-card tone-${item.statusTone}`} key={item.id}>
                   <div className="ai-subsystem-advice-head">
                     <strong>{item.name}</strong>
@@ -627,7 +742,12 @@ export default function AiOverviewPage() {
             </div>
           </div>
           <div className="ai-rec-list">
-            {recommendations.map((item) => {
+            {!runtimeOnline ? (
+              <div className="ai-rec-unavailable" role="status">
+                <strong>暂无可评审的 AI 优化建议</strong>
+                <p>先恢复实时摘要、关键点位质量和站点控制边界；数据未确认前不生成收益、风险或批准状态。</p>
+              </div>
+            ) : recommendations.map((item) => {
               const isApproved = approvedIds.includes(item.id);
               const isExpanded = expandedId === item.id;
               return (
@@ -664,13 +784,12 @@ export default function AiOverviewPage() {
         <article className="ai-chart-card">
           <div className="ai-panel-title">
             <h3>系统COP趋势</h3>
-            <span>当前 {copLabel} · 目标待模型复核</span>
+            <span>当前 {copLabel} · 趋势待时序数据</span>
           </div>
-          <svg className="ai-line-chart" viewBox="0 0 420 116" preserveAspectRatio="none" aria-label="系统COP趋势">
-            <path d="M0 88 L60 78 L120 80 L180 66 L240 58 L300 52 L360 42 L420 37" />
-            <path className="baseline" d="M0 96 L60 92 L120 91 L180 83 L240 76 L300 74 L360 70 L420 68" />
-            <circle cx="420" cy="37" r="5" />
-          </svg>
+          <div className="ai-chart-unavailable" role="status">
+            <strong>趋势数据待接入</strong>
+            <p>当前仅有摘要值，不能绘制上升或下降趋势；接入带时间戳的 COP 序列后再展示实际曲线与基线。</p>
+          </div>
         </article>
 
         <article className="ai-constraint-panel">

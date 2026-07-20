@@ -1,7 +1,9 @@
 ﻿import { startTransition, useEffect, useState, type ReactNode } from "react";
+import "./SystemOverviewExtracted.css";
 import ReadinessBadge from "../components/common/ReadinessBadge";
 import type { ReadinessBadgeViewModel } from "../components/common/ReadinessBadge";
 import { runtimeConfig } from "../config/runtimeConfig";
+import { controlPolicyPresentation } from "../config/controlPolicy";
 import { useShellProjectDisplay } from "../context/ShellProjectDisplayContext";
 import useAiDigest from "../hooks/useAiDigest";
 import useRecommendationDiagnostics from "../hooks/useRecommendationDiagnostics";
@@ -1232,10 +1234,10 @@ export default function SystemOverviewPage() {
             ))}
           </section>
           <section className="system-overview-plc-rules">
-            <h3>PLC保护边界</h3>
+            <h3>{`控制保护边界 · ${controlPolicyPresentation.statusLabel}`}</h3>
             <div><span>泵最低频率</span><strong>按现场变频器下限</strong></div>
-            <div><span>单步调节</span><strong>≤ 1 Hz / 15min</strong></div>
-            <div><span>冷冻供水上限</span><strong>7.5°C</strong></div>
+            <div><span>单步调节</span><strong>{controlPolicyPresentation.stepRateBoundary}</strong></div>
+            <div><span>冷冻供水上限</span><strong>{controlPolicyPresentation.chilledSupplyBoundary}</strong></div>
             <div><span>故障/告警</span><strong className="tone-warn">立即回退</strong></div>
           </section>
           <section className="system-overview-node-preview">

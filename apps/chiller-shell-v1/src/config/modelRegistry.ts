@@ -23,12 +23,7 @@ const DEVICE_MODEL_REGISTRY: Record<DeviceModelCategory, DeviceModelDescriptor> 
     id: "chiller-main",
     category: "chiller",
     displayName: "Chiller Unit",
-    path: "/models/chiller/chiller-main-v1-idle.glb",
-    runtimePaths: {
-      idle: "/models/chiller/chiller-main-v1-idle.glb",
-      running: "/models/chiller/chiller-main-v1-running.glb",
-      fault: "/models/chiller/chiller-main-v1-fault.glb"
-    },
+    path: "/models/chiller/chiller-centrifugal-generic-v1.glb",
     sourceLabel: "Local Model Library",
     intakeStatus: "ready"
   },
@@ -36,12 +31,7 @@ const DEVICE_MODEL_REGISTRY: Record<DeviceModelCategory, DeviceModelDescriptor> 
     id: "pump-horizontal",
     category: "pump",
     displayName: "Pump Unit",
-    path: "/models/pump/pump-horizontal-v1-idle.glb",
-    runtimePaths: {
-      idle: "/models/pump/pump-horizontal-v1-idle.glb",
-      running: "/models/pump/pump-horizontal-v1-running.glb",
-      fault: "/models/pump/pump-horizontal-v1-fault.glb"
-    },
+    path: "/models/pump/pump-horizontal-split-case-generic-v1.glb",
     sourceLabel: "Local Model Library",
     intakeStatus: "ready"
   },
@@ -49,12 +39,7 @@ const DEVICE_MODEL_REGISTRY: Record<DeviceModelCategory, DeviceModelDescriptor> 
     id: "cooling-tower",
     category: "cooling-tower",
     displayName: "Cooling Tower Unit",
-    path: "/models/cooling-tower/cooling-tower-v1-idle.glb",
-    runtimePaths: {
-      idle: "/models/cooling-tower/cooling-tower-v1-idle.glb",
-      running: "/models/cooling-tower/cooling-tower-v1-running.glb",
-      fault: "/models/cooling-tower/cooling-tower-v1-fault.glb"
-    },
+    path: "/models/cooling-tower/cooling-tower-crossflow-generic-v1.glb",
     sourceLabel: "Local Model Library",
     intakeStatus: "ready"
   },
@@ -62,9 +47,9 @@ const DEVICE_MODEL_REGISTRY: Record<DeviceModelCategory, DeviceModelDescriptor> 
     id: "valve-check",
     category: "valve",
     displayName: "Valve Unit",
-    path: "/models/valve/valve-check-v1.glb",
+    path: "",
     sourceLabel: "Local Model Library",
-    intakeStatus: "ready"
+    intakeStatus: "planned"
   }
 };
 

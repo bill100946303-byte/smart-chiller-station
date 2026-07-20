@@ -11,6 +11,8 @@ export default defineConfig({
   server: {
     host: "127.0.0.1",
     port: 3001,
+    // 3001 is the fixed local entry.  Never silently move the UI to 3002/3003.
+    strictPort: true,
     proxy: {
       "/bff": {
         target: "http://127.0.0.1:8787",

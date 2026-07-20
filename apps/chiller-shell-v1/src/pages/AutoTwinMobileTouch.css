@@ -1,0 +1,14 @@
+@media (max-width: 760px) {
+  html body #root .content.is-auto-twin-content .auto-twin-actions .auto-twin-segment button,
+  html body #root .content.is-auto-twin-content .auto-twin-actions .auto-twin-refresh {
+    min-height: 44px;
+  }
+
+  html body #root .content.is-auto-twin-content .auto-twin-actions .auto-twin-segment button {
+    padding-block: 0;
+  }
+
+  html body #root .content.is-auto-twin-content .auto-twin-actions .auto-twin-refresh {
+    padding-block: 0;
+  }
+}

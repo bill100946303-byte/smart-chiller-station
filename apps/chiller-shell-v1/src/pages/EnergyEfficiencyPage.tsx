@@ -30,6 +30,8 @@ import {
   fetchEnergyEfficiencyProportion,
   fetchEnergyEfficiencySearch
 } from "../services/bffClient";
+import "./EnergyAnalysisShared.css";
+import "./EnergyEfficiencyExtracted.css";
 
 type TabKey = "calendar" | "search" | "compare" | "proportion" | "imbalance";
 
@@ -668,9 +670,20 @@ function formatCop(value: number | null | undefined): string {
   return formatFixedNumber(value, 2);
 }
 
+function hasNegativeCalendarPower(item: EnergyEfficiencyCalendarDayDto | null | undefined): boolean {
+  return isCalendarNumber(item?.power) && item.power < 0;
+}
+
 function calculateCalendarCoolingPowerRatio(item: EnergyEfficiencyCalendarDayDto | null | undefined): number | null {
   const power = item?.power;
   const cooling = item?.cooling;
+
+  // A negative energy delta is a source-data fault, not an efficiency sample,
+  // even if legacy data happens to carry a pre-calculated efficiency alongside it.
+  if (hasNegativeCalendarPower(item)) {
+    return null;
+  }
+
   if (
     typeof power === "number"
     && Number.isFinite(power)
@@ -937,7 +950,20 @@ function getCalendarCompleteItems(month: string, entries: EnergyEfficiencyCalend
     && typeof item.date === "string"
     && item.date.startsWith(monthPrefix)
     && (!currentMonth || item.date < today)
+    && !hasNegativeCalendarPower(item)
     && typeof calculateCalendarCoolingPowerRatio(item) === "number"
+  ));
+}
+
+function getCalendarNegativePowerItems(month: string, entries: EnergyEfficiencyCalendarDayDto[]): EnergyEfficiencyCalendarDayDto[] {
+  const today = formatDateInput(new Date());
+  const monthPrefix = `${month}-`;
+  return entries.filter((item) => (
+    item?.hasData
+    && typeof item.date === "string"
+    && item.date.startsWith(monthPrefix)
+    && item.date <= today
+    && hasNegativeCalendarPower(item)
   ));
 }
 
@@ -1098,12 +1124,17 @@ function buildCalendarMonthAggregate(
 ): EnergyEfficiencyCalendarDayDto | null {
   const monthPrefix = `${month}-`;
   const today = formatDateInput(new Date());
-  const monthItems = items.filter((item) => (
+  const sourceMonthItems = items.filter((item) => (
     item?.hasData
     && typeof item.date === "string"
     && item.date.startsWith(monthPrefix)
     && item.date <= today
   ));
+  if (sourceMonthItems.some(hasNegativeCalendarPower) || hasNegativeCalendarPower(summary)) {
+    return null;
+  }
+  const monthItems = sourceMonthItems.filter((item) => !hasNegativeCalendarPower(item));
+  const trustedSummary = summary;
   const efficiencyAverage = averageCalendarValues(monthItems, (item) => item.efficiency);
   const rawEfficiencyAverage = averageCalendarValues(monthItems, (item) => item.rawEfficiency);
   const powerTotal = sumCalendarValues(monthItems, (item) => item.power);
@@ -1116,12 +1147,12 @@ function buildCalendarMonthAggregate(
     ? costTotal / coolingTotal
     : null;
   const unitPriceAverage = averageCalendarValues(monthItems, (item) => item.unitPrice);
-  const aggregateEfficiency = firstCalendarNumber(calculatedEfficiency, efficiencyAverage, rawEfficiencyAverage, summary?.efficiency, summary?.rawEfficiency);
-  const aggregateRawEfficiency = firstCalendarNumber(calculatedEfficiency, rawEfficiencyAverage, efficiencyAverage, summary?.rawEfficiency, summary?.efficiency);
-  const aggregatePower = firstCalendarNumber(powerTotal, summary?.power);
-  const aggregateCooling = firstCalendarNumber(coolingTotal, summary?.cooling);
-  const aggregateCost = firstCalendarNumber(costTotal, summary?.cost);
-  const aggregateUnitPrice = firstCalendarNumber(calculatedUnitPrice, summary?.unitPrice, unitPriceAverage);
+  const aggregateEfficiency = firstCalendarNumber(calculatedEfficiency, efficiencyAverage, rawEfficiencyAverage, trustedSummary?.efficiency, trustedSummary?.rawEfficiency);
+  const aggregateRawEfficiency = firstCalendarNumber(calculatedEfficiency, rawEfficiencyAverage, efficiencyAverage, trustedSummary?.rawEfficiency, trustedSummary?.efficiency);
+  const aggregatePower = firstCalendarNumber(powerTotal, trustedSummary?.power);
+  const aggregateCooling = firstCalendarNumber(coolingTotal, trustedSummary?.cooling);
+  const aggregateCost = firstCalendarNumber(costTotal, trustedSummary?.cost);
+  const aggregateUnitPrice = firstCalendarNumber(calculatedUnitPrice, trustedSummary?.unitPrice, unitPriceAverage);
   const hasData = [
     aggregateEfficiency,
     aggregateRawEfficiency,
@@ -1131,7 +1162,7 @@ function buildCalendarMonthAggregate(
     aggregateCost
   ].some(isCalendarNumber);
 
-  if (!hasData && !summary?.hasData) {
+  if (!hasData && !trustedSummary?.hasData) {
     return null;
   }
 
@@ -1145,7 +1176,7 @@ function buildCalendarMonthAggregate(
     cooling: aggregateCooling,
     unitPrice: aggregateUnitPrice,
     cost: aggregateCost,
-    hasData: hasData || Boolean(summary?.hasData)
+    hasData: hasData || Boolean(trustedSummary?.hasData)
   };
 }
 
@@ -1174,7 +1205,7 @@ function pickPreferredCalendarDate(items: EnergyEfficiencyCalendarDayDto[], mont
 }
 
 function getCalendarQuality(item: EnergyEfficiencyCalendarDayDto | null | undefined): {
-  tone: "excellent" | "good" | "attention" | "critical" | "missing" | "future";
+  tone: "excellent" | "good" | "attention" | "critical" | "invalid" | "missing" | "future";
   label: string;
 } {
   const itemDate = item?.date || "";
@@ -1184,6 +1215,13 @@ function getCalendarQuality(item: EnergyEfficiencyCalendarDayDto | null | undefi
     return {
       tone: "future",
       label: zhCN.energyEfficiencyPage.calendarQualityFuture
+    };
+  }
+
+  if (hasNegativeCalendarPower(item)) {
+    return {
+      tone: "invalid",
+      label: "负值电耗异常，待校核"
     };
   }
 
@@ -1230,6 +1268,9 @@ function getCalendarQualityShortLabel(tone: ReturnType<typeof getCalendarQuality
   }
   if (tone === "critical") {
     return "弱";
+  }
+  if (tone === "invalid") {
+    return "异";
   }
   if (tone === "future") {
     return "未";
@@ -2037,6 +2078,22 @@ export default function EnergyEfficiencyPage() {
     () => buildCalendarEntries(calendarData?.month || calendarFilters.month, calendarData?.items || []),
     [calendarData, calendarFilters.month]
   );
+  const calendarNegativePowerItems = useMemo(
+    () => getCalendarNegativePowerItems(
+      calendarData?.month || calendarFilters.month,
+      calendarData?.items || []
+    ),
+    [calendarData, calendarFilters.month]
+  );
+  const calendarSummaryHasNegativePower = hasNegativeCalendarPower(calendarData?.monthSummary);
+  const calendarPowerGateBlocked = calendarNegativePowerItems.length > 0 || calendarSummaryHasNegativePower;
+  const calendarPowerQualityMessage = calendarNegativePowerItems.length > 0 && calendarSummaryHasNegativePower
+    ? `检测到 ${formatCount(calendarNegativePowerItems.length)} 个负值日电耗且月汇总电耗为负，COP、月度累计及分项构成已阻断`
+    : calendarNegativePowerItems.length > 0
+      ? `检测到 ${formatCount(calendarNegativePowerItems.length)} 个负值日电耗，COP、月度累计及分项构成已阻断`
+      : calendarSummaryHasNegativePower
+        ? "检测到月汇总电耗为负，COP、月度累计及分项构成已阻断"
+        : null;
   const calendarMonthSummary = useMemo(
     () => buildCalendarMonthAggregate(
       calendarData?.month || calendarFilters.month,
@@ -2052,7 +2109,10 @@ export default function EnergyEfficiencyPage() {
   const activeCalendarItem = calendarFilters.mode === "month"
     ? calendarMonthSummary
     : selectedCalendarItem;
-  const calendarPieDisplayData = calendarPieData;
+  const calendarPieScopeBlocked = calendarPieQuery?.dateType === "1"
+    ? hasNegativeCalendarPower(selectedCalendarItem)
+    : calendarPowerGateBlocked;
+  const calendarPieDisplayData = calendarPieScopeBlocked ? null : calendarPieData;
 
   useEffect(() => {
     if (!isSearchTimeSpaceDropdownOpen) {
@@ -2558,6 +2618,7 @@ export default function EnergyEfficiencyPage() {
   const currentModeGuide = getModeGuide(activeTab);
   const activeTabLabel = ENERGY_EFFICIENCY_TABS.find((item) => item.key === activeTab)?.label || zhCN.energyEfficiencyPage.heading;
   const statusDigestLines = [
+    activeTab === "calendar" ? calendarPowerQualityMessage : null,
     aiDigest?.nextAction?.label?.trim() || digestFreshnessLabel || digestSummaryLabel,
     ...sourceStatusLinesCompact
   ].filter(Boolean).slice(0, 3);
@@ -2568,8 +2629,12 @@ export default function EnergyEfficiencyPage() {
       : sourceSummary.warn
         ? "\u9700\u8981\u5173\u6ce8"
         : "\u7ed3\u679c\u53ef\u7528";
-  const displaySourceStateLabel = digestSummaryLabel || sourceStateLabel;
-  const displayBannerText = digestSummaryText || bannerText;
+  const displaySourceStateLabel = activeTab === "calendar" && calendarPowerGateBlocked
+    ? "数据待校核"
+    : digestSummaryLabel || sourceStateLabel;
+  const displayBannerText = activeTab === "calendar" && calendarPowerQualityMessage
+    ? `${calendarPowerQualityMessage}；异常值仅展示状态，不参与汇总。`
+    : digestSummaryText || bannerText;
   const activeLatestFetchText = activeTab === "calendar"
     ? formatDateTime(
       calendarData?.generatedAt
@@ -2841,25 +2906,37 @@ export default function EnergyEfficiencyPage() {
     const partialToday = getCalendarPartialToday(overviewMonth, calendarEntries);
     const trendPoints = buildCalendarTrendPoints(completedCalendarItems, partialToday);
     const trendWindowLabel = trendPoints.length > 0 ? `近${formatCount(trendPoints.length)}日` : "近11日";
-    const trendBadgeLabel = completedCalendarItems.length > trendPoints.length
-      ? `${formatCount(completedCalendarItems.length)}日有效 · ${trendWindowLabel}`
-      : `${formatCount(completedCalendarItems.length)}日有效`;
-    const calendarMonthStatusLabel = partialToday
-      ? "未完整"
-      : completedCalendarItems.length <= 0
-        ? "待采集"
-        : calendarMonthDayCount > 0 && completedCalendarItems.length >= calendarMonthDayCount
-          ? "完整"
-          : "缺数";
-    const completedPower = sumCalendarValues(completedCalendarItems, (item) => item.power);
-    const completedCooling = sumCalendarValues(completedCalendarItems, (item) => item.cooling);
-    const monthCoolingPowerRatio = isCalendarNumber(completedPower) && completedPower > 0 && isCalendarNumber(completedCooling)
-      ? completedCooling / completedPower
-      : averageCalendarValues(completedCalendarItems, (item) => calculateCalendarCoolingPowerRatio(item));
+    const trendBadgeLabel = calendarNegativePowerItems.length > 0
+      ? `${formatCount(completedCalendarItems.length)}日有效 · ${formatCount(calendarNegativePowerItems.length)}日异常`
+      : calendarSummaryHasNegativePower
+        ? `${formatCount(completedCalendarItems.length)}日有效 · 月汇总异常`
+        : completedCalendarItems.length > trendPoints.length
+          ? `${formatCount(completedCalendarItems.length)}日有效 · ${trendWindowLabel}`
+          : `${formatCount(completedCalendarItems.length)}日有效`;
+    const calendarMonthStatusLabel = calendarPowerGateBlocked
+      ? "数据异常"
+      : partialToday
+        ? "未完整"
+        : completedCalendarItems.length <= 0
+          ? "待采集"
+          : calendarMonthDayCount > 0 && completedCalendarItems.length >= calendarMonthDayCount
+            ? "完整"
+            : "缺数";
+    const completedPower = calendarPowerGateBlocked
+      ? null
+      : sumCalendarValues(completedCalendarItems, (item) => item.power);
+    const completedCooling = calendarPowerGateBlocked
+      ? null
+      : sumCalendarValues(completedCalendarItems, (item) => item.cooling);
+    const monthCoolingPowerRatio = calendarPowerGateBlocked
+      ? null
+      : isCalendarNumber(completedPower) && completedPower > 0 && isCalendarNumber(completedCooling)
+        ? completedCooling / completedPower
+        : averageCalendarValues(completedCalendarItems, (item) => calculateCalendarCoolingPowerRatio(item));
     const completeRatioValues = completedCalendarItems
       .map((item) => calculateCalendarCoolingPowerRatio(item))
       .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
-    const averageRatio = completeRatioValues.length > 0
+    const averageRatio = !calendarPowerGateBlocked && completeRatioValues.length > 0
       ? completeRatioValues.reduce((sum, value) => sum + value, 0) / completeRatioValues.length
       : null;
     const bestCalendarItem = getCalendarBestItem(completedCalendarItems);
@@ -2959,7 +3036,9 @@ export default function EnergyEfficiencyPage() {
     const gateLevel = aiDigest?.operationsGate?.level;
     const gateLabel = gateLevel === "ready" ? "可审阅" : gateLevel === "blocked" ? "阻塞" : "需复核";
     const gateTone = gateLevel === "ready" ? "good" : gateLevel === "blocked" ? "warn" : "neutral";
-    const efficiencyTone = typeof monthCoolingPowerRatio === "number" && monthCoolingPowerRatio >= 6.5
+    const efficiencyTone = calendarPowerGateBlocked
+      ? "warn"
+      : typeof monthCoolingPowerRatio === "number" && monthCoolingPowerRatio >= 6.5
       ? "good"
       : typeof monthCoolingPowerRatio === "number" && monthCoolingPowerRatio < 5.8
         ? "warn"
@@ -2981,23 +3060,23 @@ export default function EnergyEfficiencyPage() {
             <article className={`energy-efficiency-overview-kpi tone-${efficiencyTone}`}>
               <span>月平均 COP</span>
               <strong>{formatCop(averageRatio)}</strong>
-              <small>{`累计折算 COP ${formatCop(monthCoolingPowerRatio)}`}</small>
+              <small>{calendarPowerGateBlocked ? "负值电耗已阻断 · 待校核" : `累计折算 COP ${formatCop(monthCoolingPowerRatio)}`}</small>
             </article>
-            <article className="energy-efficiency-overview-kpi tone-neutral">
+            <article className={`energy-efficiency-overview-kpi tone-${calendarPowerGateBlocked ? "warn" : "neutral"}`}>
               <span>累计电耗</span>
               <strong className="energy-efficiency-overview-kpi-value">
                 <b>{isCalendarNumber(completedPower) ? formatNumber(completedPower, 0) : "--"}</b>
                 {isCalendarNumber(completedPower) ? <em>kWh</em> : null}
               </strong>
-              <small>冷站全口径</small>
+              <small>{calendarPowerGateBlocked ? "负值电耗已阻断 · 待校核" : "冷站全口径"}</small>
             </article>
-            <article className="energy-efficiency-overview-kpi tone-good">
+            <article className={`energy-efficiency-overview-kpi tone-${calendarPowerGateBlocked ? "warn" : "good"}`}>
               <span>累计制冷量</span>
               <strong className="energy-efficiency-overview-kpi-value">
                 <b>{isCalendarNumber(completedCooling) ? formatNumber(completedCooling, 0) : "--"}</b>
                 {isCalendarNumber(completedCooling) ? <em>kWh</em> : null}
               </strong>
-              <small>制冷量全口径</small>
+              <small>{calendarPowerGateBlocked ? "同批日数据已阻断 · 待校核" : "制冷量全口径"}</small>
             </article>
             <article className="energy-efficiency-overview-kpi tone-warn">
               <span>{chillerShareScopeLabel}</span>
@@ -3066,18 +3145,21 @@ export default function EnergyEfficiencyPage() {
                   {calendarEntries.map((item) => {
                     const quality = getCalendarQuality(item);
                     const ratio = calculateCalendarCoolingPowerRatio(item);
-                    const hasDayData = quality.tone !== "future" && quality.tone !== "missing";
+                    const hasDayData = quality.tone !== "future" && quality.tone !== "missing" && quality.tone !== "invalid";
                     const displayRatio = hasDayData ? ratio : null;
                     const displayPower = hasDayData ? item.power : null;
                     const displayCooling = hasDayData ? item.cooling : null;
-                    const title = `${item.date || "--"} / 能效 ${formatCop(displayRatio)} / 电量 ${formatNumber(displayPower, 1)} / 冷量 ${formatNumber(displayCooling, 1)}`;
+                    const powerAuditText = quality.tone === "invalid"
+                      ? `${formatNumber(item.power, 1)}（异常，仅校核）`
+                      : formatNumber(displayPower, 1);
+                    const title = `${item.date || "--"} / 数据 ${quality.label} / 能效 ${formatCop(displayRatio)} / 电量 ${powerAuditText} / 冷量 ${formatNumber(displayCooling, 1)}`;
                     return (
                       <button
                         key={`overview-day-${item.date || item.id}`}
                         type="button"
                         className={[
                           "energy-efficiency-overview-day",
-                          `quality-${quality.tone}`,
+                          `quality-${quality.tone === "invalid" ? "critical" : quality.tone}`,
                           item.date === calendarFilters.selectedDate ? "is-selected" : "",
                           item.date === partialToday?.date ? "is-partial" : ""
                         ].filter(Boolean).join(" ")}
@@ -3137,22 +3219,24 @@ export default function EnergyEfficiencyPage() {
               <header className="energy-efficiency-overview-card-head">
                 <div>
                   <h3>分项电耗构成</h3>
-                  <p>{overviewPieScopeKindLabel}</p>
+                  <p>{calendarPieScopeBlocked ? "负值电耗已阻断 · 待校核" : overviewPieScopeKindLabel}</p>
                 </div>
-                <span>{overviewPieCopLabel}</span>
+                <span>{calendarPieScopeBlocked ? "数据待校核" : overviewPieCopLabel}</span>
               </header>
               <div className="energy-efficiency-overview-donut-body">
                 <div className="energy-efficiency-overview-donut-field">
                   <div className="energy-efficiency-overview-donut-map">
                     <div className="energy-efficiency-overview-donut" style={{ backgroundImage: overviewDonutBackground }}>
                       <div>
-                        <span>{overviewDonutScopeLabel}</span>
+                        <span>{calendarPieScopeBlocked ? "分项构成已阻断" : overviewDonutScopeLabel}</span>
                         <strong>{isCalendarNumber(overviewDonutTotal) ? formatNumber(overviewDonutTotal, 0) : "--"}</strong>
                         {isCalendarNumber(overviewDonutTotal) ? <small>kWh</small> : null}
                       </div>
                     </div>
                   </div>
-                  <p className="energy-efficiency-overview-donut-note">分项电耗不等于系统能效</p>
+                  <p className="energy-efficiency-overview-donut-note">
+                    {calendarPieScopeBlocked ? "异常批次不参与月度分项汇总" : "分项电耗不等于系统能效"}
+                  </p>
                 </div>
 
                 <div className="energy-efficiency-overview-donut-ranking" aria-label="分项耗电排行">
@@ -3185,7 +3269,9 @@ export default function EnergyEfficiencyPage() {
                         </div>
                       );
                     }) : (
-                      <div className="energy-efficiency-overview-donut-ranking-empty">暂无分项电耗数据</div>
+                      <div className="energy-efficiency-overview-donut-ranking-empty">
+                        {calendarPieScopeBlocked ? "负值电耗已阻断，请先校核原始表读" : "暂无分项电耗数据"}
+                      </div>
                     )}
                   </div>
                   <div className="energy-efficiency-overview-donut-ranking-summary">
@@ -3269,7 +3355,7 @@ export default function EnergyEfficiencyPage() {
                 <span>{gateLabel}</span>
               </header>
               <div className="energy-efficiency-overview-modules">
-                <div className={sourceSummary.warn ? "tone-warn" : "tone-good"}>
+                <div className={calendarPowerGateBlocked || sourceSummary.warn ? "tone-warn" : "tone-good"}>
                   <span>数据状态</span>
                   <strong>{displaySourceStateLabel}</strong>
                   <small>{statusDigestLines[0] || displayBannerText}</small>
@@ -3489,7 +3575,7 @@ export default function EnergyEfficiencyPage() {
         </SectionCard>
 
         <SectionCard title="COP 统计明细" action={<span className="energy-efficiency-section-tip">{currentModeGuide.tableHint}</span>}>
-          <div className="table-scroll-shell">
+          <div className="table-scroll-shell" role="region" aria-label="COP 统计明细表，可横向滚动查看更多字段" tabIndex={0}>
             <table className="data-table">
               <thead>
                 <tr>
@@ -3672,7 +3758,7 @@ export default function EnergyEfficiencyPage() {
         </SectionCard>
 
         <SectionCard title="对比统计明细" action={<span className="energy-efficiency-section-tip">{currentModeGuide.tableHint}</span>}>
-          <div className="table-scroll-shell">
+          <div className="table-scroll-shell" role="region" aria-label="COP 对比统计明细表，可横向滚动查看更多字段" tabIndex={0}>
             <table className="data-table">
               <thead>
                 <tr>
@@ -3843,7 +3929,7 @@ export default function EnergyEfficiencyPage() {
         </SectionCard>
 
         <SectionCard title={zhCN.energyEfficiencyPage.sectionTable} action={<span className="energy-efficiency-section-tip">{currentModeGuide.tableHint}</span>}>
-          <div className="table-scroll-shell">
+          <div className="table-scroll-shell" role="region" aria-label="COP 占比统计表，可横向滚动查看更多字段" tabIndex={0}>
             <table className="data-table energy-efficiency-proportion-table">
               <colgroup>
                 <col className="energy-efficiency-proportion-table-range-col" />
@@ -3989,7 +4075,7 @@ export default function EnergyEfficiencyPage() {
         </SectionCard>
 
         <SectionCard title={zhCN.energyEfficiencyPage.imbalanceStatisticsTitle} action={<span className="energy-efficiency-section-tip">{currentModeGuide.tableHint}</span>}>
-          <div className="table-scroll-shell">
+          <div className="table-scroll-shell" role="region" aria-label="冷量不平衡统计表，可横向滚动查看更多字段" tabIndex={0}>
             <table className="data-table">
               <thead>
                 <tr>
@@ -4040,7 +4126,7 @@ export default function EnergyEfficiencyPage() {
       <section className="energy-efficiency-header subpage-command-board">
         <div className="subpage-command-copy energy-efficiency-command-copy">
           <p className="energy-efficiency-eyebrow">{runtimeConfig.appModeLabel}</p>
-          <h2>{zhCN.energyEfficiencyPage.heading}</h2>
+          <h1>{zhCN.energyEfficiencyPage.heading}</h1>
           <p>{digestSummaryText || zhCN.energyEfficiencyPage.subtitle}</p>
           <div className="energy-efficiency-command-tags" aria-label={zhCN.energyEfficiencyPage.sectionFilters}>
             {commandTagsWithDigest.map((item) => (

@@ -20,6 +20,7 @@ const DELIVERY_PATHS = [
   "apps/chiller-shell-v1/src/i18n/sourceStatusCN.ts",
   "apps/chiller-shell-v1/src/i18n/zhCN.ts",
   "apps/chiller-shell-v1/src/pages/EnergyEfficiencyPage.tsx",
+  "apps/chiller-shell-v1/src/pages/EnergyEfficiencyExtracted.css",
   "apps/chiller-shell-v1/src/styles/global.css",
   "docs/source-status-key-dictionary-v1.2.json",
   "docs/ENERGY_EFFICIENCY_UI_ACCEPTANCE_CURRENT.md",

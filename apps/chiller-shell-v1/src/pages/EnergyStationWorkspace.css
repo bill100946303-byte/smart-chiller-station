@@ -1,0 +1,363 @@
+.energy-station-workspace {
+  --station-accent: #6ec9f5;
+  --station-accent-soft: rgba(110, 201, 245, 0.14);
+}
+
+.energy-station-workspace .station-workspace-title {
+  margin: 0;
+  color: var(--text-1);
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.energy-station-workspace .section-card-header h2 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: #eaf5ff;
+  font-size: clamp(12px, 1.04vw, 13.5px);
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html body #root#root#root .energy-station-workspace .power-monitor-layout,
+html body #root#root#root .content.is-subpage-compact .energy-station-workspace .power-monitor-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(280px, 0.8fr) !important;
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 8px !important;
+}
+
+html body #root#root#root .energy-station-workspace .station-process-card,
+html body #root#root#root .content.is-subpage-compact .energy-station-workspace .station-process-card {
+  grid-column: 1 / 3;
+  grid-row: 1 / 3;
+}
+
+html body #root#root#root .energy-station-workspace .station-device-card,
+html body #root#root#root .content.is-subpage-compact .energy-station-workspace .station-device-card {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+html body #root#root#root .energy-station-workspace .station-boundary-card,
+html body #root#root#root .content.is-subpage-compact .energy-station-workspace .station-boundary-card {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.energy-station-workspace .station-process-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.energy-station-workspace .station-process-card > .section-card-body {
+  display: flex;
+  min-height: 0;
+  align-items: center;
+}
+
+.energy-station-workspace .station-process-canvas {
+  display: grid;
+  width: 100%;
+  gap: clamp(24px, 5vh, 54px);
+}
+
+.energy-station-workspace .station-process-evidence {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.energy-station-workspace .station-process-evidence > div {
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--station-accent) 18%, transparent);
+  border-radius: 10px;
+  background: linear-gradient(145deg, var(--station-accent-soft), rgba(7, 22, 34, 0.36));
+}
+
+.energy-station-workspace .station-process-evidence span,
+.energy-station-workspace .station-process-evidence strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.energy-station-workspace .station-process-evidence span {
+  color: var(--text-3);
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.energy-station-workspace .station-process-evidence strong {
+  margin-top: 5px;
+  color: #e6f5ff;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.energy-station-workspace .station-process-card::after {
+  position: absolute;
+  right: 24px;
+  bottom: -44px;
+  width: 160px;
+  height: 160px;
+  border: 1px solid color-mix(in srgb, var(--station-accent) 16%, transparent);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.energy-station-workspace .station-readiness-list {
+  display: grid;
+  gap: 6px;
+}
+
+.energy-station-workspace .station-readiness-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  min-height: 30px;
+  padding: 6px 8px;
+  border: 1px solid rgba(128, 171, 202, 0.12);
+  border-radius: 8px;
+  background: rgba(10, 28, 41, 0.42);
+}
+
+.energy-station-workspace .station-readiness-row span {
+  min-width: 0;
+  color: var(--text-3);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.energy-station-workspace .station-readiness-row strong {
+  max-width: 190px;
+  overflow: hidden;
+  color: var(--text-1);
+  font-size: 11px;
+  line-height: 16px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.energy-station-workspace .station-boundary-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 7px !important;
+}
+
+.energy-station-workspace .station-boundary-note svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--station-accent);
+}
+
+.energy-station-workspace .station-workspace-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 7px;
+}
+
+.energy-station-workspace .station-workspace-actions a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 1px solid color-mix(in srgb, var(--station-accent) 24%, transparent);
+  border-radius: 8px;
+  background: var(--station-accent-soft);
+  color: #dff4ff;
+  font-size: 11px;
+  line-height: 16px;
+  text-decoration: none;
+}
+
+.energy-station-workspace .station-workspace-actions a:hover,
+.energy-station-workspace .station-workspace-actions a:focus-visible {
+  border-color: color-mix(in srgb, var(--station-accent) 52%, transparent);
+  outline: none;
+}
+
+.energy-station-workspace .station-workspace-actions svg {
+  flex: 0 0 auto;
+  color: var(--station-accent);
+}
+
+.energy-station-workspace .station-workspace-actions a > span {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+}
+
+@media (max-width: 1120px) {
+  html body #root#root#root .energy-station-workspace .power-monitor-layout,
+  html body #root#root#root .content.is-subpage-compact .energy-station-workspace .power-monitor-layout {
+    grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.8fr) !important;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) !important;
+  }
+
+  html body #root#root#root .energy-station-workspace .station-process-card,
+  html body #root#root#root .content.is-subpage-compact .energy-station-workspace .station-process-card {
+    grid-column: 1;
+    grid-row: 1 / 3;
+  }
+
+  html body #root#root#root .energy-station-workspace .station-device-card,
+  html body #root#root#root .content.is-subpage-compact .energy-station-workspace .station-device-card {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  html body #root#root#root .energy-station-workspace .station-boundary-card,
+  html body #root#root#root .content.is-subpage-compact .energy-station-workspace .station-boundary-card {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
+@media (max-height: 860px) and (min-width: 1440px) {
+  html body #root#root#root .energy-station-workspace .power-monitor-layout,
+  html body #root#root#root .content.is-subpage-compact .energy-station-workspace .power-monitor-layout {
+    grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.78fr) minmax(340px, 0.92fr) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+  }
+
+  html body #root#root#root .energy-station-workspace .station-process-card,
+  html body #root#root#root .content.is-subpage-compact .energy-station-workspace .station-process-card {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  html body #root#root#root .energy-station-workspace .station-device-card,
+  html body #root#root#root .content.is-subpage-compact .energy-station-workspace .station-device-card {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  html body #root#root#root .energy-station-workspace .station-boundary-card,
+  html body #root#root#root .content.is-subpage-compact .energy-station-workspace .station-boundary-card {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .energy-station-workspace .station-process-evidence {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-height: 860px) and (min-width: 721px) and (max-width: 1439px) {
+  html body #root#root#root .content.is-subpage-compact:has(> .energy-station-workspace) {
+    overflow-y: auto !important;
+  }
+
+  html body #root#root#root .energy-station-workspace,
+  html body #root#root#root .content.is-subpage-compact:has(> .energy-station-workspace) > .energy-station-workspace {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+    grid-template-rows: auto 72px auto !important;
+  }
+
+  html body #root#root#root .energy-station-workspace .power-monitor-layout,
+  html body #root#root#root .content.is-subpage-compact .energy-station-workspace .power-monitor-layout {
+    grid-template-rows: minmax(310px, auto) minmax(310px, auto) !important;
+  }
+}
+
+@media (max-width: 720px) {
+  /* Mobile station truth-card readability guard. Runtime scope and timestamp
+     evidence are safety-relevant and must wrap instead of disappearing behind
+     desktop ellipsis rules. */
+  .energy-station-workspace .station-workspace-title {
+    font-size: 17px;
+  }
+
+  html body #root#root#root .power-monitor-page.energy-station-workspace .power-monitor-subtitle,
+  html body #root#root#root .content.is-subpage-compact .power-monitor-page.energy-station-workspace .power-monitor-subtitle {
+    display: block !important;
+    max-width: none !important;
+    overflow: visible !important;
+    line-height: 1.45 !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    -webkit-line-clamp: unset !important;
+    line-clamp: unset !important;
+  }
+
+  html body #root#root#root .energy-station-workspace .power-monitor-layout,
+  html body #root#root#root .content.is-subpage-compact .energy-station-workspace .power-monitor-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto !important;
+  }
+
+  html body #root#root#root .power-monitor-page.energy-station-workspace .power-monitor-summary,
+  html body #root#root#root .content.is-subpage-compact .power-monitor-page.energy-station-workspace .power-monitor-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body #root#root#root .power-monitor-page.energy-station-workspace .power-monitor-summary > div:last-child,
+  html body #root#root#root .content.is-subpage-compact .power-monitor-page.energy-station-workspace .power-monitor-summary > div:last-child {
+    grid-column: 1 / -1;
+  }
+
+  html body #root#root#root .power-monitor-page.energy-station-workspace .power-monitor-summary > div,
+  html body #root#root#root .content.is-subpage-compact .power-monitor-page.energy-station-workspace .power-monitor-summary > div {
+    min-height: 58px !important;
+    align-content: center !important;
+  }
+
+  html body #root#root#root .power-monitor-page.energy-station-workspace .power-monitor-summary strong,
+  html body #root#root#root .content.is-subpage-compact .power-monitor-page.energy-station-workspace .power-monitor-summary strong {
+    overflow: visible !important;
+    font-size: 12px !important;
+    line-height: 16px !important;
+    overflow-wrap: anywhere !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+  }
+
+  html body #root#root#root .energy-station-workspace .station-process-card,
+  html body #root#root#root .energy-station-workspace .station-device-card,
+  html body #root#root#root .energy-station-workspace .station-boundary-card,
+  html body #root#root#root .content.is-subpage-compact .energy-station-workspace .station-process-card,
+  html body #root#root#root .content.is-subpage-compact .energy-station-workspace .station-device-card,
+  html body #root#root#root .content.is-subpage-compact .energy-station-workspace .station-boundary-card {
+    grid-column: 1;
+    grid-row: auto;
+    height: auto !important;
+  }
+
+  .energy-station-workspace .station-process-card::after {
+    display: none;
+  }
+
+  .energy-station-workspace .station-process-card > .section-card-body {
+    display: block;
+  }
+
+  .energy-station-workspace .station-process-canvas {
+    gap: 14px;
+  }
+
+  .energy-station-workspace .station-process-evidence {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .energy-station-workspace .station-workspace-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .energy-station-workspace .station-workspace-actions a {
+    min-height: 44px;
+  }
+}

@@ -1,4 +1,5 @@
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import "./ReportRecordsExtracted.css";
 import { ChevronDown } from "lucide-react";
 import { runtimeConfig } from "../config/runtimeConfig";
 import { buildSourceStatusLines, summarizeSourceStatus } from "../i18n/sourceStatusCN";
@@ -1440,7 +1441,7 @@ export default function ReportRecordsPage() {
       <section className="report-record-header subpage-command-board">
         <div className="subpage-command-copy report-record-command-copy">
           <p className="report-record-eyebrow">{runtimeConfig.appModeLabel}</p>
-          <h2>{zhCN.reportRecordPage.heading}</h2>
+          <h1>{zhCN.reportRecordPage.heading}</h1>
         </div>
         <div className="subpage-command-side report-record-command-side">
           <div className="report-record-command-state">
@@ -1719,7 +1720,7 @@ export default function ReportRecordsPage() {
             <span>{`${zhCN.reportRecordPage.summaryPoints} ${selectedPointsValue}`}</span>
           </div>
         </div>
-        <div className="report-record-table-shell">
+        <div className="report-record-table-shell" role="region" aria-label="报表记录汇总表，可横向滚动查看更多字段" tabIndex={0}>
           <table className="report-record-table">
             <colgroup>
               <col className="report-record-summary-col-object" />

@@ -1,4 +1,5 @@
 import { startTransition, useEffect, useState } from "react";
+import "./MeterReadingExtracted.css";
 import { runtimeConfig } from "../config/runtimeConfig";
 import { formatSourceStatusLineCompact, summarizeSourceStatus } from "../i18n/sourceStatusCN";
 import { zhCN } from "../i18n/zhCN";
@@ -439,7 +440,7 @@ export default function MeterReadingPage() {
       <section className="meter-reading-compact-hero">
         <div className="meter-reading-compact-hero-copy">
           <span className="meter-reading-compact-label">{runtimeConfig.appModeLabel}</span>
-          <h2>{zhCN.meterReadingPage.heading}</h2>
+          <h1>{zhCN.meterReadingPage.heading}</h1>
           <div className="meter-reading-compact-tags" aria-label={zhCN.meterReadingPage.sectionFilters}>
             <article>
               <span>{zhCN.meterReadingPage.filterStartTime}</span>
@@ -550,7 +551,7 @@ export default function MeterReadingPage() {
               <span>{`${zhCN.meterReadingPage.rangeSelected} ${toLegacyDateTime(query.startTime)} ~ ${toLegacyDateTime(query.endTime)}`}</span>
               <span>字段保持后端顺序</span>
             </div>
-            <div className="meter-reading-compact-table-wrap">
+            <div className="meter-reading-compact-table-wrap" role="region" aria-label="抄表记录表，可横向滚动查看更多字段" tabIndex={0}>
               {rows.length > 0 && columns.length > 0 ? (
                 <table className="meter-reading-compact-table">
                   <colgroup>
