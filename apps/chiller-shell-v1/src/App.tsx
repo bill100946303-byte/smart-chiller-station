@@ -42,6 +42,7 @@ const KnowledgeBasePage = lazy(() => import("./pages/KnowledgeBasePage"));
 const WorkOrdersPage = lazy(() => import("./pages/WorkOrdersPage"));
 const EnvironmentConditionsPage = lazy(() => import("./pages/EnvironmentConditionsPage"));
 const ProjectSelectionPage = lazy(() => import("./pages/ProjectSelectionPage"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 type LazyPageComponent = LazyExoticComponent<ComponentType<object>>;
 type RedirectHistoryEntry = {
@@ -406,9 +407,9 @@ export default function App() {
         <Route path="/knowlege/index" element={<LegacyPathRedirect to="/knowledge-base" />} />
         <Route path="/work" element={<LegacyPathRedirect to="/work-orders" />} />
         <Route path="/work/index" element={<LegacyPathRedirect to="/work-orders" />} />
+        <Route path="*" element={renderLazyPage(NotFoundPage)} />
       </Route>
       <Route path="/" element={<RootEntry />} />
-      <Route path="*" element={<RootEntry />} />
     </Routes>
   );
 }

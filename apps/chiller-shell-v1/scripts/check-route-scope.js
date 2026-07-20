@@ -186,6 +186,16 @@ function main() {
   const stationNavSource = fs.readFileSync(STATION_NAV_FILE, "utf8");
   const zhCnSource = fs.readFileSync(ZH_CN_FILE, "utf8");
   const readmeSource = fs.readFileSync(README_FILE, "utf8");
+
+  if (!appSource.includes('const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));')) {
+    throw new Error("App.tsx is missing the explicit unknown-route page.");
+  }
+  if (!appSource.includes('<Route path="*" element={renderLazyPage(NotFoundPage)} />')) {
+    throw new Error("Unknown routes must render the explicit not-found page inside the protected shell.");
+  }
+  if (appSource.includes('<Route path="*" element={<RootEntry />} />')) {
+    throw new Error("Unknown routes must not silently redirect to the default project landing page.");
+  }
   const zhBase = parseObjectLiteral(extractObjectLiteral(zhCnSource, "zhBase"), "zhBase");
   const appRoutes = extractCanonicalRoutes(appSource);
   const navEntries = [

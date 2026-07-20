@@ -41,6 +41,10 @@ requireText(alarmSource, "alarmSiteId: siteId", "alarm draft path must carry imm
 requireText(alarmSource, "<h1>告警处置中心</h1>", "alarm workspace must expose one page-level heading");
 requireText(alarmSource, "<AlarmClosureRail", "alarm closure rail is not rendered");
 requireText(alarmSource, "转工单草稿", "row-level work-order draft action is missing");
+requireText(alarmSource, "readEnergyStationTypeFromSearch", "alarm review handoff must read the associated station type");
+requireText(alarmSource, "readEnergyStationIdFromSearch", "alarm review handoff must read the physical station identity");
+requireText(alarmSource, "appendEnergyStationContextToPath", "alarm review handoff must preserve station context");
+requireText(alarmSource, "optimizeReviewSupported", "alarm review must block incompatible energy objects");
 requireText(closureSource, "告警恢复不等于闭环", "closure rail must distinguish recovery from closure");
 requireText(closureSource, "不在告警页直接下发控制", "alarm closure rail is missing the no-control boundary");
 requireText(closureSource, "带入工单草稿", "closure rail is missing the safe work-order handoff");
@@ -55,6 +59,7 @@ requireText(alarmMobileCss, "height: auto", "mobile alarm page must escape the f
 requireText(alarmCss, "grid-template-rows: auto auto auto minmax(0, 1fr) auto", "compact alarm page must reserve a dedicated closure-rail row");
 requireText(alarmCss, ".alarm-page-v2 .alarm-closure-panel", "compact alarm page is missing its closure-rail containment guard");
 requireText(alarmCss, ".alarm-kpi-card-wide > div:first-child", "optimization-admission status needs a separated label/value layout");
+requireText(alarmCss, ".alarm-gate-link.is-disabled", "blocked optimization review needs a visible disabled state");
 
 requireText(workOrderSource, 'searchParams.get("source") !== "alarm"', "work-order page does not validate alarm draft context");
 requireText(workOrderSource, "siteIdsEquivalent(sourceSiteId, activeSiteId)", "work-order draft must fail closed when source and active sites differ");

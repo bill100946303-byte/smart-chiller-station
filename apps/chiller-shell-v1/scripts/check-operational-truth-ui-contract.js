@@ -174,6 +174,23 @@ forbidText(alarms, ">PLC 保护在线<", "alarm static PLC badge", failures);
 forbidText(alarms, ">10 分钟刷新<", "alarm false refresh badge", failures);
 
 requireText(alarms, "不能判定无告警", "alarm unknown-state copy", failures);
+requireText(alarms, "isTrustedRealtimeAlarmSummary", "alarm realtime counts need an explicit source and freshness trust gate", failures);
+requireText(alarms, 'summary.sourceStatus?.overall === "ok"', "alarm realtime summary source must be healthy", failures);
+requireText(alarms, "summary.freshness?.stale === false", "alarm realtime summary freshness must be explicitly verified", failures);
+requireText(alarms, "blockingHistoryEvidenceReady", "alarm optimize gate must wait for dedicated blocking-history evidence", failures);
+requireText(alarms, "isTrustedBlockingHistoryEvidence", "alarm blocking-history evidence needs an explicit trust gate", failures);
+requireText(alarms, "list.filters?.severity === expectedSeverity", "alarm blocking-history evidence must verify the severity filter echo", failures);
+requireText(alarms, 'list.filters?.state === "1"', "alarm blocking-history evidence must verify the unresolved-state filter echo", failures);
+requireText(alarms, 'severity: "3"', "alarm gate must query unresolved critical history independently", failures);
+requireText(alarms, 'severity: "2"', "alarm gate must query unresolved major history independently", failures);
+requireText(alarms, 'state: "1"', "alarm gate must query unresolved history explicitly", failures);
+requireText(alarms, "unresolvedCriticalHistoryCount", "alarm optimize gate must block unresolved critical history", failures);
+requireText(alarms, "unresolvedMajorHistoryCount", "alarm optimize gate must caution on unresolved major history", failures);
+requireText(alarms, 'optimizeGate.tone === "danger"', "alarm high-frequency impact must reuse the optimize gate", failures);
+requireText(alarms, 'optimizeGate.tone === "warn"', "alarm high-frequency impact must expose degraded evidence", failures);
+forbidText(alarms, "当前无闭锁告警；该历史高频点位不阻断本次优化评审。", "alarm high-frequency impact must not contradict unresolved history", failures);
+requireText(alarms, "optimizeReviewAllowed", "alarm optimize review must have an explicit allow gate", failures);
+requireText(alarms, 'aria-disabled="true"', "alarm optimize review must expose its blocked state", failures);
 requireText(devices, "hasKnownActiveAlarmCount", "device alarm known-state guard", failures);
 requireText(readiness, "就绪状态待确认", "readiness unknown fallback", failures);
 

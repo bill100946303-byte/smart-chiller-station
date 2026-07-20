@@ -5,6 +5,11 @@ import OperationalTruthBadges, {
   resolveOperationalDataState
 } from "../components/common/OperationalTruthBadges";
 import { runtimeConfig } from "../config/runtimeConfig";
+import {
+  appendEnergyStationContextToPath,
+  readEnergyStationIdFromSearch,
+  readEnergyStationTypeFromSearch
+} from "../config/energyStationNavigation";
 import { getSeverityCopy } from "../i18n/hvacCopybook";
 import { buildSourceStatusLines, summarizeSourceStatus } from "../i18n/sourceStatusCN";
 import { zhCN } from "../i18n/zhCN";
@@ -15,6 +20,7 @@ import {
   fetchAnomalyList,
   fetchAnomalySummary
 } from "../services/bffClient";
+import { appendSiteIdToPath } from "../services/siteRouting";
 import { getDisplayAnomalySourceLabel, getDisplayAnomalyTitle } from "../utils/anomalyPresentation";
 import { resolveUnifiedStatusTone } from "../utils/statusTone";
 import "./AlarmPageExtracted.css";
@@ -321,9 +327,46 @@ function buildAlarmWorkOrderDraftPath(item: AnomalyListItemDto, siteId: string):
   return `/work-orders?${params.toString()}`;
 }
 
-function buildOptimizeGate(summary: AnomalySummaryDto | null, loadError: string | null): OptimizeGate {
+function isTrustedRealtimeAlarmSummary(summary: AnomalySummaryDto | null): boolean {
+  return Boolean(
+    summary
+    && summary.sourceStatus?.overall === "ok"
+    && summary.freshness?.stale === false
+    && summary.freshness.latestTimestamp
+  );
+}
+
+function isTrustedBlockingHistoryEvidence(
+  list: AnomalyListDto | null,
+  expectedSeverity: AlarmSeverityCode
+): boolean {
+  return Boolean(
+    list
+    && list.sourceStatus?.overall === "ok"
+    && list.filters?.severity === expectedSeverity
+    && list.filters?.state === "1"
+    && typeof list.total === "number"
+    && Number.isFinite(list.total)
+  );
+}
+
+function buildOptimizeGate(
+  summary: AnomalySummaryDto | null,
+  loadError: string | null,
+  historyEvidenceReady: boolean,
+  unresolvedCriticalHistoryCount: number,
+  unresolvedMajorHistoryCount: number
+): OptimizeGate {
   const counts = summary?.counts;
-  const stale = Boolean(summary?.freshness?.stale);
+
+  if (!isTrustedRealtimeAlarmSummary(summary)) {
+    return {
+      label: zhCN.alarmPage.gateCaution,
+      reason: zhCN.alarmPage.gateReasonStale,
+      action: zhCN.alarmPage.gateActionCaution,
+      tone: "warn"
+    };
+  }
 
   if (typeof counts?.critical === "number" && counts.critical > 0) {
     return {
@@ -343,10 +386,28 @@ function buildOptimizeGate(summary: AnomalySummaryDto | null, loadError: string 
     };
   }
 
-  if (loadError || stale || summary?.sourceStatus?.overall === "failed") {
+  if (!historyEvidenceReady || loadError) {
     return {
       label: zhCN.alarmPage.gateCaution,
       reason: zhCN.alarmPage.gateReasonStale,
+      action: zhCN.alarmPage.gateActionCaution,
+      tone: "warn"
+    };
+  }
+
+  if (unresolvedCriticalHistoryCount > 0) {
+    return {
+      label: zhCN.alarmPage.gateBlocked,
+      reason: "历史处置队列存在未恢复的紧急事件。",
+      action: zhCN.alarmPage.gateActionBlocked,
+      tone: "danger"
+    };
+  }
+
+  if (unresolvedMajorHistoryCount > 0) {
+    return {
+      label: zhCN.alarmPage.gateCaution,
+      reason: "历史处置队列存在未恢复的严重事件。",
       action: zhCN.alarmPage.gateActionCaution,
       tone: "warn"
     };
@@ -368,12 +429,20 @@ export default function AlarmPage() {
     useState<Record<AlarmSeverityCode, number | null>>(EMPTY_ALARM_SEVERITY_TOTALS);
   const [summaryRequestFailed, setSummaryRequestFailed] = useState(false);
   const [listRequestFailed, setListRequestFailed] = useState(false);
+  const [blockingHistoryRequestFailed, setBlockingHistoryRequestFailed] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
   const [listLoading, setListLoading] = useState(false);
+  const [blockingHistoryLoading, setBlockingHistoryLoading] = useState(false);
+  const [criticalBlockingHistory, setCriticalBlockingHistory] = useState<AnomalyListDto | null>(null);
+  const [majorBlockingHistory, setMajorBlockingHistory] = useState<AnomalyListDto | null>(null);
   const [loadedListRequestKey, setLoadedListRequestKey] = useState("");
   const page = parsePageParam(searchParams.get("page"), 1);
   const pageSize = parsePageSizeParam(searchParams.get("pageSize"), DEFAULT_PAGE_SIZE);
   const severityFilter = parseSeverityFilterParam(searchParams.get("severity"));
+  const routeSearch = `?${searchParams.toString()}`;
+  const associatedStationType = readEnergyStationTypeFromSearch(routeSearch);
+  const associatedStationId = readEnergyStationIdFromSearch(routeSearch);
+  const optimizeReviewSupported = !associatedStationType || associatedStationType === "chilled_plant";
   const currentListRequestKey = buildAlarmListRequestKey(runtimeConfig.siteId, page, pageSize, severityFilter);
 
   function syncListSearchParams(next: {
@@ -518,23 +587,92 @@ export default function AlarmPage() {
     };
   }, [runtimeConfig.siteId]);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadBlockingHistoryEvidence() {
+      setBlockingHistoryLoading(true);
+      setBlockingHistoryRequestFailed(false);
+      setCriticalBlockingHistory(null);
+      setMajorBlockingHistory(null);
+      const results = await Promise.allSettled([
+        fetchAnomalyList(runtimeConfig.siteId, {
+          page: 1,
+          pageSize: 1,
+          severity: "3",
+          state: "1"
+        }),
+        fetchAnomalyList(runtimeConfig.siteId, {
+          page: 1,
+          pageSize: 1,
+          severity: "2",
+          state: "1"
+        })
+      ]);
+      if (!active) {
+        return;
+      }
+      const [criticalResult, majorResult] = results;
+      startTransition(() => {
+        setCriticalBlockingHistory(criticalResult.status === "fulfilled" ? criticalResult.value : null);
+        setMajorBlockingHistory(majorResult.status === "fulfilled" ? majorResult.value : null);
+        setBlockingHistoryRequestFailed(results.some((result) => result.status === "rejected"));
+        setBlockingHistoryLoading(false);
+      });
+    }
+
+    loadBlockingHistoryEvidence();
+    return () => {
+      active = false;
+    };
+  }, [runtimeConfig.siteId]);
+
   const loadError =
-    summaryRequestFailed && listRequestFailed
+    summaryRequestFailed && listRequestFailed && blockingHistoryRequestFailed
       ? zhCN.alarmPage.degraded
-      : summaryRequestFailed || listRequestFailed
+      : summaryRequestFailed || listRequestFailed || blockingHistoryRequestFailed
         ? zhCN.dashboard.partialDataset
         : null;
 
   const listMatchesCurrentRequest = loadedListRequestKey === currentListRequestKey;
   const visibleAlarmList = listMatchesCurrentRequest ? alarmList : null;
-  const sourceSummary = summarizeSourceStatus([summary?.sourceStatus, visibleAlarmList?.sourceStatus]);
-  const sourceStatusLinesCompact = buildSourceStatusLines([summary?.sourceStatus, visibleAlarmList?.sourceStatus], {
-    limit: 4,
-    labelMode: "short"
-  });
+  const sourceSummary = summarizeSourceStatus([
+    summary?.sourceStatus,
+    visibleAlarmList?.sourceStatus,
+    criticalBlockingHistory?.sourceStatus,
+    majorBlockingHistory?.sourceStatus
+  ]);
+  const sourceStatusLinesCompact = buildSourceStatusLines(
+    [
+      summary?.sourceStatus,
+      visibleAlarmList?.sourceStatus,
+      criticalBlockingHistory?.sourceStatus,
+      majorBlockingHistory?.sourceStatus
+    ],
+    {
+      limit: 4,
+      labelMode: "short"
+    }
+  );
 
   const events = summary?.latestEvents || [];
   const items = visibleAlarmList?.items || [];
+  const blockingHistoryEvidenceReady = Boolean(
+    !blockingHistoryLoading
+    && !blockingHistoryRequestFailed
+    && isTrustedBlockingHistoryEvidence(criticalBlockingHistory, "3")
+    && isTrustedBlockingHistoryEvidence(majorBlockingHistory, "2")
+  );
+  const unresolvedCriticalHistoryCount =
+    blockingHistoryEvidenceReady && typeof criticalBlockingHistory?.total === "number"
+      ? criticalBlockingHistory.total
+      : 0;
+  const unresolvedMajorHistoryCount =
+    blockingHistoryEvidenceReady && typeof majorBlockingHistory?.total === "number"
+      ? majorBlockingHistory.total
+      : 0;
+  const unresolvedBlockingHistoryCount =
+    unresolvedCriticalHistoryCount + unresolvedMajorHistoryCount;
   const filteredTotal = typeof visibleAlarmList?.total === "number" ? visibleAlarmList.total : items.length;
   const historyTotalFallback = listMatchesCurrentRequest
     ? filteredTotal
@@ -544,9 +682,41 @@ export default function AlarmPage() {
   const historyTotal = resolveHistoricalTotal(severityTotals, historyTotalFallback);
   const historyTotalText = formatKnownCount(historyTotal);
   const pageCount = filteredTotal > 0 ? Math.max(1, Math.ceil(filteredTotal / pageSize)) : 1;
-  const optimizeGate = buildOptimizeGate(summary, loadError);
-  const gateDisplay = getGateDisplay(optimizeGate);
-  const gateStageAction = getGateStageAction(optimizeGate);
+  const optimizeGate = buildOptimizeGate(
+    summary,
+    loadError,
+    blockingHistoryEvidenceReady,
+    unresolvedCriticalHistoryCount,
+    unresolvedMajorHistoryCount
+  );
+  const gateDisplay = optimizeReviewSupported
+    ? getGateDisplay(optimizeGate)
+    : {
+        label: "不适用当前对象",
+        detail: "当前关联对象不是冷冻站；保留站房上下文并阻止进入冷站 AI 评审。",
+        action: "返回当前对象工作区"
+      };
+  const gateStageAction = optimizeReviewSupported
+    ? getGateStageAction(optimizeGate)
+    : "留在当前对象";
+  const effectiveGateTone = optimizeReviewSupported ? optimizeGate.tone : "warn";
+  const optimizeReviewAllowed = optimizeReviewSupported && optimizeGate.tone === "good";
+  const systemBoundaryPath = appendSiteIdToPath(
+    appendEnergyStationContextToPath(
+      "/system-overview",
+      associatedStationType,
+      associatedStationId
+    ),
+    runtimeConfig.siteId
+  );
+  const optimizeReviewPath = appendSiteIdToPath(
+    appendEnergyStationContextToPath(
+      "/optimize-demo",
+      associatedStationType,
+      associatedStationId
+    ),
+    runtimeConfig.siteId
+  );
   const counts = summary?.counts;
   const currentActiveCount = typeof counts?.total === "number" ? counts.total : events.length;
   const currentCriticalCount = typeof counts?.critical === "number" ? counts.critical : 0;
@@ -560,7 +730,7 @@ export default function AlarmPage() {
       : zhCN.alarmPage.freshnessWarn;
   const freshnessTimestamp =
     summary?.freshness?.latestTimestamp || visibleAlarmList?.generatedAt || visibleAlarmList?.freshness?.latestTimestamp || null;
-  const hasRealtimeAlarmSummary = Boolean(summary);
+  const hasTrustedRealtimeAlarmSummary = isTrustedRealtimeAlarmSummary(summary);
   const alarmDataState = resolveOperationalDataState({
     requestFailed: Boolean(loadError),
     sourceWarn: sourceSummary.warn,
@@ -621,18 +791,24 @@ export default function AlarmPage() {
   const kpiCards = [
     {
       title: "当前活跃告警",
-      value: hasRealtimeAlarmSummary ? `${toDisplayNumber(currentActiveCount)}${zhCN.common.unitItem}` : "--",
-      detail: !hasRealtimeAlarmSummary
-        ? "实时摘要不可用，不能判定无告警"
+      value: hasTrustedRealtimeAlarmSummary ? `${toDisplayNumber(currentActiveCount)}${zhCN.common.unitItem}` : "--",
+      detail: !hasTrustedRealtimeAlarmSummary
+        ? "实时摘要未通过来源与新鲜度校验，不能判定无告警"
         : currentActiveCount > 0
           ? "存在需先确认的实时告警"
           : "当前链路确认无闭锁告警"
     },
     {
       title: "优化闭锁告警",
-      value: hasRealtimeAlarmSummary ? `${toDisplayNumber(optimizeBlockCount)}${zhCN.common.unitItem}` : "--",
-      detail: hasRealtimeAlarmSummary
-        ? `紧急 ${currentCriticalCount} · 严重 ${currentMajorCount}`
+      value: unresolvedBlockingHistoryCount > 0
+        ? "待复核"
+        : hasTrustedRealtimeAlarmSummary && blockingHistoryEvidenceReady
+          ? `${toDisplayNumber(optimizeBlockCount)}${zhCN.common.unitItem}`
+          : "--",
+      detail: unresolvedBlockingHistoryCount > 0
+        ? `未恢复：紧急 ${unresolvedCriticalHistoryCount} · 严重 ${unresolvedMajorHistoryCount}`
+        : hasTrustedRealtimeAlarmSummary && blockingHistoryEvidenceReady
+          ? `紧急 ${currentCriticalCount} · 严重 ${currentMajorCount}`
         : "闭锁状态待实时摘要恢复"
     },
     {
@@ -647,7 +823,7 @@ export default function AlarmPage() {
     }
   ];
   const listStageMeta = [
-    `当前活跃 ${currentActiveCount} · 历史 ${historyTotalText}`,
+    `当前活跃 ${hasTrustedRealtimeAlarmSummary ? currentActiveCount : "--"} · 历史 ${historyTotalText}`,
     `当前筛选 ${activeSeverityLabel}`,
     `第 ${page} / ${pageCount} 页 · 每页 ${pageSize} 项`
   ];
@@ -656,11 +832,15 @@ export default function AlarmPage() {
     : listLoading || !listMatchesCurrentRequest
       ? `正在加载${activeSeverityLabel}告警；加载完成后刷新列表与分页。`
     : `按当前筛选展示历史告警；当前页 ${page}/${pageCount}，筛选或分页会即时刷新。`;
-  const recentFlowTitle = events.length > 0 ? `当前实时 ${events.length}${zhCN.common.unitItem}` : "当前实时";
+  const recentFlowTitle = hasTrustedRealtimeAlarmSummary
+    ? events.length > 0
+      ? `当前实时 ${events.length}${zhCN.common.unitItem}`
+      : "当前实时"
+    : "实时摘要待确认";
   const dataSourceDetail =
-    visibleAlarmList?.freshness?.stale
-      ? "历史列表为归档事件，当前准入以实时摘要为准。"
-      : "实时摘要与历史列表均已接入。";
+    blockingHistoryEvidenceReady
+      ? "实时摘要、历史列表与未恢复闭锁查询均已接入。"
+      : "未恢复闭锁查询尚未完成，优化评审保持关闭。";
 
   useEffect(() => {
     if (!alarmList || page <= pageCount) {
@@ -755,26 +935,36 @@ export default function AlarmPage() {
             <small>{item.detail}</small>
           </article>
         ))}
-        <article className={`alarm-kpi-card alarm-kpi-card-wide tone-${optimizeGate.tone}`}>
+        <article className={`alarm-kpi-card alarm-kpi-card-wide tone-${effectiveGateTone}`}>
           <div>
             <span>优化准入状态</span>
             <strong>{gateDisplay.label}</strong>
             <small>{gateDisplay.detail}</small>
           </div>
           <div className="alarm-gate-actions">
-            <Link className="alarm-gate-link secondary" to={`/system-overview?siteId=${runtimeConfig.siteId}`}>
+            <Link className="alarm-gate-link secondary" to={systemBoundaryPath}>
               查看控制边界
             </Link>
-            <Link className="alarm-gate-link primary" to={`/optimize-demo?siteId=${runtimeConfig.siteId}`}>
-              进入评审
-            </Link>
+            {optimizeReviewAllowed ? (
+              <Link className="alarm-gate-link primary" to={optimizeReviewPath}>
+                进入评审
+              </Link>
+            ) : (
+              <span
+                className="alarm-gate-link primary is-disabled"
+                aria-disabled="true"
+                title={gateDisplay.detail}
+              >
+                {optimizeReviewSupported ? "评审暂缓" : "当前对象不支持"}
+              </span>
+            )}
           </div>
         </article>
       </section>
 
       <AlarmClosureRail
         dataReady={Boolean(summary || visibleAlarmList)}
-        activeCount={hasRealtimeAlarmSummary ? currentActiveCount : null}
+        activeCount={hasTrustedRealtimeAlarmSummary ? currentActiveCount : null}
         recoveredHistoryCount={recoveredHistoryCount}
         draftPath={focusDraftPath}
         siteId={runtimeConfig.siteId}
@@ -895,9 +1085,11 @@ export default function AlarmPage() {
                 <div className="alarm-focus-card">
                   <span>影响判断</span>
                   <p>
-                    {currentActiveCount > 0
-                      ? "存在当前活跃告警；先完成现场复核，再进入优化评审。"
-                      : "当前无闭锁告警；该历史高频点位不阻断本次优化评审。"}
+                    {optimizeGate.tone === "danger"
+                      ? "存在当前活跃或未恢复闭锁告警；先完成现场复核，再进入优化评审。"
+                      : optimizeGate.tone === "warn"
+                        ? "告警证据尚未完整或存在严重历史事件；暂不据此放行优化评审。"
+                        : "当前证据未发现闭锁告警；该历史高频点位不阻断本次人工评审。"}
                   </p>
                 </div>
                 <div className="alarm-focus-card">

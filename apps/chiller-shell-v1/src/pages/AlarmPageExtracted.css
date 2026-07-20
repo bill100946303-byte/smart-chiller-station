@@ -1638,6 +1638,15 @@
   box-shadow: 0 8px 18px rgba(20, 131, 91, 0.28);
 }
 
+.content.is-subpage-compact .alarm-page-v2 .alarm-gate-link.is-disabled,
+.alarm-page-v2 .alarm-gate-link.is-disabled {
+  cursor: not-allowed;
+  border-color: rgba(141, 163, 179, 0.34);
+  background: rgba(53, 72, 87, 0.68);
+  color: rgba(221, 232, 240, 0.72);
+  box-shadow: none;
+}
+
 .content.is-subpage-compact .alarm-page-v2 .alarm-gate-link.secondary,
 .alarm-page-v2 .alarm-gate-link.secondary {
   background: rgba(13, 31, 49, 0.78);
