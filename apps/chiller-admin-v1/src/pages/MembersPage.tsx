@@ -26,6 +26,23 @@ type DraftRecord = {
   status: AdminMemberStatus;
 };
 
+const ROLE_LABELS: Record<AdminRole, string> = {
+  platform_admin: "平台管理员",
+  site_admin: "站点管理员",
+  auditor: "审计员"
+};
+
+const SCOPE_TYPE_LABELS: Record<AdminScopeType, string> = {
+  site: "站点范围",
+  platform: "平台范围"
+};
+
+const MEMBER_STATUS_LABELS: Record<AdminMemberStatus, string> = {
+  active: "已启用",
+  invited: "已邀请",
+  disabled: "已停用"
+};
+
 const emptyDraft: DraftRecord = {
   userId: "",
   username: "",
@@ -171,6 +188,7 @@ export default function MembersPage() {
     <div className="admin-page-stack">
       <SectionCard
         title="站点成员"
+        headingLevel={2}
         action={
           <div className="admin-actions">
             <button className="admin-button" type="button" onClick={() => navigate(`/sites/${encodeURIComponent(siteId)}`)}>
@@ -211,15 +229,15 @@ export default function MembersPage() {
               <form className="admin-form" onSubmit={handleCreate}>
                 <div className="admin-form-grid">
                   <label className="admin-field">
-                    <span>userId</span>
+                    <span>用户 ID</span>
                     <input value={newDraft.userId} onChange={(event) => setNewDraft((current) => ({ ...current, userId: event.target.value }))} required />
                   </label>
                   <label className="admin-field">
-                    <span>username</span>
+                    <span>用户名</span>
                     <input value={newDraft.username} onChange={(event) => setNewDraft((current) => ({ ...current, username: event.target.value }))} required />
                   </label>
                   <label className="admin-field">
-                    <span>role</span>
+                    <span>角色</span>
                     <select
                       value={newDraft.role}
                       onChange={(event) =>
@@ -229,8 +247,8 @@ export default function MembersPage() {
                         }))
                       }
                     >
-                      <option value="site_admin">site_admin</option>
-                      <option value="auditor">auditor</option>
+                      <option value="site_admin">{ROLE_LABELS.site_admin}</option>
+                      <option value="auditor">{ROLE_LABELS.auditor}</option>
                     </select>
                   </label>
                 </div>
@@ -245,7 +263,7 @@ export default function MembersPage() {
 
             <SectionCard title="成员列表">
               {members.length > 0 ? (
-                <div className="admin-table-shell">
+                <div className="admin-table-shell" role="region" aria-label="站点成员权限表，可横向滚动查看更多字段" tabIndex={0}>
                   <table className="admin-table">
                     <thead>
                       <tr>
@@ -270,12 +288,13 @@ export default function MembersPage() {
                           <tr key={member.bindingId}>
                             <td>
                               <div className="admin-field-grid" style={{ gridTemplateColumns: "1fr", gap: 8 }}>
-                                <input value={draft.username} onChange={(event) => setDrafts((current) => ({ ...current, [member.bindingId]: { ...draft, username: event.target.value } }))} />
-                                <input value={draft.userId} onChange={(event) => setDrafts((current) => ({ ...current, [member.bindingId]: { ...draft, userId: event.target.value } }))} />
+                                <input aria-label={`成员 ${member.username} 的用户名`} value={draft.username} onChange={(event) => setDrafts((current) => ({ ...current, [member.bindingId]: { ...draft, username: event.target.value } }))} />
+                                <input aria-label={`成员 ${member.username} 的用户 ID`} value={draft.userId} onChange={(event) => setDrafts((current) => ({ ...current, [member.bindingId]: { ...draft, userId: event.target.value } }))} />
                               </div>
                             </td>
                             <td>
                               <select
+                                aria-label={`成员 ${member.username} 的角色`}
                                 value={draft.role}
                                 onChange={(event) =>
                                   setDrafts((current) => ({
@@ -284,14 +303,15 @@ export default function MembersPage() {
                                   }))
                                 }
                               >
-                                <option value="platform_admin">platform_admin</option>
-                                <option value="site_admin">site_admin</option>
-                                <option value="auditor">auditor</option>
+                                <option value="platform_admin">{ROLE_LABELS.platform_admin}</option>
+                                <option value="site_admin">{ROLE_LABELS.site_admin}</option>
+                                <option value="auditor">{ROLE_LABELS.auditor}</option>
                               </select>
                             </td>
                             <td>
                               <div className="admin-field-grid" style={{ gridTemplateColumns: "1fr", gap: 8 }}>
                                 <select
+                                  aria-label={`成员 ${member.username} 的权限范围类型`}
                                   value={draft.scopeType}
                                   onChange={(event) =>
                                     setDrafts((current) => ({
@@ -304,10 +324,11 @@ export default function MembersPage() {
                                     }))
                                   }
                                 >
-                                  <option value="site">site</option>
-                                  <option value="platform">platform</option>
+                                  <option value="site">{SCOPE_TYPE_LABELS.site}</option>
+                                  <option value="platform">{SCOPE_TYPE_LABELS.platform}</option>
                                 </select>
                                 <input
+                                  aria-label={`成员 ${member.username} 的范围 ID`}
                                   value={draft.scopeId}
                                   disabled={draft.scopeType === "platform"}
                                   onChange={(event) =>
@@ -321,6 +342,7 @@ export default function MembersPage() {
                             </td>
                             <td>
                               <select
+                                aria-label={`成员 ${member.username} 的状态`}
                                 value={draft.status}
                                 onChange={(event) =>
                                   setDrafts((current) => ({
@@ -329,12 +351,12 @@ export default function MembersPage() {
                                   }))
                                 }
                               >
-                                <option value="active">active</option>
-                                <option value="invited">invited</option>
-                                <option value="disabled">disabled</option>
+                                <option value="active">{MEMBER_STATUS_LABELS.active}</option>
+                                <option value="invited">{MEMBER_STATUS_LABELS.invited}</option>
+                                <option value="disabled">{MEMBER_STATUS_LABELS.disabled}</option>
                               </select>
                               <div className="admin-chip-row" style={{ marginTop: 8 }}>
-                                <StatusPill label={member.role} tone={toneForRole(member.role)} />
+                                <StatusPill label={ROLE_LABELS[member.role]} tone={toneForRole(member.role)} />
                               </div>
                             </td>
                             <td>

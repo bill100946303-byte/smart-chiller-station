@@ -12,6 +12,8 @@ import type {
   AdminRuntimeConfig,
   AdminScopeType,
   AdminSiteDetail,
+  AdminStationInstance,
+  AdminStationInstanceList,
   AdminSiteSubsystemCapability,
   AdminSiteStatus,
   AdminSourceConfig,
@@ -26,6 +28,7 @@ type MockStore = {
   runtimeConfigs: Record<string, AdminRuntimeConfig>;
   subsystemRegistry: AdminSubsystemRegistryItem[];
   siteSubsystems: Record<string, AdminSiteSubsystemCapability[]>;
+  stationInstances: Record<string, AdminStationInstance[]>;
   pointRoleMappings: Record<string, AdminPointRoleMapping[]>;
   configVersions: Record<string, AdminConfigVersion & { payload?: unknown }>;
   members: Record<string, AdminMember[]>;
@@ -35,7 +38,7 @@ type MockStore = {
 };
 
 const STORAGE_KEY = "chiller-admin-v1-mock-store";
-const MOCK_STORE_VERSION = "energy-config-center-v7";
+const MOCK_STORE_VERSION = "energy-config-center-v8";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -448,6 +451,7 @@ function seedStore(): MockStore {
   ];
 
   const siteSubsystems = Object.fromEntries(sites.map((site) => [site.siteId, seedSiteSubsystems(site.siteId, subsystemRegistry)]));
+  const stationInstances = Object.fromEntries(sites.map((site) => [site.siteId, [] as AdminStationInstance[]]));
   const pointRoleMappings = Object.fromEntries(sites.map((site) => [site.siteId, seedPointRoleMappings(site.siteId)]));
   const configVersions = Object.fromEntries(
     sites.map((site) => {
@@ -481,6 +485,7 @@ function seedStore(): MockStore {
     runtimeConfigs,
     subsystemRegistry,
     siteSubsystems,
+    stationInstances,
     pointRoleMappings,
     configVersions,
     members,
@@ -519,6 +524,9 @@ function loadStore(): MockStore {
     }
     if (!parsed.siteSubsystems || typeof parsed.siteSubsystems !== "object") {
       parsed.siteSubsystems = Object.fromEntries(parsed.sites.map((site) => [site.siteId, seedSiteSubsystems(site.siteId, parsed.subsystemRegistry)]));
+    }
+    if (!parsed.stationInstances || typeof parsed.stationInstances !== "object") {
+      parsed.stationInstances = Object.fromEntries(parsed.sites.map((site) => [site.siteId, []]));
     }
     if (!parsed.pointRoleMappings || typeof parsed.pointRoleMappings !== "object") {
       parsed.pointRoleMappings = Object.fromEntries(parsed.sites.map((site) => [site.siteId, seedPointRoleMappings(site.siteId)]));
@@ -592,6 +600,9 @@ function normalizeSourceStatus(value: string): AdminSourceStatus {
   if (value === "partial" || value === "failed") {
     return value;
   }
+  if (value === "unknown" || value === "not_configured") {
+    return value;
+  }
   return "ok";
 }
 
@@ -616,9 +627,96 @@ export function createMockMe(userId: string, username: string): AdminMe {
     userId,
     username,
     role: matched ? "platform_admin" : "site_admin",
+    roles: {
+      platformRole: matched ? "platform_admin" : null,
+      siteRoles: matched
+        ? []
+        : store.sites.map((site) => ({ scopeId: site.siteId, role: "site_admin" as const }))
+    },
     visibleSites: clone(store.sites),
     bootstrap: matched
   };
+}
+
+export function listMockStationInstances(siteId: string): AdminStationInstanceList {
+  const store = loadStore();
+  const items = clone(store.stationInstances[siteId] || []).map((item) => ({
+    ...item,
+    alarmCount: typeof item.alarmCount === "number" ? item.alarmCount : null,
+    bindingState: item.bindingState || "unconfigured",
+    bindingVersion: item.bindingVersion || null,
+    draftBindingVersion: item.draftBindingVersion || null,
+    publishedBindingVersion: item.publishedBindingVersion || null
+  }));
+  return {
+    siteId,
+    generatedAt: nowIso(),
+    items,
+    total: items.length
+  };
+}
+
+export function updateMockStationInstances(
+  siteId: string,
+  patches: Partial<AdminStationInstance>[],
+  actor = "admin"
+): AdminStationInstanceList {
+  const store = loadStore();
+  const list = store.stationInstances[siteId] || [];
+  const before = clone(list);
+  patches.forEach((patch) => {
+    const stationId = String(patch.stationId || "").trim();
+    const stationName = String(patch.stationName || "").trim();
+    const parentSubsystemType = String(patch.parentSubsystemType || "").trim();
+    if (!stationId || !stationName || !parentSubsystemType) {
+      throw new Error("stationId, stationName and parentSubsystemType are required");
+    }
+    const existing = list.find((item) => item.stationId === stationId);
+    const status = patch.status || existing?.status || "not_configured";
+    const enabled = status === "enabled";
+    const timestamp = nowIso();
+    const next: AdminStationInstance = {
+      siteId,
+      stationId,
+      stationName,
+      parentSubsystemType,
+      status,
+      enabled,
+      sourceStatus: enabled ? String(patch.sourceStatus || existing?.sourceStatus || "unknown") : "not_configured",
+      freshnessStatus: enabled ? String(patch.freshnessStatus || existing?.freshnessStatus || "unknown") : "not_configured",
+      alarmCount: enabled && typeof (patch.alarmCount ?? existing?.alarmCount) === "number"
+        ? Math.max(0, Math.round(Number(patch.alarmCount ?? existing?.alarmCount)))
+        : null,
+      bindingState: patch.bindingState || existing?.bindingState || "unconfigured",
+      bindingVersion: patch.bindingVersion ?? existing?.bindingVersion ?? null,
+      draftBindingVersion: patch.draftBindingVersion ?? existing?.draftBindingVersion ?? null,
+      publishedBindingVersion: patch.publishedBindingVersion ?? existing?.publishedBindingVersion ?? null,
+      sortOrder: Math.max(0, Math.round(Number(patch.sortOrder ?? existing?.sortOrder ?? 999))),
+      published: patch.published ?? existing?.published ?? false,
+      notes: patch.notes ?? existing?.notes ?? null,
+      createdAt: existing?.createdAt || timestamp,
+      updatedAt: timestamp,
+      createdBy: existing?.createdBy || actor,
+      updatedBy: actor
+    };
+    if (existing) {
+      Object.assign(existing, next);
+    } else {
+      list.push(next);
+    }
+  });
+  list.sort((left, right) => left.sortOrder - right.sortOrder || left.stationName.localeCompare(right.stationName, "zh-CN"));
+  store.stationInstances[siteId] = list;
+  logAudit(store, {
+    actor,
+    action: "site.station-instances.update",
+    targetType: "station_instance",
+    targetId: siteId,
+    beforeJson: JSON.stringify(before, null, 2),
+    afterJson: JSON.stringify(list, null, 2)
+  });
+  saveStore(store);
+  return listMockStationInstances(siteId);
 }
 
 export function getMockSites(): AdminSiteDetail[] {
@@ -641,14 +739,15 @@ export function createMockSite(site: Partial<AdminSiteDetail>): AdminSiteDetail 
     status: normalizeStatus(String(site.status || "active")),
     ownerName: site.ownerName,
     remark: site.remark,
-    sourceStatus: normalizeSourceStatus(String(site.sourceStatus || "ok")),
-    runtimeStatus: normalizeSourceStatus(String(site.runtimeStatus || "ok")),
+    sourceStatus: normalizeSourceStatus(String(site.sourceStatus || "not_configured")),
+    runtimeStatus: normalizeSourceStatus(String(site.runtimeStatus || "not_configured")),
     memberCount: Number(site.memberCount || 0),
     updatedBy: site.updatedBy || "admin"
   });
   store.sites.unshift(record);
   store.sourceConfigs[siteId] = seedSourceConfig(siteId);
   store.runtimeConfigs[siteId] = seedRuntimeConfig(siteId);
+  store.stationInstances[siteId] = [];
   store.members[siteId] = [];
   logAudit(store, {
     actor: site.updatedBy || "admin",

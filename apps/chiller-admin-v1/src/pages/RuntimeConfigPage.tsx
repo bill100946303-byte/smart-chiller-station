@@ -183,6 +183,7 @@ export default function RuntimeConfigPage() {
     <div className="admin-page-stack">
       <SectionCard
         title="站点运行配置"
+        headingLevel={2}
         action={
           <div className="admin-actions">
             <button className="admin-button" type="button" onClick={() => navigate(`/sites/${encodeURIComponent(siteId)}`)}>

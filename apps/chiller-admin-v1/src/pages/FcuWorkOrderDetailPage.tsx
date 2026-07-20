@@ -541,7 +541,7 @@ export default function FcuWorkOrderDetailPage() {
             </div>
           </div>
           {finalReleaseChecklist.length > 0 ? (
-            <div className="admin-table-scroll">
+            <div className="admin-table-scroll" role="region" aria-label="FCU 最终放行检查表，可横向滚动查看更多字段" tabIndex={0}>
               <table className="admin-table">
                 <thead>
                   <tr>
@@ -795,7 +795,7 @@ export default function FcuWorkOrderDetailPage() {
             <strong>当前阻断原因</strong>
             <span>{currentReasons.join(" / ") || "暂无原因字段"}</span>
           </div>
-          <div className="admin-table-scroll">
+          <div className="admin-table-scroll" role="region" aria-label="FCU 设备签核证据表，可横向滚动查看更多字段" tabIndex={0}>
             <table className="admin-table">
               <thead>
                 <tr>
@@ -842,7 +842,7 @@ export default function FcuWorkOrderDetailPage() {
                 </span>
               </div>
             ) : null}
-            <div className="admin-table-scroll">
+            <div className="admin-table-scroll" role="region" aria-label="FCU 设备处置记录表，可横向滚动查看更多字段" tabIndex={0}>
               <table className="admin-table">
                 <thead>
                   <tr>

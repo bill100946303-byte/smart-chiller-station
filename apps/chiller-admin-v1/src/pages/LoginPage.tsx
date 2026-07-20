@@ -7,9 +7,10 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("123456");
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorText, setErrorText] = useState("");
+  const sessionExpired = searchParams.get("reason") === "expired";
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -38,6 +39,11 @@ export default function LoginPage() {
   }
 
   const showRuntimeNotice = runtimeConfig.appMode !== "local" || runtimeConfig.readOnlyMode || runtimeConfig.useMockData;
+  const runtimeNoticeDetail = runtimeConfig.useMockData
+    ? "当前使用显式本地 MOCK，只用于联调页面和表单，不读取或写入真实配置库。"
+    : runtimeConfig.readOnlyMode
+      ? "当前连接管理接口但写入总闸保持关闭；可核验站点、权限和真实清单，不会提交配置变更。"
+      : "当前运行环境会读取真实管理接口；所有写入仍需通过站点权限和服务端安全门禁。";
 
   return (
     <div className="admin-login-page">
@@ -91,7 +97,14 @@ export default function LoginPage() {
                 {runtimeConfig.readOnlyMode ? " · 只读模式已开启" : ""}
                 {runtimeConfig.useMockData ? " · 已启用本地 mock 回退" : ""}
               </div>
-              <div className="admin-banner-detail">后台可以在没有完整服务端时先跑起来，方便联调页面和表单。</div>
+              <div className="admin-banner-detail">{runtimeNoticeDetail}</div>
+            </div>
+          ) : null}
+
+          {sessionExpired ? (
+            <div className="admin-banner warn" role="alert">
+              <div>登录凭证已失效</div>
+              <div className="admin-banner-detail">已清除本地会话，请重新登录后继续原页面。</div>
             </div>
           ) : null}
 

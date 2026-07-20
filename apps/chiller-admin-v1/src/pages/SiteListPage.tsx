@@ -1,5 +1,5 @@
 import { Plus, RefreshCw, Settings2, Table2, Users } from "lucide-react";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import SectionCard from "../components/common/SectionCard";
 import SourceStatusBanner from "../components/common/SourceStatusBanner";
@@ -62,6 +62,50 @@ export default function SiteListPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [formState, setFormState] = useState<CreateFormState>(initialFormState);
+  const createModalRef = useRef<HTMLDivElement | null>(null);
+  const createSiteIdInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!showCreateModal) {
+      return;
+    }
+
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    window.requestAnimationFrame(() => createSiteIdInputRef.current?.focus());
+    return () => {
+      previousFocus?.focus();
+    };
+  }, [showCreateModal]);
+
+  function handleCreateModalKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setShowCreateModal(false);
+      return;
+    }
+    if (event.key !== "Tab") {
+      return;
+    }
+
+    const focusable = Array.from(
+      createModalRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+      ) || []
+    ).filter((element) => !element.hasAttribute("hidden"));
+    if (focusable.length === 0) {
+      return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
 
   async function loadSites() {
     if (!session) {
@@ -213,7 +257,7 @@ export default function SiteListPage() {
             <div className="admin-skeleton" />
           </div>
         ) : sites.length > 0 ? (
-          <div className="admin-table-shell">
+          <div className="admin-table-shell" role="region" aria-label="站点列表，可横向滚动查看更多字段" tabIndex={0}>
             <table className="admin-table">
               <thead>
                 <tr>
@@ -242,11 +286,11 @@ export default function SiteListPage() {
                     <td>
                       <div className="admin-chip-row">
                         <StatusPill
-                          label={`接入 ${site.sourceStatus || "ok"}`}
+                          label={`接入 ${site.sourceStatus || "unknown"}`}
                           tone={statusTone(site.sourceStatus)}
                         />
                         <StatusPill
-                          label={`运行 ${site.runtimeStatus || "ok"}`}
+                          label={`运行 ${site.runtimeStatus || "unknown"}`}
                           tone={statusTone(site.runtimeStatus)}
                         />
                       </div>
@@ -300,13 +344,26 @@ export default function SiteListPage() {
 
       {showCreateModal ? (
         <div className="admin-modal-backdrop" onClick={() => setShowCreateModal(false)} role="presentation">
-          <div className="admin-modal" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
+          <div
+            ref={createModalRef}
+            className="admin-modal"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={handleCreateModalKeyDown}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-site-dialog-title"
+          >
             <header className="admin-modal-header">
               <div>
                 <p className="admin-eyebrow">创建站点</p>
-                <h3>登记一个已有 siteId</h3>
+                <h3 id="create-site-dialog-title">登记一个已有 siteId</h3>
               </div>
-              <button className="admin-modal-close" type="button" onClick={() => setShowCreateModal(false)}>
+              <button
+                className="admin-modal-close"
+                type="button"
+                aria-label="关闭新建站点对话框"
+                onClick={() => setShowCreateModal(false)}
+              >
                 ×
               </button>
             </header>
@@ -316,6 +373,7 @@ export default function SiteListPage() {
                 <label className="admin-field">
                   <span>siteId</span>
                   <input
+                    ref={createSiteIdInputRef}
                     value={formState.siteId}
                     onChange={(event) => setFormState((current) => ({ ...current, siteId: event.target.value }))}
                     required

@@ -28,6 +28,27 @@ const styleSource = fs.readFileSync(STYLE_FILE, "utf8");
 
 assertContains(
   pageSource,
+  "const fcuWriteConfigured =",
+  "3002 must distinguish stored FCU enforced intent from effective runtime write permission."
+);
+assertRegex(
+  pageSource,
+  /const globalWriteGateOpen =\s*[\s\S]+?runtimeConfig\.readOnlyMode !== true[\s\S]+?backendHealth\.writeAllowed === true/,
+  "The effective FCU write state must require both the frontend and BFF global write gates."
+);
+assertContains(
+  pageSource,
+  "data-fcu-global-write-gate=\"blocked\"",
+  "3002 must visibly disclose when an enforced FCU configuration is overridden by the global write gate."
+);
+assertContains(
+  pageSource,
+  "这里不得显示为“闭环可写”",
+  "The global write-gate warning must prevent a configured boundary from being presented as effective write authority."
+);
+
+assertContains(
+  pageSource,
   "function handleFillFcuAuthorizationDraft()",
   "3002 must keep the FCU one-hour authorization draft helper."
 );

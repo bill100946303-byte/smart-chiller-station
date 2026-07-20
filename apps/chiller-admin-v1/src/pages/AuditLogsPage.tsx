@@ -98,7 +98,7 @@ export default function AuditLogsPage() {
               <div className="admin-skeleton" />
             </div>
           ) : logs.length > 0 ? (
-            <div className="admin-table-shell">
+            <div className="admin-table-shell" role="region" aria-label="审计日志表，可横向滚动查看更多字段" tabIndex={0}>
               <table className="admin-table">
                 <thead>
                   <tr>

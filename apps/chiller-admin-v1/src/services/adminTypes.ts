@@ -1,10 +1,20 @@
 export type AdminRole = "platform_admin" | "site_admin" | "auditor";
 
+export type AdminSiteRoleBinding = {
+  scopeId: string;
+  role: "site_admin" | "auditor";
+};
+
+export type AdminRoleClaims = {
+  platformRole: AdminRole | null;
+  siteRoles: AdminSiteRoleBinding[];
+};
+
 export type AdminScopeType = "platform" | "site";
 
 export type AdminSiteStatus = "active" | "paused" | "disabled" | "pending" | "error";
 
-export type AdminSourceStatus = "ok" | "partial" | "failed";
+export type AdminSourceStatus = "ok" | "partial" | "failed" | "unknown" | "not_configured";
 
 export type AdminMemberStatus = "active" | "invited" | "disabled";
 
@@ -111,6 +121,7 @@ export type AdminMe = {
   userId: string;
   username: string;
   role: AdminRole;
+  roles?: AdminRoleClaims;
   visibleSites: AdminSiteSummary[];
   bootstrap: boolean;
 };
@@ -842,6 +853,123 @@ export type AdminSiteSubsystemCapability = {
   advisorBindings: AdminAdvisorPluginBinding[];
   controlBoundary: AdminControlBoundary;
   updatedAt?: string | null;
+};
+
+export type AdminStationInstance = {
+  siteId: string;
+  stationId: string;
+  stationName: string;
+  parentSubsystemType: string;
+  status: AdminSubsystemStatus;
+  enabled: boolean;
+  sourceStatus: string;
+  freshnessStatus: string;
+  alarmCount: number | null;
+  bindingState: AdminStationRuntimeBindingStatus | "unconfigured";
+  bindingVersion: number | null;
+  draftBindingVersion: number | null;
+  publishedBindingVersion: number | null;
+  sortOrder: number;
+  published: boolean;
+  notes?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+};
+
+export type AdminStationRuntimeBindingStatus =
+  | "draft"
+  | "validated"
+  | "published"
+  | "superseded"
+  | "disabled";
+
+export type AdminStationRuntimeBindingValidation = {
+  ok: boolean;
+  payloadHash?: string | null;
+  checkedAt?: string | null;
+  selectorMode?: string | null;
+  matchAll?: boolean;
+  matched?: {
+    deviceCount?: number;
+    devices?: Array<{ deviceId?: string; deviceCode?: string; deviceName?: string }>;
+    pointCount?: number;
+    points?: unknown[];
+  };
+  unmatched?: {
+    deviceIds?: string[];
+    deviceCodes?: string[];
+    pointCodes?: string[];
+  };
+  ambiguous?: {
+    deviceIds?: string[];
+    pointCodes?: string[];
+  };
+  errors?: string[];
+  catalogHash?: string | null;
+  sourceEvidence?: Record<string, unknown>;
+};
+
+export type AdminStationRuntimeBinding = {
+  siteId: string;
+  stationId: string;
+  stationName?: string | null;
+  parentSubsystemType?: string | null;
+  stationStatus?: string | null;
+  stationPublished?: boolean;
+  status: AdminStationRuntimeBindingStatus;
+  bindingVersion: number;
+  source: {
+    databaseKey: string | null;
+    projectKey: string | null;
+    template: string | null;
+  };
+  selectors: {
+    deviceIds: string[];
+    deviceCodes: string[];
+    pointCodes: string[];
+  };
+  payloadHash?: string | null;
+  validatedHash?: string | null;
+  validation?: AdminStationRuntimeBindingValidation | null;
+  checkedAt?: string | null;
+  publishedAt?: string | null;
+  publishedBy?: string | null;
+  notes?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+};
+
+export type AdminStationRuntimeBindingState = {
+  siteId: string;
+  stationId: string;
+  binding: AdminStationRuntimeBinding | null;
+  draftBinding: AdminStationRuntimeBinding | null;
+  publishedBinding: AdminStationRuntimeBinding | null;
+  draftVersion: number | null;
+  publishedVersion: number | null;
+  configured: boolean;
+  validation?: AdminStationRuntimeBindingValidation | null;
+};
+
+export type AdminStationInstanceList = {
+  siteId: string;
+  generatedAt: string;
+  items: AdminStationInstance[];
+  total: number;
+};
+
+export type AdminBackendHealth = {
+  reachable: boolean;
+  ok: boolean;
+  readOnlyMode: boolean | null;
+  writeAllowed: boolean;
+  checkedAt: string;
+  source: "server" | "mock" | "unavailable";
+  reason: string;
 };
 
 export type AdminPointRoleMapping = {

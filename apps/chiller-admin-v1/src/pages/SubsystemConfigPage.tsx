@@ -4,9 +4,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import SectionCard from "../components/common/SectionCard";
 import StatCard from "../components/common/StatCard";
 import StatusPill from "../components/common/StatusPill";
+import { runtimeConfig } from "../config/runtimeConfig";
 import { getAdminSession } from "../services/adminAuth";
 import {
   buildFcuFieldArmPackage,
+  getAdminBackendHealth,
   getAdminSite,
   getFcuControlPolicy,
   getFcuFieldRemediationStatus,
@@ -25,6 +27,7 @@ import {
   updateFcuControlPolicy,
   updateSiteSubsystems,
   type AdminControlBoundaryMode,
+  type AdminBackendHealth,
   type AdminConfigVersion,
   type AdminFcuControlPolicy,
   type AdminFcuFieldArmPackageResult,
@@ -41,6 +44,16 @@ import {
   type AdminSubsystemStatus
 } from "../services/adminClient";
 
+const UNKNOWN_BACKEND_HEALTH: AdminBackendHealth = {
+  reachable: false,
+  ok: false,
+  readOnlyMode: null,
+  writeAllowed: false,
+  checkedAt: "",
+  source: "unavailable",
+  reason: "正在核验服务端写入总闸。"
+};
+
 const STATUS_LABELS: Record<AdminSubsystemStatus, string> = {
   enabled: "配置启用",
   not_configured: "未配置",
@@ -53,6 +66,25 @@ const BOUNDARY_LABELS: Record<AdminControlBoundaryMode, string> = {
   assisted: "人工确认",
   enforced: "闭环执行"
 };
+
+function formatAdvisorPluginStatus(value: string): string {
+  switch (value) {
+    case "available":
+      return "可用";
+    case "ready":
+      return "已就绪";
+    case "enabled":
+      return "已启用";
+    case "disabled":
+      return "已停用";
+    case "error":
+      return "异常";
+    case "not_configured":
+      return "未配置";
+    default:
+      return value || "未配置";
+  }
+}
 
 const VERSION_STATUS_LABELS: Record<string, string> = {
   draft: "草稿",
@@ -184,7 +216,11 @@ function getDefaultImportText(subsystemType: string): string {
 function buildVersionId(): string {
   const now = new Date();
   const pad = (value: number) => String(value).padStart(2, "0");
-  return `cfg-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
+  const randomSuffix =
+    typeof globalThis.crypto?.randomUUID === "function"
+      ? globalThis.crypto.randomUUID().slice(0, 8)
+      : Math.random().toString(36).slice(2, 10).padEnd(8, "0");
+  return `cfg-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}-${randomSuffix}`;
 }
 
 function cloneSubsystem(item: AdminSiteSubsystemCapability): AdminSiteSubsystemCapability {
@@ -502,6 +538,7 @@ export default function SubsystemConfigPage() {
   const [saving, setSaving] = useState(false);
   const [errorText, setErrorText] = useState("");
   const [notice, setNotice] = useState("");
+  const [backendHealth, setBackendHealth] = useState<AdminBackendHealth>(UNKNOWN_BACKEND_HEALTH);
   const [site, setSite] = useState<AdminSiteDetail | null>(null);
   const [registry, setRegistry] = useState<AdminSubsystemRegistryItem[]>([]);
   const [subsystems, setSubsystems] = useState<AdminSiteSubsystemCapability[]>([]);
@@ -532,14 +569,15 @@ export default function SubsystemConfigPage() {
     setErrorText("");
     setNotice("");
     try {
-      const [siteRecord, registryItems, subsystemItems, mappingItems, versionItems, fcuPolicyRecord, fcuFieldStatus] = await Promise.all([
+      const [siteRecord, registryItems, subsystemItems, mappingItems, versionItems, fcuPolicyRecord, fcuFieldStatus, health] = await Promise.all([
         getAdminSite(session.token, session.userId, siteId).catch(() => buildFallbackSite(siteId)),
         listSubsystemRegistry(session.token, session.userId),
         listSiteSubsystems(session.token, session.userId, siteId),
         listPointRoleMappings(session.token, session.userId, siteId),
         listConfigVersions(session.token, session.userId, siteId),
         getFcuControlPolicy(session.token, session.userId, siteId).catch(() => null),
-        getFcuFieldRemediationStatus(session.token, session.userId, siteId).catch(() => null)
+        getFcuFieldRemediationStatus(session.token, session.userId, siteId).catch(() => null),
+        getAdminBackendHealth()
       ]);
       setSite(siteRecord);
       setRegistry(registryItems);
@@ -552,6 +590,7 @@ export default function SubsystemConfigPage() {
       setPreview(null);
       setFcuPolicy(fcuPolicyRecord);
       setFcuFieldRemediationStatus(fcuFieldStatus);
+      setBackendHealth(health);
       setFcuSignoffPreview(null);
       setFcuCandidateFieldArmResult(null);
       setFcuWhitelistText((fcuPolicyRecord?.whitelist || []).join("\n"));
@@ -605,11 +644,16 @@ export default function SubsystemConfigPage() {
   const hasDemoSubsystems = summary.demoData > 0;
   const hvacTerminal = subsystems.find((item) => item.subsystemType === "hvac_terminal") || null;
   const showFcuPolicy = hvacTerminal?.status === "enabled" && fcuPolicy !== null;
-  const fcuWriteEnabled =
+  const fcuWriteConfigured =
     hvacTerminal?.controlBoundary?.writeEnabled === true &&
     fcuPolicy?.enabled === true &&
     fcuPolicy.defaultMode === "enforced" &&
     Boolean(fcuPolicy.dispatchAdapter && fcuPolicy.dispatchAdapter !== "none");
+  const globalWriteGateOpen =
+    runtimeConfig.readOnlyMode !== true &&
+    backendHealth.writeAllowed === true;
+  const fcuEffectiveWriteEnabled = fcuWriteConfigured && globalWriteGateOpen;
+  const fcuWriteBlockedByGlobalGate = fcuWriteConfigured && !globalWriteGateOpen;
   const fcuFieldSummary = fcuFieldRemediationStatus?.summary || null;
   const fcuFieldBlockers = fcuFieldRemediationStatus?.finalControlGates?.blockers || [];
   const fcuFieldNextActions = fcuFieldRemediationStatus?.finalControlGates?.nextActions || [];
@@ -1428,13 +1472,15 @@ export default function SubsystemConfigPage() {
     if (!session || !siteId || saving) {
       return;
     }
+    const publishedVersionId = versionId.trim();
     setSaving(true);
     setErrorText("");
     setNotice("");
     try {
-      await publishConfigVersion(session.token, session.userId, siteId, versionId, "能源站配置中心发布");
+      await publishConfigVersion(session.token, session.userId, siteId, publishedVersionId, "能源站配置中心发布");
       setVersions(await listConfigVersions(session.token, session.userId, siteId));
-      setNotice(`配置版本 ${versionId} 已发布，3001 将消费已发布能力。`);
+      setVersionId(buildVersionId());
+      setNotice(`配置版本 ${publishedVersionId} 已发布，3001 将消费已发布能力。已生成下一次发布的新版本号。`);
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : "配置发布失败");
     } finally {
@@ -1464,6 +1510,7 @@ export default function SubsystemConfigPage() {
     <div className="admin-page-stack">
       <SectionCard
         title="能源站子系统配置"
+        headingLevel={2}
         action={
           <div className="admin-actions">
             <button className="admin-button" type="button" onClick={() => navigate(`/sites/${encodeURIComponent(siteId)}`)}>
@@ -1480,15 +1527,27 @@ export default function SubsystemConfigPage() {
         <div className="admin-section-stack">
           <div className="admin-chip-row">
             <StatusPill label={site?.siteName || siteId} tone="good" />
-            <StatusPill label={fcuWriteEnabled ? "FCU enforced" : "read-only / shadow"} tone={fcuWriteEnabled ? "warn" : "neutral"} />
+            <StatusPill
+              label={fcuEffectiveWriteEnabled
+                ? "FCU 写入总闸已放行"
+                : fcuWriteBlockedByGlobalGate
+                  ? "FCU 闭环配置 · 总闸阻断"
+                  : "只读 / 影子"}
+              tone={fcuEffectiveWriteEnabled || fcuWriteBlockedByGlobalGate ? "warn" : "neutral"}
+            />
             <StatusPill label="3001 消费已发布配置" tone="neutral" />
           </div>
           <p className="admin-note">
-            当前配置中心管理子系统能力、点位角色、Advisor 插件和控制边界；配置启用不等于真实实时接入。FCU 写控制仅对白名单单台设备开放，并受 BA 适配器、审计和回退保护。
+            当前配置中心管理子系统能力、点位角色、建议器插件和控制边界；配置启用不等于真实实时接入。FCU 写控制仅对白名单单台设备开放，并受 BA 适配器、审计和回退保护。
           </p>
+          {fcuWriteBlockedByGlobalGate ? (
+            <p className="admin-warning-note" data-fcu-global-write-gate="blocked">
+              当前 FCU 保存的是闭环配置意图，但运行时写入总闸仍关闭：{backendHealth.reason} 这里不得显示为“闭环可写”。
+            </p>
+          ) : null}
           {hasDemoSubsystems ? (
             <p className="admin-warning-note">
-              当前站点包含演示数据子系统，不代表真实现场接入；Advisor 只输出只读建议，不允许写 PLC 或呈现为可执行控制。
+              当前站点包含演示数据子系统，不代表真实现场接入；建议器只输出只读建议，不允许写 PLC 或呈现为可执行控制。
             </p>
           ) : null}
         </div>
@@ -1496,13 +1555,17 @@ export default function SubsystemConfigPage() {
 
       <div className="admin-summary-grid">
         <StatCard title="配置启用子系统" value={String(summary.configEnabled)} delta={`${summary.realtimeReady} 个实时正常 / ${summary.demoData} 个演示数据 / ${summary.waitingRealData} 个实时待接`} tone="good" />
-        <StatCard title="平均映射进度" value={`${summary.avgProgress}%`} delta="point roles" tone={summary.avgProgress >= 60 ? "good" : "warn"} />
-        <StatCard title="预留扩展" value={String(summary.reserved)} delta="reserved systems" tone="neutral" />
+        <StatCard title="平均映射进度" value={`${summary.avgProgress}%`} delta="点位角色" tone={summary.avgProgress >= 60 ? "good" : "warn"} />
+        <StatCard title="预留扩展" value={String(summary.reserved)} delta="预留子系统" tone="neutral" />
         <StatCard
           title="当前边界"
-          value={fcuWriteEnabled ? "FCU闭环" : "只读/影子"}
-          delta={fcuWriteEnabled ? `${fcuPolicy?.whitelist.length || 0} 台白名单 / ${fcuPolicy?.dispatchAdapter}` : "no PLC write"}
-          tone={fcuWriteEnabled ? "warn" : "neutral"}
+          value={fcuEffectiveWriteEnabled ? "FCU闭环可写" : fcuWriteBlockedByGlobalGate ? "全局只读" : "只读/影子"}
+          delta={fcuEffectiveWriteEnabled
+            ? `${fcuPolicy?.whitelist.length || 0} 台白名单 / ${fcuPolicy?.dispatchAdapter}`
+            : fcuWriteBlockedByGlobalGate
+              ? "闭环配置仅为配置态 / BFF总闸未放行"
+              : "不写 PLC"}
+          tone={fcuEffectiveWriteEnabled || fcuWriteBlockedByGlobalGate ? "warn" : "neutral"}
         />
       </div>
 
@@ -1725,7 +1788,7 @@ export default function SubsystemConfigPage() {
               </div>
             ) : null}
             {fcuExecutionOrder.length > 0 ? (
-              <div className="admin-table-scroll">
+              <div className="admin-table-scroll" role="region" aria-label="FCU 执行顺序表，可横向滚动查看更多字段" tabIndex={0}>
                 <table className="admin-table">
                   <thead>
                     <tr>
@@ -1790,7 +1853,7 @@ export default function SubsystemConfigPage() {
               </div>
             ) : null}
             {(fcuFinalFieldExecutionPack?.finalReleaseChecklist || []).length > 0 ? (
-              <div className="admin-table-scroll">
+              <div className="admin-table-scroll" role="region" aria-label="FCU 最终放行检查表，可横向滚动查看更多字段" tabIndex={0}>
                 <table className="admin-table">
                   <thead>
                     <tr>
@@ -1814,7 +1877,7 @@ export default function SubsystemConfigPage() {
               </div>
             ) : null}
             {(fcuFinalFieldExecutionPack?.deviceQueue || []).length > 0 ? (
-              <div className="admin-table-scroll">
+              <div className="admin-table-scroll" role="region" aria-label="FCU 设备队列表，可横向滚动查看更多字段" tabIndex={0}>
                 <table className="admin-table">
                   <thead>
                     <tr>
@@ -1884,7 +1947,7 @@ export default function SubsystemConfigPage() {
                 </span>
               </div>
             ) : null}
-            <div className="admin-table-scroll">
+            <div className="admin-table-scroll" role="region" aria-label="FCU 现场放行状态表，可横向滚动查看更多字段" tabIndex={0}>
               <table className="admin-table">
                 <thead>
                   <tr>
@@ -2363,7 +2426,7 @@ export default function SubsystemConfigPage() {
                     <span>单台签核处理队列：先处理不能进 Canary 的设备，再处理已签字但仍受 closeout / readiness 阻断的设备。</span>
                     <span>点击“打开工单”只进入单台签核页，不保存签核、不下发 BA/PLC。</span>
                   </div>
-                  <div className="admin-table-scroll">
+                  <div className="admin-table-scroll" role="region" aria-label="FCU 单台签核队列表，可横向滚动查看更多字段" tabIndex={0}>
                     <table className="admin-table">
                       <thead>
                         <tr>
@@ -2406,7 +2469,7 @@ export default function SubsystemConfigPage() {
                 </div>
               ) : null}
               {fcuSignoffIssueGroups.length > 0 ? (
-                <div className="admin-table-scroll">
+                <div className="admin-table-scroll" role="region" aria-label="FCU 签核问题分类表，可横向滚动查看更多字段" tabIndex={0}>
                   <table className="admin-table">
                     <thead>
                       <tr>
@@ -2435,7 +2498,7 @@ export default function SubsystemConfigPage() {
                     <span>逐台放行视图：优先显示仍阻断设备，签字通过不等于真实下发。</span>
                     <span>可进 Canary 仍需实时 closeout、现场授权、BA 写适配器和总门禁全部通过。</span>
                   </div>
-                  <div className="admin-table-scroll">
+                  <div className="admin-table-scroll" role="region" aria-label="FCU Canary 放行队列表，可横向滚动查看更多字段" tabIndex={0}>
                     <table className="admin-table">
                       <thead>
                         <tr>
@@ -2504,7 +2567,7 @@ export default function SubsystemConfigPage() {
                 </div>
               ) : null}
               {fcuSignoffPreviewOpenRecords.length > 0 ? (
-                <div className="admin-table-scroll">
+                <div className="admin-table-scroll" role="region" aria-label="FCU 未闭环记录表，可横向滚动查看更多字段" tabIndex={0}>
                   <table className="admin-table">
                     <thead>
                       <tr>
@@ -2549,7 +2612,7 @@ export default function SubsystemConfigPage() {
               <StatusPill label={`适配器 ${fcuPolicy.dispatchAdapter || "none"}`} tone={fcuPolicy.dispatchAdapter && fcuPolicy.dispatchAdapter !== "none" ? "good" : "warn"} />
             </div>
             <p className="admin-warning-note">
-              FCU 闭环只对白名单设备生效；未配置 BA 写适配器时，enforced 也只会记录命令候选和阻断原因，不会伪装成真实下发。
+              FCU 闭环只对白名单设备生效；未配置 BA 写适配器时，闭环模式也只会记录命令候选和阻断原因，不会伪装成真实下发。
             </p>
             <div className="admin-fcu-authorization-panel">
               <div>
@@ -2770,7 +2833,7 @@ export default function SubsystemConfigPage() {
               </button>
             }
           >
-            <div className="admin-table-shell admin-subsystem-matrix-table">
+            <div className="admin-table-shell admin-subsystem-matrix-table" role="region" aria-label="子系统配置矩阵表，可横向滚动查看更多字段" tabIndex={0}>
               <table className="admin-table admin-subsystem-table">
                 <colgroup>
                   <col className="admin-subsystem-col-name" />
@@ -2786,7 +2849,7 @@ export default function SubsystemConfigPage() {
                     <th>子系统</th>
                     <th>配置状态</th>
                     <th>点位映射</th>
-                    <th>Advisor</th>
+                    <th>建议器</th>
                     <th>控制边界</th>
                     <th>发布</th>
                     <th>备注</th>
@@ -2822,7 +2885,7 @@ export default function SubsystemConfigPage() {
                           tone={item.status === "enabled" && item.pointMappingProgress >= 70 ? "good" : item.status === "enabled" ? "warn" : "neutral"}
                         />
                       </td>
-                      <td>{item.enabled ? item.advisorPluginStatus : "不参与"}</td>
+                      <td>{item.enabled ? formatAdvisorPluginStatus(item.advisorPluginStatus) : "不参与"}</td>
                       <td>
                         <select
                           value={item.controlBoundary.mode}
@@ -2953,7 +3016,7 @@ export default function SubsystemConfigPage() {
                 </div>
               ) : null}
               {preview ? (
-                <div className="admin-table-shell admin-import-preview-table" style={{ marginTop: 14 }}>
+                <div className="admin-table-shell admin-import-preview-table" style={{ marginTop: 14 }} role="region" aria-label="点位角色导入预览表，可横向滚动查看更多字段" tabIndex={0}>
                   <table className="admin-table admin-table-preview">
                     <thead>
                       <tr>
@@ -2995,7 +3058,7 @@ export default function SubsystemConfigPage() {
                 </label>
               </div>
               <p className="admin-note" style={{ marginTop: 12 }}>
-                发布会固化当前配置快照；3001 运行端只消费已发布配置。回滚按版本快照恢复能力和点位角色映射。
+                发布会固化不可变配置快照；每次发布必须使用新版本号，成功后会自动生成下一版本号。3001 运行端只消费已发布配置，回滚按历史版本快照恢复能力和点位角色映射。
               </p>
               <div className="admin-form-actions">
                 <button className="admin-button is-primary" type="button" onClick={() => void handlePublish()} disabled={saving || !versionId.trim()}>
@@ -3013,7 +3076,7 @@ export default function SubsystemConfigPage() {
                   <span>版本历史</span>
                 </div>
                 {versions.length ? (
-                  <div className="admin-table-shell">
+                  <div className="admin-table-shell" role="region" aria-label="子系统配置版本历史表，可横向滚动查看更多字段" tabIndex={0}>
                     <table className="admin-table">
                       <thead>
                         <tr>

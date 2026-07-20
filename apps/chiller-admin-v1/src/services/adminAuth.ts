@@ -1,7 +1,13 @@
 import { runtimeConfig } from "../config/runtimeConfig";
 import { getAdminMe } from "./adminClient";
 import { getMockSites } from "./adminMocks";
-import type { AdminRole, AdminSiteSummary, AdminMe, LegacyLoginResult } from "./adminTypes";
+import type {
+  AdminMe,
+  AdminRole,
+  AdminRoleClaims,
+  AdminSiteSummary,
+  LegacyLoginResult
+} from "./adminTypes";
 
 export const ADMIN_AUTH_STORAGE_KEY = "chiller-admin-auth-v1";
 
@@ -10,6 +16,7 @@ export type AdminSession = {
   token: string;
   userId?: string;
   role: AdminRole;
+  roles?: AdminRoleClaims;
   visibleSites: AdminSiteSummary[];
   loginAt: string;
   bootstrap: boolean;
@@ -40,7 +47,34 @@ function normalizeRole(value: unknown): AdminRole {
   if (value === 1 || value === "1" || value === "edit") {
     return "platform_admin";
   }
-  return "site_admin";
+  return "auditor";
+}
+
+function normalizeRoleClaims(value: unknown): AdminRoleClaims | undefined {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as {
+    platformRole?: unknown;
+    siteRoles?: unknown;
+  };
+  const platformRole =
+    record.platformRole === "platform_admin" || record.platformRole === "auditor"
+      ? record.platformRole
+      : null;
+  const siteRoles = Array.isArray(record.siteRoles)
+    ? record.siteRoles
+        .filter((item): item is { scopeId?: unknown; role?: unknown } => Boolean(item && typeof item === "object"))
+        .map((item) => ({
+          scopeId: sanitizeString(item.scopeId) || "",
+          role: item.role === "site_admin" ? "site_admin" as const : "auditor" as const
+        }))
+        .filter((item) => Boolean(item.scopeId))
+    : [];
+  return {
+    platformRole,
+    siteRoles
+  };
 }
 
 function sanitizeString(value: unknown): string | undefined {
@@ -103,8 +137,8 @@ function parseSession(value: unknown): AdminSession | null {
           status: site.status || "active",
           ownerName: sanitizeString(site.ownerName),
           remark: sanitizeString(site.remark),
-          sourceStatus: site.sourceStatus || "ok",
-          runtimeStatus: site.runtimeStatus || "ok",
+          sourceStatus: site.sourceStatus || "unknown",
+          runtimeStatus: site.runtimeStatus || "unknown",
           sourceUpdatedAt: sanitizeString(site.sourceUpdatedAt),
           runtimeUpdatedAt: sanitizeString(site.runtimeUpdatedAt),
           memberCount: typeof site.memberCount === "number" ? site.memberCount : 0,
@@ -118,6 +152,7 @@ function parseSession(value: unknown): AdminSession | null {
     token,
     userId: sanitizeString(candidate.userId),
     role,
+    roles: normalizeRoleClaims(candidate.roles),
     visibleSites,
     loginAt: sanitizeString(candidate.loginAt) || new Date().toISOString(),
     bootstrap: Boolean(candidate.bootstrap)
@@ -187,6 +222,24 @@ export function clearAdminSession(): void {
   window.localStorage.removeItem(ADMIN_AUTH_STORAGE_KEY);
 }
 
+export function canAdminSessionWriteSite(
+  session: AdminSession | null,
+  siteId: string
+): boolean {
+  const normalizedSiteId = siteId.trim();
+  if (!session || !normalizedSiteId) {
+    return false;
+  }
+  if (session.roles?.platformRole === "platform_admin") {
+    return true;
+  }
+  return Boolean(
+    session.roles?.siteRoles.some((binding) => (
+      binding.scopeId === normalizedSiteId && binding.role === "site_admin"
+    ))
+  );
+}
+
 function sanitizeInternalRedirectPath(value: string | null | undefined): string | null {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
     return null;
@@ -239,6 +292,7 @@ export async function completeAdminLogin(loginResult: LegacyLoginResult): Promis
     token: loginResult.token,
     userId: me.userId || loginResult.userId,
     role: me.role || normalizeRole(loginResult.role),
+    roles: normalizeRoleClaims(me.roles),
     visibleSites: me.visibleSites || [],
     loginAt: new Date().toISOString(),
     bootstrap: Boolean(me.bootstrap)

@@ -1,4 +1,4 @@
-import { ArrowLeft, RefreshCw, Settings2, Users } from "lucide-react";
+import { ArrowLeft, Factory, RefreshCw, Settings2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import SectionCard from "../components/common/SectionCard";
@@ -31,6 +31,23 @@ function statusTone(value?: string): "good" | "warn" | "danger" | "neutral" {
     return "danger";
   }
   return "neutral";
+}
+
+function formatMemberRole(value: string): string {
+  const labels: Record<string, string> = {
+    platform_admin: "平台管理员",
+    site_admin: "站点管理员",
+    auditor: "审计员"
+  };
+  return labels[value] || value;
+}
+
+function formatMemberScope(value: string): string {
+  const labels: Record<string, string> = {
+    site: "站点范围",
+    platform: "平台范围"
+  };
+  return labels[value] || value;
 }
 
 function safeJson(value?: string): string {
@@ -194,8 +211,8 @@ export default function SiteDetailPage() {
             <p>{site?.siteId || "siteId 未加载"}</p>
             <div className="admin-chip-row" style={{ marginTop: 14 }}>
               <StatusPill label={site?.status || "unknown"} tone={statusTone(site?.status)} />
-              <StatusPill label={`接入 ${site?.sourceStatus || "ok"}`} tone={statusTone(site?.sourceStatus)} />
-              <StatusPill label={`运行 ${site?.runtimeStatus || "ok"}`} tone={statusTone(site?.runtimeStatus)} />
+              <StatusPill label={`接入 ${site?.sourceStatus || "unknown"}`} tone={statusTone(site?.sourceStatus)} />
+              <StatusPill label={`运行 ${site?.runtimeStatus || "unknown"}`} tone={statusTone(site?.runtimeStatus)} />
               <StatusPill label={`${members.length} 个成员`} tone="neutral" />
             </div>
           </div>
@@ -221,6 +238,10 @@ export default function SiteDetailPage() {
               <Settings2 size={14} />
               子系统配置
             </button>
+            <button className="admin-button is-primary" type="button" onClick={() => navigate(`/sites/${encodeURIComponent(siteId)}/stations`)}>
+              <Factory size={14} />
+              物理站房登记
+            </button>
             <button className="admin-button is-primary" type="button" onClick={() => navigate(`/sites/${encodeURIComponent(siteId)}/members`)}>
               <Users size={14} />
               成员权限
@@ -230,9 +251,9 @@ export default function SiteDetailPage() {
       </section>
 
       <div className="admin-summary-grid">
-        <StatCard title="成员数量" value={String(members.length)} delta="bindings" tone="neutral" />
-        <StatCard title="接入状态" value={site?.sourceStatus || "ok"} delta="source" tone={statusTone(site?.sourceStatus)} />
-        <StatCard title="运行状态" value={site?.runtimeStatus || "ok"} delta="runtime" tone={statusTone(site?.runtimeStatus)} />
+        <StatCard title="成员数量" value={String(members.length)} delta="权限绑定" tone="neutral" />
+        <StatCard title="接入状态" value={site?.sourceStatus || "unknown"} delta="source" tone={statusTone(site?.sourceStatus)} />
+        <StatCard title="运行状态" value={site?.runtimeStatus || "unknown"} delta="runtime" tone={statusTone(site?.runtimeStatus)} />
         <StatCard title="当前版本" value={runtimeConfig?.version || "v1"} delta="runtime-config" tone="good" />
       </div>
 
@@ -248,8 +269,8 @@ export default function SiteDetailPage() {
       ) : (
         <>
           <SourceStatusBanner
-            summary={`站点 ${site?.siteName || siteId} 的接入状态为 ${site?.sourceStatus || "ok"}，运行状态为 ${site?.runtimeStatus || "ok"}.`}
-            warn={(site?.sourceStatus || "ok") !== "ok" || (site?.runtimeStatus || "ok") !== "ok"}
+            summary={`站点 ${site?.siteName || siteId} 的接入状态为 ${site?.sourceStatus || "unknown"}，运行状态为 ${site?.runtimeStatus || "unknown"}.`}
+            warn={(site?.sourceStatus || "unknown") !== "ok" || (site?.runtimeStatus || "unknown") !== "ok"}
             detailLines={[
               `负责人：${site?.ownerName || "未设置"}`,
               `城市：${site?.city || "未设置"}`,
@@ -288,7 +309,7 @@ export default function SiteDetailPage() {
                   {kvRow("defaultDeviceQuery", formatDeviceQueryLabel(effectiveSourceConfig))}
                 </dl>
                 {effectiveSourceConfig?.deviceDataInterfaces?.length ? (
-                  <div className="admin-table-shell">
+                  <div className="admin-table-shell" role="region" aria-label="设备数据接口表，可横向滚动查看更多字段" tabIndex={0}>
                     <table className="admin-table">
                       <thead>
                         <tr>
@@ -355,7 +376,7 @@ export default function SiteDetailPage() {
 
             <SectionCard title="成员预览" action={<button className="admin-inline-action" type="button" onClick={() => navigate(`/sites/${encodeURIComponent(siteId)}/members`)}>打开管理页</button>}>
               {members.length > 0 ? (
-                <div className="admin-table-shell">
+                <div className="admin-table-shell" role="region" aria-label="站点成员预览表，可横向滚动查看更多字段" tabIndex={0}>
                   <table className="admin-table">
                     <thead>
                       <tr>
@@ -368,8 +389,8 @@ export default function SiteDetailPage() {
                       {members.slice(0, 4).map((member) => (
                         <tr key={member.bindingId}>
                           <td>{member.username}</td>
-                          <td>{member.role}</td>
-                          <td>{member.scopeType}{member.scopeId ? ` · ${member.scopeId}` : ""}</td>
+                          <td>{formatMemberRole(member.role)}</td>
+                          <td>{formatMemberScope(member.scopeType)}{member.scopeId ? ` · ${member.scopeId}` : ""}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -383,7 +404,7 @@ export default function SiteDetailPage() {
 
           <SectionCard title="最近审计">
             {logs.length > 0 ? (
-              <div className="admin-table-shell">
+              <div className="admin-table-shell" role="region" aria-label="最近审计记录表，可横向滚动查看更多字段" tabIndex={0}>
                 <table className="admin-table">
                   <thead>
                     <tr>

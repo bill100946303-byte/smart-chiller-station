@@ -116,6 +116,7 @@ export default function SourceConfigPage() {
     <div className="admin-page-stack">
       <SectionCard
         title="站点接入配置"
+        headingLevel={2}
         action={
           <div className="admin-actions">
             <button className="admin-button" type="button" onClick={() => navigate(`/sites/${encodeURIComponent(siteId)}`)}>
@@ -159,7 +160,7 @@ export default function SourceConfigPage() {
                   这一块是系统按 `sourceConfig + 内置项目接口注册表` 计算出来的只读结果，不直接参与保存。
                 </p>
                 {effectiveSourceConfig?.deviceDataInterfaces?.length ? (
-                  <div className="admin-table-shell" style={{ marginTop: 12 }}>
+                  <div className="admin-table-shell" style={{ marginTop: 12 }} role="region" aria-label="数据源接口计算结果表，可横向滚动查看更多字段" tabIndex={0}>
                     <table className="admin-table">
                       <thead>
                         <tr>

@@ -11,6 +11,8 @@ import SubsystemConfigPage from "./pages/SubsystemConfigPage";
 import FcuWorkOrderDetailPage from "./pages/FcuWorkOrderDetailPage";
 import MembersPage from "./pages/MembersPage";
 import AuditLogsPage from "./pages/AuditLogsPage";
+import StationRegistryPage from "./pages/StationRegistryPage";
+import StationRuntimeBindingPage from "./pages/StationRuntimeBindingPage";
 
 function ExternalRedirect({ to }: { to: string }) {
   useEffect(() => {
@@ -66,6 +68,8 @@ export default function App() {
         <Route path="/sites/:siteId/source-config" element={<SourceConfigPage />} />
         <Route path="/sites/:siteId/runtime-config" element={<RuntimeConfigPage />} />
         <Route path="/sites/:siteId/subsystems" element={<SubsystemConfigPage />} />
+        <Route path="/sites/:siteId/stations" element={<StationRegistryPage />} />
+        <Route path="/sites/:siteId/stations/:stationId/runtime-binding" element={<StationRuntimeBindingPage />} />
         <Route path="/sites/:siteId/subsystems/fcu/:workOrderId" element={<FcuWorkOrderDetailPage />} />
         <Route path="/sites/:siteId/members" element={<MembersPage />} />
         <Route path="/audit-logs" element={<AuditLogsPage />} />

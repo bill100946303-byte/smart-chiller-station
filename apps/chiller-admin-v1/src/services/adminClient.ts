@@ -9,6 +9,7 @@ import {
   getMockPointRoleMappings,
   getMockRuntimeConfig,
   getMockSite,
+  listMockStationInstances,
   getMockSiteSubsystems,
   getMockSites,
   getMockSourceConfig,
@@ -21,11 +22,13 @@ import {
   updateMockPointRoleMappings,
   updateMockRuntimeConfig,
   updateMockSite,
+  updateMockStationInstances,
   updateMockSiteSubsystems,
   updateMockSourceConfig
 } from "./adminMocks";
 import type {
   AdminAuditLog,
+  AdminBackendHealth,
   AdminConfigVersion,
   AdminConfigVersionResult,
   AdminDeviceDataInterface,
@@ -44,10 +47,18 @@ import type {
   AdminMe,
   AdminMemberStatus,
   AdminRole,
+  AdminRoleClaims,
   AdminRuntimeConfig,
   AdminScopeType,
   AdminSiteDetail,
   AdminSiteSummary,
+  AdminSourceStatus,
+  AdminStationInstance,
+  AdminStationInstanceList,
+  AdminStationRuntimeBinding,
+  AdminStationRuntimeBindingState,
+  AdminStationRuntimeBindingStatus,
+  AdminStationRuntimeBindingValidation,
   AdminPointRoleImportPreview,
   AdminPointRoleMapping,
   AdminSourceConfig,
@@ -58,6 +69,7 @@ import type {
 
 export type {
   AdminAuditLog,
+  AdminBackendHealth,
   AdminAdvisorPluginBinding,
   AdminConfigVersion,
   AdminConfigVersionResult,
@@ -80,6 +92,7 @@ export type {
   AdminMe,
   AdminMemberStatus,
   AdminRole,
+  AdminRoleClaims,
   AdminRuntimeConfig,
   AdminScopeType,
   AdminPointRoleImportPreview,
@@ -88,6 +101,12 @@ export type {
   AdminSiteDetail,
   AdminSiteStatus,
   AdminSiteSummary,
+  AdminStationInstance,
+  AdminStationInstanceList,
+  AdminStationRuntimeBinding,
+  AdminStationRuntimeBindingState,
+  AdminStationRuntimeBindingStatus,
+  AdminStationRuntimeBindingValidation,
   AdminSiteSubsystemCapability,
   AdminSourceConfig,
   AdminSourceConfigBundle,
@@ -98,6 +117,14 @@ export type {
 
 type QueryValue = string | number | boolean | null | undefined;
 
+export const ADMIN_AUTH_EXPIRED_EVENT = "chiller-admin-auth-expired";
+
+const PHYSICAL_STATION_PARENT_SUBSYSTEM_TYPES = new Set([
+  "chilled_plant",
+  "compressed_air",
+  "boiler_room"
+]);
+
 type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   token?: string;
@@ -107,18 +134,40 @@ type RequestOptions = {
   allowMockFallback?: boolean;
 };
 
-class AdminApiError extends Error {
+export class AdminApiError extends Error {
   status: number;
   code?: string;
   payload?: unknown;
+  originalMessage: string;
 
   constructor(status: number, message: string, code?: string, payload?: unknown) {
-    super(message);
+    super(formatAdminApiErrorMessage(status, message, code));
     this.name = "AdminApiError";
     this.status = status;
     this.code = code;
     this.payload = payload;
+    this.originalMessage = message;
   }
+}
+
+function formatAdminApiErrorMessage(status: number, message: string, code?: string): string {
+  const normalized = `${code || ""} ${message}`.trim().toLowerCase();
+  if (status === 401 || /invalid or expired.*token|token.*expired|unauthorized/.test(normalized)) {
+    return "登录凭证已失效，请重新登录。";
+  }
+  if (status === 403 || /forbidden|permission denied/.test(normalized)) {
+    return "当前账号没有此操作权限。";
+  }
+  if (status === 404) {
+    return "请求的后台资源不存在，请核对站点与配置范围。";
+  }
+  if (status === 0 || /failed to fetch|network error/.test(normalized)) {
+    return "后台服务连接失败，请检查管理接口是否可用。";
+  }
+  if (/request failed/.test(normalized)) {
+    return "后台请求失败，请稍后重试或查看服务日志。";
+  }
+  return message;
 }
 
 function buildUrl(path: string, query?: Record<string, QueryValue>): string {
@@ -188,6 +237,9 @@ async function requestJson<T>(path: string, options: RequestOptions = {}): Promi
       if (record.code !== undefined) {
         code = String(record.code || "");
       }
+    }
+    if (response.status === 401 && options.token && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent(ADMIN_AUTH_EXPIRED_EVENT));
     }
     throw new AdminApiError(response.status, message, code, payload);
   }
@@ -439,13 +491,19 @@ function normalizeSiteSummary(value: Partial<AdminSiteSummary>): AdminSiteSummar
     status: value.status || "active",
     ownerName: value.ownerName || undefined,
     remark: value.remark || undefined,
-    sourceStatus: value.sourceStatus || "ok",
-    runtimeStatus: value.runtimeStatus || "ok",
+    sourceStatus: normalizeSiteSourceStatus(value.sourceStatus),
+    runtimeStatus: normalizeSiteSourceStatus(value.runtimeStatus),
     sourceUpdatedAt: value.sourceUpdatedAt || record.sourceConfig?.updatedAt || undefined,
     runtimeUpdatedAt: value.runtimeUpdatedAt || record.runtimeConfig?.updatedAt || undefined,
     memberCount: value.memberCount || (Array.isArray(record.members) ? record.members.length : 0),
     updatedAt: value.updatedAt || undefined
   };
+}
+
+function normalizeSiteSourceStatus(value: unknown): AdminSourceStatus {
+  return value === "ok" || value === "partial" || value === "failed" || value === "not_configured"
+    ? value
+    : "unknown";
 }
 
 function normalizeSiteDetail(value: Partial<AdminSiteDetail>): AdminSiteDetail {
@@ -701,6 +759,12 @@ function normalizeSubsystemRegistryItem(value: Partial<AdminSubsystemRegistryIte
   };
 }
 
+function filterStationParentSubsystems(
+  items: AdminSubsystemRegistryItem[]
+): AdminSubsystemRegistryItem[] {
+  return items.filter((item) => PHYSICAL_STATION_PARENT_SUBSYSTEM_TYPES.has(item.subsystemType));
+}
+
 function normalizeSiteSubsystemCapability(value: Partial<AdminSiteSubsystemCapability>): AdminSiteSubsystemCapability {
   const enabled = value.status === "enabled";
   return {
@@ -733,6 +797,353 @@ function normalizeSiteSubsystemCapability(value: Partial<AdminSiteSubsystemCapab
       notes: "第一版只读/影子运行。"
     },
     updatedAt: value.updatedAt || null
+  };
+}
+
+function normalizeStationInstance(
+  value: Partial<AdminStationInstance>,
+  fallbackSiteId = ""
+): AdminStationInstance {
+  const status =
+    value.status === "enabled" || value.status === "not_applicable"
+      ? value.status
+      : "not_configured";
+  const enabled = status === "enabled";
+  const alarmCount = Number(value.alarmCount);
+  const sortOrder = Number(value.sortOrder);
+  const bindingState = value.bindingState === "draft"
+    || value.bindingState === "validated"
+    || value.bindingState === "published"
+    || value.bindingState === "superseded"
+    || value.bindingState === "disabled"
+    ? value.bindingState
+    : "unconfigured";
+  const normalizeBindingVersion = (candidate: unknown): number | null => {
+    const version = Number(candidate);
+    return Number.isSafeInteger(version) && version > 0 ? version : null;
+  };
+  return {
+    siteId: String(value.siteId || fallbackSiteId).trim(),
+    stationId: String(value.stationId || "").trim(),
+    stationName: String(value.stationName || value.stationId || "").trim(),
+    parentSubsystemType: String(value.parentSubsystemType || "").trim(),
+    status,
+    enabled,
+    sourceStatus: enabled ? String(value.sourceStatus || "unknown") : "not_configured",
+    freshnessStatus: enabled ? String(value.freshnessStatus || "unknown") : "not_configured",
+    alarmCount: enabled && Number.isFinite(alarmCount) ? Math.max(0, Math.round(alarmCount)) : null,
+    bindingState,
+    bindingVersion: normalizeBindingVersion(value.bindingVersion),
+    draftBindingVersion: normalizeBindingVersion(value.draftBindingVersion),
+    publishedBindingVersion: normalizeBindingVersion(value.publishedBindingVersion),
+    sortOrder: Number.isFinite(sortOrder) ? Math.max(0, Math.round(sortOrder)) : 999,
+    published: value.published === true,
+    notes: value.notes ?? null,
+    createdAt: value.createdAt ?? null,
+    updatedAt: value.updatedAt ?? null,
+    createdBy: value.createdBy ?? null,
+    updatedBy: value.updatedBy ?? null
+  };
+}
+
+const STATION_RUNTIME_BINDING_STATUSES = new Set<AdminStationRuntimeBindingStatus>([
+  "draft",
+  "validated",
+  "published",
+  "superseded",
+  "disabled"
+]);
+
+function normalizeStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return Array.from(new Set(value.map((item) => String(item || "").trim()).filter(Boolean)));
+}
+
+function normalizeStationRuntimeBindingValidation(
+  value: unknown
+): AdminStationRuntimeBindingValidation | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  const record = value as Record<string, unknown>;
+  const matched = record.matched && typeof record.matched === "object" && !Array.isArray(record.matched)
+    ? record.matched as Record<string, unknown>
+    : {};
+  const unmatched = record.unmatched && typeof record.unmatched === "object" && !Array.isArray(record.unmatched)
+    ? record.unmatched as Record<string, unknown>
+    : {};
+  const ambiguous = record.ambiguous && typeof record.ambiguous === "object" && !Array.isArray(record.ambiguous)
+    ? record.ambiguous as Record<string, unknown>
+    : {};
+  return {
+    ok: record.ok === true,
+    payloadHash: typeof record.payloadHash === "string" ? record.payloadHash : null,
+    checkedAt: typeof record.checkedAt === "string" ? record.checkedAt : null,
+    selectorMode: typeof record.selectorMode === "string" ? record.selectorMode : null,
+    matchAll: record.matchAll === true,
+    matched: {
+      deviceCount: Number.isSafeInteger(Number(matched.deviceCount)) ? Number(matched.deviceCount) : 0,
+      devices: Array.isArray(matched.devices)
+        ? matched.devices.filter((item): item is { deviceId?: string; deviceCode?: string; deviceName?: string } => (
+            Boolean(item && typeof item === "object" && !Array.isArray(item))
+          ))
+        : [],
+      pointCount: Number.isSafeInteger(Number(matched.pointCount)) ? Number(matched.pointCount) : 0,
+      points: Array.isArray(matched.points) ? matched.points : []
+    },
+    unmatched: {
+      deviceIds: normalizeStringList(unmatched.deviceIds),
+      deviceCodes: normalizeStringList(unmatched.deviceCodes),
+      pointCodes: normalizeStringList(unmatched.pointCodes)
+    },
+    ambiguous: {
+      deviceIds: normalizeStringList(ambiguous.deviceIds),
+      pointCodes: normalizeStringList(ambiguous.pointCodes)
+    },
+    errors: normalizeStringList(record.errors),
+    catalogHash: typeof record.catalogHash === "string" ? record.catalogHash : null,
+    sourceEvidence: record.sourceEvidence && typeof record.sourceEvidence === "object" && !Array.isArray(record.sourceEvidence)
+      ? record.sourceEvidence as Record<string, unknown>
+      : undefined
+  };
+}
+
+function normalizeStationRuntimeBinding(
+  value: unknown,
+  expectedSiteId: string,
+  expectedStationId: string
+): AdminStationRuntimeBinding | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  const record = value as Record<string, unknown>;
+  const source = record.source && typeof record.source === "object" && !Array.isArray(record.source)
+    ? record.source as Record<string, unknown>
+    : {};
+  const selectors = record.selectors && typeof record.selectors === "object" && !Array.isArray(record.selectors)
+    ? record.selectors as Record<string, unknown>
+    : {};
+  const status = STATION_RUNTIME_BINDING_STATUSES.has(record.status as AdminStationRuntimeBindingStatus)
+    ? record.status as AdminStationRuntimeBindingStatus
+    : "draft";
+  const bindingVersion = Number(record.bindingVersion);
+  const siteId = String(record.siteId || "").trim();
+  const stationId = String(record.stationId || "").trim();
+  if (
+    siteId !== expectedSiteId ||
+    stationId !== expectedStationId ||
+    !Number.isSafeInteger(bindingVersion) ||
+    bindingVersion <= 0
+  ) {
+    throw new AdminApiError(
+      502,
+      "Station runtime binding response identity or version is invalid",
+      "STATION_RUNTIME_BINDING_CONTRACT_INVALID",
+      value
+    );
+  }
+  return {
+    siteId,
+    stationId,
+    stationName: typeof record.stationName === "string" ? record.stationName : null,
+    parentSubsystemType: typeof record.parentSubsystemType === "string" ? record.parentSubsystemType : null,
+    stationStatus: typeof record.stationStatus === "string" ? record.stationStatus : null,
+    stationPublished: record.stationPublished === true,
+    status,
+    bindingVersion,
+    source: {
+      databaseKey: typeof source.databaseKey === "string" ? source.databaseKey : null,
+      projectKey: typeof source.projectKey === "string" ? source.projectKey : null,
+      template: typeof source.template === "string" ? source.template : null
+    },
+    selectors: {
+      deviceIds: normalizeStringList(selectors.deviceIds),
+      deviceCodes: normalizeStringList(selectors.deviceCodes),
+      pointCodes: normalizeStringList(selectors.pointCodes)
+    },
+    payloadHash: typeof record.payloadHash === "string" ? record.payloadHash : null,
+    validatedHash: typeof record.validatedHash === "string" ? record.validatedHash : null,
+    validation: normalizeStationRuntimeBindingValidation(record.validation),
+    checkedAt: typeof record.checkedAt === "string" ? record.checkedAt : null,
+    publishedAt: typeof record.publishedAt === "string" ? record.publishedAt : null,
+    publishedBy: typeof record.publishedBy === "string" ? record.publishedBy : null,
+    notes: typeof record.notes === "string" ? record.notes : null,
+    createdAt: typeof record.createdAt === "string" ? record.createdAt : null,
+    updatedAt: typeof record.updatedAt === "string" ? record.updatedAt : null,
+    createdBy: typeof record.createdBy === "string" ? record.createdBy : null,
+    updatedBy: typeof record.updatedBy === "string" ? record.updatedBy : null
+  };
+}
+
+function normalizeStationRuntimeBindingState(
+  payload: unknown,
+  expectedSiteId: string,
+  expectedStationId: string
+): AdminStationRuntimeBindingState {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new AdminApiError(
+      502,
+      "Station runtime binding state response is invalid",
+      "STATION_RUNTIME_BINDING_CONTRACT_INVALID",
+      payload
+    );
+  }
+  const record = payload as Record<string, unknown>;
+  const siteId = String(record.siteId || "").trim();
+  const stationId = String(record.stationId || "").trim();
+  if (siteId !== expectedSiteId || stationId !== expectedStationId) {
+    throw new AdminApiError(
+      502,
+      "Station runtime binding response does not match the requested station",
+      "STATION_RUNTIME_BINDING_CONTRACT_INVALID",
+      payload
+    );
+  }
+  const normalizeVersion = (value: unknown): number | null => {
+    const version = Number(value);
+    return Number.isSafeInteger(version) && version > 0 ? version : null;
+  };
+  const draftBinding = normalizeStationRuntimeBinding(record.draftBinding, siteId, stationId);
+  const publishedBinding = normalizeStationRuntimeBinding(record.publishedBinding, siteId, stationId);
+  const binding = normalizeStationRuntimeBinding(record.binding, siteId, stationId)
+    || draftBinding
+    || publishedBinding;
+  const draftVersion = normalizeVersion(record.draftVersion);
+  const publishedVersion = normalizeVersion(record.publishedVersion);
+  if (
+    (draftBinding !== null && draftBinding.bindingVersion !== draftVersion) ||
+    (publishedBinding !== null && publishedBinding.bindingVersion !== publishedVersion)
+  ) {
+    throw new AdminApiError(
+      502,
+      "Station runtime binding head/version mismatch",
+      "STATION_RUNTIME_BINDING_CONTRACT_INVALID",
+      payload
+    );
+  }
+  return {
+    siteId,
+    stationId,
+    binding,
+    draftBinding,
+    publishedBinding,
+    draftVersion,
+    publishedVersion,
+    configured: record.configured === true || Boolean(binding),
+    validation: normalizeStationRuntimeBindingValidation(record.validation)
+      || draftBinding?.validation
+      || null
+  };
+}
+
+function assertStationInstanceListContract(
+  payload: unknown,
+  expectedSiteId: string,
+  requiredStationIds: string[] = []
+): AdminStationInstanceList {
+  const record = payload && typeof payload === "object"
+    ? payload as Record<string, unknown>
+    : {};
+  const responseSiteId = String(record.siteId || "").trim();
+  const rawItems = Array.isArray(record.items)
+    ? record.items.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"))
+    : [];
+  const total = Number(record.total);
+  const stableIdPattern = /^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,62}[A-Za-z0-9])?$/;
+  const rawItemInvalid =
+    !Array.isArray(record.items) ||
+    rawItems.length !== record.items.length ||
+    rawItems.some((item) => {
+      const status = item.status;
+      const enabled = status === "enabled";
+      const alarmCountValid = item.alarmCount === null || (
+        enabled && typeof item.alarmCount === "number" && Number.isInteger(item.alarmCount) && item.alarmCount >= 0
+      );
+      const bindingStateValid = item.bindingState === "unconfigured"
+        || item.bindingState === "draft"
+        || item.bindingState === "validated"
+        || item.bindingState === "published"
+        || item.bindingState === "superseded"
+        || item.bindingState === "disabled";
+      const bindingVersionValid = [
+        item.bindingVersion,
+        item.draftBindingVersion,
+        item.publishedBindingVersion
+      ].every((version) => version === null || (
+        typeof version === "number" && Number.isSafeInteger(version) && version > 0
+      ));
+      return (
+        typeof item.siteId !== "string" || item.siteId.trim() !== expectedSiteId ||
+        typeof item.stationId !== "string" || !stableIdPattern.test(item.stationId.trim()) ||
+        typeof item.stationName !== "string" || !item.stationName.trim() ||
+        typeof item.parentSubsystemType !== "string" || !item.parentSubsystemType.trim() ||
+        (status !== "enabled" && status !== "not_configured" && status !== "not_applicable") ||
+        typeof item.enabled !== "boolean" || item.enabled !== enabled ||
+        typeof item.sourceStatus !== "string" || !item.sourceStatus.trim() ||
+        typeof item.freshnessStatus !== "string" || !item.freshnessStatus.trim() ||
+        !alarmCountValid ||
+        !bindingStateValid ||
+        !bindingVersionValid ||
+        typeof item.sortOrder !== "number" || !Number.isInteger(item.sortOrder) || item.sortOrder < 0 ||
+        typeof item.published !== "boolean" ||
+        (item.notes !== null && item.notes !== undefined && typeof item.notes !== "string")
+      );
+    });
+  const items = rawItems.map((item) => normalizeStationInstance(item as Partial<AdminStationInstance>));
+  const ids = items.map((item) => item.stationId);
+  const invalid =
+    responseSiteId !== expectedSiteId ||
+    typeof record.generatedAt !== "string" || !record.generatedAt.trim() ||
+    !Number.isInteger(total) ||
+    total !== items.length ||
+    rawItemInvalid ||
+    new Set(ids).size !== ids.length ||
+    items.some((item) => (
+      item.siteId !== expectedSiteId ||
+      !item.stationId ||
+      !item.stationName ||
+      !item.parentSubsystemType
+    )) ||
+    requiredStationIds.some((stationId) => !ids.includes(stationId));
+  if (invalid) {
+    throw new AdminApiError(
+      502,
+      "Physical station registry response did not match the requested site or submitted identities",
+      "STATION_REGISTRY_CONTRACT_INVALID",
+      payload
+    );
+  }
+  return {
+    siteId: responseSiteId,
+    generatedAt: String(record.generatedAt || ""),
+    items,
+    total
+  };
+}
+
+function normalizeAdminRoleClaims(value: unknown): AdminRoleClaims | undefined {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const platformRole =
+    record.platformRole === "platform_admin" || record.platformRole === "auditor"
+      ? record.platformRole
+      : null;
+  const siteRoles = Array.isArray(record.siteRoles)
+    ? record.siteRoles
+        .filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"))
+        .map((item) => ({
+          scopeId: String(item.scopeId || "").trim(),
+          role: item.role === "site_admin" ? "site_admin" as const : "auditor" as const
+        }))
+        .filter((item) => Boolean(item.scopeId))
+    : [];
+  return {
+    platformRole,
+    siteRoles
   };
 }
 
@@ -778,13 +1189,30 @@ function normalizePointRoleImportPreview(value: Partial<AdminPointRoleImportPrev
 }
 
 export async function getAdminMe(token: string, userId?: string, username?: string): Promise<AdminMe> {
-  const payload = await requestOrMock("/admin/v1/me", {
-    token,
-    userId,
-    allowMockFallback: true,
-    fallback: () => createMockMe(userId || "admin", username || "admin")
-  });
-  const record = unwrapRecord<AdminMe>(payload) || createMockMe(userId || "admin", username || "admin");
+  const payload = runtimeConfig.useMockData
+    ? createMockMe(userId || "admin", username || "admin")
+    : await requestJson<unknown>("/admin/v1/me", { token, userId });
+  const record = unwrapRecord<AdminMe>(payload);
+  const rawRoles = payload && typeof payload === "object"
+    ? (payload as Record<string, unknown>).roles || record?.roles
+    : record?.roles;
+  const roles = normalizeAdminRoleClaims(rawRoles);
+  const normalizedRole = record?.role;
+  if (
+    !record ||
+    !String(record.userId || "").trim() ||
+    !String(record.username || "").trim() ||
+    (normalizedRole !== "platform_admin" && normalizedRole !== "site_admin" && normalizedRole !== "auditor") ||
+    !roles ||
+    (!roles.platformRole && roles.siteRoles.length === 0)
+  ) {
+    throw new AdminApiError(
+      502,
+      "/admin/v1/me did not return explicit admin role claims",
+      "ADMIN_ME_CONTRACT_INVALID",
+      payload
+    );
+  }
   const visibleSource =
     payload && typeof payload === "object"
       ? (payload as Record<string, unknown>).visibleSites ||
@@ -793,12 +1221,61 @@ export async function getAdminMe(token: string, userId?: string, username?: stri
         []
       : [];
   return {
-    userId: String(record.userId || userId || "admin"),
-    username: String(record.username || username || "admin"),
-    role: record.role || "site_admin",
+    userId: String(record.userId),
+    username: String(record.username),
+    role: normalizedRole,
+    roles,
     visibleSites: unwrapList<AdminSiteSummary>(visibleSource).map((site) => normalizeSiteSummary(site)),
     bootstrap: Boolean(record.bootstrap)
   };
+}
+
+export async function getAdminBackendHealth(): Promise<AdminBackendHealth> {
+  const checkedAt = new Date().toISOString();
+  if (runtimeConfig.useMockData) {
+    const writeAllowed = runtimeConfig.readOnlyMode !== true;
+    return {
+      reachable: true,
+      ok: true,
+      readOnlyMode: runtimeConfig.readOnlyMode,
+      writeAllowed,
+      checkedAt,
+      source: "mock",
+      reason: writeAllowed ? "显式 mock 模式允许本地登记。" : "显式 mock 模式处于只读状态。"
+    };
+  }
+  try {
+    const payload = await requestJson<unknown>("/healthz");
+    const record = payload && typeof payload === "object"
+      ? payload as Record<string, unknown>
+      : {};
+    const ok = record.ok === true;
+    const readOnlyMode = typeof record.readOnlyMode === "boolean" ? record.readOnlyMode : null;
+    const writeAllowed = ok && readOnlyMode === false;
+    return {
+      reachable: true,
+      ok,
+      readOnlyMode,
+      writeAllowed,
+      checkedAt,
+      source: "server",
+      reason: writeAllowed
+        ? "服务端健康且 readOnlyMode=false。"
+        : readOnlyMode === true
+          ? "服务端 readOnlyMode=true，所有管理写入均被总闸阻断。"
+          : "服务端未返回明确的可写状态。"
+    };
+  } catch (error) {
+    return {
+      reachable: false,
+      ok: false,
+      readOnlyMode: null,
+      writeAllowed: false,
+      checkedAt,
+      source: "unavailable",
+      reason: error instanceof Error ? error.message : "服务端健康状态不可用。"
+    };
+  }
 }
 
 export async function listAdminSites(
@@ -882,6 +1359,168 @@ export async function listSiteSubsystems(
     fallback: () => getMockSiteSubsystems(siteId)
   });
   return unwrapList<AdminSiteSubsystemCapability>(payload).map((item) => normalizeSiteSubsystemCapability(item));
+}
+
+export async function listStationParentSubsystems(
+  token: string,
+  userId?: string
+): Promise<AdminSubsystemRegistryItem[]> {
+  if (runtimeConfig.useMockData) {
+    return filterStationParentSubsystems(
+      getMockSubsystemRegistry().map((item) => normalizeSubsystemRegistryItem(item))
+    );
+  }
+  const payload = await requestJson<unknown>("/admin/v1/subsystem-registry", {
+    token,
+    userId
+  });
+  return filterStationParentSubsystems(
+    unwrapList<AdminSubsystemRegistryItem>(payload).map((item) => normalizeSubsystemRegistryItem(item))
+  );
+}
+
+export async function listStationInstances(
+  token: string,
+  userId: string | undefined,
+  siteId: string
+): Promise<AdminStationInstanceList> {
+  if (runtimeConfig.useMockData) {
+    return assertStationInstanceListContract(listMockStationInstances(siteId), siteId);
+  }
+  const payload = await requestJson<unknown>(
+    `/admin/v1/sites/${encodeURIComponent(siteId)}/stations`,
+    { token, userId }
+  );
+  return assertStationInstanceListContract(payload, siteId);
+}
+
+export async function updateStationInstances(
+  token: string,
+  userId: string | undefined,
+  siteId: string,
+  items: Partial<AdminStationInstance>[]
+): Promise<AdminStationInstanceList> {
+  const requiredStationIds = items.map((item) => String(item.stationId || "").trim()).filter(Boolean);
+  if (runtimeConfig.useMockData) {
+    return assertStationInstanceListContract(
+      updateMockStationInstances(siteId, items, currentUserIdentity(token, userId)),
+      siteId,
+      requiredStationIds
+    );
+  }
+  const payload = await requestJson<unknown>(
+    `/admin/v1/sites/${encodeURIComponent(siteId)}/stations`,
+    {
+      method: "PUT",
+      token,
+      userId,
+      body: { items }
+    }
+  );
+  return assertStationInstanceListContract(payload, siteId, requiredStationIds);
+}
+
+export async function getStationRuntimeBinding(
+  token: string,
+  userId: string | undefined,
+  siteId: string,
+  stationId: string
+): Promise<AdminStationRuntimeBindingState> {
+  if (runtimeConfig.useMockData) {
+    return {
+      siteId,
+      stationId,
+      binding: null,
+      draftBinding: null,
+      publishedBinding: null,
+      draftVersion: null,
+      publishedVersion: null,
+      configured: false,
+      validation: null
+    };
+  }
+  const payload = await requestJson<unknown>(
+    `/admin/v1/sites/${encodeURIComponent(siteId)}/stations/${encodeURIComponent(stationId)}/runtime-binding`,
+    { token, userId }
+  );
+  return normalizeStationRuntimeBindingState(payload, siteId, stationId);
+}
+
+type SaveStationRuntimeBindingInput = {
+  expectedVersion: number;
+  source: {
+    databaseKey: string | null;
+    projectKey: string | null;
+    template: string | null;
+  };
+  selectors: {
+    deviceIds: string[];
+    deviceCodes: string[];
+    pointCodes: string[];
+  };
+  notes?: string | null;
+};
+
+function assertRealBindingMutationAvailable(): void {
+  if (runtimeConfig.useMockData) {
+    throw new AdminApiError(
+      501,
+      "Local mock mode cannot validate or publish a real station runtime binding",
+      "STATION_RUNTIME_BINDING_MOCK_BLOCKED"
+    );
+  }
+}
+
+export async function saveStationRuntimeBindingDraft(
+  token: string,
+  userId: string | undefined,
+  siteId: string,
+  stationId: string,
+  input: SaveStationRuntimeBindingInput
+): Promise<AdminStationRuntimeBindingState> {
+  assertRealBindingMutationAvailable();
+  const payload = await requestJson<unknown>(
+    `/admin/v1/sites/${encodeURIComponent(siteId)}/stations/${encodeURIComponent(stationId)}/runtime-binding`,
+    { method: "PUT", token, userId, body: input }
+  );
+  return normalizeStationRuntimeBindingState(payload, siteId, stationId);
+}
+
+export async function validateStationRuntimeBindingDraft(
+  token: string,
+  userId: string | undefined,
+  siteId: string,
+  stationId: string,
+  expectedVersion: number
+): Promise<AdminStationRuntimeBindingState> {
+  assertRealBindingMutationAvailable();
+  try {
+    const payload = await requestJson<unknown>(
+      `/admin/v1/sites/${encodeURIComponent(siteId)}/stations/${encodeURIComponent(stationId)}/runtime-binding/validate`,
+      { method: "POST", token, userId, body: { expectedVersion } }
+    );
+    return normalizeStationRuntimeBindingState(payload, siteId, stationId);
+  } catch (error) {
+    if (error instanceof AdminApiError && error.status === 422 && error.payload) {
+      return normalizeStationRuntimeBindingState(error.payload, siteId, stationId);
+    }
+    throw error;
+  }
+}
+
+export async function publishStationRuntimeBindingDraft(
+  token: string,
+  userId: string | undefined,
+  siteId: string,
+  stationId: string,
+  expectedVersion: number
+): Promise<AdminStationRuntimeBindingState> {
+  assertRealBindingMutationAvailable();
+  const payload = await requestJson<unknown>(
+    `/admin/v1/sites/${encodeURIComponent(siteId)}/stations/${encodeURIComponent(stationId)}/runtime-binding/publish`,
+    { method: "POST", token, userId, body: { expectedVersion } }
+  );
+  return normalizeStationRuntimeBindingState(payload, siteId, stationId);
 }
 
 export async function updateSiteSubsystems(
@@ -1502,5 +2141,3 @@ export async function listAdminAuditLogs(
   });
   return unwrapList<AdminAuditLog>(payload).map((entry) => normalizeAuditLog(entry));
 }
-
-export { AdminApiError };
