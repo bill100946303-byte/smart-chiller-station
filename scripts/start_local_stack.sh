@@ -35,11 +35,15 @@ BYX_POWER_HISTORY_DIR="${BYX_POWER_HISTORY_DIR:-}"
 BYX_POWER_ASSIGNMENT_FILE="${BYX_POWER_ASSIGNMENT_FILE:-}"
 APP_MODE="${APP_MODE:-local}"
 APP_MODE_LABEL="${APP_MODE_LABEL:-}"
-READ_ONLY_MODE="${READ_ONLY_MODE:-0}"
+# Fail closed: local startup must remain read-only unless an operator
+# explicitly opens a reviewed, time-bounded commissioning window.
+READ_ONLY_MODE="${READ_ONLY_MODE:-1}"
 BFF_APP_BASE_URL="${BFF_APP_BASE_URL:-${VITE_BFF_BASE_URL:-http://127.0.0.1:${BFF_PORT}}}"
 BFF_HEALTH_URL="${BFF_HEALTH_URL:-${BFF_APP_BASE_URL}/healthz}"
 FRONTEND_URL="${FRONTEND_BASE_URL:-http://127.0.0.1:${FRONTEND_PORT}/}"
-FRONTEND_FALLBACK_PORTS="${FRONTEND_FALLBACK_PORTS:-3001 3002 3003}"
+# Port 3002 is reserved for chiller-admin-v1. Never start the operator shell
+# there, otherwise the project configuration CTA opens the wrong application.
+FRONTEND_FALLBACK_PORTS="${FRONTEND_FALLBACK_PORTS:-3001 3003 3004}"
 APP_MODE_SLUG="$(slugify_token "${APP_MODE}")"
 BFF_LOG="${BFF_LOG:-/tmp/chiller-bff-${APP_MODE_SLUG}-${BFF_PORT}.log}"
 SHELL_LOG_BASE="${SHELL_LOG_BASE:-/tmp/chiller-shell-${APP_MODE_SLUG}}"
