@@ -9,6 +9,50 @@ import { computeFreshnessState } from "./freshness.js";
 import { applyFieldNullStrategy, buildGeneratedAt } from "./fieldPolicyService.js";
 import { buildSourceStatus } from "./sourceStatusService.js";
 
+const B25_READ_ONLY_SCENE_ALIASES = new Set([
+  "140",
+  "b25",
+  "140b25",
+  "btwentyfive",
+  "140btwentyfive"
+]);
+
+function normalizeSceneScopeToken(value) {
+  if (typeof value !== "string" && typeof value !== "number") {
+    return "";
+  }
+  return String(value).trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function appendSceneScopeCandidates(candidates, value) {
+  if (Array.isArray(value)) {
+    value.forEach((item) => appendSceneScopeCandidates(candidates, item));
+    return;
+  }
+  candidates.push(value);
+}
+
+function resolveB25ReadOnlySceneScope(siteId, options = {}) {
+  const candidates = [siteId];
+  const identityFields = [
+    "siteId",
+    "siteCode",
+    "appId",
+    "projectKey",
+    "projectKeyCandidates",
+    "databaseKey",
+    "databaseKeyCandidates",
+    "preferredProjectKey",
+    "modelKey"
+  ];
+  for (const field of identityFields) {
+    appendSceneScopeCandidates(candidates, options?.[field]);
+  }
+  return candidates
+    .map(normalizeSceneScopeToken)
+    .find((candidate) => B25_READ_ONLY_SCENE_ALIASES.has(candidate)) || null;
+}
+
 function mapSite(config, siteId) {
   return {
     siteId: applyFieldNullStrategy(config, "site_id", siteId, siteId),
@@ -83,6 +127,40 @@ export async function submitSceneDeviceCommand(config, siteId, request = {}, opt
   const value = request.value == null ? "" : String(request.value).trim();
   const tagName = typeof request.tagName === "string" ? request.tagName.trim() : "";
   const msg = `${regName}|${value}|${tagName}`;
+  const command = {
+    drId: request.drId == null ? "" : String(request.drId),
+    drTypeId: request.drTypeId == null ? "" : String(request.drTypeId),
+    regName,
+    value,
+    tagName,
+    msg
+  };
+  const blockedScope = resolveB25ReadOnlySceneScope(siteId, options);
+  if (blockedScope) {
+    const error = "B25冷站数字孪生仅允许只读监测，禁止下发BA/PLC场景控制指令。";
+    return {
+      site: mapSite(config, siteId),
+      generatedAt: buildGeneratedAt(config),
+      ok: false,
+      code: "B25_READ_ONLY_SCOPE",
+      status: 403,
+      message: null,
+      error,
+      payload: null,
+      controlMutation: false,
+      dispatch: false,
+      command,
+      sourceStatus: buildSourceStatus([{
+        key: "sceneDeviceCommand",
+        endpoint: "",
+        ok: false,
+        status: 403,
+        reasonCode: "B25_READ_ONLY_SCOPE",
+        error,
+        rows: null
+      }])
+    };
+  }
   const report = await executeSceneDeviceCommand(config.legacyBaseUrl, siteId, {
     ...options,
     drId: request.drId,
@@ -97,14 +175,7 @@ export async function submitSceneDeviceCommand(config, siteId, request = {}, opt
     message: report.message,
     error: report.error,
     payload: report.payload,
-    command: {
-      drId: request.drId == null ? "" : String(request.drId),
-      drTypeId: request.drTypeId == null ? "" : String(request.drTypeId),
-      regName,
-      value,
-      tagName,
-      msg
-    },
+    command,
     sourceStatus: buildSourceStatus([{ key: "sceneDeviceCommand", ...(report.sourceStatus || {}) }])
   };
 }

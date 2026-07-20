@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { DatabaseSync } from "node:sqlite";
 
 import { createAdminStore } from "./admin-db.js";
 
@@ -245,6 +246,44 @@ test("energy config versions are listed per site and allow reused version ids", 
   adminStore.close();
 });
 
+test("published config versions are immutable within a site", () => {
+  const adminStore = createStoreWithSite();
+  const before = adminStore.publishConfigVersion("site-energy", "cfg-immutable", actor, {
+    summary: "first snapshot"
+  });
+
+  adminStore.upsertSiteSubsystems(
+    "site-energy",
+    {
+      items: [
+        {
+          subsystemType: "power_monitoring",
+          status: "enabled"
+        }
+      ]
+    },
+    actor
+  );
+
+  assert.throws(
+    () =>
+      adminStore.publishConfigVersion("site-energy", "cfg-immutable", actor, {
+        summary: "attempted overwrite"
+      }),
+    (error) => {
+      assert.equal(error.status, 409);
+      assert.equal(error.code, "CONFLICT");
+      assert.equal(error.details?.versionId, "cfg-immutable");
+      return true;
+    }
+  );
+
+  const rollback = adminStore.rollbackConfigVersion("site-energy", "cfg-immutable", actor);
+  assert.equal(rollback.version.summary, "first snapshot");
+  assert.deepEqual(rollback.version.payload, before.payload);
+  adminStore.close();
+});
+
 test("energy config publishedOnly excludes unpublished subsystems and publish rollback writes audit logs", () => {
   const adminStore = createStoreWithSite();
   adminStore.upsertSiteSubsystems(
@@ -290,4 +329,320 @@ test("energy config publishedOnly excludes unpublished subsystems and publish ro
   assert.ok(audits.some((item) => item.action === "site.config-version.rollback" && item.targetId === "cfg-audit"));
 
   adminStore.close();
+});
+
+test("energy config keeps physical station instances separate from subsystem capabilities", () => {
+  const adminStore = createStoreWithSite();
+  const staged = adminStore.upsertStationInstances(
+    "site-energy",
+    {
+      items: [
+        {
+          stationId: "chilled-a",
+          stationName: "冷冻站 A",
+          parentSubsystemType: "chilled_plant",
+          status: "enabled",
+          sortOrder: 10
+        },
+        {
+          stationId: "chilled-b",
+          stationName: "冷冻站 B",
+          parentSubsystemType: "chilled_plant",
+          status: "not_configured",
+          sortOrder: 20
+        },
+        {
+          stationId: "air-01",
+          stationName: "空压站 1",
+          parentSubsystemType: "compressed_air",
+          status: "not_configured",
+          sortOrder: 30
+        }
+      ]
+    },
+    actor
+  );
+
+  assert.deepEqual(staged.items.map((item) => item.stationId), ["chilled-a", "chilled-b", "air-01"]);
+  assert.equal(staged.items[0].published, false);
+  assert.equal(staged.items[0].sourceStatus, "not_configured");
+  assert.equal(staged.items[0].freshnessStatus, "not_configured");
+  assert.equal(staged.items[0].alarmCount, null);
+  assert.equal(
+    adminStore.getSiteCapabilities("site-energy", { publishedOnly: true }).stationTotal,
+    0
+  );
+
+  adminStore.publishConfigVersion("site-energy", "cfg-stations", actor);
+  const published = adminStore.getSiteCapabilities("site-energy", { publishedOnly: true });
+  assert.equal(published.stationTotal, 3);
+  assert.deepEqual(
+    published.stationInstances.map((item) => item.parentSubsystemType),
+    ["chilled_plant", "chilled_plant", "compressed_air"]
+  );
+  assert.equal(published.items.filter((item) => item.subsystemType === "chilled_plant").length, 1);
+
+  adminStore.upsertStationInstances(
+    "site-energy",
+    {
+      items: [
+        {
+          stationId: "chilled-a",
+          stationName: "已改名冷冻站",
+          parentSubsystemType: "chilled_plant"
+        }
+      ]
+    },
+    actor
+  );
+  adminStore.rollbackConfigVersion("site-energy", "cfg-stations", actor);
+  assert.equal(
+    adminStore.listStationInstances("site-energy").items.find((item) => item.stationId === "chilled-a")?.stationName,
+    "冷冻站 A"
+  );
+  const rolledBackPublishedStations = adminStore.listStationInstances("site-energy", {
+    publishedOnly: true
+  });
+  assert.equal(rolledBackPublishedStations.total, 3);
+  assert.equal(
+    rolledBackPublishedStations.items.find((item) => item.stationId === "chilled-a")?.published,
+    true
+  );
+  assert.ok(
+    adminStore.listAuditLogs({ siteId: "site-energy", limit: 50 }, { allowAllSites: true })
+      .some((item) => item.action === "site.station-instances.update")
+  );
+
+  assert.throws(
+    () => adminStore.upsertStationInstances(
+      "site-energy",
+      {
+        items: [
+          {
+            stationId: "invalid-parent",
+            stationName: "未知站房",
+            parentSubsystemType: "unknown_energy_type"
+          }
+        ]
+      },
+      actor
+    ),
+    /Unknown subsystem type/
+  );
+
+  for (const parentSubsystemType of ["power_monitoring", "hvac_terminal"]) {
+    assert.throws(
+      () => adminStore.upsertStationInstances(
+        "site-energy",
+        {
+          items: [
+            {
+              stationId: `invalid-${parentSubsystemType}`,
+              stationName: `非站房对象 ${parentSubsystemType}`,
+              parentSubsystemType
+            }
+          ]
+        },
+        actor
+      ),
+      (error) => (
+        error?.status === 400
+        && error?.details?.field === "parentSubsystemType"
+        && error?.details?.allowed?.includes("chilled_plant")
+        && !error?.details?.allowed?.includes(parentSubsystemType)
+      )
+    );
+    assert.throws(
+      () => adminStore.listStationInstances("site-energy", { parentSubsystemType }),
+      (error) => error?.status === 400 && error?.details?.field === "parentSubsystemType"
+    );
+  }
+
+  assert.throws(
+    () => adminStore.upsertStationInstances(
+      "site-energy",
+      {
+        items: [
+          {
+            stationId: "冷冻站 A",
+            stationName: "非法标识站房",
+            parentSubsystemType: "chilled_plant"
+          }
+        ]
+      },
+      actor
+    ),
+    (error) => error?.status === 400 && error?.details?.field === "stationId"
+  );
+
+  assert.throws(
+    () => adminStore.upsertStationInstances(
+      "site-energy",
+      {
+        items: [
+          {
+            stationId: "chilled-c",
+            stationName: "冷冻站 A",
+            parentSubsystemType: "chilled_plant"
+          }
+        ]
+      },
+      actor
+    ),
+    (error) => error?.status === 409 && error?.details?.conflictingStationId === "chilled-a"
+  );
+
+  for (const [field, value] of [
+    ["status", "ready"],
+    ["published", "true"],
+    ["sortOrder", -1]
+  ]) {
+    assert.throws(
+      () => adminStore.upsertStationInstances(
+        "site-energy",
+        {
+          items: [
+            {
+              stationId: "strict-contract",
+              stationName: "严格合同测试站房",
+              parentSubsystemType: "chilled_plant",
+              status: "enabled",
+              published: false,
+              sortOrder: 90,
+              [field]: value
+            }
+          ]
+        },
+        actor
+      ),
+      (error) => error?.status === 400 && error?.details?.field === field
+    );
+    assert.equal(
+      adminStore.listStationInstances("site-energy").items.some((item) => item.stationId === "strict-contract"),
+      false
+    );
+  }
+
+  assert.throws(
+    () => adminStore.upsertStationInstances(
+      "site-energy",
+      {
+        items: [
+          {
+            stationId: "runtime-evidence-forbidden",
+            stationName: "禁止人工证据站房",
+            parentSubsystemType: "chilled_plant",
+            sourceStatus: "ok",
+            freshnessStatus: "fresh",
+            alarmCount: 0
+          }
+        ]
+      },
+      actor
+    ),
+    (error) => error?.status === 400
+      && error?.details?.fields?.includes("sourceStatus")
+      && error?.details?.fields?.includes("freshnessStatus")
+      && error?.details?.fields?.includes("alarmCount")
+  );
+
+  adminStore.close();
+});
+
+test("station registry filters legacy nonphysical rows and rejects unsafe rollback atomically", () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "chiller-station-semantics-"));
+  const dbFile = path.join(tempDir, "admin.sqlite");
+  let adminStore;
+  try {
+    adminStore = createAdminStore({ dbFile });
+    adminStore.createSite(
+      {
+        siteId: "site-energy",
+        siteName: "综合能源站测试",
+        status: "active"
+      },
+      actor
+    );
+    adminStore.upsertStationInstances(
+      "site-energy",
+      {
+        items: [
+          {
+            stationId: "chilled-safe",
+            stationName: "安全冷冻站",
+            parentSubsystemType: "chilled_plant"
+          }
+        ]
+      },
+      actor
+    );
+    adminStore.publishConfigVersion("site-energy", "cfg-unsafe-snapshot", actor);
+    adminStore.close();
+    adminStore = null;
+
+    const sqlite = new DatabaseSync(dbFile);
+    const versionRow = sqlite.prepare(
+      "SELECT payload_json FROM admin_config_versions WHERE site_id = ? AND version_id = ?"
+    ).get("site-energy", "cfg-unsafe-snapshot");
+    const unsafeSnapshot = JSON.parse(versionRow.payload_json);
+    unsafeSnapshot.stationInstances.items[0].parentSubsystemType = "hvac_terminal";
+    sqlite.prepare(
+      "UPDATE admin_config_versions SET payload_json = ? WHERE site_id = ? AND version_id = ?"
+    ).run(JSON.stringify(unsafeSnapshot), "site-energy", "cfg-unsafe-snapshot");
+    const timestamp = new Date().toISOString();
+    sqlite.prepare(
+      `
+        INSERT INTO admin_station_instances (
+          site_id, station_id, station_name, parent_subsystem_type, status,
+          source_status, freshness_status, alarm_count, sort_order, published,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `
+    ).run(
+      "site-energy",
+      "legacy-terminal",
+      "历史末端脏数据",
+      "hvac_terminal",
+      "not_configured",
+      "not_configured",
+      "not_configured",
+      0,
+      999,
+      1,
+      timestamp,
+      timestamp
+    );
+    sqlite.close();
+
+    adminStore = createAdminStore({ dbFile });
+    assert.deepEqual(
+      adminStore.listStationInstances("site-energy").items.map((item) => item.stationId),
+      ["chilled-safe"]
+    );
+    adminStore.upsertStationInstances(
+      "site-energy",
+      {
+        items: [
+          {
+            stationId: "chilled-safe",
+            stationName: "已修改安全冷冻站",
+            parentSubsystemType: "chilled_plant"
+          }
+        ]
+      },
+      actor
+    );
+
+    assert.throws(
+      () => adminStore.rollbackConfigVersion("site-energy", "cfg-unsafe-snapshot", actor),
+      (error) => error?.status === 400 && error?.details?.field === "parentSubsystemType"
+    );
+    assert.equal(
+      adminStore.listStationInstances("site-energy").items[0]?.stationName,
+      "已修改安全冷冻站"
+    );
+  } finally {
+    adminStore?.close();
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
 });

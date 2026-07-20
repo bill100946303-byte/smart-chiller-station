@@ -59,6 +59,38 @@ ADMIN_DEV_AUTH=1 ADMIN_BOOTSTRAP_USERNAMES=admin npm run dev
 
 `ADMIN_DEV_AUTH` is off by default and is accepted only in local/test/development modes. It allows local demo tokens such as `mock-token-admin` to call `/admin/v1`, then the bootstrap username grants the local admin session platform access.
 
+## Isolated multi-station UI fixture
+
+Use the acceptance fixture to verify physical-station navigation and runtime data isolation without touching a real project, PLC, or gateway:
+
+```bash
+cd /Users/billchow/Documents/智慧冷冻站/apps/chiller-bff
+npm run dev:multi-station-ui-fixture
+```
+
+In another terminal, point the shell at the fixture:
+
+```bash
+cd /Users/billchow/Documents/智慧冷冻站/apps/chiller-shell-v1
+VITE_BFF_BASE_URL=http://127.0.0.1:8791 \
+VITE_LEGACY_BASE_URL=http://127.0.0.1:8792 \
+VITE_SITE_ID=ui-multi-station \
+VITE_APP_MODE=local \
+VITE_APP_MODE_LABEL=多站房验收 \
+VITE_APP_READ_ONLY=1 \
+VITE_SCENE_CONTROL_ENABLED=0 \
+npm run dev -- --host 127.0.0.1 --port 3003
+```
+
+The fixture is loopback-only, read-only, and uses an in-memory admin database plus a deterministic fake legacy upstream. Any local fixture credentials are accepted. It provides six physical stations: three chilled-water plants, one compressed-air station, and two boiler rooms. Chilled plants A/B, compressed-air station 1, and boiler room 1 have independent published bindings. Chilled plant C is intentionally unbound, while boiler room 2 is intentionally inactive, for fail-closed verification. It does not write project `126lnoffice` data and does not call a PLC, BA system, or field gateway.
+
+Run its isolated contract test with:
+
+```bash
+cd /Users/billchow/Documents/智慧冷冻站/apps/chiller-bff
+node --test --test-reporter=spec scripts/start-multi-station-ui-fixture.test.js
+```
+
 ## Contract check
 
 ```bash

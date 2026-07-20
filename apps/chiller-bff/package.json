@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node src/server.js",
+    "dev:multi-station-ui-fixture": "node scripts/start-multi-station-ui-fixture.js",
     "start": "node src/server.js",
     "test": "node --test",
     "check:contract": "node scripts/check-contract.js",
@@ -26,6 +27,7 @@
     "check:optimize-l3-smoke": "node scripts/check-optimize-l3-smoke.js",
     "check:b25-ui-smoke": "node scripts/check-b25-ui-smoke.js",
     "check:b25-upstream-data": "node scripts/check-b25-upstream-data.js",
+    "check:b25-runtime-point-evidence": "node scripts/check-b25-runtime-point-evidence.js",
     "check:b25-tower-approach-readiness": "node scripts/check-b25-tower-approach-readiness.js",
     "check:tower-approach-control-mapping": "node scripts/check-tower-approach-control-mapping.js",
     "collect:b25-tower-approach-shadow": "node scripts/collect-b25-tower-approach-shadow-sample.js",

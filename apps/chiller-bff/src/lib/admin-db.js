@@ -1,8 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { createHash } from "node:crypto";
 
 import { badRequest, conflict, notFound } from "./admin-errors.js";
+import {
+  PHYSICAL_STATION_PARENT_TYPES,
+  isPhysicalStationParentType
+} from "./energy-object-semantics.js";
 
 const SITE_STATUSES = new Set(["active", "paused", "disabled"]);
 const ADMIN_ROLES = new Set(["platform_admin", "site_admin", "auditor"]);
@@ -22,6 +27,13 @@ const SHADOW_VERIFICATION_OUTCOMES = new Set(["improved", "neutral", "regressed"
 const SUBSYSTEM_STATUSES = new Set(["enabled", "not_configured", "not_applicable"]);
 const SUBSYSTEM_MODES = new Set(["monitoring", "optimization_ready", "reserved"]);
 const CONTROL_BOUNDARY_MODES = new Set(["read_only", "shadow", "assisted", "enforced"]);
+const STATION_RUNTIME_BINDING_STATUSES = new Set([
+  "draft",
+  "validated",
+  "published",
+  "superseded",
+  "disabled"
+]);
 const POINT_ROLE_KINDS = new Set([
   "power",
   "temperature",
@@ -33,6 +45,8 @@ const POINT_ROLE_KINDS = new Set([
   "command",
   "feedback"
 ]);
+const STATION_ID_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,62}[A-Za-z0-9])?$/;
+const STATION_RUNTIME_SOURCE_KEY_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9_-]{0,126}[A-Za-z0-9])?$/;
 
 const GLOBAL_REGISTRY_SITE_ID = "__global__";
 
@@ -177,6 +191,140 @@ function normalizeText(value) {
 function normalizeNullableText(value) {
   const normalized = normalizeText(value);
   return normalized || null;
+}
+
+function assertStationId(value) {
+  const stationId = normalizeText(value);
+  if (!stationId) {
+    throw badRequest("stationId is required", { field: "stationId" });
+  }
+  if (!STATION_ID_PATTERN.test(stationId)) {
+    throw badRequest("stationId must be a stable 1-64 character identifier", {
+      field: "stationId",
+      allowed: "ASCII letters, numbers, dot, underscore and hyphen; must start and end with a letter or number"
+    });
+  }
+  return stationId;
+}
+
+function resolveStationStatus(value, fallback = "not_configured") {
+  if (value === null || value === undefined || value === "") {
+    return fallback;
+  }
+  const normalized = normalizeText(value).toLowerCase();
+  if (!SUBSYSTEM_STATUSES.has(normalized)) {
+    throw badRequest("status must be a supported station status", {
+      field: "status",
+      allowed: [...SUBSYSTEM_STATUSES]
+    });
+  }
+  return normalized;
+}
+
+function resolveStationBoolean(value, fallback, field) {
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+  if (typeof value !== "boolean") {
+    throw badRequest(`${field} must be a boolean`, { field });
+  }
+  return value;
+}
+
+function resolveStationNonNegativeInteger(value, fallback, field) {
+  if (value === null || value === undefined || value === "") {
+    return fallback;
+  }
+  const number = Number(value);
+  if (!Number.isSafeInteger(number) || number < 0) {
+    throw badRequest(`${field} must be a non-negative integer`, { field });
+  }
+  return number;
+}
+
+function normalizeStationRuntimeSelectorList(value, field, maximum = 1000) {
+  if (value === null || value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    throw badRequest(`${field} must be an array`, { field });
+  }
+  const items = normalizeTextList(value);
+  if (items.length > maximum) {
+    throw badRequest(`${field} exceeds the supported item limit`, {
+      field,
+      maximum
+    });
+  }
+  return items;
+}
+
+function normalizeStationRuntimeSourceKey(value, field) {
+  const normalized = normalizeText(value);
+  if (!normalized) {
+    return null;
+  }
+  if (!STATION_RUNTIME_SOURCE_KEY_PATTERN.test(normalized)) {
+    throw badRequest(`${field} must be a stable source identifier`, {
+      field,
+      allowed: "ASCII letters, numbers, underscore and hyphen"
+    });
+  }
+  return normalized;
+}
+
+function normalizeStationRuntimeBindingStatus(value, fallback = "draft") {
+  const normalized = normalizeText(value).toLowerCase();
+  if (!normalized) {
+    return fallback;
+  }
+  if (!STATION_RUNTIME_BINDING_STATUSES.has(normalized)) {
+    throw badRequest("status must be a supported binding lifecycle state", {
+      field: "status",
+      allowed: [...STATION_RUNTIME_BINDING_STATUSES]
+    });
+  }
+  return normalized;
+}
+
+function buildStationRuntimeBindingPayload(source, selectors) {
+  return {
+    source: {
+      databaseKey: source.databaseKey || null,
+      projectKey: source.projectKey || null,
+      template: source.template || null
+    },
+    selectors: {
+      deviceIds: [...selectors.deviceIds].sort(),
+      deviceCodes: [...selectors.deviceCodes].map((item) => item.toUpperCase()).sort(),
+      pointCodes: [...selectors.pointCodes].sort()
+    }
+  };
+}
+
+function buildStationRuntimeBindingPayloadHash(source, selectors) {
+  return createHash("sha256")
+    .update(JSON.stringify(buildStationRuntimeBindingPayload(source, selectors)))
+    .digest("hex");
+}
+
+function buildStationRuntimeEffectiveSourceHash(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return "";
+  }
+  return createHash("sha256")
+    .update(JSON.stringify(value))
+    .digest("hex");
+}
+
+function normalizeExpectedBindingVersion(value) {
+  const number = Number(value);
+  if (!Number.isSafeInteger(number) || number < 0) {
+    throw badRequest("expectedVersion must be a non-negative integer", {
+      field: "expectedVersion"
+    });
+  }
+  return number;
 }
 
 function normalizeSiteStatus(value, fallback = "active") {
@@ -837,6 +985,92 @@ function mapSiteSubsystemCapabilityRow(row) {
   };
 }
 
+function mapStationInstanceRow(row) {
+  if (!row) {
+    return null;
+  }
+  const status = normalizeSubsystemStatus(row.status, "not_configured");
+  const enabled = status === "enabled";
+  const bindingState = STATION_RUNTIME_BINDING_STATUSES.has(row.binding_status)
+    ? row.binding_status
+    : "unconfigured";
+  const bindingVersion = Number.isSafeInteger(row.binding_version) && row.binding_version > 0
+    ? row.binding_version
+    : null;
+  const publishedBindingVersion = Number.isSafeInteger(row.published_binding_version)
+    && row.published_binding_version > 0
+    ? row.published_binding_version
+    : null;
+  const draftBindingVersion = Number.isSafeInteger(row.draft_binding_version)
+    && row.draft_binding_version > 0
+    ? row.draft_binding_version
+    : null;
+  return {
+    siteId: row.site_id,
+    stationId: row.station_id,
+    stationName: row.station_name || row.station_id,
+    parentSubsystemType: row.parent_subsystem_type,
+    status,
+    enabled,
+    // Runtime health is evidence, not editable station identity. Until a
+    // persistent probe ledger exists, even a published binding remains unknown.
+    sourceStatus: enabled && publishedBindingVersion ? "unknown" : "not_configured",
+    freshnessStatus: enabled && publishedBindingVersion ? "unknown" : "not_configured",
+    alarmCount: null,
+    bindingState,
+    bindingVersion,
+    draftBindingVersion,
+    publishedBindingVersion,
+    sortOrder: typeof row.sort_order === "number" ? row.sort_order : 999,
+    published: row.published !== 0,
+    notes: row.notes || null,
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null,
+    createdBy: row.created_by || null,
+    updatedBy: row.updated_by || null
+  };
+}
+
+function mapStationRuntimeBindingRow(row) {
+  if (!row) {
+    return null;
+  }
+  const deviceIds = safeJsonParse(row.device_ids_json, []);
+  const deviceCodes = safeJsonParse(row.device_codes_json, []);
+  const pointCodes = safeJsonParse(row.point_codes_json, []);
+  return {
+    siteId: row.site_id,
+    stationId: row.station_id,
+    stationName: row.station_name || null,
+    parentSubsystemType: row.parent_subsystem_type || null,
+    stationStatus: row.station_status || null,
+    stationPublished: row.station_published === 1,
+    status: STATION_RUNTIME_BINDING_STATUSES.has(row.status) ? row.status : "draft",
+    bindingVersion: Number.isSafeInteger(row.binding_version) ? row.binding_version : 0,
+    source: {
+      databaseKey: row.database_key || null,
+      projectKey: row.project_key || null,
+      template: row.template || null
+    },
+    selectors: {
+      deviceIds: Array.isArray(deviceIds) ? deviceIds : [],
+      deviceCodes: Array.isArray(deviceCodes) ? deviceCodes : [],
+      pointCodes: Array.isArray(pointCodes) ? pointCodes : []
+    },
+    payloadHash: row.payload_hash || null,
+    validatedHash: row.validated_hash || null,
+    validation: safeJsonParse(row.validation_json, null),
+    checkedAt: row.checked_at || null,
+    publishedAt: row.published_at || null,
+    publishedBy: row.published_by || null,
+    notes: row.notes || null,
+    createdAt: row.created_at || null,
+    updatedAt: row.updated_at || null,
+    createdBy: row.created_by || null,
+    updatedBy: row.updated_by || null
+  };
+}
+
 function mapPointRoleMappingRow(row) {
   if (!row) {
     return null;
@@ -930,6 +1164,97 @@ function ensureTableColumn(db, tableName, columnName, definitionSql) {
     return;
   }
   db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${definitionSql}`);
+}
+
+function migrateLegacyStationRuntimeBindingsToDrafts(db) {
+  const legacyTable = db.prepare(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'admin_station_runtime_bindings'"
+  ).get();
+  if (!legacyTable) {
+    return;
+  }
+  const rows = db.prepare("SELECT * FROM admin_station_runtime_bindings").all();
+  const timestamp = nowIso();
+  for (const row of rows) {
+    const siteId = normalizeText(row.site_id);
+    const stationId = normalizeText(row.station_id);
+    const deviceIds = safeJsonParse(row.device_ids_json, []);
+    if (!siteId || !stationId || !Array.isArray(deviceIds) || deviceIds.length === 0) {
+      continue;
+    }
+    const existing = db.prepare(
+      `SELECT binding_version
+       FROM admin_station_runtime_binding_versions
+       WHERE site_id = ? AND station_id = ?
+       ORDER BY binding_version DESC LIMIT 1`
+    ).get(siteId, stationId);
+    if (existing) {
+      continue;
+    }
+    const source = {
+      databaseKey: normalizeNullableText(row.database_key),
+      projectKey: normalizeNullableText(row.project_key),
+      template: normalizeNullableText(row.template)
+    };
+    const selectors = {
+      deviceIds: normalizeTextList(deviceIds),
+      deviceCodes: normalizeTextList(safeJsonParse(row.device_codes_json, [])),
+      pointCodes: normalizeTextList(safeJsonParse(row.point_codes_json, []))
+    };
+    const payloadHash = buildStationRuntimeBindingPayloadHash(source, selectors);
+    const bindingVersion = Number.isSafeInteger(row.binding_version) && row.binding_version > 0
+      ? row.binding_version
+      : 1;
+    db.prepare(
+      `
+        INSERT INTO admin_station_runtime_binding_versions (
+          site_id, station_id, binding_version, status, database_key, project_key,
+          template, device_ids_json, device_codes_json, point_codes_json,
+          payload_hash, notes, created_at, updated_at, created_by, updated_by
+        ) VALUES (?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `
+    ).run(
+      siteId,
+      stationId,
+      bindingVersion,
+      source.databaseKey,
+      source.projectKey,
+      source.template,
+      toJsonText(selectors.deviceIds, []),
+      toJsonText(selectors.deviceCodes, []),
+      toJsonText(selectors.pointCodes, []),
+      payloadHash,
+      normalizeNullableText(row.notes),
+      row.created_at || timestamp,
+      timestamp,
+      normalizeNullableText(row.created_by),
+      normalizeNullableText(row.updated_by)
+    );
+    db.prepare(
+      `
+        INSERT INTO admin_station_runtime_binding_heads (
+          site_id, station_id, draft_version, current_published_version, updated_at, updated_by
+        ) VALUES (?, ?, ?, NULL, ?, ?)
+        ON CONFLICT(site_id, station_id) DO UPDATE SET
+          draft_version = excluded.draft_version,
+          current_published_version = NULL,
+          updated_at = excluded.updated_at,
+          updated_by = excluded.updated_by
+      `
+    ).run(
+      siteId,
+      stationId,
+      bindingVersion,
+      timestamp,
+      normalizeNullableText(row.updated_by)
+    );
+  }
+  const migratedTable = db.prepare(
+    "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'admin_station_runtime_bindings_legacy'"
+  ).get();
+  if (!migratedTable) {
+    db.exec("ALTER TABLE admin_station_runtime_bindings RENAME TO admin_station_runtime_bindings_legacy");
+  }
 }
 
 function runMigrations(db) {
@@ -1041,6 +1366,74 @@ function runMigrations(db) {
       PRIMARY KEY (site_id, subsystem_type),
       FOREIGN KEY (site_id) REFERENCES admin_sites(site_id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS admin_station_instances (
+      site_id TEXT NOT NULL,
+      station_id TEXT NOT NULL,
+      station_name TEXT NOT NULL,
+      parent_subsystem_type TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'not_configured',
+      source_status TEXT NOT NULL DEFAULT 'not_configured',
+      freshness_status TEXT NOT NULL DEFAULT 'not_configured',
+      alarm_count INTEGER NOT NULL DEFAULT 0,
+      sort_order INTEGER NOT NULL DEFAULT 999,
+      published INTEGER NOT NULL DEFAULT 0,
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      created_by TEXT,
+      updated_by TEXT,
+      PRIMARY KEY (site_id, station_id),
+      UNIQUE (site_id, parent_subsystem_type, station_name),
+      FOREIGN KEY (site_id) REFERENCES admin_sites(site_id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_admin_station_instances_parent
+      ON admin_station_instances(site_id, parent_subsystem_type, sort_order, station_id);
+
+    CREATE TABLE IF NOT EXISTS admin_station_runtime_binding_versions (
+      site_id TEXT NOT NULL,
+      station_id TEXT NOT NULL,
+      binding_version INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'draft',
+      database_key TEXT,
+      project_key TEXT,
+      template TEXT,
+      device_ids_json TEXT NOT NULL DEFAULT '[]',
+      device_codes_json TEXT NOT NULL DEFAULT '[]',
+      point_codes_json TEXT NOT NULL DEFAULT '[]',
+      payload_hash TEXT NOT NULL,
+      validated_hash TEXT,
+      validation_json TEXT,
+      checked_at TEXT,
+      published_at TEXT,
+      published_by TEXT,
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      created_by TEXT,
+      updated_by TEXT,
+      PRIMARY KEY (site_id, station_id, binding_version),
+      FOREIGN KEY (site_id, station_id)
+        REFERENCES admin_station_instances(site_id, station_id)
+        ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_station_runtime_binding_heads (
+      site_id TEXT NOT NULL,
+      station_id TEXT NOT NULL,
+      draft_version INTEGER,
+      current_published_version INTEGER,
+      updated_at TEXT NOT NULL,
+      updated_by TEXT,
+      PRIMARY KEY (site_id, station_id),
+      FOREIGN KEY (site_id, station_id)
+        REFERENCES admin_station_instances(site_id, station_id)
+        ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_admin_station_runtime_binding_versions_status
+      ON admin_station_runtime_binding_versions(site_id, status, binding_version);
 
     CREATE TABLE IF NOT EXISTS admin_point_role_mappings (
       mapping_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1285,6 +1678,7 @@ function runMigrations(db) {
   `);
 
   ensureTableColumn(db, "admin_site_source_configs", "preferred_project_key", "preferred_project_key TEXT");
+  migrateLegacyStationRuntimeBindingsToDrafts(db);
   ensureConfigVersionsSiteScopedKey(db);
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_admin_config_versions_site_status
@@ -4011,6 +4405,27 @@ export function createAdminStore(options) {
     return registryItem;
   }
 
+  function assertPhysicalStationParentType(parentSubsystemType) {
+    const normalizedType = normalizeText(parentSubsystemType);
+    const registryItem = getSubsystemRegistryItem(normalizedType);
+    if (!registryItem) {
+      throw badRequest(`Unknown subsystem type: ${normalizedType}`, {
+        field: "parentSubsystemType",
+        allowed: [...PHYSICAL_STATION_PARENT_TYPES]
+      });
+    }
+    if (!isPhysicalStationParentType(registryItem.subsystemType)) {
+      throw badRequest(
+        `Subsystem type cannot be used as a physical station parent: ${registryItem.subsystemType}`,
+        {
+          field: "parentSubsystemType",
+          allowed: [...PHYSICAL_STATION_PARENT_TYPES]
+        }
+      );
+    }
+    return registryItem;
+  }
+
   function getSiteCapabilityRow(siteId, subsystemType) {
     return sql.get(
       `
@@ -4419,6 +4834,739 @@ export function createAdminStore(options) {
     return normalizeProgress((mappedRequired / requiredRoles.length) * 100);
   }
 
+  function listStationInstances(siteId, options = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    if (!normalizedSiteId) {
+      throw badRequest("siteId is required", { field: "siteId" });
+    }
+    assertSiteExists(normalizedSiteId);
+    const where = ["s.site_id = ?"];
+    const params = [GLOBAL_REGISTRY_SITE_ID, normalizedSiteId];
+    const parentSubsystemType = normalizeText(options.parentSubsystemType);
+    if (parentSubsystemType) {
+      assertPhysicalStationParentType(parentSubsystemType);
+      where.push("s.parent_subsystem_type = ?");
+      params.push(parentSubsystemType);
+    }
+    if (options.publishedOnly === true) {
+      where.push("s.published = 1");
+    }
+    const items = sql
+      .all(
+        `
+          SELECT
+            s.*,
+            COALESCE(p.status, d.status) AS binding_status,
+            COALESCE(h.current_published_version, h.draft_version) AS binding_version,
+            h.draft_version AS draft_binding_version,
+            h.current_published_version AS published_binding_version
+          FROM admin_station_instances s
+          JOIN admin_subsystem_registry r
+            ON r.site_id = ? AND r.subsystem_type = s.parent_subsystem_type
+          LEFT JOIN admin_station_runtime_binding_heads h
+            ON h.site_id = s.site_id AND h.station_id = s.station_id
+          LEFT JOIN admin_station_runtime_binding_versions d
+            ON d.site_id = h.site_id
+           AND d.station_id = h.station_id
+           AND d.binding_version = h.draft_version
+          LEFT JOIN admin_station_runtime_binding_versions p
+            ON p.site_id = h.site_id
+           AND p.station_id = h.station_id
+           AND p.binding_version = h.current_published_version
+          WHERE ${where.join(" AND ")}
+          ORDER BY r.sort_order ASC, s.sort_order ASC, s.station_name ASC, s.station_id ASC
+        `,
+        ...params
+      )
+      .map(mapStationInstanceRow)
+      .filter((item) => item && isPhysicalStationParentType(item.parentSubsystemType));
+    return {
+      siteId: normalizedSiteId,
+      generatedAt: nowIso(),
+      items,
+      total: items.length
+    };
+  }
+
+  function getStationRuntimeBindingHead(siteId, stationId) {
+    return sql.get(
+      `
+        SELECT *
+        FROM admin_station_runtime_binding_heads
+        WHERE site_id = ? AND station_id = ?
+        LIMIT 1
+      `,
+      siteId,
+      stationId
+    ) || null;
+  }
+
+  function getStationRuntimeBindingVersion(siteId, stationId, bindingVersion) {
+    if (!Number.isSafeInteger(bindingVersion) || bindingVersion <= 0) {
+      return null;
+    }
+    return mapStationRuntimeBindingRow(
+      sql.get(
+        `
+          SELECT
+            b.*,
+            s.station_name,
+            s.parent_subsystem_type,
+            s.status AS station_status,
+            s.published AS station_published
+          FROM admin_station_runtime_binding_versions b
+          JOIN admin_station_instances s
+            ON s.site_id = b.site_id AND s.station_id = b.station_id
+          WHERE b.site_id = ? AND b.station_id = ? AND b.binding_version = ?
+          LIMIT 1
+        `,
+        siteId,
+        stationId,
+        bindingVersion
+      )
+    );
+  }
+
+  function getStationRuntimeBinding(siteId, stationId, options = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    const normalizedStationId = assertStationId(stationId);
+    if (!normalizedSiteId) {
+      throw badRequest("siteId is required", { field: "siteId" });
+    }
+    assertSiteExists(normalizedSiteId);
+    const head = getStationRuntimeBindingHead(normalizedSiteId, normalizedStationId);
+    if (!head) {
+      return null;
+    }
+    const explicitVersion = Number(options.bindingVersion);
+    const view = normalizeText(options.view) || "effective";
+    const bindingVersion = Number.isSafeInteger(explicitVersion) && explicitVersion > 0
+      ? explicitVersion
+      : view === "published"
+        ? head.current_published_version
+        : view === "draft"
+          ? head.draft_version
+          : head.draft_version || head.current_published_version;
+    return getStationRuntimeBindingVersion(normalizedSiteId, normalizedStationId, bindingVersion);
+  }
+
+  function getStationRuntimeBindingState(siteId, stationId) {
+    const normalizedSiteId = normalizeText(siteId);
+    const normalizedStationId = assertStationId(stationId);
+    assertSiteExists(normalizedSiteId);
+    const head = getStationRuntimeBindingHead(normalizedSiteId, normalizedStationId);
+    const draftBinding = head?.draft_version
+      ? getStationRuntimeBindingVersion(normalizedSiteId, normalizedStationId, head.draft_version)
+      : null;
+    const publishedBinding = head?.current_published_version
+      ? getStationRuntimeBindingVersion(normalizedSiteId, normalizedStationId, head.current_published_version)
+      : null;
+    return {
+      siteId: normalizedSiteId,
+      stationId: normalizedStationId,
+      draftVersion: draftBinding?.bindingVersion || null,
+      publishedVersion: publishedBinding?.bindingVersion || null,
+      draftBinding,
+      publishedBinding,
+      effectiveBinding: publishedBinding
+    };
+  }
+
+  function listStationRuntimeBindings(siteId) {
+    const normalizedSiteId = normalizeText(siteId);
+    assertSiteExists(normalizedSiteId);
+    const stationIds = sql.all(
+      `
+        SELECT h.station_id
+        FROM admin_station_runtime_binding_heads h
+        JOIN admin_station_instances s
+          ON s.site_id = h.site_id AND s.station_id = h.station_id
+        WHERE h.site_id = ?
+        ORDER BY s.sort_order ASC, s.station_name ASC, s.station_id ASC
+      `,
+      normalizedSiteId
+    );
+    const items = stationIds.map((row) => getStationRuntimeBindingState(normalizedSiteId, row.station_id));
+    return {
+      siteId: normalizedSiteId,
+      generatedAt: nowIso(),
+      items,
+      total: items.length
+    };
+  }
+
+  function assertPhysicalStationForBinding(siteId, stationId) {
+    const station = mapStationInstanceRow(
+      sql.get(
+        "SELECT * FROM admin_station_instances WHERE site_id = ? AND station_id = ? LIMIT 1",
+        siteId,
+        stationId
+      )
+    );
+    if (!station || !isPhysicalStationParentType(station.parentSubsystemType)) {
+      throw notFound(`Physical station not found: ${stationId}`, { siteId, stationId });
+    }
+    return station;
+  }
+
+  function normalizeStationRuntimeBindingDraftPayload(payload = {}) {
+    if (Object.prototype.hasOwnProperty.call(payload || {}, "status")) {
+      throw badRequest("PUT runtime-binding only saves a draft; status is server-managed", { field: "status" });
+    }
+    const source = payload?.source && typeof payload.source === "object" && !Array.isArray(payload.source)
+      ? payload.source
+      : {};
+    const selectors = payload?.selectors && typeof payload.selectors === "object" && !Array.isArray(payload.selectors)
+      ? payload.selectors
+      : {};
+    const deviceIds = normalizeStationRuntimeSelectorList(selectors.deviceIds, "selectors.deviceIds");
+    const deviceCodes = normalizeStationRuntimeSelectorList(selectors.deviceCodes, "selectors.deviceCodes");
+    const pointCodes = normalizeStationRuntimeSelectorList(selectors.pointCodes, "selectors.pointCodes", 5000);
+    if (deviceIds.length === 0) {
+      throw badRequest("station runtime binding requires selectors.deviceIds", {
+        field: "selectors.deviceIds",
+        reason: "Device detail authorization must be decidable before contacting upstream"
+      });
+    }
+    const wildcardSelectors = [...deviceIds, ...deviceCodes, ...pointCodes]
+      .filter((item) => /[*?]|^(?:all|any)$/i.test(item));
+    if (wildcardSelectors.length > 0) {
+      throw badRequest("Station runtime binding does not allow wildcard or match-all selectors", {
+        field: "selectors",
+        values: wildcardSelectors
+      });
+    }
+    const databaseKey = normalizeStationRuntimeSourceKey(source.databaseKey, "source.databaseKey");
+    const projectKey = normalizeStationRuntimeSourceKey(source.projectKey, "source.projectKey");
+    const template = normalizeNullableText(source.template);
+    if (template && template.length > 32) {
+      throw badRequest("source.template exceeds 32 characters", { field: "source.template" });
+    }
+    const normalizedSource = { databaseKey, projectKey, template };
+    const normalizedSelectors = { deviceIds, deviceCodes, pointCodes };
+    return {
+      source: normalizedSource,
+      selectors: normalizedSelectors,
+      payloadHash: buildStationRuntimeBindingPayloadHash(normalizedSource, normalizedSelectors),
+      notes: normalizeNullableText(payload?.notes)
+    };
+  }
+
+  function upsertStationRuntimeBinding(siteId, stationId, payload = {}, actor = {}, options = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    const normalizedStationId = assertStationId(stationId);
+    assertSiteExists(normalizedSiteId);
+    assertPhysicalStationForBinding(normalizedSiteId, normalizedStationId);
+    const expectedVersion = normalizeExpectedBindingVersion(payload?.expectedVersion);
+    const draft = normalizeStationRuntimeBindingDraftPayload(payload);
+
+    return withTransaction(db, () => {
+      const before = getStationRuntimeBindingState(normalizedSiteId, normalizedStationId);
+      const latestRow = sql.get(
+        `SELECT MAX(binding_version) AS latest_version
+         FROM admin_station_runtime_binding_versions
+         WHERE site_id = ? AND station_id = ?`,
+        normalizedSiteId,
+        normalizedStationId
+      );
+      const currentVersion = Number.isSafeInteger(latestRow?.latest_version) ? latestRow.latest_version : 0;
+      if (expectedVersion !== currentVersion) {
+        throw conflict("Station runtime binding version conflict", {
+          siteId: normalizedSiteId,
+          stationId: normalizedStationId,
+          expectedVersion,
+          currentVersion
+        });
+      }
+      const bindingVersion = currentVersion + 1;
+      const timestamp = nowIso();
+      if (before.draftVersion) {
+        sql.run(
+          `UPDATE admin_station_runtime_binding_versions
+           SET status = 'superseded', updated_at = ?
+           WHERE site_id = ? AND station_id = ? AND binding_version = ?`,
+          timestamp,
+          normalizedSiteId,
+          normalizedStationId,
+          before.draftVersion
+        );
+      }
+      sql.run(
+        `
+          INSERT INTO admin_station_runtime_binding_versions (
+            site_id, station_id, binding_version, status, database_key,
+            project_key, template, device_ids_json, device_codes_json,
+            point_codes_json, payload_hash, notes, created_at, updated_at,
+            created_by, updated_by
+          ) VALUES (?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        normalizedSiteId,
+        normalizedStationId,
+        bindingVersion,
+        draft.source.databaseKey,
+        draft.source.projectKey,
+        draft.source.template,
+        toJsonText(draft.selectors.deviceIds, []),
+        toJsonText(draft.selectors.deviceCodes, []),
+        toJsonText(draft.selectors.pointCodes, []),
+        draft.payloadHash,
+        draft.notes,
+        timestamp,
+        timestamp,
+        normalizeNullableText(actor?.userId),
+        normalizeNullableText(actor?.userId)
+      );
+      sql.run(
+        `
+          INSERT INTO admin_station_runtime_binding_heads (
+            site_id, station_id, draft_version, current_published_version, updated_at, updated_by
+          ) VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(site_id, station_id) DO UPDATE SET
+            draft_version = excluded.draft_version,
+            updated_at = excluded.updated_at,
+            updated_by = excluded.updated_by
+        `,
+        normalizedSiteId,
+        normalizedStationId,
+        bindingVersion,
+        before.publishedVersion,
+        timestamp,
+        normalizeNullableText(actor?.userId)
+      );
+      const after = getStationRuntimeBindingState(normalizedSiteId, normalizedStationId);
+      recordAudit({
+        actorUserId: actor?.userId,
+        actorUsername: actor?.username,
+        action: "site.station-runtime-binding.draft.save",
+        targetType: "station_runtime_binding",
+        targetId: `${normalizedSiteId}:${normalizedStationId}:v${bindingVersion}`,
+        scopeType: "site",
+        scopeId: normalizedSiteId,
+        beforeJson: toJsonText(before),
+        afterJson: toJsonText(after),
+        requestId: options.requestId
+      });
+      return after.draftBinding;
+    });
+  }
+
+  function recordStationRuntimeBindingValidation(
+    siteId,
+    stationId,
+    expectedVersionValue,
+    validation,
+    actor = {},
+    options = {}
+  ) {
+    const normalizedSiteId = normalizeText(siteId);
+    const normalizedStationId = assertStationId(stationId);
+    const expectedVersion = normalizeExpectedBindingVersion(expectedVersionValue);
+    const checkedAt = normalizeNullableText(validation?.checkedAt) || nowIso();
+    const validationPayload = validation && typeof validation === "object" && !Array.isArray(validation)
+      ? cloneJson(validation, {})
+      : {};
+    return withTransaction(db, () => {
+      const head = getStationRuntimeBindingHead(normalizedSiteId, normalizedStationId);
+      const before = getStationRuntimeBinding(normalizedSiteId, normalizedStationId, { view: "draft" });
+      const currentVersion = head?.draft_version || head?.current_published_version || 0;
+      if (!before || head?.draft_version !== expectedVersion) {
+        throw conflict("Station runtime binding draft version conflict", {
+          siteId: normalizedSiteId,
+          stationId: normalizedStationId,
+          expectedVersion,
+          currentVersion
+        });
+      }
+      const effectiveSourceHash = buildStationRuntimeEffectiveSourceHash(
+        validationPayload.effectiveSource
+      );
+      const validationOk = validationPayload.ok === true
+        && validationPayload.payloadHash === before.payloadHash
+        && Boolean(effectiveSourceHash)
+        && validationPayload.effectiveSourceHash === effectiveSourceHash;
+      validationPayload.ok = validationOk;
+      validationPayload.payloadHash = before.payloadHash;
+      validationPayload.checkedAt = checkedAt;
+      if (!validationOk && validation?.ok === true && !effectiveSourceHash) {
+        validationPayload.errors = Array.from(new Set([
+          ...(Array.isArray(validationPayload.errors) ? validationPayload.errors : []),
+          "EFFECTIVE_SOURCE_EVIDENCE_MISSING"
+        ]));
+      } else if (
+        !validationOk
+        && validation?.ok === true
+        && validationPayload.effectiveSourceHash !== effectiveSourceHash
+      ) {
+        validationPayload.errors = Array.from(new Set([
+          ...(Array.isArray(validationPayload.errors) ? validationPayload.errors : []),
+          "EFFECTIVE_SOURCE_HASH_MISMATCH"
+        ]));
+      }
+      sql.run(
+        `
+          UPDATE admin_station_runtime_binding_versions
+          SET status = ?, validated_hash = ?, validation_json = ?, checked_at = ?, updated_at = ?
+          WHERE site_id = ? AND station_id = ? AND binding_version = ?
+        `,
+        validationOk ? "validated" : "draft",
+        validationOk ? before.payloadHash : null,
+        toJsonText(validationPayload, {}),
+        checkedAt,
+        nowIso(),
+        normalizedSiteId,
+        normalizedStationId,
+        expectedVersion
+      );
+      const after = getStationRuntimeBindingVersion(normalizedSiteId, normalizedStationId, expectedVersion);
+      recordAudit({
+        actorUserId: actor?.userId,
+        actorUsername: actor?.username,
+        action: "site.station-runtime-binding.validate",
+        targetType: "station_runtime_binding",
+        targetId: `${normalizedSiteId}:${normalizedStationId}:v${expectedVersion}`,
+        scopeType: "site",
+        scopeId: normalizedSiteId,
+        beforeJson: toJsonText(before),
+        afterJson: toJsonText(after),
+        requestId: options.requestId
+      });
+      return after;
+    });
+  }
+
+  function publishStationRuntimeBinding(
+    siteId,
+    stationId,
+    expectedVersionValue,
+    actor = {},
+    options = {}
+  ) {
+    const normalizedSiteId = normalizeText(siteId);
+    const normalizedStationId = assertStationId(stationId);
+    const expectedVersion = normalizeExpectedBindingVersion(expectedVersionValue);
+    return withTransaction(db, () => {
+      const head = getStationRuntimeBindingHead(normalizedSiteId, normalizedStationId);
+      const before = getStationRuntimeBinding(normalizedSiteId, normalizedStationId, { view: "draft" });
+      const currentVersion = head?.draft_version || head?.current_published_version || 0;
+      if (!before || head?.draft_version !== expectedVersion) {
+        throw conflict("Station runtime binding draft version conflict", {
+          siteId: normalizedSiteId,
+          stationId: normalizedStationId,
+          expectedVersion,
+          currentVersion
+        });
+      }
+      if (
+        before.status !== "validated"
+        || before.validation?.ok !== true
+        || !before.payloadHash
+        || before.validatedHash !== before.payloadHash
+        || !before.validation?.effectiveSourceHash
+        || before.validation.effectiveSourceHash !== buildStationRuntimeEffectiveSourceHash(
+          before.validation.effectiveSource
+        )
+      ) {
+        throw conflict("Station runtime binding must pass validation without payload drift before publish", {
+          siteId: normalizedSiteId,
+          stationId: normalizedStationId,
+          status: before.status,
+          payloadHash: before.payloadHash,
+          validatedHash: before.validatedHash
+        });
+      }
+      if (before.stationStatus !== "enabled" || before.stationPublished !== true) {
+        throw conflict("Physical station must be enabled and published before binding publish", {
+          siteId: normalizedSiteId,
+          stationId: normalizedStationId,
+          stationStatus: before.stationStatus,
+          stationPublished: before.stationPublished
+        });
+      }
+      const actorUserId = normalizeText(actor?.userId);
+      if (
+        !actorUserId
+        || !before.createdBy
+        || actorUserId === before.createdBy
+        || actorUserId === before.updatedBy
+      ) {
+        throw conflict("Binding publisher must be different from every editor of the current draft", {
+          siteId: normalizedSiteId,
+          stationId: normalizedStationId,
+          creatorUserId: before.createdBy || null,
+          lastEditorUserId: before.updatedBy || null,
+          publisherUserId: actorUserId || null
+        });
+      }
+      const requestedDeviceIds = new Set(before.selectors.deviceIds);
+      const requestedDeviceCodes = new Set(before.selectors.deviceCodes.map((item) => item.toUpperCase()));
+      const conflicts = listStationRuntimeBindings(normalizedSiteId).items
+        .filter((item) => item.stationId !== normalizedStationId && item.publishedBinding)
+        .map((item) => ({
+          stationId: item.stationId,
+          overlappingDeviceIds: item.publishedBinding.selectors.deviceIds.filter((value) => requestedDeviceIds.has(value)),
+          overlappingDeviceCodes: item.publishedBinding.selectors.deviceCodes.filter((value) => (
+            requestedDeviceCodes.has(String(value).toUpperCase())
+          ))
+        }))
+        .filter((item) => item.overlappingDeviceIds.length > 0 || item.overlappingDeviceCodes.length > 0);
+      if (conflicts.length > 0) {
+        throw conflict("Station runtime device selectors overlap another published station", {
+          siteId: normalizedSiteId,
+          stationId: normalizedStationId,
+          conflicts
+        });
+      }
+      const timestamp = nowIso();
+      if (head?.current_published_version) {
+        sql.run(
+          `UPDATE admin_station_runtime_binding_versions
+           SET status = 'superseded', updated_at = ?
+           WHERE site_id = ? AND station_id = ? AND binding_version = ?`,
+          timestamp,
+          normalizedSiteId,
+          normalizedStationId,
+          head.current_published_version
+        );
+      }
+      sql.run(
+        `
+          UPDATE admin_station_runtime_binding_versions
+          SET status = 'published', published_at = ?, published_by = ?, updated_at = ?
+          WHERE site_id = ? AND station_id = ? AND binding_version = ?
+        `,
+        timestamp,
+        actorUserId,
+        timestamp,
+        normalizedSiteId,
+        normalizedStationId,
+        expectedVersion
+      );
+      sql.run(
+        `
+          UPDATE admin_station_runtime_binding_heads
+          SET draft_version = NULL,
+              current_published_version = ?,
+              updated_at = ?,
+              updated_by = ?
+          WHERE site_id = ? AND station_id = ?
+        `,
+        expectedVersion,
+        timestamp,
+        actorUserId,
+        normalizedSiteId,
+        normalizedStationId
+      );
+      const after = getStationRuntimeBindingVersion(normalizedSiteId, normalizedStationId, expectedVersion);
+      recordAudit({
+        actorUserId,
+        actorUsername: actor?.username,
+        action: "site.station-runtime-binding.publish",
+        targetType: "station_runtime_binding",
+        targetId: `${normalizedSiteId}:${normalizedStationId}:v${expectedVersion}`,
+        scopeType: "site",
+        scopeId: normalizedSiteId,
+        beforeJson: toJsonText(before),
+        afterJson: toJsonText(after),
+        requestId: options.requestId
+      });
+      return after;
+    });
+  }
+
+  function upsertStationInstances(siteId, payload, actor = {}, options = {}) {
+    const normalizedSiteId = normalizeText(siteId);
+    assertSiteExists(normalizedSiteId);
+    const items = Array.isArray(payload) ? payload : Array.isArray(payload?.items) ? payload.items : [];
+    if (!items.length) {
+      throw badRequest("station instances payload requires items", { field: "items" });
+    }
+    const before = listStationInstances(normalizedSiteId);
+    return withTransaction(db, () => {
+      for (const item of items) {
+        const forbiddenEvidenceFields = ["sourceStatus", "freshnessStatus", "alarmCount"]
+          .filter((field) => Object.prototype.hasOwnProperty.call(item || {}, field));
+        if (forbiddenEvidenceFields.length > 0) {
+          throw badRequest("Station identity payload cannot contain runtime evidence fields", {
+            fields: forbiddenEvidenceFields,
+            reason: "source/freshness/alarm evidence is derived from actual runtime responses"
+          });
+        }
+        const stationId = assertStationId(item?.stationId);
+        const existing = mapStationInstanceRow(
+          sql.get(
+            `
+              SELECT *
+              FROM admin_station_instances
+              WHERE site_id = ? AND station_id = ?
+              LIMIT 1
+            `,
+            normalizedSiteId,
+            stationId
+          )
+        );
+        const stationName = normalizeText(item?.stationName) || existing?.stationName || "";
+        if (!stationName) {
+          throw badRequest("stationName is required", { field: "stationName" });
+        }
+        const parentSubsystemType = normalizeText(item?.parentSubsystemType) || existing?.parentSubsystemType || "";
+        if (!parentSubsystemType) {
+          throw badRequest("parentSubsystemType is required", { field: "parentSubsystemType" });
+        }
+        assertPhysicalStationParentType(parentSubsystemType);
+        if (existing && existing.parentSubsystemType !== parentSubsystemType) {
+          const bindingCount = sql.get(
+            `SELECT COUNT(*) AS count
+             FROM admin_station_runtime_binding_versions
+             WHERE site_id = ? AND station_id = ?`,
+            normalizedSiteId,
+            stationId
+          )?.count || 0;
+          if (bindingCount > 0) {
+            throw conflict("Cannot change station type after runtime binding history exists", {
+              siteId: normalizedSiteId,
+              stationId,
+              currentParentSubsystemType: existing.parentSubsystemType,
+              requestedParentSubsystemType: parentSubsystemType
+            });
+          }
+        }
+        const duplicateName = sql.get(
+          `
+            SELECT station_id
+            FROM admin_station_instances
+            WHERE site_id = ?
+              AND parent_subsystem_type = ?
+              AND station_name = ?
+              AND station_id <> ?
+            LIMIT 1
+          `,
+          normalizedSiteId,
+          parentSubsystemType,
+          stationName,
+          stationId
+        );
+        if (duplicateName?.station_id) {
+          throw conflict("Station name already exists for this energy-object type", {
+            field: "stationName",
+            siteId: normalizedSiteId,
+            parentSubsystemType,
+            stationName,
+            conflictingStationId: duplicateName.station_id
+          });
+        }
+        const status = resolveStationStatus(item?.status, existing?.status || "not_configured");
+        const enabled = status === "enabled";
+        const timestamp = nowIso();
+        const next = {
+          stationId,
+          stationName,
+          parentSubsystemType,
+          status,
+          // Identity writes never manufacture live evidence. These legacy
+          // columns remain schema-compatible but are no longer client-owned.
+          sourceStatus: enabled ? "waiting" : "not_configured",
+          freshnessStatus: enabled ? "unknown" : "not_configured",
+          alarmCount: 0,
+          sortOrder: resolveStationNonNegativeInteger(
+            item?.sortOrder,
+            existing?.sortOrder ?? 999,
+            "sortOrder"
+          ),
+          published: resolveStationBoolean(
+            item?.published,
+            existing?.published === true,
+            "published"
+          ),
+          notes: normalizeNullableText(item?.notes) ?? existing?.notes ?? null
+        };
+
+        if (existing) {
+          sql.run(
+            `
+              UPDATE admin_station_instances
+              SET station_name = ?,
+                  parent_subsystem_type = ?,
+                  status = ?,
+                  source_status = ?,
+                  freshness_status = ?,
+                  alarm_count = ?,
+                  sort_order = ?,
+                  published = ?,
+                  notes = ?,
+                  updated_at = ?,
+                  updated_by = ?
+              WHERE site_id = ? AND station_id = ?
+            `,
+            next.stationName,
+            next.parentSubsystemType,
+            next.status,
+            next.sourceStatus,
+            next.freshnessStatus,
+            next.alarmCount,
+            next.sortOrder,
+            next.published ? 1 : 0,
+            next.notes,
+            timestamp,
+            normalizeNullableText(actor?.userId),
+            normalizedSiteId,
+            next.stationId
+          );
+        } else {
+          sql.run(
+            `
+              INSERT INTO admin_station_instances (
+                site_id,
+                station_id,
+                station_name,
+                parent_subsystem_type,
+                status,
+                source_status,
+                freshness_status,
+                alarm_count,
+                sort_order,
+                published,
+                notes,
+                created_at,
+                updated_at,
+                created_by,
+                updated_by
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            normalizedSiteId,
+            next.stationId,
+            next.stationName,
+            next.parentSubsystemType,
+            next.status,
+            next.sourceStatus,
+            next.freshnessStatus,
+            next.alarmCount,
+            next.sortOrder,
+            next.published ? 1 : 0,
+            next.notes,
+            timestamp,
+            timestamp,
+            normalizeNullableText(actor?.userId),
+            normalizeNullableText(actor?.userId)
+          );
+        }
+      }
+      const after = listStationInstances(normalizedSiteId);
+      recordAudit({
+        actorUserId: actor?.userId,
+        actorUsername: actor?.username,
+        action: "site.station-instances.update",
+        targetType: "station_instance",
+        targetId: normalizedSiteId,
+        scopeType: "site",
+        scopeId: normalizedSiteId,
+        beforeJson: toJsonText(before),
+        afterJson: toJsonText(after),
+        requestId: options.requestId
+      });
+      return after;
+    });
+  }
+
   function listSiteSubsystems(siteId, options = {}) {
     const normalizedSiteId = normalizeText(siteId);
     if (!normalizedSiteId) {
@@ -4467,11 +5615,16 @@ export function createAdminStore(options) {
         controlBoundary: getControlBoundary(normalizedSiteId, item.subsystemType)
       };
     });
+    const stationRegistry = listStationInstances(normalizedSiteId, {
+      publishedOnly: options.publishedOnly === true
+    });
     return {
       siteId: normalizedSiteId,
       generatedAt: nowIso(),
       items,
-      total: items.length
+      total: items.length,
+      stationInstances: stationRegistry.items,
+      stationTotal: stationRegistry.total
     };
   }
 
@@ -4488,7 +5641,9 @@ export function createAdminStore(options) {
         alarmCount: item.enabled ? item.alarmCount : null,
         advisorBindings: item.enabled ? item.advisorBindings : []
       })),
-      total: subsystems.total
+      total: subsystems.total,
+      stationInstances: subsystems.stationInstances,
+      stationTotal: subsystems.stationTotal
     };
   }
 
@@ -4782,11 +5937,35 @@ export function createAdminStore(options) {
 
   function createSiteConfigSnapshot(siteId) {
     return {
+      snapshotVersion: 3,
       siteId,
       capturedAt: nowIso(),
       subsystems: listSiteSubsystems(siteId),
+      stationInstances: listStationInstances(siteId),
+      stationRuntimeBindings: listStationRuntimeBindings(siteId),
       pointRoleMappings: listPointRoleMappings(siteId),
       advisorPluginBindings: listAdvisorPluginBindings(siteId)
+    };
+  }
+
+  function createPublishedSiteConfigSnapshot(siteId) {
+    const snapshot = createSiteConfigSnapshot(siteId);
+    return {
+      ...snapshot,
+      subsystems: {
+        ...snapshot.subsystems,
+        items: (snapshot.subsystems?.items || []).map((item) => ({
+          ...item,
+          published: true
+        }))
+      },
+      stationInstances: {
+        ...snapshot.stationInstances,
+        items: (snapshot.stationInstances?.items || []).map((item) => ({
+          ...item,
+          published: true
+        }))
+      }
     };
   }
 
@@ -4852,60 +6031,56 @@ export function createAdminStore(options) {
     }
     assertSiteExists(normalizedSiteId);
     const before = getConfigVersion(normalizedSiteId, normalizedVersionId);
-    const snapshot = createSiteConfigSnapshot(normalizedSiteId);
+    if (before) {
+      throw conflict("Published config version is immutable", {
+        siteId: normalizedSiteId,
+        versionId: normalizedVersionId,
+        status: before.status
+      });
+    }
+    // A version represents the state that becomes current after this publish,
+    // not the draft flags that happened to exist one line earlier.
+    const snapshot = createPublishedSiteConfigSnapshot(normalizedSiteId);
     const timestamp = nowIso();
     return withTransaction(db, () => {
-      if (before) {
-        sql.run(
-          `
-            UPDATE admin_config_versions
-            SET status = 'published',
-                summary = ?,
-                payload_json = ?,
-                updated_at = ?,
-                updated_by = ?,
-                published_at = ?,
-                rolled_back_at = NULL
-            WHERE site_id = ? AND version_id = ?
-          `,
-          normalizeNullableText(options.summary) || `发布配置 ${normalizedVersionId}`,
-          toJsonText(snapshot, {}),
-          timestamp,
-          normalizeNullableText(actor?.userId),
-          timestamp,
-          normalizedSiteId,
-          normalizedVersionId
-        );
-      } else {
-        sql.run(
-          `
-            INSERT INTO admin_config_versions (
-              version_id,
-              site_id,
-              status,
-              summary,
-              payload_json,
-              created_at,
-              updated_at,
-              created_by,
-              updated_by,
-              published_at
-            ) VALUES (?, ?, 'published', ?, ?, ?, ?, ?, ?, ?)
-          `,
-          normalizedVersionId,
-          normalizedSiteId,
-          normalizeNullableText(options.summary) || `发布配置 ${normalizedVersionId}`,
-          toJsonText(snapshot, {}),
-          timestamp,
-          timestamp,
-          normalizeNullableText(actor?.userId),
-          normalizeNullableText(actor?.userId),
-          timestamp
-        );
-      }
+      sql.run(
+        `
+          INSERT INTO admin_config_versions (
+            version_id,
+            site_id,
+            status,
+            summary,
+            payload_json,
+            created_at,
+            updated_at,
+            created_by,
+            updated_by,
+            published_at
+          ) VALUES (?, ?, 'published', ?, ?, ?, ?, ?, ?, ?)
+        `,
+        normalizedVersionId,
+        normalizedSiteId,
+        normalizeNullableText(options.summary) || `发布配置 ${normalizedVersionId}`,
+        toJsonText(snapshot, {}),
+        timestamp,
+        timestamp,
+        normalizeNullableText(actor?.userId),
+        normalizeNullableText(actor?.userId),
+        timestamp
+      );
       sql.run(
         `
           UPDATE admin_site_subsystem_capabilities
+          SET published = 1, updated_at = ?, updated_by = ?
+          WHERE site_id = ?
+        `,
+        timestamp,
+        normalizeNullableText(actor?.userId),
+        normalizedSiteId
+      );
+      sql.run(
+        `
+          UPDATE admin_station_instances
           SET published = 1, updated_at = ?, updated_by = ?
           WHERE site_id = ?
         `,
@@ -4977,6 +6152,232 @@ export function createAdminStore(options) {
     }
   }
 
+  function restoreStationInstancesFromSnapshot(siteId, snapshot, actor = {}) {
+    if (!Array.isArray(snapshot?.stationInstances?.items)) {
+      return;
+    }
+    const restorableItems = snapshot.stationInstances.items
+      .map((item) => ({
+        item,
+        stationId: normalizeText(item?.stationId),
+        stationName: normalizeText(item?.stationName),
+        parentSubsystemType: normalizeText(item?.parentSubsystemType)
+      }))
+      .filter(({ stationId, stationName, parentSubsystemType }) => (
+        stationId && stationName && parentSubsystemType
+      ));
+    for (const { parentSubsystemType } of restorableItems) {
+      assertPhysicalStationParentType(parentSubsystemType);
+    }
+    const timestamp = nowIso();
+    // Historical binding versions reference station identities. A config
+    // rollback therefore disables stations absent from the snapshot instead
+    // of deleting rows and cascading immutable binding history away.
+    sql.run(
+      `UPDATE admin_station_instances
+       SET status = 'not_configured', published = 0, updated_at = ?, updated_by = ?
+       WHERE site_id = ?`,
+      timestamp,
+      normalizeNullableText(actor?.userId),
+      siteId
+    );
+    for (const { item, stationId, stationName, parentSubsystemType } of restorableItems) {
+      const status = normalizeSubsystemStatus(item?.status, "not_configured");
+      const enabled = status === "enabled";
+      const existing = sql.get(
+        `SELECT parent_subsystem_type
+         FROM admin_station_instances
+         WHERE site_id = ? AND station_id = ?
+         LIMIT 1`,
+        siteId,
+        stationId
+      );
+      if (existing && existing.parent_subsystem_type !== parentSubsystemType) {
+        const bindingCount = sql.get(
+          `SELECT COUNT(*) AS count
+           FROM admin_station_runtime_binding_versions
+           WHERE site_id = ? AND station_id = ?`,
+          siteId,
+          stationId
+        )?.count || 0;
+        if (bindingCount > 0) {
+          throw conflict("Cannot relabel a physical station with immutable binding history", {
+            siteId,
+            stationId,
+            currentParentSubsystemType: existing.parent_subsystem_type,
+            requestedParentSubsystemType: parentSubsystemType
+          });
+        }
+      }
+      sql.run(
+        `
+          INSERT INTO admin_station_instances (
+            site_id,
+            station_id,
+            station_name,
+            parent_subsystem_type,
+            status,
+            source_status,
+            freshness_status,
+            alarm_count,
+            sort_order,
+            published,
+            notes,
+            created_at,
+            updated_at,
+            created_by,
+            updated_by
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(site_id, station_id) DO UPDATE SET
+            station_name = excluded.station_name,
+            parent_subsystem_type = excluded.parent_subsystem_type,
+            status = excluded.status,
+            source_status = excluded.source_status,
+            freshness_status = excluded.freshness_status,
+            alarm_count = excluded.alarm_count,
+            sort_order = excluded.sort_order,
+            published = excluded.published,
+            notes = excluded.notes,
+            updated_at = excluded.updated_at,
+            updated_by = excluded.updated_by
+        `,
+        siteId,
+        stationId,
+        stationName,
+        parentSubsystemType,
+        status,
+        enabled ? "waiting" : "not_configured",
+        enabled ? "unknown" : "not_configured",
+        0,
+        item?.sortOrder == null ? 999 : normalizeNonNegativeInteger(item.sortOrder),
+        normalizeBooleanFlag(item?.published, false) ? 1 : 0,
+        normalizeNullableText(item?.notes),
+        timestamp,
+        timestamp,
+        normalizeNullableText(actor?.userId),
+        normalizeNullableText(actor?.userId)
+      );
+    }
+  }
+
+  function restoreStationRuntimeBindingsFromSnapshot(siteId, snapshot, actor = {}) {
+    const snapshotItems = Array.isArray(snapshot?.stationRuntimeBindings?.items)
+      ? snapshot.stationRuntimeBindings.items
+      : [];
+    const normalizedItems = snapshotItems.map((state) => {
+      const sourceBinding = state?.publishedBinding || state?.effectiveBinding || state?.draftBinding || state;
+      const stationId = assertStationId(state?.stationId || sourceBinding?.stationId);
+      const station = sql.get(
+        "SELECT station_id FROM admin_station_instances WHERE site_id = ? AND station_id = ? LIMIT 1",
+        siteId,
+        stationId
+      );
+      if (!station) {
+        throw badRequest("Binding snapshot references a missing physical station", {
+          siteId,
+          stationId
+        });
+      }
+      const draft = normalizeStationRuntimeBindingDraftPayload({
+        source: sourceBinding?.source || {},
+        selectors: sourceBinding?.selectors || {},
+        notes: sourceBinding?.notes
+      });
+      return {
+        stationId,
+        draft
+      };
+    });
+
+    const timestamp = nowIso();
+    // Rollback never treats historical validation as current. Clear every live
+    // head first, retain immutable rows as superseded evidence, then create new
+    // drafts that must pass validation and approval again.
+    sql.run(
+      `UPDATE admin_station_runtime_binding_versions
+       SET status = 'superseded', updated_at = ?
+       WHERE site_id = ? AND status IN ('draft', 'validated', 'published')`,
+      timestamp,
+      siteId
+    );
+    sql.run(
+      `UPDATE admin_station_runtime_binding_heads
+       SET draft_version = NULL,
+           current_published_version = NULL,
+           updated_at = ?,
+           updated_by = ?
+       WHERE site_id = ?`,
+      timestamp,
+      normalizeNullableText(actor?.userId),
+      siteId
+    );
+    for (const item of normalizedItems) {
+      const head = getStationRuntimeBindingHead(siteId, item.stationId);
+      const latestVersion = Number(sql.get(
+        `SELECT MAX(binding_version) AS latest_version
+         FROM admin_station_runtime_binding_versions
+         WHERE site_id = ? AND station_id = ?`,
+        siteId,
+        item.stationId
+      )?.latest_version) || 0;
+      const bindingVersion = latestVersion + 1;
+      if (head?.draft_version) {
+        sql.run(
+          `UPDATE admin_station_runtime_binding_versions
+           SET status = 'superseded', updated_at = ?
+           WHERE site_id = ? AND station_id = ? AND binding_version = ?`,
+          timestamp,
+          siteId,
+          item.stationId,
+          head.draft_version
+        );
+      }
+      sql.run(
+        `
+          INSERT INTO admin_station_runtime_binding_versions (
+            site_id, station_id, binding_version, status, database_key,
+            project_key, template, device_ids_json, device_codes_json,
+            point_codes_json, payload_hash, notes, created_at, updated_at,
+            created_by, updated_by
+          ) VALUES (?, ?, ?, 'draft', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        siteId,
+        item.stationId,
+        bindingVersion,
+        item.draft.source.databaseKey,
+        item.draft.source.projectKey,
+        item.draft.source.template,
+        toJsonText(item.draft.selectors.deviceIds, []),
+        toJsonText(item.draft.selectors.deviceCodes, []),
+        toJsonText(item.draft.selectors.pointCodes, []),
+        item.draft.payloadHash,
+        item.draft.notes,
+        timestamp,
+        timestamp,
+        normalizeNullableText(actor?.userId),
+        normalizeNullableText(actor?.userId)
+      );
+      sql.run(
+        `
+          INSERT INTO admin_station_runtime_binding_heads (
+            site_id, station_id, draft_version, current_published_version, updated_at, updated_by
+          ) VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(site_id, station_id) DO UPDATE SET
+            draft_version = excluded.draft_version,
+            current_published_version = NULL,
+            updated_at = excluded.updated_at,
+            updated_by = excluded.updated_by
+        `,
+        siteId,
+        item.stationId,
+        bindingVersion,
+        null,
+        timestamp,
+        normalizeNullableText(actor?.userId)
+      );
+    }
+  }
+
   function rollbackConfigVersion(siteId, versionId, actor = {}, options = {}) {
     const normalizedSiteId = normalizeText(siteId);
     const normalizedVersionId = normalizeText(versionId);
@@ -5005,6 +6406,8 @@ export function createAdminStore(options) {
           });
         }
       }
+      restoreStationInstancesFromSnapshot(normalizedSiteId, snapshot, actor);
+      restoreStationRuntimeBindingsFromSnapshot(normalizedSiteId, snapshot, actor);
       restorePointMappingsFromSnapshot(normalizedSiteId, snapshot, actor);
       sql.run(
         `
@@ -5182,6 +6585,14 @@ export function createAdminStore(options) {
     listSiteSubsystems,
     getSiteCapabilities,
     upsertSiteSubsystems,
+    listStationInstances,
+    upsertStationInstances,
+    getStationRuntimeBinding,
+    getStationRuntimeBindingState,
+    listStationRuntimeBindings,
+    upsertStationRuntimeBinding,
+    recordStationRuntimeBindingValidation,
+    publishStationRuntimeBinding,
     listPointRoleMappings,
     upsertPointRoleMappings,
     previewPointRoleMappingImport,

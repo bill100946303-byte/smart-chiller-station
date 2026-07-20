@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import path from "node:path";
 
 import { config as appConfig } from "../src/config.js";
@@ -436,12 +437,19 @@ function ensureSite(adminStore, profile, siteId, actor) {
   return existing;
 }
 
+function buildGeneratedVersionId(profile) {
+  const timestamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  const scope = profile === PROFILE_OFFICE_ALL_SYSTEMS_DEMO ? "office-all-systems" : "b25-cold-only";
+  return `energy-demo-${scope}-${timestamp}-${randomBytes(4).toString("hex")}`;
+}
+
 function buildProfileConfig(profile, siteId, explicitVersionId) {
+  const versionId = explicitVersionId || buildGeneratedVersionId(profile);
   if (profile === PROFILE_OFFICE_ALL_SYSTEMS_DEMO) {
     return {
       profile,
       siteId: normalizeText(siteId, "126lnoffice"),
-      versionId: explicitVersionId || "energy-demo-office-all-systems",
+      versionId,
       summary: "盛世绿能办公楼全子系统演示配置",
       enabledTypes: new Set(CONFIGURABLE_SUBSYSTEMS)
     };
@@ -449,7 +457,7 @@ function buildProfileConfig(profile, siteId, explicitVersionId) {
   return {
     profile,
     siteId: normalizeText(siteId, "140"),
-    versionId: explicitVersionId || "energy-demo-b25-cold-only",
+    versionId,
     summary: "B25 冷站单系统配置",
     enabledTypes: new Set(["chilled_plant"])
   };

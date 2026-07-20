@@ -3,8 +3,12 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { createHash } from "node:crypto";
 
 import express from "express";
+
+import { createAdminStore } from "../lib/admin-db.js";
+import { resolveSiteRuntimeConfig } from "../lib/site-runtime-config.js";
 
 import {
   buildV1Router,
@@ -63,6 +67,7 @@ function writeFcuFinalControlGatesReport(outputDir, overrides = {}) {
     JSON.stringify(
       {
         ok: true,
+        siteId: "126lnoffice",
         summary,
         controlMutation: false,
         ...overrides
@@ -76,6 +81,7 @@ function writeFcuFinalControlGatesReport(outputDir, overrides = {}) {
     JSON.stringify(
       {
         ok: true,
+        siteId: "126lnoffice",
         verdict: "evidence_consistent",
         summary: {
           issueCount: 0,
@@ -308,7 +314,7 @@ test("energy-efficiency imbalance route uses B25 data key for table endpoint", a
     legacyBaseUrl: "http://127.0.0.1:8098",
     staleThresholdHours: 6
   }));
-  const server = app.listen(0);
+  const server = app.listen(0, "127.0.0.1");
 
   try {
     await new Promise((resolve) => server.once("listening", resolve));
@@ -353,6 +359,56 @@ test("energy-efficiency imbalance route uses B25 data key for table endpoint", a
 test("runtime summary route exposes B25 realtime point counts and frequency feedback", async () => {
   const originalFetch = globalThis.fetch;
   const requests = [];
+  const resolvedB25Config = resolveSiteRuntimeConfig({
+    legacyBaseUrl: "http://127.0.0.1:8098",
+    defaultSiteId: "140"
+  }, null, "140");
+  const enrichmentContract = resolvedB25Config.siteSourceConfig.readOnlyRuntimeEnrichment;
+  const signalRegisterNames = enrichmentContract.exactSignalRegisterNames;
+  const fullRegisterRecords = Object.entries(enrichmentContract.exactTagNamesByDeviceCode)
+    .flatMap(([deviceCode, selectors], deviceIndex) => {
+      const isChiller = /^CH\d+$/.test(deviceCode);
+      const isChilledPump = /^CHP\d+$/.test(deviceCode);
+      const isCoolingPump = /^CWP\d+$/.test(deviceCode);
+      const sequence = deviceCode.match(/\d+/)?.[0] || String(deviceIndex + 1);
+      const drname = isChiller
+        ? `${sequence}#冷水机组`
+        : isChilledPump
+          ? `${sequence}#冷冻泵`
+          : isCoolingPump
+            ? `${sequence}#冷却泵`
+            : `${sequence}#冷却塔风机`;
+      const drtypename = isChiller
+        ? "主机"
+        : isChilledPump
+          ? "冷冻水泵"
+          : isCoolingPump
+            ? "冷却水泵"
+            : "冷却塔风机";
+      const deviceId = isChiller
+        ? sequence
+        : isChilledPump
+          ? String(19 + Number(sequence))
+          : isCoolingPump
+            ? String(Number(sequence) <= 6 ? 46 + Number(sequence) : 54)
+            : String(100 + deviceIndex);
+      return Object.entries(selectors).map(([semanticKey, tagName]) => ({
+        drId: deviceId,
+        drcode: deviceCode,
+        drname,
+        drtypename,
+        regName: signalRegisterNames[semanticKey],
+        tagName: tagName.replace(/^SY-/, `${deviceCode}-`),
+        newtagvalue:
+          semanticKey === "running"
+            ? ["CH2", "CWP2"].includes(deviceCode) ? "1" : "0"
+            : semanticKey === "remoteEnabled"
+              ? "1"
+              : semanticKey === "frequencyHz" && deviceCode === "CWP2"
+                ? "33.2"
+                : "0"
+      }));
+    });
 
   globalThis.fetch = async (input) => {
     const target = String(input);
@@ -436,6 +492,10 @@ test("runtime summary route exposes B25 realtime point counts and frequency feed
       });
     }
 
+    if (target.endsWith("/zsqy/reg/140btwentyfive/findObject?pageCurrent=1&pageSize=5000")) {
+      return createJsonResponse({ data: fullRegisterRecords });
+    }
+
     throw new Error(`Unexpected URL: ${target}`);
   };
 
@@ -465,16 +525,90 @@ test("runtime summary route exposes B25 realtime point counts and frequency feed
     assert.equal(response.status, 200);
     assert.equal(payload.status, "ready");
     assert.equal(payload.sourceStatus.overall, "ok");
-    assert.equal(payload.counts.chillerCount, 2);
+    assert.equal(payload.counts.chillerCount, 7);
     assert.equal(payload.counts.runningChillerCount, 1);
-    assert.equal(payload.counts.coolingPumpCount, 2);
+    assert.equal(payload.counts.coolingPumpCount, 7);
     assert.equal(payload.counts.runningCoolingPumpCount, 1);
     assert.equal(payload.keySignals.pumpFrequency.coolingAvgHz, 33.2);
     assert.equal(payload.keySignals.weather.wetBulbC, 25.4);
+    assert.equal(payload.pointEvidence.contractVersion, "runtime-point-evidence-v1");
+    assert.equal(payload.pointEvidence.summary.totalPoints, 221);
+    assert.equal(payload.pointEvidence.summary.authoritativeTimestampPoints, 0);
+    assert.equal(payload.pointEvidence.summary.goodQualityPoints, 0);
+    assert.equal(payload.pointEvidence.summary.replayProofPoints, 0);
+    assert.equal(payload.pointEvidence.points.every((point) => point.observedAt === null), true);
+    assert.deepEqual(payload.freshnessPolicy, {
+      clientRefreshIntervalMs: 10000,
+      sourceExpectedIntervalMs: null,
+      liveMaxAgeMs: 20000,
+      maxFutureSkewMs: 2000
+    });
     assert.deepEqual(requests, [
       "http://127.0.0.1:8098/zsqy/drinfo/140btwentyfive/findObject?pageCurrent=1&pageSize=200",
-      "http://127.0.0.1:8098/zsqy/reg/140btwentyfive/findAllByDrTypeId?build=1&floor=0"
+      "http://127.0.0.1:8098/zsqy/reg/140btwentyfive/findAllByDrTypeId?build=1&floor=0",
+      "http://127.0.0.1:8098/zsqy/reg/140btwentyfive/findObject?pageCurrent=1&pageSize=5000"
     ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+});
+
+test("B25 scene device command is blocked before any BA or PLC upstream request", async () => {
+  const originalFetch = globalThis.fetch;
+  const upstreamRequests = [];
+  globalThis.fetch = async (input) => {
+    upstreamRequests.push(String(input));
+    throw new Error("B25 read-only guard must block before upstream fetch");
+  };
+
+  const app = express();
+  app.use(express.json());
+  app.use("/bff/v1", buildV1Router({
+    defaultSiteId: "140",
+    legacyBaseUrl: "http://127.0.0.1:8098",
+    staleThresholdHours: 6,
+    readOnlyMode: false
+  }));
+  const server = app.listen(0);
+
+  try {
+    await new Promise((resolve) => server.once("listening", resolve));
+    const { port } = server.address();
+    const response = await originalFetch(
+      `http://127.0.0.1:${port}/bff/v1/sites/140/scene/device-command`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-chiller-site-id": "140",
+          "x-chiller-site-code": "B25",
+          "x-chiller-project-key": "140btwentyfive"
+        },
+        body: JSON.stringify({
+          drId: "47",
+          drTypeId: "9",
+          regName: "频率给定",
+          value: "35",
+          tagName: "CWP1-1-509-42007"
+        })
+      }
+    );
+    const payload = await response.json();
+
+    assert.equal(response.status, 403);
+    assert.equal(payload.code, "B25_READ_ONLY_SCOPE");
+    assert.equal(payload.controlMutation, false);
+    assert.equal(payload.dispatch, false);
+    assert.deepEqual(upstreamRequests, []);
   } finally {
     globalThis.fetch = originalFetch;
     await new Promise((resolve, reject) => {
@@ -646,7 +780,18 @@ test("config center runtime routes resolve office numeric alias for FCU terminal
             }
           }
         ],
-        total: 1
+        total: 1,
+        stationInstances: [
+          {
+            siteId,
+            stationId: "terminal-east",
+            stationName: "东区末端",
+            parentSubsystemType: "hvac_terminal",
+            status: "enabled",
+            published: true
+          }
+        ],
+        stationTotal: 1
       };
     },
     listSiteSubsystems(siteId) {
@@ -663,7 +808,18 @@ test("config center runtime routes resolve office numeric alias for FCU terminal
             published: true
           }
         ],
-        total: 1
+        total: 1,
+        stationInstances: [
+          {
+            siteId,
+            stationId: "terminal-east",
+            stationName: "东区末端",
+            parentSubsystemType: "hvac_terminal",
+            status: "enabled",
+            published: true
+          }
+        ],
+        stationTotal: 1
       };
     }
   };
@@ -675,7 +831,7 @@ test("config center runtime routes resolve office numeric alias for FCU terminal
     staleThresholdHours: 6,
     readOnlyMode: true
   }, { adminStore }));
-  const server = app.listen(0);
+  const server = app.listen(0, "127.0.0.1");
 
   try {
     await new Promise((resolve) => server.once("listening", resolve));
@@ -691,9 +847,445 @@ test("config center runtime routes resolve office numeric alias for FCU terminal
     assert.equal(capabilitiesPayload.site.siteId, "126lnoffice");
     assert.equal(capabilitiesPayload.items[0]?.subsystemType, "hvac_terminal");
     assert.equal(capabilitiesPayload.items[0]?.status, "enabled");
+    assert.equal(capabilitiesPayload.stationTotal, 0);
+    assert.deepEqual(capabilitiesPayload.stationInstances, []);
+    assert.deepEqual(capabilitiesPayload.dataScope, {
+      siteId: "126lnoffice",
+      requestedSubsystemType: null,
+      effectiveSubsystemType: null,
+      stationId: null,
+      filterMode: "site_aggregate",
+      applied: true,
+      reason: "SITE_AGGREGATE"
+    });
     assert.equal(subsystemsPayload.site.siteId, "126lnoffice");
     assert.equal(subsystemsPayload.items[0]?.subsystemType, "hvac_terminal");
+    assert.equal(subsystemsPayload.stationTotal, 0);
+    assert.deepEqual(subsystemsPayload.stationInstances, []);
+    assert.deepEqual(subsystemsPayload.dataScope, capabilitiesPayload.dataScope);
   } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+});
+
+test("unsupported runtime routes reject stationId before invoking project-scoped upstream services", async () => {
+  const originalFetch = globalThis.fetch;
+  let upstreamCalls = 0;
+  globalThis.fetch = async () => {
+    upstreamCalls += 1;
+    throw new Error("station-scoped requests must not reach upstream services");
+  };
+  const app = express();
+  app.use(express.json());
+  app.use("/bff/v1", buildV1Router({
+    defaultSiteId: "scope-contract-site",
+    legacyBaseUrl: "http://127.0.0.1:8098",
+    staleThresholdHours: 6,
+    readOnlyMode: true
+  }));
+  const server = app.listen(0);
+
+  try {
+    await new Promise((resolve) => server.once("listening", resolve));
+    const { port } = server.address();
+    const response = await originalFetch(
+      `http://127.0.0.1:${port}/bff/v1/sites/scope-contract-site/dashboard/trends?range=24h&stationId=chilled-a`
+    );
+    const payload = await response.json();
+
+    assert.equal(response.status, 409);
+    assert.equal(payload.ok, false);
+    assert.equal(payload.code, "STATION_RUNTIME_ENDPOINT_UNSUPPORTED");
+    assert.deepEqual(payload.details, {
+      siteId: "scope-contract-site",
+      stationId: "chilled-a",
+      applied: false
+    });
+    assert.equal(upstreamCalls, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+});
+
+test("published station binding filters all supported runtime routes and atomically switches versions", async () => {
+  const originalFetch = globalThis.fetch;
+  const upstreamRequests = [];
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    upstreamRequests.push(url);
+    if (url.includes("/zsqy/drinfo/station-db/findObject")) {
+      return createJsonResponse({
+        data: [
+          { drid: "1", drcode: "CH1", drname: "1#冷机", drtypename: "主机", typeYT: "1" },
+          { drid: "2", drcode: "CH2", drname: "2#冷机", drtypename: "主机", typeYT: "1" }
+        ]
+      });
+    }
+    if (url.includes("/api/device/station-db/data/tree")) {
+      return createJsonResponse({ data: [] });
+    }
+    if (url.includes("/zsqy/reg/station-db/findAllByDrTypeId")) {
+      return createJsonResponse({
+        data: [
+          {
+            drid: "1",
+            drcode: "CH1",
+            drname: "1#冷机",
+            drtypename: "主机",
+            reglist: [{ tagName: "CH1-RUN", regName: "运行", newtagvalue: "1" }]
+          },
+          {
+            drid: "2",
+            drcode: "CH2",
+            drname: "2#冷机",
+            drtypename: "主机",
+            reglist: [{ tagName: "CH2-RUN", regName: "运行", newtagvalue: "1" }]
+          }
+        ]
+      });
+    }
+    if (url.includes("/zsqy/reg/station-db/findObject")) {
+      const deviceId = new URL(url).searchParams.get("drId");
+      return createJsonResponse({
+        data: [{
+          drId: deviceId,
+          drcode: deviceId === "1" ? "CH1" : "CH2",
+          tagName: deviceId === "1" ? "CH1-RUN" : "CH2-RUN",
+          regName: "运行",
+          newtagvalue: "1"
+        }]
+      });
+    }
+    throw new Error(`Unexpected upstream request: ${url}`);
+  };
+
+  const adminStore = createAdminStore({ dbFile: ":memory:" });
+  const owner = { userId: "platform-owner", username: "platform-owner" };
+  const editor = { userId: "binding-editor", username: "binding-editor" };
+  const publisher = { userId: "binding-publisher", username: "binding-publisher" };
+  adminStore.bootstrapPlatformAdmin(owner, {});
+  adminStore.createSite({ siteId: "scope-contract-site", siteName: "综合能源站" }, owner, {});
+  adminStore.upsertStationInstances("scope-contract-site", {
+    items: [
+      {
+        stationId: "chilled-a",
+        stationName: "冷冻站 A",
+        parentSubsystemType: "chilled_plant",
+        status: "enabled",
+        published: true
+      },
+      {
+        stationId: "air-a",
+        stationName: "空压站 A",
+        parentSubsystemType: "compressed_air",
+        status: "enabled",
+        published: true
+      }
+    ]
+  }, owner, {});
+
+  const saveAndValidateDraft = (expectedVersion, deviceId, deviceCode, pointCode) => {
+    const draft = adminStore.upsertStationRuntimeBinding("scope-contract-site", "chilled-a", {
+      expectedVersion,
+      source: { databaseKey: "station-db", projectKey: "station-project", template: "1" },
+      selectors: {
+        deviceIds: [deviceId],
+        deviceCodes: [deviceCode],
+        pointCodes: [pointCode]
+      }
+    }, editor, {});
+    const effectiveSource = {
+      legacyBaseUrl: "https://upstream.invalid",
+      databaseKey: "station-db",
+      projectKey: "station-project",
+      template: "1",
+      realtimeEndpointKind: "legacy-reg-findAllByDrTypeId",
+      build: "1",
+      floor: "1",
+      mock: false
+    };
+    adminStore.recordStationRuntimeBindingValidation(
+      "scope-contract-site",
+      "chilled-a",
+      draft.bindingVersion,
+      {
+        ok: true,
+        payloadHash: draft.payloadHash,
+        checkedAt: new Date().toISOString(),
+        matched: { deviceCount: 1 },
+        effectiveSource,
+        effectiveSourceHash: createHash("sha256")
+          .update(JSON.stringify(effectiveSource))
+          .digest("hex"),
+        errors: []
+      },
+      editor,
+      {}
+    );
+    return draft.bindingVersion;
+  };
+
+  const v1 = saveAndValidateDraft(0, "1", "CH1", "CH1-RUN");
+  adminStore.publishStationRuntimeBinding(
+    "scope-contract-site",
+    "chilled-a",
+    v1,
+    publisher,
+    {}
+  );
+
+  const app = express();
+  app.use(express.json());
+  app.use("/bff/v1", buildV1Router({
+    defaultSiteId: "scope-contract-site",
+    legacyBaseUrl: "https://upstream.invalid",
+    staleThresholdHours: 6,
+    readOnlyMode: true,
+    siteSourceConfig: {
+      deviceDataInterfaces: [{ endpointKind: "legacy-reg-findAllByDrTypeId" }]
+    }
+  }, { adminStore }));
+  const server = app.listen(0);
+
+  try {
+    await new Promise((resolve) => server.once("listening", resolve));
+    const { port } = server.address();
+    const baseUrl = `http://127.0.0.1:${port}/bff/v1/sites/scope-contract-site`;
+
+    const listResponse = await originalFetch(
+      `${baseUrl}/devices/list?stationId=chilled-a&page=1&pageSize=1&mock=true`,
+      {
+        headers: {
+          "x-chiller-project-database-key": "evil-db",
+          "x-chiller-project-key": "evil-project",
+          "x-chiller-project-template": "evil-template"
+        }
+      }
+    );
+    assert.equal(listResponse.status, 200);
+    const listPayload = await listResponse.json();
+    assert.deepEqual(listPayload.items.map((item) => item.deviceId), ["1"]);
+    assert.equal(listPayload.total, 1);
+    assert.equal(listPayload.dataScope.applied, true);
+    assert.equal(listPayload.dataScope.requestedSubsystemType, "chilled_plant");
+    assert.equal(listPayload.dataScope.effectiveSubsystemType, "chilled_plant");
+    assert.equal(listPayload.dataScope.stationId, "chilled-a");
+    assert.equal(listPayload.dataScope.bindingVersion, 1);
+    assert.equal(listPayload.dataScope.cacheKey, "scope-contract-site:chilled-a:v1");
+    assert.equal(listPayload.dataScope.matchedDeviceCount, 1);
+    assert.equal(upstreamRequests.some((url) => /evil-|mock=true/.test(url)), false);
+
+    // Site source settings can evolve independently, but a published binding
+    // continues to use the effective source snapshot that was validated.
+    adminStore.upsertSourceConfig("scope-contract-site", {
+      legacyBaseUrl: "https://evil-source.invalid",
+      databaseKey: "evil-db",
+      modelKey: "126lnoffice"
+    }, owner, {});
+
+    const secondPageResponse = await originalFetch(
+      `${baseUrl}/devices/list?stationId=chilled-a&page=2&pageSize=1`
+    );
+    const secondPagePayload = await secondPageResponse.json();
+    assert.equal(secondPageResponse.status, 200);
+    assert.equal(secondPagePayload.total, 1);
+    assert.deepEqual(secondPagePayload.items, []);
+    assert.equal(upstreamRequests.some((url) => url.startsWith("https://evil-source.invalid")), false);
+
+    const treeResponse = await originalFetch(`${baseUrl}/devices/tree?stationId=chilled-a`);
+    assert.equal(treeResponse.status, 200);
+    const treePayload = await treeResponse.json();
+    const treeDevices = (treePayload.tree?.children || []).flatMap((group) => group.children || []);
+    assert.deepEqual(treeDevices.map((item) => item.deviceIdRef), ["1"]);
+    assert.equal(treePayload.dataScope.bindingVersion, 1);
+
+    const runtimeResponse = await originalFetch(`${baseUrl}/runtime/summary?stationId=chilled-a`);
+    assert.equal(runtimeResponse.status, 200);
+    const runtimePayload = await runtimeResponse.json();
+    assert.equal(runtimePayload.counts?.deviceRows, 1);
+    assert.equal(runtimePayload.counts?.registerPoints, 1);
+    assert.equal(runtimePayload.dataScope.bindingVersion, 1);
+
+    const detailResponse = await originalFetch(`${baseUrl}/devices/1?stationId=chilled-a`);
+    assert.equal(detailResponse.status, 200);
+    const detailPayload = await detailResponse.json();
+    assert.equal(detailPayload.detail?.deviceId, "1");
+    assert.equal(detailPayload.dataScope.bindingVersion, 1);
+
+    const requestsBeforeDenied = upstreamRequests.length;
+    const deniedDetailResponse = await originalFetch(`${baseUrl}/devices/2?stationId=chilled-a`);
+    assert.equal(deniedDetailResponse.status, 404);
+    assert.equal((await deniedDetailResponse.json()).code, "STATION_RUNTIME_DEVICE_NOT_BOUND");
+    assert.equal(upstreamRequests.length, requestsBeforeDenied);
+
+    const deniedBatchResponse = await originalFetch(
+      `${baseUrl}/devices/details?stationId=chilled-a&ids=1,2`
+    );
+    assert.equal(deniedBatchResponse.status, 404);
+    assert.equal((await deniedBatchResponse.json()).code, "STATION_RUNTIME_DEVICE_NOT_BOUND");
+    assert.equal(upstreamRequests.length, requestsBeforeDenied);
+
+    const unsupportedResponse = await originalFetch(
+      `${baseUrl}/dashboard/trends?stationId=chilled-a&range=24h`
+    );
+    assert.equal(unsupportedResponse.status, 409);
+    assert.equal((await unsupportedResponse.json()).code, "STATION_RUNTIME_ENDPOINT_UNSUPPORTED");
+    assert.equal(upstreamRequests.length, requestsBeforeDenied);
+
+    const airSummaryResponse = await originalFetch(
+      `${baseUrl}/runtime/summary?stationId=air-a`
+    );
+    assert.equal(airSummaryResponse.status, 409);
+    assert.equal(
+      (await airSummaryResponse.json()).code,
+      "STATION_RUNTIME_SCOPE_NOT_CONFIGURED"
+    );
+    assert.equal(upstreamRequests.length, requestsBeforeDenied);
+
+    const v2 = saveAndValidateDraft(1, "2", "CH2", "CH2-RUN");
+    const whileDraftResponse = await originalFetch(
+      `${baseUrl}/devices/list?stationId=chilled-a&page=1&pageSize=10`
+    );
+    const whileDraftPayload = await whileDraftResponse.json();
+    assert.deepEqual(whileDraftPayload.items.map((item) => item.deviceId), ["1"]);
+    assert.equal(whileDraftPayload.dataScope.bindingVersion, 1);
+
+    const capabilitiesResponse = await originalFetch(`${baseUrl}/capabilities`);
+    assert.equal(capabilitiesResponse.status, 200);
+    const capabilitiesPayload = await capabilitiesResponse.json();
+    const chilledStation = capabilitiesPayload.stationInstances.find((item) => (
+      item.stationId === "chilled-a"
+    ));
+    assert.equal(chilledStation?.bindingState, "published");
+    assert.equal(chilledStation?.bindingVersion, 1);
+    assert.equal(chilledStation?.draftBindingVersion, 2);
+    assert.equal(chilledStation?.publishedBindingVersion, 1);
+    assert.equal(chilledStation?.sourceStatus, "unknown");
+    assert.equal(chilledStation?.freshnessStatus, "unknown");
+    assert.equal(chilledStation?.alarmCount, null);
+
+    adminStore.publishStationRuntimeBinding(
+      "scope-contract-site",
+      "chilled-a",
+      v2,
+      publisher,
+      {}
+    );
+    const switchedResponse = await originalFetch(
+      `${baseUrl}/devices/list?stationId=chilled-a&page=1&pageSize=10`
+    );
+    const switchedPayload = await switchedResponse.json();
+    assert.deepEqual(switchedPayload.items.map((item) => item.deviceId), ["2"]);
+    assert.equal(switchedPayload.dataScope.bindingVersion, 2);
+    assert.equal(switchedPayload.dataScope.cacheKey, "scope-contract-site:chilled-a:v2");
+  } finally {
+    globalThis.fetch = originalFetch;
+    adminStore.close();
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+});
+
+test("dashboard runtime routes attach complete cold-scope evidence", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => createJsonResponse({
+    status: 20000,
+    data: [],
+    rows: []
+  });
+  const app = express();
+  app.use(express.json());
+  app.use("/bff/v1", buildV1Router({
+    defaultSiteId: "scope-contract-site",
+    legacyBaseUrl: "http://127.0.0.1:8098",
+    staleThresholdHours: 6,
+    readOnlyMode: true
+  }));
+  const server = app.listen(0);
+
+  try {
+    await new Promise((resolve) => server.once("listening", resolve));
+    const { port } = server.address();
+    const overviewResponse = await originalFetch(
+      `http://127.0.0.1:${port}/bff/v1/sites/scope-contract-site/dashboard/overview`
+    );
+    const overviewPayload = await overviewResponse.json();
+    const trendsResponse = await originalFetch(
+      `http://127.0.0.1:${port}/bff/v1/sites/scope-contract-site/dashboard/trends?range=24h`
+    );
+    const trendsPayload = await trendsResponse.json();
+
+    assert.equal(overviewResponse.status, 200);
+    assert.deepEqual(overviewPayload.dataScope, {
+      siteId: "scope-contract-site",
+      requestedSubsystemType: null,
+      effectiveSubsystemType: null,
+      stationId: null,
+      filterMode: "project_unfiltered",
+      applied: false,
+      reason: "MIXED_SCOPE_PAYLOAD"
+    });
+    assert.deepEqual(overviewPayload.fieldScopes.chilledPlantMetrics.dataScope, {
+      siteId: "scope-contract-site",
+      requestedSubsystemType: null,
+      effectiveSubsystemType: "chilled_plant",
+      stationId: null,
+      filterMode: "fixed_subsystem",
+      applied: true,
+      reason: "ENDPOINT_FIXED_SCOPE"
+    });
+    assert.ok(
+      overviewPayload.fieldScopes.chilledPlantMetrics.fieldPaths.includes(
+        "energyCards.totalCoolingCapacity"
+      )
+    );
+    assert.equal(
+      overviewPayload.fieldScopes.chilledPlantMetrics.fieldPaths.includes(
+        "energyCards.outdoorWetBulbC"
+      ),
+      false
+    );
+    assert.ok(
+      overviewPayload.fieldScopes.projectAggregate.fieldPaths.includes(
+        "energyCards.outdoorWetBulbC"
+      )
+    );
+    assert.equal(trendsResponse.status, 200);
+    assert.deepEqual(trendsPayload.dataScope, {
+      siteId: "scope-contract-site",
+      requestedSubsystemType: null,
+      effectiveSubsystemType: "chilled_plant",
+      stationId: null,
+      filterMode: "fixed_subsystem",
+      applied: true,
+      reason: "ENDPOINT_FIXED_SCOPE"
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
     await new Promise((resolve, reject) => {
       server.close((error) => {
         if (error) {
@@ -713,6 +1305,10 @@ test("FCU control cycle previews without BA write and dispatches only after expl
   const commandRequests = [];
   let setpointFeedbackValue = "25";
   let hvacWriteEnabled = true;
+  let boundaryMode = "enforced";
+  let boundaryApprovalRequired = true;
+  let boundaryPlcProtectionRequired = true;
+  let boundaryRollbackRequired = true;
 
   globalThis.fetch = async (input) => {
     const target = String(input);
@@ -838,8 +1434,11 @@ test("FCU control cycle previews without BA write and dispatches only after expl
             status: "enabled",
             sourceStatus: "ok",
             controlBoundary: {
-              mode: "enforced",
-              writeEnabled: hvacWriteEnabled
+              mode: boundaryMode,
+              writeEnabled: hvacWriteEnabled,
+              approvalRequired: boundaryApprovalRequired,
+              plcProtectionRequired: boundaryPlcProtectionRequired,
+              rollbackRequired: boundaryRollbackRequired
             }
           }
         ]
@@ -1129,6 +1728,74 @@ test("FCU control cycle previews without BA write and dispatches only after expl
     assert.equal(records[0]?.deviceCode, "BGS01");
     assert.equal(records[0]?.dryRun, false);
     assert.equal(commandRequests.length, 3);
+
+    const controlBoundarySafetyCases = [
+      {
+        blockedReason: "boundary_mode_enforced",
+        block() {
+          boundaryMode = "shadow";
+        },
+        restore() {
+          boundaryMode = "enforced";
+        }
+      },
+      {
+        blockedReason: "boundary_approval_required",
+        block() {
+          boundaryApprovalRequired = false;
+        },
+        restore() {
+          boundaryApprovalRequired = true;
+        }
+      },
+      {
+        blockedReason: "boundary_plc_protection_required",
+        block() {
+          boundaryPlcProtectionRequired = false;
+        },
+        restore() {
+          boundaryPlcProtectionRequired = true;
+        }
+      },
+      {
+        blockedReason: "boundary_rollback_required",
+        block() {
+          boundaryRollbackRequired = false;
+        },
+        restore() {
+          boundaryRollbackRequired = true;
+        }
+      }
+    ];
+    for (const safetyCase of controlBoundarySafetyCases) {
+      safetyCase.block();
+      const blockedBySafetyBoundaryResponse = await originalFetch(
+        `http://127.0.0.1:${port}/bff/v1/sites/126lnoffice/hvac-terminal/fan-coils/control-command?build=1&floor=1&deviceCode=BGS02`,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "x-chiller-project-key": "126lnoffice"
+          },
+          body: JSON.stringify({
+            dispatch: true,
+            command: {
+              fanSpeed: "low"
+            }
+          })
+        }
+      );
+      const blockedBySafetyBoundaryPayload = await blockedBySafetyBoundaryResponse.json();
+      assert.equal(blockedBySafetyBoundaryResponse.status, 201);
+      assert.equal(blockedBySafetyBoundaryPayload.dispatchAllowed, false);
+      assert.equal(
+        blockedBySafetyBoundaryPayload.executionGate.blockedReasons.includes(safetyCase.blockedReason),
+        true
+      );
+      assert.equal(blockedBySafetyBoundaryPayload.controlMutation, false);
+      assert.equal(commandRequests.length, 3);
+      safetyCase.restore();
+    }
     assert.match(decodeURIComponent(commandRequests[2]), /风速模式\|high\|TAG_FAN_SPEED/);
 
     writeFcuFinalControlGatesReport(outputDir, {
@@ -1337,6 +2004,49 @@ test("FCU final control status endpoint exposes read-only evidence", async () =>
   }
 });
 
+test("FCU final control status isolates reports from another site", async () => {
+  const app = express();
+  app.use(express.json());
+  app.use("/bff/v1", buildV1Router({
+    defaultSiteId: "126lnoffice",
+    legacyBaseUrl: "http://127.0.0.1:8098",
+    staleThresholdHours: 6,
+    readOnlyMode: true
+  }, {}));
+  const server = app.listen(0);
+
+  try {
+    await new Promise((resolve) => server.once("listening", resolve));
+    const { port } = server.address();
+    const response = await fetch(
+      `http://127.0.0.1:${port}/bff/v1/sites/ui-multi-station/hvac-terminal/fan-coils/final-control-status`
+    );
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.site?.siteId, "ui-multi-station");
+    assert.equal(payload.dataScope?.siteId, "ui-multi-station");
+    assert.equal(payload.dataScope?.effectiveSubsystemType, "hvac_terminal");
+    assert.equal(payload.dataScope?.applied, false);
+    assert.equal(payload.reportStatuses?.finalCompletion?.status, "missing");
+    assert.equal(payload.finalCompletion?.firstCanary, null);
+    assert.deepEqual(payload.finalCompletion?.blockingItems, []);
+    assert.deepEqual(payload.qualityRemediation?.devices, []);
+    assert.deepEqual(payload.finalWorklist?.actions, []);
+    assert.equal(payload.controlMutation, false);
+  } finally {
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+});
+
 test("FCU final control status refresh regenerates read-only evidence without control mutation", async () => {
   const app = express();
   const outputDir = fs.mkdtempSync(path.join(os.tmpdir(), "fcu-final-refresh-test-"));
@@ -1407,6 +2117,82 @@ test("FCU final control status refresh regenerates read-only evidence without co
     assert.equal(fs.existsSync(path.join(outputDir, "fcu-field-remediation-signoff-latest.json")), true);
     assert.equal(fs.existsSync(path.join(outputDir, "fcu-field-remediation-return-template-latest.json")), true);
     assert.equal(fs.existsSync(path.join(outputDir, "fcu-field-arm-package-latest.json")), true);
+  } finally {
+    fs.rmSync(outputDir, { recursive: true, force: true });
+    await new Promise((resolve, reject) => {
+      server.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+});
+
+test("FCU final control refresh keeps each non-legacy site in an independent evidence directory", async () => {
+  const app = express();
+  const outputDir = fs.mkdtempSync(path.join(os.tmpdir(), "fcu-final-multisite-refresh-test-"));
+  app.use(express.json());
+  app.get("/healthz", (_req, res) => {
+    res.json({ ok: true, readOnlyMode: true });
+  });
+  app.use("/bff/v1", buildV1Router({
+    defaultSiteId: "126lnoffice",
+    legacyBaseUrl: "http://127.0.0.1:8098",
+    staleThresholdHours: 6,
+    readOnlyMode: true,
+    fcuFinalControlOutputDir: outputDir
+  }, {}));
+  const server = app.listen(0);
+
+  try {
+    await new Promise((resolve) => server.once("listening", resolve));
+    const { port } = server.address();
+    const refresh = async (siteId) => {
+      const response = await fetch(
+        `http://127.0.0.1:${port}/bff/v1/sites/${siteId}/hvac-terminal/fan-coils/final-control-status/refresh`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: "{}"
+        }
+      );
+      return { response, payload: await response.json() };
+    };
+
+    const siteA = await refresh("factory-a");
+    assert.equal(siteA.response.status, 201);
+    assert.equal(siteA.payload.site?.siteId, "factory-a");
+    const siteADir = path.join(outputDir, "sites", "factory-a", "fcu-final-control");
+    const siteAGates = path.join(siteADir, "fcu-final-control-gates-latest.json");
+    assert.equal(siteA.payload.refresh?.outputs?.docsDir, siteADir);
+    assert.equal(siteA.payload.reportStatuses?.finalCompletion?.status, "ok");
+    assert.equal(siteA.payload.reportStatuses?.finalRollout?.status, "missing");
+    assert.equal(fs.existsSync(siteAGates), true);
+    const siteAGatesBefore = fs.readFileSync(siteAGates, "utf8");
+
+    const siteB = await refresh("factory-b");
+    assert.equal(siteB.response.status, 201);
+    assert.equal(siteB.payload.site?.siteId, "factory-b");
+    const siteBDir = path.join(outputDir, "sites", "factory-b", "fcu-final-control");
+    const siteBGates = path.join(siteBDir, "fcu-final-control-gates-latest.json");
+    assert.equal(siteB.payload.refresh?.outputs?.docsDir, siteBDir);
+    assert.equal(fs.existsSync(siteBGates), true);
+    assert.equal(fs.readFileSync(siteAGates, "utf8"), siteAGatesBefore);
+    assert.equal(fs.existsSync(path.join(outputDir, "fcu-final-control-gates-latest.json")), false);
+
+    const siteAStatusResponse = await fetch(
+      `http://127.0.0.1:${port}/bff/v1/sites/factory-a/hvac-terminal/fan-coils/final-control-status`
+    );
+    const siteAStatus = await siteAStatusResponse.json();
+    assert.equal(siteAStatusResponse.status, 200);
+    assert.equal(siteAStatus.site?.siteId, "factory-a");
+    assert.equal(siteAStatus.reportStatuses?.finalCompletion?.status, "ok");
+    assert.equal(siteAStatus.reportStatuses?.finalControlGates?.status, "ok");
+    assert.equal(siteAStatus.reportStatuses?.evidenceConsistency?.status, "ok");
+    assert.equal(siteAStatus.reportStatuses?.finalCompletion?.sourceFile?.startsWith(siteADir), true);
   } finally {
     fs.rmSync(outputDir, { recursive: true, force: true });
     await new Promise((resolve, reject) => {
@@ -1645,7 +2431,10 @@ test("FCU final control rollout endpoint requires both real-write confirmations"
             sourceStatus: "ok",
             controlBoundary: {
               mode: "enforced",
-              writeEnabled: true
+              writeEnabled: true,
+              approvalRequired: true,
+              plcProtectionRequired: true,
+              rollbackRequired: true
             }
           }
         ]
@@ -1723,7 +2512,10 @@ test("FCU canary dispatch endpoint blocks when field authorization gates are not
             sourceStatus: "ok",
             controlBoundary: {
               mode: "enforced",
-              writeEnabled: true
+              writeEnabled: true,
+              approvalRequired: true,
+              plcProtectionRequired: true,
+              rollbackRequired: true
             }
           }
         ]
@@ -1819,7 +2611,10 @@ test("FCU runtime execution gate blocks approved authorization outside active wi
             sourceStatus: "ok",
             controlBoundary: {
               mode: "enforced",
-              writeEnabled: true
+              writeEnabled: true,
+              approvalRequired: true,
+              plcProtectionRequired: true,
+              rollbackRequired: true
             }
           }
         ]

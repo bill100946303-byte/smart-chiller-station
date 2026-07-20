@@ -281,6 +281,13 @@ test("read-only v1 allowlist permits advisory endpoints without opening generic 
   assert.equal(
     isAllowedReadOnlyV1Write({
       method: "POST",
+      path: "/sites/140/scene/device-command"
+    }),
+    false
+  );
+  assert.equal(
+    isAllowedReadOnlyV1Write({
+      method: "POST",
       path: "/sites/140/energy-parameters"
     }),
     false

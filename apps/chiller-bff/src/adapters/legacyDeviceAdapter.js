@@ -2,6 +2,7 @@
 
 const DEVICE_LIST_PAGE_SIZE = 200;
 const DEVICE_DETAIL_RUNTIME_PAGE_SIZE = 200;
+const DEVICE_REGISTER_COLLECTION_PAGE_SIZE = 5000;
 const ACTIVE_FREQUENCY_FALLBACK_THRESHOLD_HZ = 5;
 const STATUS_TEXT_RUNNING = "\u8fd0\u884c\u4e2d";
 const STATUS_TEXT_STOPPED = "\u5df2\u505c\u6b62";
@@ -47,6 +48,28 @@ const PLACEHOLDER_DEVICE_META = {
   }
 };
 
+function enforceLegacyBusinessSuccess(response) {
+  if (!response?.ok || !response.payload || typeof response.payload !== "object") {
+    return response;
+  }
+  const payload = response.payload;
+  const rawStatus = payload.status ?? payload.code ?? payload.statusCode;
+  const explicitFailure = payload.ok === false || payload.success === false;
+  if (rawStatus == null && !explicitFailure) {
+    return response;
+  }
+  const normalizedStatus = rawStatus == null ? "" : String(rawStatus).trim();
+  const businessOk = !explicitFailure
+    && (rawStatus == null || ["0", "200", "20000"].includes(normalizedStatus));
+  return businessOk
+    ? response
+    : {
+        ...response,
+        ok: false,
+        error: `Legacy business response failed${normalizedStatus ? ` with status ${normalizedStatus}` : ""}`
+      };
+}
+
 function normalizeLegacyPath(siteId, options = {}) {
   const databaseKey =
     typeof options.databaseKey === "string" && options.databaseKey.trim()
@@ -63,11 +86,126 @@ function normalizeLegacyPath(siteId, options = {}) {
 }
 
 function buildDeviceListEndpoint(siteId, options = {}) {
-  return `/zsqy/drinfo/${normalizeLegacyPath(siteId, options)}/findObject?pageCurrent=1&pageSize=${DEVICE_LIST_PAGE_SIZE}`;
+  const requestedPageSize = Number(options.sourcePageSize);
+  const pageSize = Number.isSafeInteger(requestedPageSize) && requestedPageSize > 0
+    ? Math.min(requestedPageSize, 5000)
+    : DEVICE_LIST_PAGE_SIZE;
+  return `/zsqy/drinfo/${normalizeLegacyPath(siteId, options)}/findObject?pageCurrent=1&pageSize=${pageSize}`;
 }
 
 function buildDeviceDetailRuntimeEndpoint(siteId, deviceId, options = {}) {
   return `/zsqy/reg/${normalizeLegacyPath(siteId, options)}/findObject?pageCurrent=1&pageSize=${DEVICE_DETAIL_RUNTIME_PAGE_SIZE}&drId=${encodeURIComponent(deviceId)}`;
+}
+
+function normalizeExactSelectorSet(value, { upper = false } = {}) {
+  const items = Array.isArray(value) ? value : [];
+  return new Set(
+    items
+      .map((item) => toTrimmedString(item))
+      .filter(Boolean)
+      .map((item) => (upper ? item.toUpperCase() : item))
+  );
+}
+
+function hasStationDeviceAllowlist(options = {}) {
+  return Array.isArray(options.allowedDeviceIds) && options.allowedDeviceIds.length > 0;
+}
+
+function rowDeviceIdentity(row) {
+  return {
+    deviceId: toTrimmedString(row?.drid ?? row?.drId ?? row?.deviceId ?? row?.id),
+    deviceCode: toTrimmedString(row?.drcode ?? row?.drCode ?? row?.deviceCode).toUpperCase()
+  };
+}
+
+function stationBindingAllowsRow(row, options = {}) {
+  if (!hasStationDeviceAllowlist(options)) {
+    return true;
+  }
+  const allowedDeviceIds = normalizeExactSelectorSet(options.allowedDeviceIds);
+  const allowedDeviceCodes = normalizeExactSelectorSet(options.allowedDeviceCodes, { upper: true });
+  const { deviceId, deviceCode } = rowDeviceIdentity(row);
+  // The immutable device id is the authorization boundary. A device code is
+  // only a secondary identity check; it must never broaden the allowlist when
+  // an upstream catalog later introduces a duplicate code.
+  return allowedDeviceIds.has(deviceId)
+    && (allowedDeviceCodes.size === 0 || Boolean(deviceCode && allowedDeviceCodes.has(deviceCode)));
+}
+
+function findAmbiguousStationDeviceIds(rows, options = {}) {
+  if (!hasStationDeviceAllowlist(options)) {
+    return [];
+  }
+  const allowedDeviceIds = normalizeExactSelectorSet(options.allowedDeviceIds);
+  const counts = new Map();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const { deviceId } = rowDeviceIdentity(row);
+    if (allowedDeviceIds.has(deviceId)) {
+      counts.set(deviceId, (counts.get(deviceId) || 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([deviceId]) => deviceId)
+    .sort();
+}
+
+function stationBindingAllowsPoint(record, options = {}) {
+  const allowedPointCodes = normalizeExactSelectorSet(options.allowedPointCodes);
+  if (allowedPointCodes.size === 0) {
+    return true;
+  }
+  const candidates = [
+    record?.pointCode,
+    record?.tagName,
+    record?.tagname,
+    record?.regId,
+    record?.regid
+  ].map((item) => toTrimmedString(item)).filter(Boolean);
+  return candidates.some((item) => allowedPointCodes.has(item));
+}
+
+function runtimeRecordBelongsToDevice(record, deviceId) {
+  const recordDeviceId = toTrimmedString(record?.drId ?? record?.drid ?? record?.deviceId);
+  // Some legacy per-device register endpoints omit drId on every row. When an
+  // identity is present, however, it must agree with the requested device; an
+  // upstream that ignores the drId query must not leak mixed-device records.
+  return !recordDeviceId || recordDeviceId === toTrimmedString(deviceId);
+}
+
+function filterRuntimeRowForStation(row, options = {}) {
+  if (!stationBindingAllowsRow(row, options)) {
+    return null;
+  }
+  if (!Array.isArray(options.allowedPointCodes) || options.allowedPointCodes.length === 0) {
+    return row;
+  }
+  const registers = getRuntimeRecords(row?.reglist).filter((record) => (
+    stationBindingAllowsPoint(record, options)
+  ));
+  return {
+    ...row,
+    reglist: registers
+  };
+}
+
+function filterRowsForStation(rows, options = {}, { runtime = false } = {}) {
+  if (!hasStationDeviceAllowlist(options)) {
+    return Array.isArray(rows) ? rows : [];
+  }
+  const ambiguousDeviceIds = new Set(findAmbiguousStationDeviceIds(rows, options));
+  return (Array.isArray(rows) ? rows : [])
+    .filter((row) => !ambiguousDeviceIds.has(rowDeviceIdentity(row).deviceId))
+    .map((row) => (runtime ? filterRuntimeRowForStation(row, options) : stationBindingAllowsRow(row, options) ? row : null))
+    .filter(Boolean);
+}
+
+function buildDeviceRegisterCollectionEndpoint(siteId, options = {}) {
+  const configuredPageSize = Number(options.pageSize);
+  const pageSize = Number.isFinite(configuredPageSize) && configuredPageSize > 0
+    ? Math.floor(configuredPageSize)
+    : DEVICE_REGISTER_COLLECTION_PAGE_SIZE;
+  return `/zsqy/reg/${normalizeLegacyPath(siteId, options)}/findObject?pageCurrent=1&pageSize=${pageSize}`;
 }
 
 function parseBuildFloorFromProjectKey(projectKey) {
@@ -1158,9 +1296,19 @@ function buildCoolingTowerProxySnapshot(proxyRows, fallbackLatestUpdateAt = null
 
 async function loadDeviceCatalogRows(baseUrl, siteId, options = {}) {
   const endpoint = buildDeviceListEndpoint(siteId, options);
-  const response = await fetchLegacyJson(baseUrl, endpoint);
-  const rows = response.ok ? deepArrayProbe(response.payload) : [];
-  return { endpoint, response, rows };
+  const upstreamResponse = enforceLegacyBusinessSuccess(await fetchLegacyJson(baseUrl, endpoint));
+  const sourceRows = upstreamResponse.ok ? deepArrayProbe(upstreamResponse.payload) : [];
+  const ambiguousDeviceIds = findAmbiguousStationDeviceIds(sourceRows, options);
+  const response = ambiguousDeviceIds.length > 0
+    ? {
+        ...upstreamResponse,
+        ok: false,
+        reasonCode: "STATION_DEVICE_IDS_AMBIGUOUS",
+        error: `Station catalog contains duplicate device ids: ${ambiguousDeviceIds.join(", ")}`
+      }
+    : upstreamResponse;
+  const rows = response.ok ? filterRowsForStation(sourceRows, options) : [];
+  return { endpoint, response, rows, ambiguousDeviceIds };
 }
 
 function deriveDeviceNodeStatus(runStatusText, alarmStatusText) {
@@ -1234,12 +1382,188 @@ async function loadDeviceRealtimeCollectionRows(baseUrl, siteId, options = {}) {
   if (!endpoint) {
     return null;
   }
-  const response = await fetchLegacyJson(baseUrl, endpoint);
-  const rows = response.ok ? deepArrayProbe(response.payload).filter((item) => item && typeof item === "object") : [];
+  const upstreamResponse = enforceLegacyBusinessSuccess(await fetchLegacyJson(baseUrl, endpoint));
+  const sourceRows = upstreamResponse.ok ? deepArrayProbe(upstreamResponse.payload).filter((item) => item && typeof item === "object") : [];
+  const ambiguousDeviceIds = findAmbiguousStationDeviceIds(sourceRows, options);
+  const response = ambiguousDeviceIds.length > 0
+    ? {
+        ...upstreamResponse,
+        ok: false,
+        reasonCode: "STATION_DEVICE_IDS_AMBIGUOUS",
+        error: `Station runtime contains duplicate device ids: ${ambiguousDeviceIds.join(", ")}`
+      }
+    : upstreamResponse;
+  const rows = response.ok ? filterRowsForStation(sourceRows, options, { runtime: true }) : [];
   return {
     endpoint,
     response,
     rows: rows.map(enrichRealtimeCollectionRow)
+  };
+}
+
+function buildStationCatalogTree(siteId, items) {
+  const groups = new Map();
+  for (const item of Array.isArray(items) ? items : []) {
+    const groupKey = toTrimmedString(item.systemType || item.deviceTypeName || item.usageType) || "other";
+    if (!groups.has(groupKey)) {
+      groups.set(groupKey, []);
+    }
+    groups.get(groupKey).push(item);
+  }
+  const children = [...groups.entries()].map(([groupKey, groupItems]) => {
+    const groupId = `${siteId}/group/${groupKey}`;
+    const deviceChildren = groupItems.map((item) => ({
+      id: `${groupId}/${item.deviceId}`,
+      label: item.deviceName,
+      nodeType: "device",
+      parentId: groupId,
+      deviceIdRef: item.deviceId,
+      deviceCode: item.deviceCode || null,
+      deviceName: item.deviceName || null,
+      systemType: item.systemType || null,
+      floorName: item.floorName || null,
+      buildingName: item.buildingName || null,
+      status: item.status || "unknown",
+      lastReportAt: item.lastReportAt || null,
+      childCount: 0,
+      children: []
+    }));
+    return {
+      id: groupId,
+      label: groupItems[0]?.deviceTypeName || groupItems[0]?.usageType || groupKey,
+      nodeType: "group",
+      parentId: siteId,
+      deviceIdRef: null,
+      deviceCode: null,
+      deviceName: null,
+      systemType: groupKey,
+      floorName: null,
+      buildingName: null,
+      status: "unknown",
+      lastReportAt: null,
+      childCount: deviceChildren.length,
+      children: deviceChildren
+    };
+  });
+  return {
+    id: siteId,
+    label: siteId,
+    nodeType: "root",
+    parentId: null,
+    deviceIdRef: null,
+    deviceCode: null,
+    deviceName: null,
+    systemType: null,
+    floorName: null,
+    buildingName: null,
+    status: "unknown",
+    lastReportAt: null,
+    childCount: children.length,
+    children
+  };
+}
+
+function filterNormalizedTreeForStation(node, options = {}) {
+  if (!node || !hasStationDeviceAllowlist(options)) {
+    return node;
+  }
+  const allowedDeviceIds = normalizeExactSelectorSet(options.allowedDeviceIds);
+  const allowedPointCodes = normalizeExactSelectorSet(options.allowedPointCodes);
+  const filterNode = (current) => {
+    if (!current || typeof current !== "object") {
+      return null;
+    }
+    if (current.nodeType === "device" && !allowedDeviceIds.has(toTrimmedString(current.deviceIdRef))) {
+      return null;
+    }
+    if (current.nodeType === "point") {
+      if (!allowedDeviceIds.has(toTrimmedString(current.deviceIdRef))) {
+        return null;
+      }
+      if (allowedPointCodes.size > 0) {
+        const rawNodeId = toTrimmedString(current.id).split("/").at(-1) || "";
+        if (!allowedPointCodes.has(rawNodeId) && !allowedPointCodes.has(toTrimmedString(current.label))) {
+          return null;
+        }
+      }
+    }
+    const children = (Array.isArray(current.children) ? current.children : [])
+      .map(filterNode)
+      .filter(Boolean);
+    if (current.nodeType === "group" && children.length === 0) {
+      return null;
+    }
+    return {
+      ...current,
+      children,
+      childCount: children.length
+    };
+  };
+  return filterNode(node);
+}
+
+function groupRegisterCollectionRows(records) {
+  const rowsByDeviceId = new Map();
+  for (const record of Array.isArray(records) ? records : []) {
+    if (!record || typeof record !== "object") {
+      continue;
+    }
+    const deviceId = toTrimmedString(record.drId ?? record.drid ?? record.deviceId);
+    if (!deviceId) {
+      continue;
+    }
+    let row = rowsByDeviceId.get(deviceId);
+    if (!row) {
+      row = {
+        drid: deviceId,
+        drcode: toTrimmedString(record.drcode ?? record.drCode ?? record.deviceCode),
+        drname: toTrimmedString(record.drname ?? record.drName ?? record.deviceName),
+        drtypename: toTrimmedString(record.drtypename ?? record.drTypeName ?? record.deviceTypeName),
+        reglist: []
+      };
+      rowsByDeviceId.set(deviceId, row);
+    }
+    row.reglist.push(record);
+  }
+  return [...rowsByDeviceId.values()];
+}
+
+/**
+ * Reads the legacy register collection once and groups its flat register rows by
+ * device. This adapter is GET-only; filtering and B25 equipment authorization
+ * remain the service layer's responsibility.
+ */
+export async function loadDeviceRegisterCollection(baseUrl, siteId, options = {}) {
+  const endpoint = buildDeviceRegisterCollectionEndpoint(siteId, options);
+  const fetchedAt = new Date().toISOString();
+  const response = enforceLegacyBusinessSuccess(await fetchLegacyJson(baseUrl, endpoint));
+  const sourceRecords = response.ok
+    ? deepArrayProbe(response.payload).filter((item) => item && typeof item === "object")
+    : [];
+  const records = sourceRecords.filter((record) => (
+    stationBindingAllowsRow(record, options) && stationBindingAllowsPoint(record, options)
+  ));
+  const rows = groupRegisterCollectionRows(records);
+  const ok = response.ok && records.length > 0 && rows.length > 0;
+
+  return {
+    endpoint,
+    fetchedAt,
+    records,
+    rows,
+    sourceStatus: {
+      endpoint,
+      ok,
+      status: response.status ?? null,
+      message: ok ? extractMessage(response.payload, "OK") : null,
+      rows: records.length,
+      error: ok
+        ? null
+        : response.ok
+          ? "Legacy register collection payload contained no device register rows"
+          : response.error || "Legacy register collection unavailable",
+      fallback: false
+    }
   };
 }
 
@@ -1355,7 +1679,9 @@ export async function loadDeviceList(baseUrl, siteId, options = {}) {
     ? buildPlaceholderDeviceRows(siteId, {
         floorName: floorFilter || "1"
       })
-    : selectDisplayRows(rows.map(normalizeDeviceRow));
+    : hasStationDeviceAllowlist(options) || options.includeAllCatalogRows === true
+      ? rows.map(normalizeDeviceRow)
+      : selectDisplayRows(rows.map(normalizeDeviceRow));
   const enforceFloorFilter = Boolean(floorFilter) && normalizedRows.some((row) => hasUsableFloorInfo(row));
   const filteredRows = normalizedRows.filter((row) => {
     if (typeFilter && row.systemType !== typeFilter) {
@@ -1383,6 +1709,7 @@ export async function loadDeviceList(baseUrl, siteId, options = {}) {
     sourceStatus: {
       endpoint,
       ok: response.ok,
+      reasonCode: response.reasonCode || null,
       status: response.status ?? null,
       message: response.ok ? extractMessage(response.payload, "OK") : null,
       rows: response.ok ? rows.length : null,
@@ -1403,7 +1730,9 @@ export async function loadDeviceTree(baseUrl, siteId, options = {}) {
   const endpoint = `/api/device/${normalizeLegacyPath(siteId, options)}/data/tree?build=${build}&floor=${floor}&mock=${mock}`;
   const fetchedAt = new Date().toISOString();
   const [treeResponse, catalog, realtimeCollection] = await Promise.all([
-    useRealtimeCollectionForTree ? Promise.resolve(null) : fetchLegacyJson(baseUrl, endpoint),
+    useRealtimeCollectionForTree
+      ? Promise.resolve(null)
+      : fetchLegacyJson(baseUrl, endpoint).then(enforceLegacyBusinessSuccess),
     loadDeviceCatalogRows(baseUrl, siteId, options),
     useRealtimeCollectionForTree ? loadDeviceRealtimeCollectionRows(baseUrl, siteId, options) : Promise.resolve(null)
   ]);
@@ -1433,16 +1762,23 @@ export async function loadDeviceTree(baseUrl, siteId, options = {}) {
         floorName: String(floor),
         buildingName: `濠德板€曢崥瀣偉?${build}`
       })
-    : selectDisplayRows(mergedCatalogRows.map(normalizeDeviceRow));
+    : hasStationDeviceAllowlist(options) || options.includeAllCatalogRows === true
+      ? mergedCatalogRows.map(normalizeDeviceRow)
+      : selectDisplayRows(mergedCatalogRows.map(normalizeDeviceRow));
   const catalogMap = buildDeviceCatalog(catalogRows);
-  const normalizedTree = treeResponse?.ok
+  const normalizedTree = filterNormalizedTreeForStation(
+    (!hasStationDeviceAllowlist(options) || catalog.response.ok) && treeResponse?.ok
     ? normalizeDeviceTree(treeResponse.payload, siteId, catalogMap)
-    : null;
+    : null,
+    options
+  );
   const treeHasDeviceNodes = countDeviceTreeNodes(normalizedTree) > 0;
   const root = treeHasDeviceNodes
     ? normalizedTree
     : catalogRows.length > 0
-      ? buildPlaceholderTree(siteId, Array.from(catalogMap.values()))
+      ? hasStationDeviceAllowlist(options)
+        ? buildStationCatalogTree(siteId, Array.from(catalogMap.values()))
+        : buildPlaceholderTree(siteId, Array.from(catalogMap.values()))
       : null;
   const treeError =
     treeHasDeviceNodes
@@ -1479,6 +1815,7 @@ export async function loadDeviceTree(baseUrl, siteId, options = {}) {
       tree: {
         endpoint: useRealtimeCollectionForTree ? realtimeCollection?.endpoint || endpoint : endpoint,
         ok: useRealtimeCollectionForTree ? Boolean(realtimeCollection?.response?.ok && realtimeCollection.rows.length > 0) : treeHasDeviceNodes,
+        reasonCode: catalog.response.reasonCode || realtimeCollection?.response?.reasonCode || null,
         status: useRealtimeCollectionForTree ? realtimeCollection?.response?.status ?? null : treeResponse.status ?? null,
         message: treeMessage,
         rows: useRealtimeCollectionForTree ? realtimeCollection?.rows?.length ?? null : treeHasDeviceNodes ? root?.childCount ?? null : null,
@@ -1487,6 +1824,7 @@ export async function loadDeviceTree(baseUrl, siteId, options = {}) {
       catalog: {
         endpoint: catalog.endpoint,
         ok: catalog.response.ok,
+        reasonCode: catalog.response.reasonCode || null,
         status: catalog.response.status ?? null,
         message: catalog.response.ok ? extractMessage(catalog.response.payload, "OK") : null,
         rows: catalogRows.length,
@@ -1573,7 +1911,14 @@ async function resolveDeviceDetailFromTree(baseUrl, siteId, deviceId, tree, opti
   const realtimeCollectionRows = Array.isArray(tree.realtimeCollectionRows) ? tree.realtimeCollectionRows : [];
   const matchedRealtimeRow =
     realtimeCollectionRows.find((row) => toTrimmedString(row?.drid ?? row?.deviceId ?? row?.id) === normalizedDeviceId) || null;
-  const runtime = matched?.isPlaceholder
+  const runtime = !matched
+    ? {
+        ok: false,
+        status: null,
+        payload: null,
+        error: "Device is absent from an unambiguous station catalog"
+      }
+    : matched?.isPlaceholder
     ? {
         ok: true,
         status: 200,
@@ -1582,8 +1927,13 @@ async function resolveDeviceDetailFromTree(baseUrl, siteId, deviceId, tree, opti
         },
         error: null
       }
-    : await fetchLegacyJson(baseUrl, runtimeEndpoint);
-  const runtimeRecords = runtime.ok ? getRuntimeRecords(runtime.payload) : [];
+    : enforceLegacyBusinessSuccess(await fetchLegacyJson(baseUrl, runtimeEndpoint));
+  const runtimeRecords = runtime.ok
+    ? getRuntimeRecords(runtime.payload).filter((record) => (
+        runtimeRecordBelongsToDevice(record, normalizedDeviceId)
+        && stationBindingAllowsPoint(record, options)
+      ))
+    : [];
   const runtimeSnapshot = buildRuntimeSnapshot(runtimeRecords, matched?.lastReportAt || null);
   const collectionSnapshot = matchedRealtimeRow
     ? buildRuntimeSnapshot(getRuntimeRecords(matchedRealtimeRow?.reglist), matchedRealtimeRow?.lastReportAt || null)
@@ -1703,7 +2053,10 @@ async function resolveDeviceDetailFromTree(baseUrl, siteId, deviceId, tree, opti
 }
 
 export async function loadDeviceDetail(baseUrl, siteId, deviceId, options = {}) {
-  const tree = await loadDeviceTree(baseUrl, siteId, { ...options, placeholderFallback: true });
+  const tree = await loadDeviceTree(baseUrl, siteId, {
+    ...options,
+    placeholderFallback: options.placeholderFallback !== false
+  });
   return resolveDeviceDetailFromTree(baseUrl, siteId, deviceId, tree, options);
 }
 
@@ -1725,7 +2078,10 @@ export async function loadDeviceDetails(baseUrl, siteId, deviceIds, options = {}
     };
   }
 
-  const tree = await loadDeviceTree(baseUrl, siteId, { ...options, placeholderFallback: true });
+  const tree = await loadDeviceTree(baseUrl, siteId, {
+    ...options,
+    placeholderFallback: options.placeholderFallback !== false
+  });
   const batchSize =
     Number.isFinite(Number(options.batchSize)) && Number(options.batchSize) > 0
       ? Math.max(1, Math.floor(Number(options.batchSize)))

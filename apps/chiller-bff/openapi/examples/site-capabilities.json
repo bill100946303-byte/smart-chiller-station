@@ -1,0 +1,164 @@
+{
+  "site": {
+    "siteId": "126lnoffice",
+    "siteName": "6期1栋综合能源站"
+  },
+  "generatedAt": "2026-07-19T01:00:00.000Z",
+  "kind": "capabilities",
+  "items": [
+    {
+      "siteId": "126lnoffice",
+      "subsystemType": "chilled_plant",
+      "displayName": "冷冻站",
+      "category": "supply",
+      "status": "enabled",
+      "published": true,
+      "kpis": [
+        {
+          "key": "system_cop",
+          "label": "系统COP"
+        }
+      ],
+      "alarmCount": 3,
+      "advisorBindings": [],
+      "controlBoundary": {
+        "mode": "read_only",
+        "approvalRequired": true,
+        "plcProtectionRequired": true,
+        "rollbackRequired": true,
+        "writeEnabled": false,
+        "notes": "UI audit profile"
+      }
+    },
+    {
+      "siteId": "126lnoffice",
+      "subsystemType": "compressed_air",
+      "displayName": "空压站",
+      "category": "supply",
+      "status": "not_configured",
+      "published": true,
+      "kpis": [],
+      "alarmCount": null,
+      "advisorBindings": []
+    },
+    {
+      "siteId": "126lnoffice",
+      "subsystemType": "boiler_room",
+      "displayName": "锅炉房",
+      "category": "supply",
+      "status": "not_configured",
+      "published": true,
+      "kpis": [],
+      "alarmCount": null,
+      "advisorBindings": []
+    },
+    {
+      "siteId": "126lnoffice",
+      "subsystemType": "power_monitoring",
+      "displayName": "电力监控",
+      "category": "distribution",
+      "status": "not_configured",
+      "published": true,
+      "kpis": [],
+      "alarmCount": null,
+      "advisorBindings": []
+    },
+    {
+      "siteId": "126lnoffice",
+      "subsystemType": "hvac_terminal",
+      "displayName": "空调末端",
+      "category": "consumption",
+      "status": "not_configured",
+      "published": true,
+      "kpis": [],
+      "alarmCount": null,
+      "advisorBindings": []
+    }
+  ],
+  "stationInstances": [
+    {
+      "siteId": "126lnoffice",
+      "stationId": "chilled-a",
+      "stationName": "冷冻站 A",
+      "parentSubsystemType": "chilled_plant",
+      "status": "enabled",
+      "enabled": true,
+      "sourceStatus": "unknown",
+      "freshnessStatus": "unknown",
+      "alarmCount": null,
+      "bindingState": "published",
+      "bindingVersion": 1,
+      "draftBindingVersion": null,
+      "publishedBindingVersion": 1,
+      "sortOrder": 10,
+      "published": true,
+      "notes": "运行绑定已发布；实时状态仍以运行端实际响应证据为准。"
+    },
+    {
+      "siteId": "126lnoffice",
+      "stationId": "chilled-b",
+      "stationName": "冷冻站 B",
+      "parentSubsystemType": "chilled_plant",
+      "status": "not_configured",
+      "enabled": false,
+      "sourceStatus": "not_configured",
+      "freshnessStatus": "not_configured",
+      "alarmCount": null,
+      "bindingState": "unconfigured",
+      "bindingVersion": null,
+      "draftBindingVersion": null,
+      "publishedBindingVersion": null,
+      "sortOrder": 20,
+      "published": true,
+      "notes": "等待点位与设备归属核验。"
+    },
+    {
+      "siteId": "126lnoffice",
+      "stationId": "air-01",
+      "stationName": "空压站 1",
+      "parentSubsystemType": "compressed_air",
+      "status": "not_configured",
+      "enabled": false,
+      "sourceStatus": "not_configured",
+      "freshnessStatus": "not_configured",
+      "alarmCount": null,
+      "bindingState": "unconfigured",
+      "bindingVersion": null,
+      "draftBindingVersion": null,
+      "publishedBindingVersion": null,
+      "sortOrder": 30,
+      "published": true,
+      "notes": "等待真实接入。"
+    }
+  ],
+  "stationTotal": 3,
+  "total": 5,
+  "dataScope": {
+    "siteId": "126lnoffice",
+    "requestedSubsystemType": null,
+    "effectiveSubsystemType": null,
+    "stationId": null,
+    "filterMode": "site_aggregate",
+    "applied": true,
+    "reason": "SITE_AGGREGATE"
+  },
+  "freshness": {
+    "latestTimestamp": "2026-07-19T01:00:00.000Z",
+    "stale": false,
+    "ageHours": 0
+  },
+  "sourceStatus": {
+    "overall": "ok",
+    "sources": [
+      {
+        "key": "configurationCenter",
+        "endpoint": "/admin/v1/sites/126lnoffice/capabilities",
+        "ok": true,
+        "status": 200,
+        "message": "Published subsystem configuration",
+        "error": null,
+        "rows": 5
+      }
+    ]
+  }
+}

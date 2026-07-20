@@ -17,8 +17,10 @@ tags:
   - name: Anomalies
   - name: Devices
   - name: System
+  - name: Configuration
   - name: Recommendations
   - name: Optimize
+  - name: Admin Configuration
 paths:
   /healthz:
     get:
@@ -34,6 +36,220 @@ paths:
                 $ref: "#/components/schemas/HealthzResponse"
         "500":
           $ref: "#/components/responses/InternalError"
+
+  /admin/v1/sites/{siteId}/stations:
+    get:
+      tags: [Admin Configuration]
+      summary: List physical station identities registered for a project
+      operationId: listAdminStationInstances
+      security:
+        - AdminBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/AdminUserIdHeader"
+        - name: publishedOnly
+          in: query
+          required: false
+          description: Return only station identities visible to the runtime shell.
+          schema:
+            type: boolean
+            default: false
+        - name: parentSubsystemType
+          in: query
+          required: false
+          description: Optional owning energy-object type filter.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Physical station identity list. An empty list is valid and must not be replaced by mock stations.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStationInstanceListResponse"
+              examples:
+                default:
+                  summary: Valid empty physical station registry
+                  externalValue: ./examples/admin-station-instances.json
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    put:
+      tags: [Admin Configuration]
+      summary: Create or update physical station identities for a project
+      description: |
+        Transactional partial upsert. Records omitted from the request are not deleted.
+        A published record is immediately visible to the runtime shell; publication does not imply runtime data filtering by stationId.
+      operationId: upsertAdminStationInstances
+      security:
+        - AdminBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/AdminUserIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminStationInstanceUpsertRequest"
+      responses:
+        "200":
+          description: Updated server-side physical station identity list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStationInstanceListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+
+  /admin/v1/sites/{siteId}/stations/{stationId}/runtime-binding:
+    get:
+      tags: [Admin Configuration]
+      summary: Read draft and currently published runtime binding heads
+      operationId: getAdminStationRuntimeBinding
+      security: [{ AdminBearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/StationIdPathParam"
+        - $ref: "#/components/parameters/AdminUserIdHeader"
+      responses:
+        "200":
+          description: Draft and published versions are returned independently.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminStationRuntimeBindingResponse" }
+        "403": { $ref: "#/components/responses/ForbiddenError" }
+        "404": { $ref: "#/components/responses/NotFoundError" }
+    put:
+      tags: [Admin Configuration]
+      summary: Save a new immutable runtime-binding draft version
+      operationId: saveAdminStationRuntimeBindingDraft
+      security: [{ AdminBearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/StationIdPathParam"
+        - $ref: "#/components/parameters/AdminUserIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminStationRuntimeBindingDraftRequest" }
+      responses:
+        "200":
+          description: New draft; an existing published head remains active.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminStationRuntimeBindingResponse" }
+        "400": { $ref: "#/components/responses/BadRequestError" }
+        "403": { $ref: "#/components/responses/ForbiddenError" }
+        "409": { $ref: "#/components/responses/ConflictError" }
+
+  /admin/v1/sites/{siteId}/stations/{stationId}/runtime-binding/validate:
+    post:
+      tags: [Admin Configuration]
+      summary: Validate the current draft against the real read-only source
+      operationId: validateAdminStationRuntimeBinding
+      security: [{ AdminBearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/StationIdPathParam"
+        - $ref: "#/components/parameters/AdminUserIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminStationRuntimeBindingVersionRequest" }
+      responses:
+        "200":
+          description: Real-source validation passed and evidence was persisted.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminStationRuntimeBindingResponse" }
+        "422":
+          description: Validation failed closed; response ok is false.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403": { $ref: "#/components/responses/ForbiddenError" }
+        "409": { $ref: "#/components/responses/ConflictError" }
+
+  /admin/v1/sites/{siteId}/stations/{stationId}/runtime-binding/publish:
+    post:
+      tags: [Admin Configuration]
+      summary: Atomically publish a validated draft binding
+      description: Platform-admin only. The publisher must differ from the draft creator/editor.
+      operationId: publishAdminStationRuntimeBinding
+      security: [{ AdminBearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/StationIdPathParam"
+        - $ref: "#/components/parameters/AdminUserIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminStationRuntimeBindingVersionRequest" }
+      responses:
+        "200":
+          description: Head was atomically switched to the published version.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminStationRuntimeBindingResponse" }
+        "403": { $ref: "#/components/responses/ForbiddenError" }
+        "409": { $ref: "#/components/responses/ConflictError" }
+
+  /bff/v1/sites/{siteId}/capabilities:
+    get:
+      tags: [Configuration]
+      summary: Published subsystem capability registry for the current project
+      operationId: getSiteCapabilities
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+      responses:
+        "200":
+          description: Project-wide energy-object capability registry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimeSubsystemCapabilityListResponse"
+              examples:
+                default:
+                  summary: Multi-energy capability registry example
+                  externalValue: ./examples/site-capabilities.json
+        "503":
+          $ref: "#/components/responses/ConfigurationCenterUnavailableError"
+
+  /bff/v1/sites/{siteId}/subsystems:
+    get:
+      tags: [Configuration]
+      summary: Published subsystem registry for the current project
+      operationId: getSiteSubsystems
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+      responses:
+        "200":
+          description: Project-wide energy-object subsystem registry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimeSubsystemCapabilityListResponse"
+              examples:
+                default:
+                  summary: Multi-energy subsystem registry example
+                  externalValue: ./examples/site-subsystems.json
+        "503":
+          $ref: "#/components/responses/ConfigurationCenterUnavailableError"
 
   /bff/v1/sites/{siteId}/dashboard/overview:
     get:
@@ -326,6 +542,42 @@ paths:
           $ref: "#/components/responses/BadRequestError"
         "404":
           $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+  /bff/v1/sites/{siteId}/runtime/summary:
+    get:
+      tags: [Devices]
+      summary: Read-only runtime point summary with optional physical-station isolation
+      description: |
+        When stationId is supplied, the BFF requires a published, hash-matched runtime binding,
+        applies the exact device and point allowlists, and returns station_binding scope evidence.
+        Compressed-air and boiler bindings also return stationProcess metrics derived only from
+        explicitly configured point-role mappings. Missing or invalid bindings fail closed.
+      operationId: getRuntimePointSummary
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - name: stationId
+          in: query
+          required: false
+          description: Stable physical station identifier. Required by station-instance UI routes.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+      responses:
+        "200":
+          description: Runtime summary. A station request includes verified station_binding dataScope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimePointSummaryResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
         "500":
           $ref: "#/components/responses/InternalError"
         "502":
@@ -677,12 +929,34 @@ paths:
           $ref: "#/components/responses/InternalError"
 
 components:
+  securitySchemes:
+    AdminBearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque-token
   parameters:
     SiteIdPathParam:
       name: siteId
       in: path
       required: true
       description: Site identifier, same as legacy dbName, e.g. 126lnoffice.
+      schema:
+        type: string
+        minLength: 1
+    StationIdPathParam:
+      name: stationId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 64
+        pattern: "^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,62}[A-Za-z0-9])?$"
+    AdminUserIdHeader:
+      name: x-chiller-user-id
+      in: header
+      required: false
+      description: Explicit admin identity hint used by local and integration authentication modes.
       schema:
         type: string
         minLength: 1
@@ -741,6 +1015,17 @@ components:
         minLength: 1
 
   responses:
+    UnauthorizedError:
+      description: Missing, invalid, or expired admin authentication.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            code: ADMIN_UNAUTHORIZED
+            error: "Missing admin user context"
+            requestId: "req-20260719-0001"
     BadRequestError:
       description: Invalid request parameter or malformed query.
       content:
@@ -833,6 +1118,17 @@ components:
             code: INTERNAL_ERROR
             error: "Unhandled error"
             requestId: "req-20260311-0004"
+    ConfigurationCenterUnavailableError:
+      description: Published energy-object configuration is unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            code: CONFIG_CENTER_UNAVAILABLE
+            error: "Configuration center store is unavailable"
+            requestId: "req-20260719-0001"
 
   schemas:
     HealthzResponse:
@@ -916,6 +1212,524 @@ components:
           items:
             $ref: "#/components/schemas/SourceEndpointStatus"
 
+    RuntimeDataScope:
+      type: object
+      description: Scope actually enforced by the endpoint. Navigation query context alone never sets applied=true.
+      required:
+        - siteId
+        - requestedSubsystemType
+        - effectiveSubsystemType
+        - stationId
+        - filterMode
+        - applied
+        - reason
+      properties:
+        siteId:
+          type: string
+        requestedSubsystemType:
+          type: string
+          nullable: true
+        effectiveSubsystemType:
+          type: string
+          nullable: true
+        stationId:
+          type: string
+          nullable: true
+        filterMode:
+          type: string
+          enum: [fixed_subsystem, site_aggregate, project_unfiltered, device_selected, station_binding]
+        applied:
+          type: boolean
+        reason:
+          type: string
+          enum: [ENDPOINT_FIXED_SCOPE, SUBSYSTEM_FILTER_NOT_IMPLEMENTED, DEVICE_SELECTOR_APPLIED, STATION_RUNTIME_BINDING_APPLIED, SITE_AGGREGATE, MIXED_SCOPE_PAYLOAD]
+        bindingVersion:
+          type: integer
+          minimum: 1
+          nullable: true
+
+    StationProcessRoleMeasurement:
+      type: object
+      required: [role, label, required, value, matched, authoritativeTimestamp]
+      properties:
+        mappingId: { type: string, nullable: true }
+        role: { type: string }
+        label: { type: string }
+        pointCode: { type: string, nullable: true }
+        required: { type: boolean }
+        value:
+          nullable: true
+          oneOf:
+            - { type: number }
+            - { type: string }
+            - { type: boolean }
+        unit: { type: string, nullable: true }
+        qualityCode: { type: string }
+        observedAt: { type: string, format: date-time, nullable: true }
+        authoritativeTimestamp: { type: boolean }
+        deviceId: { type: string, nullable: true }
+        deviceCode: { type: string, nullable: true }
+        sourcePointKey: { type: string, nullable: true }
+        matched: { type: boolean }
+
+    StationProcessSummary:
+      type: object
+      required: [contractVersion, station, readiness, timestampStatus, coverage, missingRequiredRoles, roleMeasurements, operatingState, metrics]
+      properties:
+        contractVersion:
+          type: string
+          enum: [station-process-summary-v1]
+        station:
+          type: object
+          required: [siteId, stationId, stationName, subsystemType, bindingVersion]
+          properties:
+            siteId: { type: string }
+            stationId: { type: string }
+            stationName: { type: string }
+            subsystemType: { type: string, enum: [compressed_air, boiler_room] }
+            bindingVersion: { type: integer, minimum: 1 }
+        readiness:
+          type: string
+          enum: [ready, partial, blocked]
+        timestampStatus:
+          type: string
+          enum: [authoritative, partial, unverified, unavailable]
+        coverage:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+        missingRequiredRoles:
+          type: array
+          items: { type: string }
+        roleMeasurements:
+          type: array
+          items:
+            $ref: "#/components/schemas/StationProcessRoleMeasurement"
+        operatingState:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+        metrics:
+          type: object
+          description: Normalized read-only metrics for compressedAir or boilerRoom; unavailable values are null.
+          additionalProperties: true
+
+    RuntimePointSummaryResponse:
+      type: object
+      required: [site, generatedAt, status, counts, pointEvidence, sourceStatus]
+      properties:
+        site:
+          $ref: "#/components/schemas/SiteRef"
+        generatedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        basis:
+          type: string
+        counts:
+          type: object
+          additionalProperties: true
+        keySignals:
+          type: object
+          additionalProperties: true
+        pointEvidence:
+          type: object
+          additionalProperties: true
+        stationProcess:
+          $ref: "#/components/schemas/StationProcessSummary"
+        sourceStatus:
+          $ref: "#/components/schemas/SourceStatus"
+        dataScope:
+          $ref: "#/components/schemas/RuntimeDataScope"
+
+    RuntimeFieldScope:
+      type: object
+      required: [fieldPaths, exclusions, dataScope]
+      properties:
+        fieldPaths:
+          type: array
+          items:
+            type: string
+        exclusions:
+          type: array
+          items:
+            type: string
+        dataScope:
+          $ref: "#/components/schemas/RuntimeDataScope"
+
+    DashboardOverviewFieldScopes:
+      type: object
+      required: [chilledPlantMetrics, projectAggregate]
+      properties:
+        chilledPlantMetrics:
+          $ref: "#/components/schemas/RuntimeFieldScope"
+        projectAggregate:
+          $ref: "#/components/schemas/RuntimeFieldScope"
+
+    RuntimeControlBoundary:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum: [read_only, shadow, assisted, enforced]
+        approvalRequired:
+          type: boolean
+        plcProtectionRequired:
+          type: boolean
+        rollbackRequired:
+          type: boolean
+        writeEnabled:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+
+    RuntimeSubsystemRegistryPointRole:
+      type: object
+      required: [role, label]
+      properties:
+        role:
+          type: string
+        label:
+          type: string
+        required:
+          type: boolean
+        unit:
+          type: string
+          nullable: true
+
+    RuntimeAdvisorBinding:
+      type: object
+      properties:
+        pluginKey:
+          type: string
+        status:
+          type: string
+        mode:
+          type: string
+
+    RuntimeStationInstance:
+      type: object
+      description: Physical station identity. Runtime health stays unknown until actual response evidence exists; published binding is not itself live evidence.
+      required:
+        [siteId, stationId, stationName, parentSubsystemType, status, enabled, sourceStatus, freshnessStatus, alarmCount, bindingState, bindingVersion, draftBindingVersion, publishedBindingVersion, sortOrder, published]
+      properties:
+        siteId:
+          type: string
+        stationId:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: "^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,62}[A-Za-z0-9])?$"
+          description: Stable identifier within the project; must not be derived from a mutable display name.
+        stationName:
+          type: string
+          minLength: 1
+        parentSubsystemType:
+          type: string
+          minLength: 1
+          description: Energy-object type that owns this physical station instance.
+        status:
+          type: string
+          enum: [enabled, not_configured, not_applicable]
+        enabled:
+          type: boolean
+        sourceStatus:
+          type: string
+          nullable: true
+        freshnessStatus:
+          type: string
+          nullable: true
+        alarmCount:
+          type: integer
+          nullable: true
+        bindingState:
+          type: string
+          enum: [unconfigured, draft, validated, published, superseded]
+          description: Published head takes precedence while a newer draft coexists.
+        bindingVersion:
+          type: integer
+          nullable: true
+        draftBindingVersion:
+          type: integer
+          nullable: true
+        publishedBindingVersion:
+          type: integer
+          nullable: true
+        sortOrder:
+          type: integer
+          minimum: 0
+        published:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+
+    AdminStationInstanceUpsertItem:
+      type: object
+      additionalProperties: false
+      required: [stationId, stationName, parentSubsystemType]
+      properties:
+        stationId:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: "^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,62}[A-Za-z0-9])?$"
+          description: Stable identifier; immutable in the management UI after first save.
+        stationName:
+          type: string
+          minLength: 1
+        parentSubsystemType:
+          type: string
+          minLength: 1
+        status:
+          type: string
+          enum: [enabled, not_configured, not_applicable]
+          default: not_configured
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 999
+        published:
+          type: boolean
+          default: false
+        notes:
+          type: string
+          nullable: true
+
+    AdminStationInstanceUpsertRequest:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/AdminStationInstanceUpsertItem"
+
+    AdminStationInstanceListResponse:
+      type: object
+      required: [ok, requestId, siteId, generatedAt, items, total]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        requestId:
+          type: string
+        siteId:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuntimeStationInstance"
+        total:
+          type: integer
+          minimum: 0
+
+    AdminStationRuntimeBindingSource:
+      type: object
+      additionalProperties: false
+      properties:
+        databaseKey: { type: string, nullable: true }
+        projectKey: { type: string, nullable: true }
+        template: { type: string, nullable: true }
+
+    AdminStationRuntimeBindingSelectors:
+      type: object
+      additionalProperties: false
+      required: [deviceIds]
+      properties:
+        deviceIds:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string, minLength: 1 }
+        deviceCodes:
+          type: array
+          uniqueItems: true
+          items: { type: string, minLength: 1 }
+        pointCodes:
+          type: array
+          uniqueItems: true
+          items: { type: string, minLength: 1 }
+
+    AdminStationRuntimeBinding:
+      type: object
+      required: [siteId, stationId, status, bindingVersion, source, selectors, payloadHash]
+      properties:
+        siteId: { type: string }
+        stationId: { type: string }
+        stationName: { type: string, nullable: true }
+        parentSubsystemType: { type: string, nullable: true }
+        status:
+          type: string
+          enum: [draft, validated, published, superseded, disabled]
+        bindingVersion: { type: integer, minimum: 1 }
+        source: { $ref: "#/components/schemas/AdminStationRuntimeBindingSource" }
+        selectors: { $ref: "#/components/schemas/AdminStationRuntimeBindingSelectors" }
+        payloadHash: { type: string }
+        validatedHash: { type: string, nullable: true }
+        validation:
+          type: object
+          nullable: true
+          additionalProperties: true
+        checkedAt: { type: string, format: date-time, nullable: true }
+        publishedAt: { type: string, format: date-time, nullable: true }
+        publishedBy: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+
+    AdminStationRuntimeBindingDraftRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, source, selectors]
+      properties:
+        expectedVersion: { type: integer, minimum: 0 }
+        source: { $ref: "#/components/schemas/AdminStationRuntimeBindingSource" }
+        selectors: { $ref: "#/components/schemas/AdminStationRuntimeBindingSelectors" }
+        notes: { type: string, nullable: true }
+
+    AdminStationRuntimeBindingVersionRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer, minimum: 1 }
+
+    AdminStationRuntimeBindingResponse:
+      type: object
+      required: [ok, requestId, siteId, stationId, draftVersion, publishedVersion]
+      properties:
+        ok: { type: boolean, enum: [true] }
+        requestId: { type: string }
+        siteId: { type: string }
+        stationId: { type: string }
+        binding:
+          allOf: [{ $ref: "#/components/schemas/AdminStationRuntimeBinding" }]
+          nullable: true
+        draftBinding:
+          allOf: [{ $ref: "#/components/schemas/AdminStationRuntimeBinding" }]
+          nullable: true
+        publishedBinding:
+          allOf: [{ $ref: "#/components/schemas/AdminStationRuntimeBinding" }]
+          nullable: true
+        draftVersion: { type: integer, nullable: true }
+        publishedVersion: { type: integer, nullable: true }
+        configured: { type: boolean }
+        validation:
+          type: object
+          nullable: true
+          additionalProperties: true
+
+    RuntimeSubsystemCapability:
+      type: object
+      required: [subsystemType, displayName, status]
+      properties:
+        siteId:
+          type: string
+        subsystemType:
+          type: string
+          example: chilled_plant
+        displayName:
+          type: string
+          example: 冷冻站
+        category:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [enabled, not_configured, not_applicable]
+        mode:
+          type: string
+          nullable: true
+        reserved:
+          type: boolean
+        enabled:
+          type: boolean
+        kpis:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        alarmCount:
+          type: integer
+          nullable: true
+        freshnessStatus:
+          type: string
+          nullable: true
+        sourceStatus:
+          type: string
+          nullable: true
+        pointMappingProgress:
+          type: number
+          format: double
+          nullable: true
+        advisorPluginStatus:
+          type: string
+          nullable: true
+        pageTemplateStatus:
+          type: string
+          nullable: true
+        published:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+        requiredPointRoles:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuntimeSubsystemRegistryPointRole"
+        advisorBindings:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuntimeAdvisorBinding"
+        controlBoundary:
+          $ref: "#/components/schemas/RuntimeControlBoundary"
+
+    RuntimeSubsystemCapabilityListResponse:
+      type: object
+      description: Published project-wide energy-object registry. dataScope is site_aggregate and never implies a physical station instance filter.
+      required: [site, generatedAt, kind, items, total, stationInstances, stationTotal, dataScope, freshness, sourceStatus]
+      properties:
+        site:
+          $ref: "#/components/schemas/SiteRef"
+        generatedAt:
+          type: string
+          format: date-time
+        kind:
+          type: string
+          enum: [capabilities, subsystems]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuntimeSubsystemCapability"
+        total:
+          type: integer
+          minimum: 0
+        stationInstances:
+          type: array
+          description: Physical station identities grouped by parentSubsystemType. This list is registry data, not runtime filter evidence.
+          items:
+            $ref: "#/components/schemas/RuntimeStationInstance"
+        stationTotal:
+          type: integer
+          minimum: 0
+        dataScope:
+          $ref: "#/components/schemas/RuntimeDataScope"
+        freshness:
+          $ref: "#/components/schemas/Freshness"
+        sourceStatus:
+          $ref: "#/components/schemas/SourceStatus"
+
     ErrorResponse:
       type: object
       required: [ok, code, error]
@@ -925,7 +1739,7 @@ components:
           enum: [false]
         code:
           type: string
-          enum: [BAD_REQUEST, NOT_FOUND, UPSTREAM_ERROR, INTERNAL_ERROR, ADMIN_FORBIDDEN, CONFLICT, NOT_IMPLEMENTED]
+          enum: [BAD_REQUEST, NOT_FOUND, UPSTREAM_ERROR, INTERNAL_ERROR, ADMIN_FORBIDDEN, CONFLICT, NOT_IMPLEMENTED, CONFIG_CENTER_UNAVAILABLE]
         error:
           type: string
         requestId:
@@ -952,9 +1766,25 @@ components:
         - currentLoadRate
         - totalElectricityKwh
         - savingPotentialPct
+        - totalCoolingCapacity
         - activeAnomalyCount
         - chilledDeltaT
         - coolingDeltaT
+        - chillerPowerKw
+        - chilledPumpPowerKw
+        - coolingPumpPowerKw
+        - coolingTowerPowerKw
+        - chillerCop
+        - chilledPumpConveyingCoefficient
+        - coolingTowerConveyingCoefficient
+        - coolingPumpConveyingCoefficient
+        - thermalUnbalanceRate
+        - chilledSupplyTemp
+        - coolingReturnTemp
+        - outdoorTempC
+        - outdoorHumidityPct
+        - outdoorWetBulbC
+        - dewPointC
       properties:
         currentCop:
           type: number
@@ -976,6 +1806,10 @@ components:
           type: number
           format: double
           nullable: true
+        totalCoolingCapacity:
+          type: number
+          format: double
+          nullable: true
         activeAnomalyCount:
           type: integer
           nullable: true
@@ -984,6 +1818,66 @@ components:
           format: double
           nullable: true
         coolingDeltaT:
+          type: number
+          format: double
+          nullable: true
+        chillerPowerKw:
+          type: number
+          format: double
+          nullable: true
+        chilledPumpPowerKw:
+          type: number
+          format: double
+          nullable: true
+        coolingPumpPowerKw:
+          type: number
+          format: double
+          nullable: true
+        coolingTowerPowerKw:
+          type: number
+          format: double
+          nullable: true
+        chillerCop:
+          type: number
+          format: double
+          nullable: true
+        chilledPumpConveyingCoefficient:
+          type: number
+          format: double
+          nullable: true
+        coolingTowerConveyingCoefficient:
+          type: number
+          format: double
+          nullable: true
+        coolingPumpConveyingCoefficient:
+          type: number
+          format: double
+          nullable: true
+        thermalUnbalanceRate:
+          type: number
+          format: double
+          nullable: true
+        chilledSupplyTemp:
+          type: number
+          format: double
+          nullable: true
+        coolingReturnTemp:
+          type: number
+          format: double
+          nullable: true
+        outdoorTempC:
+          type: number
+          format: double
+          nullable: true
+        outdoorHumidityPct:
+          type: number
+          format: double
+          nullable: true
+        outdoorWetBulbC:
+          type: number
+          format: double
+          nullable: true
+        dewPointC:
           type: number
           format: double
           nullable: true
@@ -1038,7 +1932,7 @@ components:
 
     DashboardOverviewResponse:
       type: object
-      required: [site, generatedAt, energyCards, deviceSummary, alarmSummary, freshness, sourceStatus]
+      required: [site, generatedAt, energyCards, deviceSummary, alarmSummary, freshness, sourceStatus, dataScope, fieldScopes]
       properties:
         site:
           $ref: "#/components/schemas/SiteRef"
@@ -1057,6 +1951,10 @@ components:
           $ref: "#/components/schemas/Freshness"
         sourceStatus:
           $ref: "#/components/schemas/SourceStatus"
+        dataScope:
+          $ref: "#/components/schemas/RuntimeDataScope"
+        fieldScopes:
+          $ref: "#/components/schemas/DashboardOverviewFieldScopes"
 
     TrendPoint:
       type: object
@@ -1104,7 +2002,7 @@ components:
 
     DashboardTrendsResponse:
       type: object
-      required: [site, generatedAt, range, series, stats, freshness, sourceStatus]
+      required: [site, generatedAt, range, series, stats, freshness, sourceStatus, dataScope]
       properties:
         site:
           $ref: "#/components/schemas/SiteRef"
@@ -1126,6 +2024,8 @@ components:
           $ref: "#/components/schemas/Freshness"
         sourceStatus:
           $ref: "#/components/schemas/SourceStatus"
+        dataScope:
+          $ref: "#/components/schemas/RuntimeDataScope"
 
     AnomalyEvent:
       type: object

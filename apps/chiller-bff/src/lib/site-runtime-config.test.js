@@ -113,6 +113,29 @@ test("resolveSiteRuntimeConfig keeps builtin B25 project data access when admin 
   assert.equal(result.siteSourceConfig?.defaultDeviceQuery?.build, 1);
   assert.equal(result.siteSourceConfig?.defaultDeviceQuery?.floor, 0);
   assert.equal(result.siteSourceConfig?.deviceDataInterfaces?.[0]?.endpointKind, "legacy-reg-findAllByDrTypeId");
+  assert.equal(result.siteSourceConfig?.readOnlyRuntimeEnrichment?.enabled, true);
+  assert.equal(result.siteSourceConfig?.readOnlyRuntimeEnrichment?.mode, "read-only");
+  assert.equal(result.siteSourceConfig?.readOnlyRuntimeEnrichment?.allowedMethod, "GET");
+  assert.equal(result.siteSourceConfig?.readOnlyRuntimeEnrichment?.exactDeviceCodes?.length, 54);
+  assert.equal(
+    Object.keys(result.siteSourceConfig?.readOnlyRuntimeEnrichment?.exactTagNamesByDeviceCode || {}).length,
+    54
+  );
+  assert.equal(
+    result.siteSourceConfig?.readOnlyRuntimeEnrichment?.exactTagNamesByDeviceCode?.CTF63?.frequencyHz,
+    "SY-1-509-42045"
+  );
+  assert.deepEqual(result.siteSourceConfig?.readOnlyRuntimeEnrichment?.exactTagAliasRule, {
+    transform: "replace-leading-prefix-only",
+    sourcePrefix: "SY-",
+    runtimePrefixTemplate: "{deviceCode}-"
+  });
+  assert.deepEqual(result.siteSourceConfig?.readOnlyRuntimeEnrichment?.expectedSignalCounts, {
+    running: 54,
+    faultActive: 54,
+    remoteEnabled: 54,
+    frequencyHz: 47
+  });
 });
 
 test("resolveSiteRuntimeConfig exposes B25 chiller staging inventory", () => {
@@ -576,6 +599,7 @@ test("resolveSiteRuntimeConfig exposes builtin project data interfaces for offic
     result.siteSourceConfig?.deviceDataInterfaces?.[0]?.endpoint,
     "/api/device/126lnoffice/data?mock=1&build=1&floor=1"
   );
+  assert.equal(result.siteSourceConfig?.readOnlyRuntimeEnrichment, undefined);
 });
 
 test("resolveSiteRuntimeConfig prefers databaseKey for builtin project data interfaces", () => {

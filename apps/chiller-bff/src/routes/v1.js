@@ -4,7 +4,16 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Router } from "express";
+import { isPhysicalStationParentType } from "../lib/energy-object-semantics.js";
+import { resolveFcuEvidenceDirectory } from "../lib/fcu-evidence-paths.js";
 import { resolveSiteRuntimeConfig } from "../lib/site-runtime-config.js";
+import {
+  buildDashboardOverviewScopeEvidence,
+  buildFixedSubsystemDataScope,
+  buildSiteAggregateDataScope,
+  buildStationBindingDataScope,
+  withRuntimeDataScope
+} from "../lib/runtime-data-scope.js";
 import { computeFreshnessState } from "../services/freshness.js";
 import { buildSourceStatus } from "../services/sourceStatusService.js";
 import { getAnomalyList, getAnomalySummary } from "../services/anomalyService.js";
@@ -102,6 +111,7 @@ import {
 import { getTopology } from "../services/topologyService.js";
 import { getSystemDiagram } from "../services/systemDiagramService.js";
 import { getRecommendations } from "../services/recommendationService.js";
+import { buildStationProcessSummary } from "../services/stationProcessService.js";
 import {
   createWorkOrder,
   deleteWorkOrder,
@@ -421,10 +431,12 @@ function readFcuFinalControlEvidence(overrides = {}) {
           new URL("../../../../docs/fcu-final-control-gates-latest.json", import.meta.url),
           "FCU final control gates"
         ),
-    finalRollout: readJsonReportFile(
-      new URL("../../../../docs/fcu-final-control-rollout-latest.json", import.meta.url),
-      "FCU final control rollout"
-    ),
+    finalRollout: overrides.finalRolloutJson
+      ? readJsonReportPath(overrides.finalRolloutJson, "FCU final control rollout")
+      : readJsonReportFile(
+          new URL("../../../../docs/fcu-final-control-rollout-latest.json", import.meta.url),
+          "FCU final control rollout"
+        ),
     finalCompletion: overrides.finalCompletionJson
       ? readJsonReportPath(overrides.finalCompletionJson, "FCU final control completion")
       : readJsonReportFile(
@@ -500,6 +512,43 @@ function readFcuFinalControlEvidence(overrides = {}) {
   };
 }
 
+function resolveFcuEvidenceSiteId(payload) {
+  return normalizeRouteText(
+    payload?.siteId
+    || payload?.site?.siteId
+    || payload?.request?.siteId
+    || payload?.summary?.siteId
+    || payload?.metadata?.siteId
+  );
+}
+
+function scopeFcuFinalControlEvidence(evidence, requestedSiteId) {
+  const expectedSiteId = normalizeRouteText(requestedSiteId).toLowerCase();
+  return Object.fromEntries(Object.entries(evidence).map(([key, item]) => {
+    if (item.status !== "ok") {
+      return [key, item];
+    }
+    const evidenceSiteId = resolveFcuEvidenceSiteId(item.payload);
+    if (!evidenceSiteId) {
+      return [key, {
+        ...item,
+        status: "scope_unverified",
+        payload: null,
+        error: `${item.label} report does not declare siteId`
+      }];
+    }
+    if (evidenceSiteId.toLowerCase() !== expectedSiteId) {
+      return [key, {
+        ...item,
+        status: "scope_mismatch",
+        payload: null,
+        error: `${item.label} report belongs to ${evidenceSiteId}, not ${requestedSiteId}`
+      }];
+    }
+    return [key, item];
+  }));
+}
+
 function buildFcuFinalDispatchGate(evidence) {
   const finalControlGates = evidence?.finalControlGates || {};
   const evidenceConsistency = evidence?.evidenceConsistency || {};
@@ -556,9 +605,9 @@ function slugifyFcuDeviceCode(value) {
   return normalizeRouteText(value).replace(/[^a-zA-Z0-9_-]/g, "-").toLowerCase() || "unknown";
 }
 
-function buildFcuCanaryWindowFilePaths(deviceCode, outputDir = "") {
+function buildFcuCanaryWindowFilePaths(deviceCode, outputDir = "", siteId = "") {
   const slug = slugifyFcuDeviceCode(deviceCode);
-  const docsDir = outputDir || fileURLToPath(new URL("../../../../docs/", import.meta.url));
+  const docsDir = resolveFcuEvidenceDirectory(outputDir, siteId);
   return {
     json: path.join(docsDir, `fcu-canary-window-${slug}.json`),
     markdown: path.join(docsDir, `fcu-canary-window-${slug}.md`),
@@ -580,18 +629,18 @@ function buildFcuCanaryWindowFilePaths(deviceCode, outputDir = "") {
   };
 }
 
-function buildFcuCanaryDispatchFilePaths(deviceCode, outputDir = "") {
+function buildFcuCanaryDispatchFilePaths(deviceCode, outputDir = "", siteId = "") {
   const slug = slugifyFcuDeviceCode(deviceCode);
-  const docsDir = outputDir || fileURLToPath(new URL("../../../../docs/", import.meta.url));
+  const docsDir = resolveFcuEvidenceDirectory(outputDir, siteId);
   return {
     json: path.join(docsDir, `fcu-canary-dispatch-${slug}.json`),
     markdown: path.join(docsDir, `fcu-canary-dispatch-${slug}.md`)
   };
 }
 
-function buildFcuFieldArmPackageFilePaths(deviceCode, outputDir = "") {
+function buildFcuFieldArmPackageFilePaths(deviceCode, outputDir = "", siteId = "") {
   const slug = slugifyFcuDeviceCode(deviceCode);
-  const docsDir = outputDir || fileURLToPath(new URL("../../../../docs/", import.meta.url));
+  const docsDir = resolveFcuEvidenceDirectory(outputDir, siteId);
   return {
     json: path.join(docsDir, `fcu-field-arm-package-${slug}.json`),
     markdown: path.join(docsDir, `fcu-field-arm-package-${slug}.md`),
@@ -599,13 +648,16 @@ function buildFcuFieldArmPackageFilePaths(deviceCode, outputDir = "") {
   };
 }
 
-function buildFcuFinalControlRefreshFilePaths(outputDir) {
-  const docsDir = outputDir || fileURLToPath(new URL("../../../../docs/", import.meta.url));
+function buildFcuFinalControlRefreshFilePaths(outputDir, siteId = "") {
+  const docsDir = resolveFcuEvidenceDirectory(outputDir, siteId);
   return {
+    docsDir,
     finalControlGatesJson: path.join(docsDir, "fcu-final-control-gates-latest.json"),
     finalControlGatesMd: path.join(docsDir, "fcu-final-control-gates-latest.md"),
     finalCompletionJson: path.join(docsDir, "fcu-final-control-completion-latest.json"),
     finalCompletionMd: path.join(docsDir, "fcu-final-control-completion-latest.md"),
+    finalRolloutJson: path.join(docsDir, "fcu-final-control-rollout-latest.json"),
+    finalRolloutMd: path.join(docsDir, "fcu-final-control-rollout-latest.md"),
     finalWorklistJson: path.join(docsDir, "fcu-final-control-worklist-latest.json"),
     finalWorklistMd: path.join(docsDir, "fcu-final-control-worklist-latest.md"),
     finalRunbookJson: path.join(docsDir, "fcu-final-control-runbook-latest.json"),
@@ -669,6 +721,13 @@ function buildFcuFinalControlRefreshFilePaths(outputDir) {
   };
 }
 
+function readFcuFinalControlEvidenceForSite(outputDir, siteId) {
+  return scopeFcuFinalControlEvidence(
+    readFcuFinalControlEvidence(buildFcuFinalControlRefreshFilePaths(outputDir, siteId)),
+    siteId
+  );
+}
+
 function readJsonReportPath(filePath, label) {
   try {
     if (!fs.existsSync(filePath)) {
@@ -701,8 +760,8 @@ function readJsonReportPath(filePath, label) {
 function runFcuCanaryWindowPackage(siteId, deviceCode, options = {}) {
   const scriptPath = fileURLToPath(new URL("../../scripts/execute-fcu-canary-window.js", import.meta.url));
   const cwd = fileURLToPath(new URL("../../", import.meta.url));
-  const files = buildFcuCanaryWindowFilePaths(deviceCode, options.outputDir);
-  const refreshFiles = buildFcuFinalControlRefreshFilePaths(options.outputDir);
+  const files = buildFcuCanaryWindowFilePaths(deviceCode, options.outputDir, siteId);
+  const refreshFiles = buildFcuFinalControlRefreshFilePaths(options.outputDir, siteId);
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [scriptPath], {
       cwd,
@@ -809,7 +868,7 @@ function runFcuCanaryWindowPackage(siteId, deviceCode, options = {}) {
 function runFcuCanaryDispatch(siteId, deviceCode, options = {}) {
   const scriptPath = fileURLToPath(new URL("../../scripts/execute-fcu-canary-dispatch.js", import.meta.url));
   const cwd = fileURLToPath(new URL("../../", import.meta.url));
-  const files = buildFcuCanaryDispatchFilePaths(deviceCode, options.outputDir);
+  const files = buildFcuCanaryDispatchFilePaths(deviceCode, options.outputDir, siteId);
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [scriptPath], {
       cwd,
@@ -862,8 +921,8 @@ async function runFcuFieldArmPackage(siteId, deviceCode, options = {}) {
   const canaryWindowResult = await runFcuCanaryWindowPackage(siteId, deviceCode, options);
   const scriptPath = fileURLToPath(new URL("../../scripts/build-fcu-field-arm-package.js", import.meta.url));
   const cwd = fileURLToPath(new URL("../../", import.meta.url));
-  const files = buildFcuFieldArmPackageFilePaths(deviceCode, options.outputDir);
-  const canaryFiles = buildFcuCanaryWindowFilePaths(deviceCode, options.outputDir);
+  const files = buildFcuFieldArmPackageFilePaths(deviceCode, options.outputDir, siteId);
+  const canaryFiles = buildFcuCanaryWindowFilePaths(deviceCode, options.outputDir, siteId);
   const fieldPackageResult = await new Promise((resolve) => {
     const child = spawn(process.execPath, [scriptPath], {
       cwd,
@@ -929,7 +988,7 @@ async function runFcuFieldArmPackage(siteId, deviceCode, options = {}) {
 
 function runFcuFinalControlStatusRefresh(siteId, options = {}) {
   const cwd = fileURLToPath(new URL("../../", import.meta.url));
-  const files = buildFcuFinalControlRefreshFilePaths(options.outputDir);
+  const files = buildFcuFinalControlRefreshFilePaths(options.outputDir, siteId);
   const scripts = [
     {
       key: "finalCompletion",
@@ -987,7 +1046,7 @@ function runFcuFinalControlStatusRefresh(siteId, options = {}) {
           FCU_FINAL_CONTROL_FIELD_EXECUTION_PACK_CSV: files.finalControlFieldExecutionPackCsv,
           FCU_FINAL_CONTROL_EVIDENCE_CONSISTENCY_JSON: files.evidenceConsistencyJson,
           FCU_FINAL_CONTROL_EVIDENCE_CONSISTENCY_MD: files.evidenceConsistencyMd,
-          FCU_FINAL_CONTROL_GATES_OUTPUT_DIR: options.outputDir || fileURLToPath(new URL("../../../../docs/", import.meta.url)),
+          FCU_FINAL_CONTROL_GATES_OUTPUT_DIR: files.docsDir,
           FCU_FINAL_CONTROL_GATES_JSON: files.finalControlGatesJson,
           FCU_FINAL_CONTROL_GATES_MD: files.finalControlGatesMd,
           FCU_CANARY_READINESS_JSON: files.canaryReadinessJson,
@@ -1096,9 +1155,9 @@ function runFcuFinalControlStatusRefresh(siteId, options = {}) {
 function runFcuFinalControlRollout(siteId, options = {}) {
   const scriptPath = fileURLToPath(new URL("../../scripts/execute-fcu-final-control-rollout.js", import.meta.url));
   const cwd = fileURLToPath(new URL("../../", import.meta.url));
-  const files = buildFcuFinalControlRefreshFilePaths(options.outputDir);
-  const rolloutJson = path.join(options.outputDir || fileURLToPath(new URL("../../../../docs/", import.meta.url)), "fcu-final-control-rollout-latest.json");
-  const rolloutMd = path.join(options.outputDir || fileURLToPath(new URL("../../../../docs/", import.meta.url)), "fcu-final-control-rollout-latest.md");
+  const files = buildFcuFinalControlRefreshFilePaths(options.outputDir, siteId);
+  const rolloutJson = files.finalRolloutJson;
+  const rolloutMd = files.finalRolloutMd;
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [scriptPath], {
       cwd,
@@ -2092,6 +2151,27 @@ function readRuntimeDatabaseProjectKeys(req) {
   ]);
 }
 
+const B25_READ_ONLY_SCENE_ALIASES = new Set([
+  "140",
+  "b25",
+  "140b25",
+  "btwentyfive",
+  "140btwentyfive"
+]);
+
+export function isB25ReadOnlySceneScope(req, siteId, requestContext = {}) {
+  const candidates = [
+    siteId,
+    req?.params?.siteId,
+    requestContext?.siteId,
+    requestContext?.siteCode,
+    requestContext?.databaseKey,
+    requestContext?.projectKey,
+    ...readRuntimeProjectDataKeys(req)
+  ];
+  return candidates.some((value) => B25_READ_ONLY_SCENE_ALIASES.has(normalizeProjectAliasToken(value)));
+}
+
 function readRuntimeDashboardTemplate(req) {
   const runtimeSourceConfig =
     req?.siteRuntimeConfig && typeof req.siteRuntimeConfig === "object"
@@ -2325,6 +2405,127 @@ async function readRequestBodyBuffer(req) {
   });
 }
 
+const STATION_RUNTIME_SUPPORTED_PATHS = [
+  // This middleware is mounted at /sites/:siteId, so Express exposes req.path
+  // relative to that mount point (for example /devices/list).
+  /^\/devices\/list$/,
+  /^\/devices\/tree$/,
+  /^\/devices\/details$/,
+  /^\/devices\/[^/]+$/,
+  /^\/runtime\/summary$/
+];
+
+export function readStationIdQuery(req) {
+  const rawStationId = req?.query?.stationId;
+  return (Array.isArray(rawStationId) ? rawStationId : [rawStationId])
+    .map((value) => String(value ?? "").trim())
+    .find(Boolean) || "";
+}
+
+function isStationRuntimeSupportedRequest(req) {
+  if (String(req?.method || "GET").toUpperCase() !== "GET") {
+    return false;
+  }
+  const requestPath = typeof req?.path === "string" ? req.path : "";
+  return STATION_RUNTIME_SUPPORTED_PATHS.some((pattern) => pattern.test(requestPath));
+}
+
+function sendStationRuntimeError(req, res, status, code, error, details = {}) {
+  res.status(status).json({
+    ok: false,
+    code,
+    error,
+    requestId: req.requestId || `req-${Date.now()}`,
+    details: {
+      ...details,
+      applied: false
+    }
+  });
+}
+
+function stationRuntimeRequestOptions(req, requestContext = {}) {
+  const binding = req?.stationRuntimeBinding;
+  if (!binding) {
+    return {
+      databaseKey: requestContext.databaseKey,
+      databaseKeyCandidates: requestContext.databaseKeyCandidates,
+      projectKey: requestContext.projectKey,
+      projectKeyCandidates: requestContext.projectKeyCandidates
+    };
+  }
+  const effectiveSource = binding?.validation?.effectiveSource || {};
+  const databaseKey = normalizeLegacyProjectKey(effectiveSource.databaseKey);
+  const projectKey = normalizeLegacyProjectKey(effectiveSource.projectKey);
+  const cacheKey = `${binding.siteId}:${binding.stationId}:v${binding.bindingVersion}`;
+  return {
+    databaseKey,
+    databaseKeyCandidates: databaseKey ? [databaseKey] : [],
+    projectKey,
+    projectKeyCandidates: projectKey ? [projectKey] : [],
+    template: normalizeLegacyProjectKey(effectiveSource.template),
+    build: effectiveSource.build == null ? "" : String(effectiveSource.build),
+    floor: effectiveSource.floor == null ? "" : String(effectiveSource.floor),
+    realtimeEndpointKind: normalizeLegacyProjectKey(effectiveSource.realtimeEndpointKind),
+    mock: false,
+    sourcePageSize: 5000,
+    allowedDeviceIds: binding.selectors.deviceIds,
+    allowedDeviceCodes: binding.selectors.deviceCodes,
+    allowedPointCodes: binding.selectors.pointCodes,
+    stationRuntimeCacheKey: cacheKey,
+    placeholderFallback: false
+  };
+}
+
+function getStationRuntimeSiteConfig(req, baseConfig) {
+  const siteConfig = getRequestSiteConfig(req, baseConfig);
+  const binding = req?.stationRuntimeBinding;
+  if (!binding) {
+    return siteConfig;
+  }
+  const effectiveSource = binding.validation.effectiveSource;
+  const realtimeEndpointKind = normalizeLegacyProjectKey(effectiveSource.realtimeEndpointKind);
+  return {
+    ...siteConfig,
+    legacyBaseUrl: effectiveSource.legacyBaseUrl,
+    siteSourceConfig: {
+      ...(siteConfig.siteSourceConfig || {}),
+      databaseKey: effectiveSource.databaseKey || null,
+      deviceDataProjectKey: effectiveSource.projectKey || null,
+      modelKey: effectiveSource.projectKey || null,
+      preferredProjectKey: effectiveSource.projectKey || null,
+      template: effectiveSource.template || null,
+      defaultDeviceQuery: {
+        ...(effectiveSource.build != null ? { build: effectiveSource.build } : {}),
+        ...(effectiveSource.floor != null ? { floor: effectiveSource.floor } : {}),
+        mock: false
+      },
+      deviceDataInterfaces: realtimeEndpointKind ? [{ endpointKind: realtimeEndpointKind }] : [],
+      // Exact station selectors are the only approved runtime boundary. Site
+      // enrichment profiles can change independently and therefore stay off.
+      readOnlyRuntimeEnrichment: null
+    }
+  };
+}
+
+function withStationRuntimeScope(req, payload) {
+  if (!req?.stationRuntimeBinding) {
+    return payload;
+  }
+  return withRuntimeDataScope(
+    payload,
+    buildStationBindingDataScope(req.stationRuntimeBinding.siteId, req.stationRuntimeBinding)
+  );
+}
+
+function stationBindingAllowsDevice(binding, deviceId) {
+  const normalizedDeviceId = String(deviceId || "").trim();
+  return Boolean(
+    normalizedDeviceId &&
+    Array.isArray(binding?.selectors?.deviceIds) &&
+    binding.selectors.deviceIds.includes(normalizedDeviceId)
+  );
+}
+
 export function buildV1Router(config, dependencies = {}) {
   const router = Router();
   const { adminStore } = dependencies;
@@ -2353,6 +2554,109 @@ export function buildV1Router(config, dependencies = {}) {
     next();
   });
 
+  router.use("/sites/:siteId", (req, res, next) => {
+    const stationId = readStationIdQuery(req);
+    if (!stationId) {
+      next();
+      return;
+    }
+    const siteId = resolveSiteId(req, config.defaultSiteId);
+    if (!isStationRuntimeSupportedRequest(req)) {
+      sendStationRuntimeError(
+        req,
+        res,
+        409,
+        "STATION_RUNTIME_ENDPOINT_UNSUPPORTED",
+        "This endpoint cannot safely apply a physical station runtime binding.",
+        { siteId, stationId }
+      );
+      return;
+    }
+    if (!adminStore?.listStationInstances || !adminStore?.getStationRuntimeBinding) {
+      sendStationRuntimeError(
+        req,
+        res,
+        503,
+        "STATION_RUNTIME_STORE_UNAVAILABLE",
+        "Station runtime binding store is unavailable.",
+        { siteId, stationId }
+      );
+      return;
+    }
+    const station = adminStore.listStationInstances(siteId, { publishedOnly: true }).items
+      .find((item) => item.stationId === stationId);
+    if (!station) {
+      sendStationRuntimeError(
+        req,
+        res,
+        404,
+        "STATION_RUNTIME_SCOPE_NOT_FOUND",
+        "Published physical station was not found.",
+        { siteId, stationId }
+      );
+      return;
+    }
+    if (station.status !== "enabled") {
+      sendStationRuntimeError(
+        req,
+        res,
+        409,
+        "STATION_RUNTIME_SCOPE_INACTIVE",
+        "Physical station is not enabled for runtime access.",
+        { siteId, stationId, stationStatus: station.status }
+      );
+      return;
+    }
+    const binding = adminStore.getStationRuntimeBinding(siteId, stationId, { view: "published" });
+    if (
+      !binding
+      || binding.status !== "published"
+      || !binding.payloadHash
+      || binding.validatedHash !== binding.payloadHash
+      || binding.validation?.ok !== true
+      || binding.validation?.payloadHash !== binding.payloadHash
+      || !binding.validation?.effectiveSource
+      || binding.validation?.effectiveSource?.mock !== false
+      || !binding.validation?.effectiveSource?.legacyBaseUrl
+      || binding.validation?.effectiveSourceHash !== createHash("sha256")
+        .update(JSON.stringify(binding.validation?.effectiveSource || null))
+        .digest("hex")
+    ) {
+      const state = adminStore.getStationRuntimeBindingState
+        ? adminStore.getStationRuntimeBindingState(siteId, stationId)
+        : null;
+      sendStationRuntimeError(
+        req,
+        res,
+        409,
+        "STATION_RUNTIME_SCOPE_NOT_CONFIGURED",
+        "Physical station has no published, hash-matched runtime binding.",
+        {
+          siteId,
+          stationId,
+          bindingState: state?.draftBinding?.status || state?.publishedBinding?.status || "unconfigured",
+          draftVersion: state?.draftVersion || null,
+          publishedVersion: state?.publishedVersion || null
+        }
+      );
+      return;
+    }
+    if (!Array.isArray(binding?.selectors?.deviceIds) || binding.selectors.deviceIds.length === 0) {
+      sendStationRuntimeError(
+        req,
+        res,
+        409,
+        "STATION_RUNTIME_BINDING_INVALID",
+        "Active station runtime binding has no device allowlist.",
+        { siteId, stationId, bindingVersion: binding.bindingVersion }
+      );
+      return;
+    }
+    req.stationRuntimeBinding = binding;
+    req.stationRuntimeCacheKey = `${siteId}:${stationId}:v${binding.bindingVersion}`;
+    next();
+  });
+
   function buildConfigCenterRuntimePayload(siteId, payload, kind) {
     const generatedAt = payload?.generatedAt || new Date().toISOString();
     const freshnessBase = computeFreshnessState(generatedAt, config.staleThresholdHours || 6);
@@ -2371,6 +2675,14 @@ export function buildV1Router(config, dependencies = {}) {
           };
         })
       : [];
+    const visibleSubsystemTypes = new Set(items.map((item) => item.subsystemType).filter(Boolean));
+    const stationInstances = Array.isArray(payload?.stationInstances)
+      ? payload.stationInstances.filter((item) => (
+          item?.published !== false
+          && isPhysicalStationParentType(item?.parentSubsystemType)
+          && visibleSubsystemTypes.has(item?.parentSubsystemType)
+        ))
+      : [];
     const site = adminStore?.getSite ? adminStore.getSite(siteId) : null;
     return {
       site: {
@@ -2381,6 +2693,9 @@ export function buildV1Router(config, dependencies = {}) {
       kind,
       items,
       total: items.length,
+      stationInstances,
+      stationTotal: stationInstances.length,
+      dataScope: buildSiteAggregateDataScope(siteId),
       freshness,
       sourceStatus: buildSourceStatus([
         {
@@ -2441,7 +2756,10 @@ export function buildV1Router(config, dependencies = {}) {
       anomalies,
       dashboardContext
     );
-    res.json(data);
+    res.json({
+      ...data,
+      ...buildDashboardOverviewScopeEvidence(siteId)
+    });
   });
 
   router.get("/sites/:siteId/dashboard/trends", async (req, res) => {
@@ -2462,7 +2780,7 @@ export function buildV1Router(config, dependencies = {}) {
       return;
     }
     const data = await getDashboardTrends(siteConfig, siteId, range, readDashboardRequestContext(req));
-    res.json(data);
+    res.json(withRuntimeDataScope(data, buildFixedSubsystemDataScope(siteId, "chilled_plant")));
   });
 
   router.get("/sites/:siteId/cold-station-logs", async (req, res) => {
@@ -3788,6 +4106,22 @@ export function buildV1Router(config, dependencies = {}) {
   router.post("/sites/:siteId/scene/device-command", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
     const requestContext = readProjectDataRequestContext(req);
+    if (isB25ReadOnlySceneScope(req, siteId, requestContext)) {
+      res.status(403).json({
+        ok: false,
+        code: "B25_READ_ONLY_SCOPE",
+        error: "B25冷站数字孪生仅允许只读监测，禁止下发BA/PLC场景控制指令。",
+        requestId: req.requestId || `req-${Date.now()}`,
+        controlMutation: false,
+        dispatch: false,
+        details: {
+          siteId,
+          projectKey: requestContext.projectKey || null,
+          databaseKey: requestContext.databaseKey || null
+        }
+      });
+      return;
+    }
     const payload = req.body && typeof req.body === "object" ? req.body : {};
     const drId = payload.drId == null ? "" : String(payload.drId).trim();
     const drTypeId = payload.drTypeId == null ? "" : String(payload.drTypeId).trim();
@@ -3831,23 +4165,21 @@ export function buildV1Router(config, dependencies = {}) {
 
   router.get("/sites/:siteId/devices/list", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
-    const siteConfig = getRequestSiteConfig(req, config);
+    const siteConfig = getStationRuntimeSiteConfig(req, config);
     const requestContext = readProjectDataRequestContext(req);
     const page = String(req.query.page || "1");
     const pageSize = String(req.query.pageSize || "12");
     const type = typeof req.query.type === "string" ? req.query.type : "";
     const floor = typeof req.query.floor === "string" ? req.query.floor : "";
+    const runtimeOptions = stationRuntimeRequestOptions(req, requestContext);
     const data = await getDeviceList(siteConfig, siteId, {
       page,
       pageSize,
       type,
       floor,
-      databaseKey: requestContext.databaseKey,
-      databaseKeyCandidates: requestContext.databaseKeyCandidates,
-      projectKey: requestContext.projectKey,
-      projectKeyCandidates: requestContext.projectKeyCandidates
+      ...runtimeOptions
     });
-    res.json(data);
+    res.json(withStationRuntimeScope(req, data));
   });
 
   router.get("/sites/:siteId/device-data-interfaces", async (req, res) => {
@@ -3868,21 +4200,19 @@ export function buildV1Router(config, dependencies = {}) {
 
   router.get("/sites/:siteId/devices/tree", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
-    const siteConfig = getRequestSiteConfig(req, config);
+    const siteConfig = getStationRuntimeSiteConfig(req, config);
     const requestContext = readProjectDataRequestContext(req);
     const build = typeof req.query.build === "string" ? req.query.build : "";
     const floor = typeof req.query.floor === "string" ? req.query.floor : "";
     const mock = typeof req.query.mock === "string" ? req.query.mock : "";
+    const runtimeOptions = stationRuntimeRequestOptions(req, requestContext);
     const data = await getDeviceTree(siteConfig, siteId, {
       build,
       floor,
       mock,
-      databaseKey: requestContext.databaseKey,
-      databaseKeyCandidates: requestContext.databaseKeyCandidates,
-      projectKey: requestContext.projectKey,
-      projectKeyCandidates: requestContext.projectKeyCandidates
+      ...runtimeOptions
     });
-    res.json(data);
+    res.json(withStationRuntimeScope(req, data));
   });
 
   router.get("/sites/:siteId/hvac-terminal/fan-coils", async (req, res) => {
@@ -3997,7 +4327,7 @@ export function buildV1Router(config, dependencies = {}) {
     const policy = normalizeFcuControlPolicy(record?.policy || buildDefaultFcuControlPolicy());
     const executionGate = buildFcuExecutionGate(policy, readHvacTerminalCapability(siteId));
     const finalDispatchGate = buildFcuFinalDispatchGate(
-      readFcuFinalControlEvidence(buildFcuFinalControlRefreshFilePaths(config.fcuFinalControlOutputDir))
+      readFcuFinalControlEvidenceForSite(config.fcuFinalControlOutputDir, siteId)
     );
     res.json({
       site: {
@@ -4131,9 +4461,29 @@ export function buildV1Router(config, dependencies = {}) {
         ok: normalizedPolicy.defaultMode === "enforced"
       },
       {
+        key: "boundary_mode_enforced",
+        label: "子系统控制边界为自动闭环",
+        ok: boundary?.mode === "enforced"
+      },
+      {
         key: "subsystem_write_enabled",
         label: "空调末端子系统写总闸",
         ok: boundary?.writeEnabled === true
+      },
+      {
+        key: "boundary_approval_required",
+        label: "控制边界要求审批",
+        ok: boundary?.approvalRequired === true
+      },
+      {
+        key: "boundary_plc_protection_required",
+        label: "控制边界要求 PLC 保护",
+        ok: boundary?.plcProtectionRequired === true
+      },
+      {
+        key: "boundary_rollback_required",
+        label: "控制边界要求可回退",
+        ok: boundary?.rollbackRequired === true
       },
       {
         key: "dispatch_adapter_configured",
@@ -4188,6 +4538,9 @@ export function buildV1Router(config, dependencies = {}) {
       readOnlyMode: config.readOnlyMode === true,
       subsystemWriteEnabled: boundary?.writeEnabled === true,
       boundaryMode: boundary?.mode || "read_only",
+      boundaryApprovalRequired: boundary?.approvalRequired === true,
+      boundaryPlcProtectionRequired: boundary?.plcProtectionRequired === true,
+      boundaryRollbackRequired: boundary?.rollbackRequired === true,
       policyMode: normalizedPolicy.defaultMode,
       adapterConfigured,
       whitelistCount: normalizedPolicy.whitelist.length,
@@ -4310,12 +4663,26 @@ export function buildV1Router(config, dependencies = {}) {
     const items = [];
     const blockerKeys = new Set((Array.isArray(blockers) ? blockers : []).map((item) => item.key));
     const blockedReasons = Array.isArray(executionGate?.blockedReasons) ? executionGate.blockedReasons : [];
+    const boundarySafetyBlockers = [
+      "boundary_mode_enforced",
+      "boundary_approval_required",
+      "boundary_plc_protection_required",
+      "boundary_rollback_required"
+    ].filter((key) => blockedReasons.includes(key));
+    if (boundarySafetyBlockers.length > 0) {
+      items.push({
+        priority: "P0",
+        action: "补齐控制边界安全强制项并留存验收证据",
+        target: "审批 / PLC保护 / 回退 / 边界模式",
+        reason: `当前仍缺少 ${boundarySafetyBlockers.join("、")}；任一项未通过都禁止 BA/PLC 真实写入。`
+      });
+    }
     if (blockerKeys.has("backend_write_gate") || blockedReasons.includes("backend_not_readonly")) {
       items.push({
         priority: "P0",
-        action: "关闭后端只读总闸并重启 BFF",
-        target: "READ_ONLY_MODE / CHILLER_READ_ONLY_MODE",
-        reason: "当前 BFF /healthz 仍显示 readOnlyMode=true，任何确认下发都只能被记录为只读保护。"
+        action: "保持只读，先完成控制边界与现场双人复核",
+        target: "controlBoundary / fieldAuthorization / READ_ONLY_MODE",
+        reason: "全局只读正在提供最后一道安全保护；只有全部边界、保护、回退和短时授权条件验收通过后，才能另行批准短时投运窗口。"
       });
     }
     if (blockerKeys.has("execution_gate_open") && blockedReasons.includes("subsystem_write_enabled")) {
@@ -4443,14 +4810,60 @@ export function buildV1Router(config, dependencies = {}) {
         acceptance: "BFF executionGate.finalRolloutConfirmArmed=true，final-control-rollout 仍需请求体提供总确认短语。"
       });
     }
+    const boundarySafetyActions = [
+      {
+        key: "boundary_mode_enforced",
+        owner: "配置管理员 / 项目负责人",
+        action: "保持影子模式并完成闭环投运审批",
+        target: "hvac_terminal.controlBoundary.mode",
+        reason: "控制边界不是 enforced 时不得真实下发；模式切换必须晚于保护与回退验收。",
+        acceptance: "审批证据完整后，边界模式由授权管理员显式设为 enforced。"
+      },
+      {
+        key: "boundary_approval_required",
+        owner: "配置管理员 / 现场负责人",
+        action: "恢复控制审批强制要求",
+        target: "hvac_terminal.controlBoundary.approvalRequired=true",
+        reason: "真实写入必须保留人工授权与责任追溯，不能绕过审批。",
+        acceptance: "BFF executionGate.boundaryApprovalRequired=true。"
+      },
+      {
+        key: "boundary_plc_protection_required",
+        owner: "PLC工程师 / 配置管理员",
+        action: "确认 PLC 保护逻辑并恢复强制要求",
+        target: "hvac_terminal.controlBoundary.plcProtectionRequired=true",
+        reason: "PLC 必须继续承担联锁、限值和异常保护，AI/BFF 不得替代安全边界。",
+        acceptance: "PLC 保护测试留证，BFF executionGate.boundaryPlcProtectionRequired=true。"
+      },
+      {
+        key: "boundary_rollback_required",
+        owner: "BA工程师 / 配置管理员",
+        action: "验证失败回退并恢复强制要求",
+        target: "hvac_terminal.controlBoundary.rollbackRequired=true",
+        reason: "没有可验证回退路径时不得进入真实控制。",
+        acceptance: "回退演练留证，BFF executionGate.boundaryRollbackRequired=true。"
+      }
+    ];
+    for (const item of boundarySafetyActions) {
+      if (blockerKeys.has(item.key) || blockedReasons.includes(item.key)) {
+        push(item.key, {
+          phase: "safety_boundary",
+          owner: item.owner,
+          action: item.action,
+          target: item.target,
+          reason: item.reason,
+          acceptance: item.acceptance
+        });
+      }
+    }
     if (blockerKeys.has("backend_write_gate") || blockedReasons.includes("backend_not_readonly")) {
       push("backend_write_gate", {
         phase: "environment",
         owner: "平台运维 / 自控工程师",
-        action: "在现场值守窗口关闭 BFF 只读总闸并重启",
-        target: "READ_ONLY_MODE=false / CHILLER_READ_ONLY_MODE=false",
-        reason: "当前后端只读，所有确认下发都会被阻断，不会产生 BA/PLC 写入。",
-        acceptance: "BFF /healthz 或 final-control-status 显示 readOnlyMode=false，fieldArmCheck backend_write_gate=true。"
+        action: "保持 BFF 只读并完成投运前双人复核",
+        target: "控制边界 / PLC保护 / 回退方案 / 现场短时授权",
+        reason: "当前后端只读正在阻断 BA/PLC 写入；不得把关闭总闸作为首要整改动作。",
+        acceptance: "全部安全条件有审计证据后，由现场负责人另行批准短时窗口；本检查不自动关闭只读总闸。"
       });
     }
     if (blockerKeys.has("subsystem_write_enabled") || blockedReasons.includes("subsystem_write_enabled")) {
@@ -4770,7 +5183,7 @@ export function buildV1Router(config, dependencies = {}) {
       commissioningSummary,
       firstCanary
     });
-    const finalEvidence = readFcuFinalControlEvidence();
+    const finalEvidence = readFcuFinalControlEvidenceForSite(config.fcuFinalControlOutputDir, siteId);
     const finalPayload = finalEvidence.finalCompletion.payload || {};
     const commissioningItems = baseCommissioningItems.map((item) => ({
       ...item,
@@ -4963,7 +5376,7 @@ export function buildV1Router(config, dependencies = {}) {
       commissioningSummary,
       firstCanary
     });
-    const finalEvidence = readFcuFinalControlEvidence();
+    const finalEvidence = readFcuFinalControlEvidenceForSite(config.fcuFinalControlOutputDir, siteId);
     const finalPayload = finalEvidence.finalCompletion.payload || {};
     const commissioningStatus = commissioningItems[0] || (deviceCode ? evaluateFcuDeviceCommissioningStatus(snapshot, policy, recentRecords, {
       executionGate
@@ -5153,7 +5566,8 @@ export function buildV1Router(config, dependencies = {}) {
 
   router.get("/sites/:siteId/hvac-terminal/fan-coils/final-control-status", async (req, res) => {
     const siteId = resolveHvacTerminalSiteId(req, config.defaultSiteId);
-    const evidence = readFcuFinalControlEvidence();
+    const evidence = readFcuFinalControlEvidenceForSite(config.fcuFinalControlOutputDir, siteId);
+    const finalEvidenceScopeApplied = evidence.finalCompletion.status === "ok";
     const rolloutPayload = evidence.finalRollout.payload || {};
     const gatesPayload = evidence.finalControlGates.payload || {};
     const finalPayload = evidence.finalCompletion.payload || {};
@@ -5183,6 +5597,15 @@ export function buildV1Router(config, dependencies = {}) {
       requestId: req.requestId || `req-${Date.now()}`,
       site: {
         siteId
+      },
+      dataScope: {
+        siteId,
+        requestedSubsystemType: "hvac_terminal",
+        effectiveSubsystemType: "hvac_terminal",
+        stationId: null,
+        filterMode: "site_aggregate",
+        applied: finalEvidenceScopeApplied,
+        reason: finalEvidenceScopeApplied ? "SITE_AGGREGATE" : "SUBSYSTEM_FILTER_NOT_IMPLEMENTED"
       },
       generatedAt: new Date().toISOString(),
       subsystemType: "hvac_terminal",
@@ -5370,7 +5793,7 @@ export function buildV1Router(config, dependencies = {}) {
       outputDir: config.fcuFinalControlOutputDir
     });
     const refreshResults = refreshResult.results;
-    const evidence = readFcuFinalControlEvidence(refreshResult.files);
+    const evidence = scopeFcuFinalControlEvidence(readFcuFinalControlEvidence(refreshResult.files), siteId);
     const gatesPayload = evidence.finalControlGates.payload || {};
     const finalPayload = evidence.finalCompletion.payload || {};
     const worklistPayload = evidence.finalWorklist.payload || {};
@@ -5641,7 +6064,7 @@ export function buildV1Router(config, dependencies = {}) {
     const policy = normalizeFcuControlPolicy(policyRecord?.policy || buildDefaultFcuControlPolicy());
     const executionGate = buildFcuExecutionGate(policy, readHvacTerminalCapability(siteId));
     const finalDispatchGate = buildFcuFinalDispatchGate(
-      readFcuFinalControlEvidence(buildFcuFinalControlRefreshFilePaths(config.fcuFinalControlOutputDir))
+      readFcuFinalControlEvidenceForSite(config.fcuFinalControlOutputDir, siteId)
     );
     const dispatchAllowed = dispatchRequested && executionGate.dispatchAllowed === true && finalDispatchGate.dispatchAllowed === true;
     const snapshot = filterFanCoilSnapshotByDevice(await getFanCoilTerminalSnapshot(siteConfig, siteId, {
@@ -5950,7 +6373,7 @@ export function buildV1Router(config, dependencies = {}) {
     const policy = normalizeFcuControlPolicy(policyRecord?.policy || buildDefaultFcuControlPolicy());
     const executionGate = buildFcuExecutionGate(policy, readHvacTerminalCapability(siteId));
     const finalDispatchGate = buildFcuFinalDispatchGate(
-      readFcuFinalControlEvidence(buildFcuFinalControlRefreshFilePaths(config.fcuFinalControlOutputDir))
+      readFcuFinalControlEvidenceForSite(config.fcuFinalControlOutputDir, siteId)
     );
     const dispatchAllowed = dispatchRequested && executionGate.dispatchAllowed === true && finalDispatchGate.dispatchAllowed === true;
     const snapshot = filterFanCoilSnapshotByDevice(await getFanCoilTerminalSnapshot(siteConfig, siteId, {
@@ -6077,26 +6500,41 @@ export function buildV1Router(config, dependencies = {}) {
 
   router.get("/sites/:siteId/runtime/summary", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
-    const siteConfig = getRequestSiteConfig(req, config);
+    const siteConfig = getStationRuntimeSiteConfig(req, config);
     const requestContext = readProjectDataRequestContext(req);
     const build = typeof req.query.build === "string" ? req.query.build : "";
     const floor = typeof req.query.floor === "string" ? req.query.floor : "";
     const mock = typeof req.query.mock === "string" ? req.query.mock : "";
+    const runtimeOptions = stationRuntimeRequestOptions(req, requestContext);
     const data = await getRuntimePointSummary(siteConfig, siteId, {
       build,
       floor,
       mock,
-      databaseKey: requestContext.databaseKey,
-      databaseKeyCandidates: requestContext.databaseKeyCandidates,
-      projectKey: requestContext.projectKey,
-      projectKeyCandidates: requestContext.projectKeyCandidates
+      ...runtimeOptions
     });
-    res.json(data);
+    const stationProcess = req.stationRuntimeBinding
+      ? buildStationProcessSummary({
+          binding: req.stationRuntimeBinding,
+          runtimeSummary: data,
+          pointMappings: adminStore?.listPointRoleMappings
+            ? adminStore.listPointRoleMappings(siteId, {
+                subsystemType: req.stationRuntimeBinding.parentSubsystemType
+              }).items
+            : [],
+          requiredPointRoles: adminStore?.getSiteCapabilities
+            ? adminStore.getSiteCapabilities(siteId, { publishedOnly: true }).items
+                .find((item) => (
+                  item.subsystemType === req.stationRuntimeBinding.parentSubsystemType
+                ))?.requiredPointRoles || []
+            : []
+        })
+      : null;
+    res.json(withStationRuntimeScope(req, stationProcess ? { ...data, stationProcess } : data));
   });
 
   router.get("/sites/:siteId/devices/details", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
-    const siteConfig = getRequestSiteConfig(req, config);
+    const siteConfig = getStationRuntimeSiteConfig(req, config);
     const requestContext = readProjectDataRequestContext(req);
     const deviceIds = readDeviceIdsQuery(req);
     if (deviceIds.length === 0) {
@@ -6111,39 +6549,72 @@ export function buildV1Router(config, dependencies = {}) {
       });
       return;
     }
+    if (req.stationRuntimeBinding) {
+      const deniedDeviceIds = deviceIds.filter((deviceId) => (
+        !stationBindingAllowsDevice(req.stationRuntimeBinding, deviceId)
+      ));
+      if (deniedDeviceIds.length > 0) {
+        sendStationRuntimeError(
+          req,
+          res,
+          404,
+          "STATION_RUNTIME_DEVICE_NOT_BOUND",
+          "One or more requested devices are not bound to this physical station.",
+          {
+            siteId,
+            stationId: req.stationRuntimeBinding.stationId,
+            deniedDeviceIds,
+            bindingVersion: req.stationRuntimeBinding.bindingVersion
+          }
+        );
+        return;
+      }
+    }
     const build = typeof req.query.build === "string" ? req.query.build : "";
     const floor = typeof req.query.floor === "string" ? req.query.floor : "";
     const mock = typeof req.query.mock === "string" ? req.query.mock : "";
+    const runtimeOptions = stationRuntimeRequestOptions(req, requestContext);
     const data = await getDeviceDetails(siteConfig, siteId, deviceIds, {
       build,
       floor,
       mock,
-      databaseKey: requestContext.databaseKey,
-      databaseKeyCandidates: requestContext.databaseKeyCandidates,
-      projectKey: requestContext.projectKey,
-      projectKeyCandidates: requestContext.projectKeyCandidates
+      ...runtimeOptions
     });
-    res.json(data);
+    res.json(withStationRuntimeScope(req, data));
   });
 
   router.get("/sites/:siteId/devices/:deviceId", async (req, res) => {
     const siteId = resolveSiteId(req, config.defaultSiteId);
-    const siteConfig = getRequestSiteConfig(req, config);
+    const siteConfig = getStationRuntimeSiteConfig(req, config);
     const requestContext = readProjectDataRequestContext(req);
     const deviceId = String(req.params.deviceId || "");
+    if (req.stationRuntimeBinding && !stationBindingAllowsDevice(req.stationRuntimeBinding, deviceId)) {
+      sendStationRuntimeError(
+        req,
+        res,
+        404,
+        "STATION_RUNTIME_DEVICE_NOT_BOUND",
+        "Requested device is not bound to this physical station.",
+        {
+          siteId,
+          stationId: req.stationRuntimeBinding.stationId,
+          deviceId,
+          bindingVersion: req.stationRuntimeBinding.bindingVersion
+        }
+      );
+      return;
+    }
     const build = typeof req.query.build === "string" ? req.query.build : "";
     const floor = typeof req.query.floor === "string" ? req.query.floor : "";
     const mock = typeof req.query.mock === "string" ? req.query.mock : "";
+    const runtimeOptions = stationRuntimeRequestOptions(req, requestContext);
     const data = await getDeviceDetail(siteConfig, siteId, deviceId, {
       build,
       floor,
       mock,
-      databaseKey: requestContext.databaseKey,
-      databaseKeyCandidates: requestContext.databaseKeyCandidates,
-      projectKey: requestContext.projectKey,
-      projectKeyCandidates: requestContext.projectKeyCandidates
+      ...runtimeOptions
     });
-    res.json(data);
+    res.json(withStationRuntimeScope(req, data));
   });
 
   router.get("/sites/:siteId/recommendations", async (req, res) => {

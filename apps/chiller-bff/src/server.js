@@ -30,7 +30,6 @@ export function isAllowedReadOnlyV1Write(req) {
       req.path.endsWith("/hvac-terminal/fan-coils/canary-dispatch") ||
       req.path.endsWith("/hvac-terminal/fan-coils/final-control-status/refresh") ||
       req.path.endsWith("/hvac-terminal/fan-coils/final-control-rollout") ||
-      req.path.endsWith("/scene/device-command") ||
       req.path.endsWith("/power-monitoring/byx/history/snapshots") ||
       req.path.includes("/optimize/executions") ||
       req.path.endsWith("/assistant/query"))

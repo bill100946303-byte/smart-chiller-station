@@ -4,15 +4,100 @@
     "siteName": "6期1栋冷站"
   },
   "generatedAt": "2026-03-13T14:58:50.672Z",
+  "dataScope": {
+    "siteId": "126lnoffice",
+    "requestedSubsystemType": null,
+    "effectiveSubsystemType": null,
+    "stationId": null,
+    "filterMode": "project_unfiltered",
+    "applied": false,
+    "reason": "MIXED_SCOPE_PAYLOAD"
+  },
+  "fieldScopes": {
+    "chilledPlantMetrics": {
+      "fieldPaths": [
+        "energyCards.currentCop",
+        "energyCards.totalPowerKw",
+        "energyCards.currentLoadRate",
+        "energyCards.totalElectricityKwh",
+        "energyCards.savingPotentialPct",
+        "energyCards.totalCoolingCapacity",
+        "energyCards.chilledDeltaT",
+        "energyCards.coolingDeltaT",
+        "energyCards.chillerPowerKw",
+        "energyCards.chilledPumpPowerKw",
+        "energyCards.coolingPumpPowerKw",
+        "energyCards.coolingTowerPowerKw",
+        "energyCards.chillerCop",
+        "energyCards.chilledPumpConveyingCoefficient",
+        "energyCards.coolingTowerConveyingCoefficient",
+        "energyCards.coolingPumpConveyingCoefficient",
+        "energyCards.thermalUnbalanceRate",
+        "energyCards.chilledSupplyTemp",
+        "energyCards.coolingReturnTemp",
+        "deviceSummary.chillerCount",
+        "deviceSummary.chilledPumpCount",
+        "deviceSummary.coolingPumpCount",
+        "deviceSummary.coolingTowerCount"
+      ],
+      "exclusions": [],
+      "dataScope": {
+        "siteId": "126lnoffice",
+        "requestedSubsystemType": null,
+        "effectiveSubsystemType": "chilled_plant",
+        "stationId": null,
+        "filterMode": "fixed_subsystem",
+        "applied": true,
+        "reason": "ENDPOINT_FIXED_SCOPE"
+      }
+    },
+    "projectAggregate": {
+      "fieldPaths": [
+        "energyCards.activeAnomalyCount",
+        "energyCards.outdoorTempC",
+        "energyCards.outdoorHumidityPct",
+        "energyCards.outdoorWetBulbC",
+        "energyCards.dewPointC",
+        "alarmSummary",
+        "deviceSummary.totalDevices"
+      ],
+      "exclusions": [],
+      "dataScope": {
+        "siteId": "126lnoffice",
+        "requestedSubsystemType": null,
+        "effectiveSubsystemType": null,
+        "stationId": null,
+        "filterMode": "project_unfiltered",
+        "applied": false,
+        "reason": "SUBSYSTEM_FILTER_NOT_IMPLEMENTED"
+      }
+    }
+  },
   "energyCards": {
     "currentCop": 5.24,
     "totalPowerKw": 7.9,
     "currentLoadRate": null,
     "totalElectricityKwh": 53.84,
     "savingPotentialPct": null,
+    "totalCoolingCapacity": 41.4,
     "activeAnomalyCount": 3,
     "chilledDeltaT": 0.9,
-    "coolingDeltaT": 1.4
+    "coolingDeltaT": 1.4,
+    "chillerPowerKw": 5.2,
+    "chilledPumpPowerKw": 0.8,
+    "coolingPumpPowerKw": 0.9,
+    "coolingTowerPowerKw": 0.6,
+    "chillerCop": 7.96,
+    "chilledPumpConveyingCoefficient": null,
+    "coolingTowerConveyingCoefficient": null,
+    "coolingPumpConveyingCoefficient": null,
+    "thermalUnbalanceRate": null,
+    "chilledSupplyTemp": 7.1,
+    "coolingReturnTemp": 31.8,
+    "outdoorTempC": 31.2,
+    "outdoorHumidityPct": 74,
+    "outdoorWetBulbC": 27.1,
+    "dewPointC": 26.1
   },
   "deviceSummary": {
     "totalDevices": 59,

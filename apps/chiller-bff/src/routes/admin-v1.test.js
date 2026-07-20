@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 
@@ -55,6 +56,57 @@ async function startTestServer(adminStore, configOverrides = {}) {
 
   return {
     baseUrl: `http://127.0.0.1:${address.port}`,
+    async close() {
+      await new Promise((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      });
+    }
+  };
+}
+
+async function startRuntimeBindingSourceServer() {
+  const requests = [];
+  const server = http.createServer((req, res) => {
+    requests.push({ method: req.method, url: req.url });
+    res.setHeader("content-type", "application/json");
+    if (req.method !== "GET") {
+      res.statusCode = 405;
+      res.end(JSON.stringify({ error: "read-only source" }));
+      return;
+    }
+    if (req.url?.startsWith("/zsqy/drinfo/station-db/findObject")) {
+      res.end(JSON.stringify({
+        data: [
+          { drid: "1", drcode: "CH1", drname: "1#冷机", drtypename: "主机", typeYT: "1" },
+          { drid: "2", drcode: "CH2", drname: "2#冷机", drtypename: "主机", typeYT: "1" }
+        ]
+      }));
+      return;
+    }
+    if (req.url?.startsWith("/zsqy/reg/station-db/findObject")) {
+      res.end(JSON.stringify({
+        data: [
+          { drId: "1", drcode: "CH1", tagName: "CH1-RUN", regName: "运行" },
+          { drId: "2", drcode: "CH2", tagName: "CH2-RUN", regName: "运行" }
+        ]
+      }));
+      return;
+    }
+    res.statusCode = 404;
+    res.end(JSON.stringify({ error: "not found" }));
+  });
+  server.listen(0, "127.0.0.1");
+  await new Promise((resolve, reject) => {
+    server.once("listening", resolve);
+    server.once("error", reject);
+  });
+  const address = server.address();
+  if (!address || typeof address === "string") {
+    throw new Error("Failed to resolve runtime binding source server address");
+  }
+  return {
+    baseUrl: `http://127.0.0.1:${address.port}`,
+    requests,
     async close() {
       await new Promise((resolve, reject) => {
         server.close((error) => (error ? reject(error) : resolve()));
@@ -1327,6 +1379,128 @@ test("energy config admin routes enforce read and write roles", async (t) => {
   assert.equal(power?.controlBoundary?.mode, "shadow");
   assert.equal(power?.controlBoundary?.writeEnabled, false);
 
+  const deniedStationWriteResponse = await fetch(`${server.baseUrl}/admin/v1/sites/site-energy/stations`, {
+    method: "PUT",
+    headers: buildHeaders("auditor-energy"),
+    body: JSON.stringify({
+      items: [
+        {
+          stationId: "chilled-a",
+          stationName: "冷冻站 A",
+          parentSubsystemType: "chilled_plant"
+        }
+      ]
+    })
+  });
+  assert.equal(deniedStationWriteResponse.status, 403);
+
+  const stationWriteResponse = await fetch(`${server.baseUrl}/admin/v1/sites/site-energy/stations`, {
+    method: "PUT",
+    headers: buildHeaders("site-admin-energy"),
+    body: JSON.stringify({
+      items: [
+        {
+          stationId: "chilled-a",
+          stationName: "冷冻站 A",
+          parentSubsystemType: "chilled_plant",
+          status: "enabled",
+          published: true
+        }
+      ]
+    })
+  });
+  assert.equal(stationWriteResponse.status, 200);
+  const stationWritePayload = await stationWriteResponse.json();
+  assert.equal(stationWritePayload.items?.[0]?.stationId, "chilled-a");
+
+  const invalidStationParentResponse = await fetch(`${server.baseUrl}/admin/v1/sites/site-energy/stations`, {
+    method: "PUT",
+    headers: buildHeaders("site-admin-energy"),
+    body: JSON.stringify({
+      items: [
+        {
+          stationId: "terminal-east",
+          stationName: "东区末端",
+          parentSubsystemType: "hvac_terminal"
+        }
+      ]
+    })
+  });
+  assert.equal(invalidStationParentResponse.status, 400);
+  const invalidStationParentPayload = await invalidStationParentResponse.json();
+  assert.equal(invalidStationParentPayload.details?.field, "parentSubsystemType");
+  assert.deepEqual(invalidStationParentPayload.details?.allowed, [
+    "chilled_plant",
+    "compressed_air",
+    "boiler_room"
+  ]);
+
+  const invalidStationIdResponse = await fetch(`${server.baseUrl}/admin/v1/sites/site-energy/stations`, {
+    method: "PUT",
+    headers: buildHeaders("site-admin-energy"),
+    body: JSON.stringify({
+      items: [
+        {
+          stationId: "冷冻站 B",
+          stationName: "冷冻站 B",
+          parentSubsystemType: "chilled_plant"
+        }
+      ]
+    })
+  });
+  assert.equal(invalidStationIdResponse.status, 400);
+  assert.equal((await invalidStationIdResponse.json()).details?.field, "stationId");
+
+  for (const [field, value] of [
+    ["status", "ready"],
+    ["published", "true"],
+    ["sortOrder", -1]
+  ]) {
+    const invalidContractResponse = await fetch(`${server.baseUrl}/admin/v1/sites/site-energy/stations`, {
+      method: "PUT",
+      headers: buildHeaders("site-admin-energy"),
+      body: JSON.stringify({
+        items: [
+          {
+            stationId: `invalid-${field}`,
+            stationName: `非法 ${field} 站房`,
+            parentSubsystemType: "chilled_plant",
+            status: "not_configured",
+            published: false,
+            sortOrder: 90,
+            [field]: value
+          }
+        ]
+      })
+    });
+    assert.equal(invalidContractResponse.status, 400);
+    assert.equal((await invalidContractResponse.json()).details?.field, field);
+  }
+
+  const duplicateStationNameResponse = await fetch(`${server.baseUrl}/admin/v1/sites/site-energy/stations`, {
+    method: "PUT",
+    headers: buildHeaders("site-admin-energy"),
+    body: JSON.stringify({
+      items: [
+        {
+          stationId: "chilled-b",
+          stationName: "冷冻站 A",
+          parentSubsystemType: "chilled_plant"
+        }
+      ]
+    })
+  });
+  assert.equal(duplicateStationNameResponse.status, 409);
+  assert.equal((await duplicateStationNameResponse.json()).details?.conflictingStationId, "chilled-a");
+
+  const stationReadResponse = await fetch(`${server.baseUrl}/admin/v1/sites/site-energy/stations?publishedOnly=true`, {
+    headers: buildHeaders("auditor-energy")
+  });
+  assert.equal(stationReadResponse.status, 200);
+  const stationReadPayload = await stationReadResponse.json();
+  assert.equal(stationReadPayload.total, 1);
+  assert.equal(stationReadPayload.items?.[0]?.parentSubsystemType, "chilled_plant");
+
   const publishResponse = await fetch(`${server.baseUrl}/admin/v1/sites/site-energy/config-versions/cfg-route-test/publish`, {
     method: "POST",
     headers: buildHeaders("platform-admin"),
@@ -1357,4 +1531,310 @@ test("energy config admin routes enforce read and write roles", async (t) => {
   const rollbackPayload = await rollbackResponse.json();
   assert.equal(rollbackPayload.version?.versionId, "cfg-route-test");
   assert.equal(rollbackPayload.version?.status, "rolled_back");
+});
+
+test("station registry writes remain blocked when the BFF is globally read-only", async (t) => {
+  const adminStore = createAdminStore({ dbFile: ":memory:" });
+  const platformActor = {
+    userId: "platform-admin",
+    username: "platform-admin"
+  };
+
+  adminStore.bootstrapPlatformAdmin(platformActor, {});
+  adminStore.createSite({ siteId: "site-read-only", siteName: "只读能源站" }, platformActor, {});
+  adminStore.createSiteMember(
+    "site-read-only",
+    {
+      userId: "site-admin-read-only",
+      username: "site-admin-read-only",
+      role: "site_admin"
+    },
+    platformActor,
+    {}
+  );
+
+  const server = await startTestServer(adminStore, { readOnlyMode: true });
+  t.after(async () => {
+    await server.close();
+    adminStore.close();
+  });
+
+  const readResponse = await fetch(`${server.baseUrl}/admin/v1/sites/site-read-only/stations`, {
+    headers: buildHeaders("site-admin-read-only")
+  });
+  assert.equal(readResponse.status, 200);
+
+  const writeResponse = await fetch(`${server.baseUrl}/admin/v1/sites/site-read-only/stations`, {
+    method: "PUT",
+    headers: buildHeaders("site-admin-read-only"),
+    body: JSON.stringify({
+      items: [
+        {
+          stationId: "chilled-01",
+          stationName: "1号冷冻站",
+          parentSubsystemType: "chilled_plant"
+        }
+      ]
+    })
+  });
+  assert.equal(writeResponse.status, 403);
+  const payload = await writeResponse.json();
+  assert.equal(payload.code, "READ_ONLY_MODE");
+  assert.equal(adminStore.listStationInstances("site-read-only").total, 0);
+});
+
+test("station registry write permission is evaluated for the requested site", async (t) => {
+  const adminStore = createAdminStore({ dbFile: ":memory:" });
+  const platformActor = {
+    userId: "platform-admin",
+    username: "platform-admin"
+  };
+  const mixedUserId = "mixed-site-user";
+
+  adminStore.bootstrapPlatformAdmin(platformActor, {});
+  adminStore.createSite({ siteId: "site-write", siteName: "可维护站点" }, platformActor, {});
+  adminStore.createSite({ siteId: "site-audit", siteName: "只审计站点" }, platformActor, {});
+  adminStore.createSiteMember(
+    "site-write",
+    {
+      userId: mixedUserId,
+      username: mixedUserId,
+      role: "site_admin"
+    },
+    platformActor,
+    {}
+  );
+  adminStore.createSiteMember(
+    "site-audit",
+    {
+      userId: mixedUserId,
+      username: mixedUserId,
+      role: "auditor"
+    },
+    platformActor,
+    {}
+  );
+
+  const server = await startTestServer(adminStore);
+  t.after(async () => {
+    await server.close();
+    adminStore.close();
+  });
+
+  const writableResponse = await fetch(`${server.baseUrl}/admin/v1/sites/site-write/stations`, {
+    method: "PUT",
+    headers: buildHeaders(mixedUserId),
+    body: JSON.stringify({
+      items: [
+        {
+          stationId: "air-01",
+          stationName: "1号空压站",
+          parentSubsystemType: "compressed_air"
+        }
+      ]
+    })
+  });
+  assert.equal(writableResponse.status, 200);
+
+  const forbiddenResponse = await fetch(`${server.baseUrl}/admin/v1/sites/site-audit/stations`, {
+    method: "PUT",
+    headers: buildHeaders(mixedUserId),
+    body: JSON.stringify({
+      items: [
+        {
+          stationId: "air-02",
+          stationName: "2号空压站",
+          parentSubsystemType: "compressed_air"
+        }
+      ]
+    })
+  });
+  assert.equal(forbiddenResponse.status, 403);
+  assert.equal(adminStore.listStationInstances("site-write").total, 1);
+  assert.equal(adminStore.listStationInstances("site-audit").total, 0);
+});
+
+test("station runtime binding routes enforce draft, real validation, and independent publish roles", async (t) => {
+  const adminStore = createAdminStore({ dbFile: ":memory:" });
+  const source = await startRuntimeBindingSourceServer();
+  const platformCreator = { userId: "platform-creator", username: "platform-creator" };
+  const platformPublisher = { userId: "platform-publisher", username: "platform-publisher" };
+
+  adminStore.bootstrapPlatformAdmin(platformCreator, {});
+  adminStore.bootstrapPlatformAdmin(platformPublisher, {});
+  adminStore.createSite({ siteId: "site-binding", siteName: "综合能源站" }, platformCreator, {});
+  adminStore.createSiteMember(
+    "site-binding",
+    { userId: "binding-editor", username: "binding-editor", role: "site_admin" },
+    platformCreator,
+    {}
+  );
+  adminStore.createSiteMember(
+    "site-binding",
+    { userId: "binding-auditor", username: "binding-auditor", role: "auditor" },
+    platformCreator,
+    {}
+  );
+  adminStore.upsertStationInstances("site-binding", {
+    items: [{
+      stationId: "chilled-a",
+      stationName: "冷冻站 A",
+      parentSubsystemType: "chilled_plant",
+      status: "enabled",
+      published: true
+    }]
+  }, platformCreator, {});
+
+  const server = await startTestServer(adminStore, { legacyBaseUrl: source.baseUrl });
+  t.after(async () => {
+    await server.close();
+    await source.close();
+    adminStore.close();
+  });
+  const bindingUrl = `${server.baseUrl}/admin/v1/sites/site-binding/stations/chilled-a/runtime-binding`;
+
+  const forbiddenEvidenceResponse = await fetch(`${server.baseUrl}/admin/v1/sites/site-binding/stations`, {
+    method: "PUT",
+    headers: buildHeaders("binding-editor"),
+    body: JSON.stringify({
+      items: [{
+        stationId: "chilled-a",
+        stationName: "冷冻站 A",
+        parentSubsystemType: "chilled_plant",
+        sourceStatus: "ok",
+        freshnessStatus: "fresh",
+        alarmCount: 0
+      }]
+    })
+  });
+  assert.equal(forbiddenEvidenceResponse.status, 400);
+  assert.deepEqual((await forbiddenEvidenceResponse.json()).details?.fields, [
+    "sourceStatus",
+    "freshnessStatus",
+    "alarmCount"
+  ]);
+
+  const auditorWriteResponse = await fetch(bindingUrl, {
+    method: "PUT",
+    headers: buildHeaders("binding-auditor"),
+    body: JSON.stringify({
+      expectedVersion: 0,
+      source: { databaseKey: "station-db" },
+      selectors: { deviceIds: ["1"], deviceCodes: ["CH1"], pointCodes: ["CH1-RUN"] }
+    })
+  });
+  assert.equal(auditorWriteResponse.status, 403);
+
+  const draftResponse = await fetch(bindingUrl, {
+    method: "PUT",
+    headers: buildHeaders("binding-editor"),
+    body: JSON.stringify({
+      expectedVersion: 0,
+      source: { databaseKey: "station-db", projectKey: "station-project", template: "1" },
+      selectors: { deviceIds: ["1"], deviceCodes: ["CH1"], pointCodes: ["CH1-RUN"] },
+      notes: "冷冻站 A 设备边界"
+    })
+  });
+  assert.equal(draftResponse.status, 200);
+  const draftPayload = await draftResponse.json();
+  assert.equal(draftPayload.draftVersion, 1);
+  assert.equal(draftPayload.publishedVersion, null);
+  assert.equal(draftPayload.draftBinding?.status, "draft");
+  assert.ok(draftPayload.draftBinding?.payloadHash);
+
+  const getDraftResponse = await fetch(bindingUrl, {
+    headers: buildHeaders("binding-auditor")
+  });
+  assert.equal(getDraftResponse.status, 200);
+  const getDraftPayload = await getDraftResponse.json();
+  assert.equal(getDraftPayload.draftBinding?.bindingVersion, 1);
+  assert.equal(getDraftPayload.publishedBinding, null);
+
+  const validateResponse = await fetch(`${bindingUrl}/validate`, {
+    method: "POST",
+    headers: buildHeaders("binding-editor"),
+    body: JSON.stringify({ expectedVersion: 1 })
+  });
+  assert.equal(validateResponse.status, 200);
+  const validatePayload = await validateResponse.json();
+  assert.equal(validatePayload.validation?.ok, true);
+  assert.equal(validatePayload.validation?.matched?.deviceCount, 1);
+  assert.equal(validatePayload.validation?.matched?.pointCount, 1);
+  assert.equal(validatePayload.validation?.sourceEvidence?.mock, false);
+  assert.equal(validatePayload.binding?.validatedHash, validatePayload.binding?.payloadHash);
+  assert.ok(validatePayload.validation?.catalogHash);
+  assert.equal(source.requests.every((item) => item.method === "GET"), true);
+
+  const siteAdminPublishResponse = await fetch(`${bindingUrl}/publish`, {
+    method: "POST",
+    headers: buildHeaders("binding-editor"),
+    body: JSON.stringify({ expectedVersion: 1 })
+  });
+  assert.equal(siteAdminPublishResponse.status, 403);
+
+  const publishResponse = await fetch(`${bindingUrl}/publish`, {
+    method: "POST",
+    headers: buildHeaders("platform-publisher"),
+    body: JSON.stringify({ expectedVersion: 1 })
+  });
+  assert.equal(publishResponse.status, 200);
+  const publishPayload = await publishResponse.json();
+  assert.equal(publishPayload.binding?.status, "published");
+  assert.equal(publishPayload.draftVersion, null);
+  assert.equal(publishPayload.publishedVersion, 1);
+
+  const secondDraftResponse = await fetch(bindingUrl, {
+    method: "PUT",
+    headers: buildHeaders("binding-editor"),
+    body: JSON.stringify({
+      expectedVersion: 1,
+      source: { databaseKey: "station-db", projectKey: "station-project", template: "1" },
+      selectors: { deviceIds: ["2"], deviceCodes: ["CH2"], pointCodes: ["CH2-RUN"] }
+    })
+  });
+  assert.equal(secondDraftResponse.status, 200);
+  const secondDraftPayload = await secondDraftResponse.json();
+  assert.equal(secondDraftPayload.draftVersion, 2);
+  assert.equal(secondDraftPayload.publishedVersion, 1);
+  assert.equal(secondDraftPayload.publishedBinding?.selectors?.deviceIds?.[0], "1");
+  assert.equal(secondDraftPayload.draftBinding?.selectors?.deviceIds?.[0], "2");
+
+  const staleDraftResponse = await fetch(bindingUrl, {
+    method: "PUT",
+    headers: buildHeaders("binding-editor"),
+    body: JSON.stringify({
+      expectedVersion: 1,
+      source: { databaseKey: "station-db" },
+      selectors: { deviceIds: ["1"], deviceCodes: ["CH1"], pointCodes: [] }
+    })
+  });
+  assert.equal(staleDraftResponse.status, 409);
+  const stalePayload = await staleDraftResponse.json();
+  assert.equal(stalePayload.details?.expectedVersion, 1);
+  assert.equal(stalePayload.details?.currentVersion, 2);
+
+  const invalidDraftResponse = await fetch(bindingUrl, {
+    method: "PUT",
+    headers: buildHeaders("binding-editor"),
+    body: JSON.stringify({
+      expectedVersion: 2,
+      source: { databaseKey: "station-db" },
+      selectors: { deviceIds: ["missing-device"], deviceCodes: ["MISSING"], pointCodes: [] }
+    })
+  });
+  assert.equal(invalidDraftResponse.status, 200);
+  assert.equal((await invalidDraftResponse.json()).draftVersion, 3);
+
+  const failedValidationResponse = await fetch(`${bindingUrl}/validate`, {
+    method: "POST",
+    headers: buildHeaders("binding-editor"),
+    body: JSON.stringify({ expectedVersion: 3 })
+  });
+  assert.equal(failedValidationResponse.status, 422);
+  const failedValidationPayload = await failedValidationResponse.json();
+  assert.equal(failedValidationPayload.ok, false);
+  assert.equal(failedValidationPayload.code, "STATION_RUNTIME_BINDING_VALIDATION_FAILED");
+  assert.equal(failedValidationPayload.validation?.ok, false);
+  assert.ok(failedValidationPayload.validation?.errors?.includes("DEVICE_IDS_UNMATCHED"));
+  assert.equal(failedValidationPayload.publishedVersion, 1);
 });

@@ -43,7 +43,9 @@ export const config = {
   port: Number(process.env.BFF_PORT || 8787),
   appMode,
   appModeLabel: resolveAppModeLabel(appMode),
-  readOnlyMode: normalizeBooleanEnv(process.env.READ_ONLY_MODE, false),
+  // Safety default: a missing or malformed environment value must never
+  // silently enable BA / PLC writes.
+  readOnlyMode: normalizeBooleanEnv(process.env.READ_ONLY_MODE, true),
   legacyBaseUrl: (process.env.LEGACY_BASE_URL || "https://www.ssge.com.cn:8098").replace(/\/+$/, ""),
   realtimeParamsBaseUrl:
     (process.env.REALTIME_PARAMS_BASE_URL || "https://ln.szgreenenergy.com").replace(/\/+$/, ""),

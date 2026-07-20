@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "../../..");
 const DOCS_DIR = path.resolve(REPO_ROOT, "docs");
+const SITE_ID = String(process.env.SITE_ID || "126lnoffice").trim() || "126lnoffice";
 
 const FINAL_RUNBOOK_JSON =
   process.env.FCU_FINAL_CONTROL_RUNBOOK_JSON ||
@@ -180,6 +181,7 @@ function buildReport() {
   return {
     ok: issues.length === 0,
     generatedAt: new Date().toISOString(),
+    siteId: SITE_ID,
     scope: "fcu_final_control_evidence_consistency",
     controlMutation: false,
     dispatch: false,

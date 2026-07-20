@@ -277,6 +277,105 @@ const B25_PUMP_DELTA_T_CONFIG = {
   ]
 };
 
+const B25_READ_ONLY_RUNTIME_ENRICHMENT_CONFIG = {
+  enabled: true,
+  mode: "read-only",
+  allowedMethod: "GET",
+  endpointKind: "legacy-reg-findObject-all",
+  pageSize: 5000,
+  mergeKeyFields: ["deviceId", "tagName"],
+  exactDeviceCodes: [
+    "CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7",
+    "CHP1", "CHP2", "CHP3", "CHP4", "CHP5", "CHP6", "CHP7",
+    "CWP1", "CWP2", "CWP3", "CWP4", "CWP5", "CWP6", "CWP7",
+    "CTF11", "CTF12", "CTF13", "CTF14", "CTF15", "CTF16",
+    "CTF21", "CTF22", "CTF23", "CTF24", "CTF25", "CTF26",
+    "CTF31", "CTF32", "CTF33", "CTF34", "CTF35", "CTF36",
+    "CTF41", "CTF42", "CTF43", "CTF44", "CTF45", "CTF46",
+    "CTF51", "CTF52", "CTF53", "CTF54", "CTF55", "CTF56",
+    "CTF61", "CTF62", "CTF63"
+  ],
+  exactSignalRegisterNames: {
+    running: "运行",
+    faultActive: "故障",
+    remoteEnabled: "远程",
+    frequencyHz: "频率反馈"
+  },
+  exactTagNamesByDeviceCode: {
+    "CH1": {"running":"SY-1-509-40950","faultActive":"SY-1-509-40952","remoteEnabled":"SY-1-509-40951"},
+    "CH2": {"running":"SY-1-509-40953","faultActive":"SY-1-509-40955","remoteEnabled":"SY-1-509-40954"},
+    "CH3": {"running":"SY-1-509-40956","faultActive":"SY-1-509-40958","remoteEnabled":"SY-1-509-40957"},
+    "CH4": {"running":"SY-1-509-40959","faultActive":"SY-1-509-40961","remoteEnabled":"SY-1-509-40960"},
+    "CH5": {"running":"SY-1-509-40962","faultActive":"SY-1-509-40964","remoteEnabled":"SY-1-509-40963"},
+    "CH6": {"running":"SY-1-509-40965","faultActive":"SY-1-509-40967","remoteEnabled":"SY-1-509-40966"},
+    "CH7": {"running":"SY-1-509-40968","faultActive":"SY-1-509-40970","remoteEnabled":"SY-1-509-40969"},
+    "CHP1": {"running":"SY-1-509-40005","faultActive":"SY-1-509-40006","remoteEnabled":"SY-1-509-40004","frequencyHz":"SY-1-509-42001"},
+    "CHP2": {"running":"SY-1-509-40021","faultActive":"SY-1-509-40022","remoteEnabled":"SY-1-509-40020","frequencyHz":"SY-1-509-42002"},
+    "CHP3": {"running":"SY-1-509-40037","faultActive":"SY-1-509-40038","remoteEnabled":"SY-1-509-40036","frequencyHz":"SY-1-509-42003"},
+    "CHP4": {"running":"SY-1-509-40053","faultActive":"SY-1-509-40054","remoteEnabled":"SY-1-509-40052","frequencyHz":"SY-1-509-42004"},
+    "CHP5": {"running":"SY-1-509-40069","faultActive":"SY-1-509-40070","remoteEnabled":"SY-1-509-40068","frequencyHz":"SY-1-509-42005"},
+    "CHP6": {"running":"SY-1-509-40085","faultActive":"SY-1-509-40086","remoteEnabled":"SY-1-509-40084","frequencyHz":"SY-1-509-42006"},
+    "CHP7": {"running":"SY-1-509-40971","faultActive":"SY-1-509-40973","remoteEnabled":"SY-1-509-40972","frequencyHz":"SY-1-509-42990"},
+    "CWP1": {"running":"SY-1-509-40008","faultActive":"SY-1-509-40009","remoteEnabled":"SY-1-509-40007","frequencyHz":"SY-1-509-42007"},
+    "CWP2": {"running":"SY-1-509-40024","faultActive":"SY-1-509-40025","remoteEnabled":"SY-1-509-40023","frequencyHz":"SY-1-509-42008"},
+    "CWP3": {"running":"SY-1-509-40040","faultActive":"SY-1-509-40041","remoteEnabled":"SY-1-509-40039","frequencyHz":"SY-1-509-42009"},
+    "CWP4": {"running":"SY-1-509-40056","faultActive":"SY-1-509-40057","remoteEnabled":"SY-1-509-40055","frequencyHz":"SY-1-509-42010"},
+    "CWP5": {"running":"SY-1-509-40072","faultActive":"SY-1-509-40073","remoteEnabled":"SY-1-509-40071","frequencyHz":"SY-1-509-42011"},
+    "CWP6": {"running":"SY-1-509-40088","faultActive":"SY-1-509-40089","remoteEnabled":"SY-1-509-40087","frequencyHz":"SY-1-509-42012"},
+    "CWP7": {"running":"SY-1-509-40974","faultActive":"SY-1-509-40976","remoteEnabled":"SY-1-509-40975","frequencyHz":"SY-1-509-43002"},
+    "CTF11": {"running":"SY-1-509-40131","faultActive":"SY-1-509-40132","remoteEnabled":"SY-1-509-40129","frequencyHz":"SY-1-509-42013"},
+    "CTF12": {"running":"SY-1-509-40137","faultActive":"SY-1-509-40138","remoteEnabled":"SY-1-509-40135","frequencyHz":"SY-1-509-42014"},
+    "CTF13": {"running":"SY-1-509-40143","faultActive":"SY-1-509-40144","remoteEnabled":"SY-1-509-40141","frequencyHz":"SY-1-509-42015"},
+    "CTF14": {"running":"SY-1-509-40149","faultActive":"SY-1-509-40150","remoteEnabled":"SY-1-509-40147","frequencyHz":"SY-1-509-42016"},
+    "CTF15": {"running":"SY-1-509-40155","faultActive":"SY-1-509-40156","remoteEnabled":"SY-1-509-40153","frequencyHz":"SY-1-509-42017"},
+    "CTF16": {"running":"SY-1-509-40163","faultActive":"SY-1-509-40164","remoteEnabled":"SY-1-509-40161","frequencyHz":"SY-1-509-42018"},
+    "CTF21": {"running":"SY-1-509-40169","faultActive":"SY-1-509-40170","remoteEnabled":"SY-1-509-40167","frequencyHz":"SY-1-509-42019"},
+    "CTF22": {"running":"SY-1-509-40175","faultActive":"SY-1-509-40176","remoteEnabled":"SY-1-509-40173","frequencyHz":"SY-1-509-42020"},
+    "CTF23": {"running":"SY-1-509-40181","faultActive":"SY-1-509-40182","remoteEnabled":"SY-1-509-40179","frequencyHz":"SY-1-509-42021"},
+    "CTF24": {"running":"SY-1-509-40187","faultActive":"SY-1-509-40188","remoteEnabled":"SY-1-509-40185","frequencyHz":"SY-1-509-42022"},
+    "CTF25": {"running":"SY-1-509-40195","faultActive":"SY-1-509-40196","remoteEnabled":"SY-1-509-40193","frequencyHz":"SY-1-509-42023"},
+    "CTF26": {"running":"SY-1-509-40201","faultActive":"SY-1-509-40202","remoteEnabled":"SY-1-509-40199","frequencyHz":"SY-1-509-42024"},
+    "CTF31": {"running":"SY-1-509-40207","faultActive":"SY-1-509-40208","remoteEnabled":"SY-1-509-40205","frequencyHz":"SY-1-509-42025"},
+    "CTF32": {"running":"SY-1-509-40213","faultActive":"SY-1-509-40214","remoteEnabled":"SY-1-509-40211","frequencyHz":"SY-1-509-42026"},
+    "CTF33": {"running":"SY-1-509-40219","faultActive":"SY-1-509-40220","remoteEnabled":"SY-1-509-40217","frequencyHz":"SY-1-509-42027"},
+    "CTF34": {"running":"SY-1-509-40227","faultActive":"SY-1-509-40228","remoteEnabled":"SY-1-509-40225","frequencyHz":"SY-1-509-42028"},
+    "CTF35": {"running":"SY-1-509-40233","faultActive":"SY-1-509-40234","remoteEnabled":"SY-1-509-40231","frequencyHz":"SY-1-509-42029"},
+    "CTF36": {"running":"SY-1-509-40239","faultActive":"SY-1-509-40240","remoteEnabled":"SY-1-509-40237","frequencyHz":"SY-1-509-42030"},
+    "CTF41": {"running":"SY-1-509-40245","faultActive":"SY-1-509-40246","remoteEnabled":"SY-1-509-40243","frequencyHz":"SY-1-509-42031"},
+    "CTF42": {"running":"SY-1-509-40251","faultActive":"SY-1-509-40252","remoteEnabled":"SY-1-509-40249","frequencyHz":"SY-1-509-42032"},
+    "CTF43": {"running":"SY-1-509-40259","faultActive":"SY-1-509-40260","remoteEnabled":"SY-1-509-40257","frequencyHz":"SY-1-509-42033"},
+    "CTF44": {"running":"SY-1-509-40265","faultActive":"SY-1-509-40266","remoteEnabled":"SY-1-509-40263","frequencyHz":"SY-1-509-42034"},
+    "CTF45": {"running":"SY-1-509-40271","faultActive":"SY-1-509-40272","remoteEnabled":"SY-1-509-40269","frequencyHz":"SY-1-509-42035"},
+    "CTF46": {"running":"SY-1-509-40277","faultActive":"SY-1-509-40278","remoteEnabled":"SY-1-509-40275","frequencyHz":"SY-1-509-42036"},
+    "CTF51": {"running":"SY-1-509-40283","faultActive":"SY-1-509-40284","remoteEnabled":"SY-1-509-40281","frequencyHz":"SY-1-509-42037"},
+    "CTF52": {"running":"SY-1-509-40291","faultActive":"SY-1-509-40292","remoteEnabled":"SY-1-509-40289","frequencyHz":"SY-1-509-42038"},
+    "CTF53": {"running":"SY-1-509-40297","faultActive":"SY-1-509-40298","remoteEnabled":"SY-1-509-40295","frequencyHz":"SY-1-509-42039"},
+    "CTF54": {"running":"SY-1-509-40303","faultActive":"SY-1-509-40304","remoteEnabled":"SY-1-509-40301","frequencyHz":"SY-1-509-42040"},
+    "CTF55": {"running":"SY-1-509-40309","faultActive":"SY-1-509-40310","remoteEnabled":"SY-1-509-40307","frequencyHz":"SY-1-509-42041"},
+    "CTF56": {"running":"SY-1-509-40315","faultActive":"SY-1-509-40316","remoteEnabled":"SY-1-509-40313","frequencyHz":"SY-1-509-42042"},
+    "CTF61": {"running":"SY-1-509-40323","faultActive":"SY-1-509-40324","remoteEnabled":"SY-1-509-40321","frequencyHz":"SY-1-509-42043"},
+    "CTF62": {"running":"SY-1-509-40329","faultActive":"SY-1-509-40330","remoteEnabled":"SY-1-509-40327","frequencyHz":"SY-1-509-42044"},
+    "CTF63": {"running":"SY-1-509-40335","faultActive":"SY-1-509-40336","remoteEnabled":"SY-1-509-40333","frequencyHz":"SY-1-509-42045"}
+  },
+  exactTagAliasRule: {
+    transform: "replace-leading-prefix-only",
+    sourcePrefix: "SY-",
+    runtimePrefixTemplate: "{deviceCode}-"
+  },
+  expectedSignalCounts: {
+    running: 54,
+    faultActive: 54,
+    remoteEnabled: 54,
+    frequencyHz: 47
+  },
+  expectedEquipmentCount: 54,
+  notes: [
+    "仅对 B25 54 台核心设备补齐只读运行状态证据；禁止写 BA/PLC。",
+    "设备身份只认 exactDeviceCodes，信号只认 exactSignalRegisterNames，并按 exactTagNamesByDeviceCode + 显式前缀别名规则核验，不用中文模糊匹配决定身份。",
+    "receivedAt 只表示 BFF 收到快照的时间，不得冒充单点 observedAt。"
+  ]
+};
+
 const BUILTIN_SITE_SOURCE_CONFIGS = {
   "122": {
     legacyAppId: "122",
@@ -294,6 +393,7 @@ const BUILTIN_SITE_SOURCE_CONFIGS = {
     ratedCoolingCapacityKw: 25322.4,
     chillerStaging: B25_CHILLER_STAGING_CONFIG,
     operationalDiagnosticsPointDictionary: B25_OPERATIONAL_DIAGNOSTICS_POINT_DICTIONARY,
+    readOnlyRuntimeEnrichment: B25_READ_ONLY_RUNTIME_ENRICHMENT_CONFIG,
     towerApproach: B25_TOWER_APPROACH_CONFIG,
     pumpDeltaT: B25_PUMP_DELTA_T_CONFIG
   },
@@ -306,6 +406,7 @@ const BUILTIN_SITE_SOURCE_CONFIGS = {
     ratedCoolingCapacityKw: 25322.4,
     chillerStaging: B25_CHILLER_STAGING_CONFIG,
     operationalDiagnosticsPointDictionary: B25_OPERATIONAL_DIAGNOSTICS_POINT_DICTIONARY,
+    readOnlyRuntimeEnrichment: B25_READ_ONLY_RUNTIME_ENRICHMENT_CONFIG,
     towerApproach: B25_TOWER_APPROACH_CONFIG,
     pumpDeltaT: B25_PUMP_DELTA_T_CONFIG
   }
@@ -540,6 +641,7 @@ function normalizeProjectDataInterfaces(projectKey, items) {
       const build = normalizeOptionalNonNegativeInteger(item?.build);
       const floor = normalizeOptionalNonNegativeInteger(item?.floor);
       const mock = normalizeOptionalBoolean(item?.mock);
+      const pointEvidenceProfileId = normalizeOptionalText(item?.pointEvidenceProfileId);
       return {
         projectKey,
         label,
@@ -552,7 +654,8 @@ function normalizeProjectDataInterfaces(projectKey, items) {
         }),
         ...(build !== null ? { build } : {}),
         ...(floor !== null ? { floor } : {}),
-        ...(typeof mock === "boolean" ? { mock } : {})
+        ...(typeof mock === "boolean" ? { mock } : {}),
+        ...(pointEvidenceProfileId ? { pointEvidenceProfileId } : {})
       };
     })
     .filter(Boolean);
@@ -854,6 +957,7 @@ function mergeSourceConfig(siteId, sourceConfig) {
     operationalDiagnosticsPointDictionary: normalizeOptionalJsonObject(
       sourceConfig?.operationalDiagnosticsPointDictionary || builtin?.operationalDiagnosticsPointDictionary
     ),
+    readOnlyRuntimeEnrichment: normalizeOptionalJsonObject(builtin?.readOnlyRuntimeEnrichment),
     towerApproach: normalizeOptionalJsonObject(sourceConfig?.towerApproach || builtin?.towerApproach),
     pumpDeltaT: normalizeOptionalJsonObject(sourceConfig?.pumpDeltaT || builtin?.pumpDeltaT),
     deviceDataProjectKey: normalizeOptionalText(builtinProjectDataAccess?.projectKey),

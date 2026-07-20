@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
@@ -21,6 +22,29 @@ function runScript(args) {
     encoding: "utf8"
   });
   return JSON.parse(stdout);
+}
+
+function runScriptExpectingFailure(args) {
+  return spawnSync(process.execPath, [scriptPath, ...args], {
+    encoding: "utf8"
+  });
+}
+
+function readConfigVersionRow(dbFile, siteId, versionId) {
+  const db = new DatabaseSync(dbFile, { readOnly: true });
+  try {
+    return db
+      .prepare(
+        `
+          SELECT status, summary, payload_json, created_at, updated_at, published_at, rolled_back_at
+          FROM admin_config_versions
+          WHERE site_id = ? AND version_id = ?
+        `
+      )
+      .get(siteId, versionId);
+  } finally {
+    db.close();
+  }
 }
 
 function withTempStore(callback) {
@@ -65,15 +89,16 @@ test("ensure-energy-demo-subsystems publishes B25 as cold-plant only and clears 
     const summary = runScript([
       `--db-file=${dbFile}`,
       "--profile=b25-cold-only",
-      "--site-id=140",
-      "--version-id=test-b25-cold-only"
+      "--site-id=140"
     ]);
     const repeated = runScript([
       `--db-file=${dbFile}`,
       "--profile=b25-cold-only",
-      "--site-id=140",
-      "--version-id=test-b25-cold-only"
+      "--site-id=140"
     ]);
+    assert.match(summary.versionId, /^energy-demo-b25-cold-only-\d{8}T\d{6}Z-[0-9a-f]{8}$/);
+    assert.match(repeated.versionId, /^energy-demo-b25-cold-only-\d{8}T\d{6}Z-[0-9a-f]{8}$/);
+    assert.notEqual(repeated.versionId, summary.versionId);
     assert.deepEqual(summary.enabledSubsystems, ["chilled_plant"]);
     assert.deepEqual(repeated.enabledSubsystems, ["chilled_plant"]);
     assert.equal(summary.sourceStatusBySubsystem.chilled_plant, "ok");
@@ -104,6 +129,7 @@ test("ensure-energy-demo-subsystems publishes B25 as cold-plant only and clears 
       subsystemType: "compressed_air"
     });
     assert.equal(airMappings.items.length, 0);
+    assert.equal(verifiedStore.listConfigVersions("140").items.length, 2);
     verifiedStore.close();
   });
 });
@@ -113,16 +139,17 @@ test("ensure-energy-demo-subsystems publishes Shengshi Green Energy office as al
     const summary = runScript([
       `--db-file=${dbFile}`,
       "--profile=office-all-systems-demo",
-      "--site-id=126lnoffice",
-      "--version-id=test-office-all-systems"
+      "--site-id=126lnoffice"
     ]);
     const repeated = runScript([
       `--db-file=${dbFile}`,
       "--profile=office-all-systems-demo",
-      "--site-id=126lnoffice",
-      "--version-id=test-office-all-systems"
+      "--site-id=126lnoffice"
     ]);
 
+    assert.match(summary.versionId, /^energy-demo-office-all-systems-\d{8}T\d{6}Z-[0-9a-f]{8}$/);
+    assert.match(repeated.versionId, /^energy-demo-office-all-systems-\d{8}T\d{6}Z-[0-9a-f]{8}$/);
+    assert.notEqual(repeated.versionId, summary.versionId);
     assert.equal(summary.siteName, "盛世绿能办公楼");
     assert.equal(repeated.siteName, "盛世绿能办公楼");
     assert.deepEqual(summary.enabledSubsystems, [
@@ -175,6 +202,34 @@ test("ensure-energy-demo-subsystems publishes Shengshi Green Energy office as al
     assert.equal(fcuControlPolicy?.policy?.allowStartStop, true);
     assert.equal(fcuControlPolicy?.policy?.allowSetpoint, true);
     assert.equal(fcuControlPolicy?.policy?.allowFanSpeed, true);
+    assert.equal(verifiedStore.listConfigVersions("126lnoffice").items.length, 2);
+    verifiedStore.close();
+  });
+});
+
+test("ensure-energy-demo-subsystems respects an explicit version id and fails on reuse", () => {
+  withTempStore((dbFile) => {
+    const args = [
+      `--db-file=${dbFile}`,
+      "--profile=office-all-systems-demo",
+      "--site-id=126lnoffice",
+      "--version-id=test-office-explicit"
+    ];
+    const summary = runScript(args);
+    assert.equal(summary.versionId, "test-office-explicit");
+    const beforeConflict = readConfigVersionRow(dbFile, "126lnoffice", "test-office-explicit");
+
+    const repeated = runScriptExpectingFailure(args);
+    assert.equal(repeated.status, 1);
+    assert.match(repeated.stderr, /Published config version is immutable/);
+    assert.deepEqual(
+      readConfigVersionRow(dbFile, "126lnoffice", "test-office-explicit"),
+      beforeConflict
+    );
+
+    const verifiedStore = createAdminStore({ dbFile });
+    const versions = verifiedStore.listConfigVersions("126lnoffice").items;
+    assert.deepEqual(versions.map((item) => item.versionId), ["test-office-explicit"]);
     verifiedStore.close();
   });
 });

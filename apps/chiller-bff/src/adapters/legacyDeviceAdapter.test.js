@@ -1,7 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { loadDeviceDetail, loadDeviceDetails, loadDeviceTree } from "./legacyDeviceAdapter.js";
+import {
+  loadDeviceDetail,
+  loadDeviceDetails,
+  loadDeviceList,
+  loadDeviceRegisterCollection,
+  loadDeviceTree
+} from "./legacyDeviceAdapter.js";
 
 function createJsonResponse(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -11,6 +17,251 @@ function createJsonResponse(payload, status = 200) {
     }
   });
 }
+
+function createXmlResponse(payload, status = 200) {
+  return new Response(payload, {
+    status,
+    headers: {
+      "content-type": "application/xml"
+    }
+  });
+}
+
+test("loadDeviceRegisterCollection performs one GET and groups flat XML registers by drId", async () => {
+  const requests = [];
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async (input, options) => {
+    const url = String(input);
+    requests.push({ url, method: options?.method });
+    if (!url.endsWith("/zsqy/reg/140btwentyfive/findObject?pageCurrent=1&pageSize=5000")) {
+      throw new Error(`Unexpected request: ${url}`);
+    }
+    return createXmlResponse(`
+      <SysResult>
+        <data>
+          <records>
+            <drId>7</drId><drcode>CH1</drcode><drname>1#冷水机组</drname>
+            <drtypename>主机</drtypename><regName>运行</regName>
+            <tagName>SY-1-509-40950</tagName><newtagvalue>1</newtagvalue>
+          </records>
+          <records>
+            <drId>7</drId><drcode>CH1</drcode><drname>1#冷水机组</drname>
+            <drtypename>主机</drtypename><regName>故障</regName>
+            <tagName>SY-1-509-40952</tagName><newtagvalue>0</newtagvalue>
+          </records>
+          <records>
+            <drId>8</drId><drcode>CH2</drcode><drname>2#冷水机组</drname>
+            <drtypename>主机</drtypename><regName>运行</regName>
+            <tagName>SY-1-509-40953</tagName><newtagvalue>0</newtagvalue>
+          </records>
+        </data>
+      </SysResult>
+    `);
+  };
+
+  try {
+    const result = await loadDeviceRegisterCollection(
+      "https://www.ssge.com.cn:8098",
+      "140",
+      { databaseKey: "140btwentyfive" }
+    );
+
+    assert.equal(result.sourceStatus.ok, true);
+    assert.equal(result.records.length, 3);
+    assert.equal(result.rows.length, 2);
+    assert.equal(result.rows[0]?.drid, "7");
+    assert.equal(result.rows[0]?.reglist?.length, 2);
+    assert.deepEqual(requests, [{
+      url: "https://www.ssge.com.cn:8098/zsqy/reg/140btwentyfive/findObject?pageCurrent=1&pageSize=5000",
+      method: "GET"
+    }]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("station device list filters by immutable id, checks code, and recomputes pagination", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    assert.match(url, /\/zsqy\/drinfo\/station-db\/findObject\?pageCurrent=1&pageSize=200$/);
+    return createJsonResponse({
+      data: [
+        { drid: "1", drcode: "CH1", drname: "1#冷机", drtypename: "主机" },
+        // A later catalog drift reusing CH1 must not widen the id allowlist.
+        { drid: "2", drcode: "CH1", drname: "伪重复编码设备", drtypename: "主机" },
+        { drid: "3", drcode: "CH3", drname: "3#冷机", drtypename: "主机" }
+      ]
+    });
+  };
+
+  try {
+    const result = await loadDeviceList("https://example.invalid", "site-a", {
+      databaseKey: "station-db",
+      allowedDeviceIds: ["1"],
+      allowedDeviceCodes: ["CH1"],
+      page: 1,
+      pageSize: 1,
+      placeholderFallback: false
+    });
+
+    assert.equal(result.total, 1);
+    assert.equal(result.page, 1);
+    assert.equal(result.pageSize, 1);
+    assert.deepEqual(result.items.map((item) => item.deviceId), ["1"]);
+    assert.equal(result.sourceStatus.rows, 1);
+    assert.equal(result.fallbackSourceStatus, null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("duplicate allowed device ids fail closed for station list and tree", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    if (url.includes("/zsqy/drinfo/station-db/findObject")) {
+      return createJsonResponse({
+        data: [
+          { drid: "1", drcode: "A", drname: "重复设备 A", typeYT: "1" },
+          { drid: "1", drcode: "B", drname: "重复设备 B", typeYT: "1" }
+        ]
+      });
+    }
+    if (url.includes("/api/device/station-db/data/tree")) {
+      return createJsonResponse({ data: [] });
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  };
+
+  try {
+    const options = {
+      databaseKey: "station-db",
+      allowedDeviceIds: ["1"],
+      allowedDeviceCodes: [],
+      placeholderFallback: false
+    };
+    const list = await loadDeviceList("https://example.invalid", "site-a", options);
+    assert.equal(list.sourceStatus.ok, false);
+    assert.equal(list.sourceStatus.reasonCode, "STATION_DEVICE_IDS_AMBIGUOUS");
+    assert.equal(list.total, 0);
+    assert.deepEqual(list.items, []);
+
+    const tree = await loadDeviceTree("https://example.invalid", "site-a", options);
+    assert.equal(tree.sourceStatus.catalog.ok, false);
+    assert.equal(tree.sourceStatus.catalog.reasonCode, "STATION_DEVICE_IDS_AMBIGUOUS");
+    assert.equal(tree.sourceStatus.tree.reasonCode, "STATION_DEVICE_IDS_AMBIGUOUS");
+    assert.equal(tree.root, null);
+    assert.deepEqual(tree.catalogRows, []);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("station tree falls back only to the filtered real catalog and never placeholder data", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    if (url.includes("/api/device/station-db/data/tree")) {
+      return createJsonResponse({ data: [] });
+    }
+    if (url.includes("/zsqy/drinfo/station-db/findObject")) {
+      return createJsonResponse({
+        data: [
+          { drid: "1", drcode: "CH1", drname: "1#冷机", drtypename: "主机" },
+          { drid: "2", drcode: "CH2", drname: "2#冷机", drtypename: "主机" }
+        ]
+      });
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  };
+
+  try {
+    const result = await loadDeviceTree("https://example.invalid", "site-a", {
+      databaseKey: "station-db",
+      allowedDeviceIds: ["2"],
+      allowedDeviceCodes: ["CH2"],
+      placeholderFallback: false
+    });
+    const devices = (result.root?.children || []).flatMap((group) => group.children || []);
+
+    assert.deepEqual(devices.map((item) => item.deviceIdRef), ["2"]);
+    assert.deepEqual(result.catalogRows.map((item) => item.deviceId), ["2"]);
+    assert.equal(result.sourceStatus.placeholder, null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("station detail keeps placeholder fallback disabled when the real catalog is empty", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    if (url.includes("/api/device/station-db/data/tree")) {
+      return createJsonResponse({ data: [] });
+    }
+    if (url.includes("/zsqy/drinfo/station-db/findObject")) {
+      return createJsonResponse({ data: [] });
+    }
+    if (url.includes("/zsqy/reg/station-db/findObject")) {
+      return createJsonResponse({ data: [] });
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  };
+
+  try {
+    const result = await loadDeviceDetail("https://example.invalid", "site-a", "1", {
+      databaseKey: "station-db",
+      allowedDeviceIds: ["1"],
+      allowedDeviceCodes: ["CH1"],
+      placeholderFallback: false
+    });
+
+    assert.equal(result.detail, null);
+    assert.equal(result.sourceStatus.placeholder, null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("station detail rejects mixed-device registers even when upstream ignores the drId query", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    if (url.includes("/api/device/station-db/data/tree")) {
+      return createJsonResponse({ data: [] });
+    }
+    if (url.includes("/zsqy/drinfo/station-db/findObject")) {
+      return createJsonResponse({
+        data: [{ drid: "1", drcode: "CH1", drname: "1#冷机", drtypename: "主机", typeYT: "1" }]
+      });
+    }
+    if (url.includes("/zsqy/reg/station-db/findObject")) {
+      return createJsonResponse({
+        data: [{ drId: "OUTSIDE", tagName: "CH1-RUN", regName: "运行", newtagvalue: "1" }]
+      });
+    }
+    throw new Error(`Unexpected request: ${url}`);
+  };
+
+  try {
+    const result = await loadDeviceDetail("https://example.invalid", "site-a", "1", {
+      databaseKey: "station-db",
+      allowedDeviceIds: ["1"],
+      allowedDeviceCodes: ["CH1"],
+      allowedPointCodes: ["CH1-RUN"],
+      placeholderFallback: false
+    });
+
+    assert.equal(result.detail?.deviceId, "1");
+    assert.equal(result.detail?.runStatusText, null);
+    assert.equal(result.sourceStatus.runtime?.ok, false);
+    assert.equal(result.sourceStatus.runtime?.rows, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
 
 test("loadDeviceTree prefers configured realtime collection endpoint over legacy tree endpoint", async () => {
   const requests = [];

@@ -1,12 +1,14 @@
 import { Router } from "express";
+import { resolveFcuEvidenceDirectory } from "../lib/fcu-evidence-paths.js";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { badRequest, forbidden, unauthorized } from "../lib/admin-errors.js";
+import { badRequest, conflict, forbidden, unauthorized } from "../lib/admin-errors.js";
 import { resolveSiteRuntimeConfig } from "../lib/site-runtime-config.js";
+import { validateStationRuntimeBindingSource } from "../services/deviceService.js";
 import { buildDefaultFcuControlPolicy, normalizeFcuControlPolicy } from "../services/fcuControlService.js";
 const SITE_MEMBER_ROLES = new Set(["site_admin", "auditor"]);
 const SITE_STATUSES = new Set(["active", "paused", "disabled"]);
@@ -401,8 +403,8 @@ function renderCsv(header, records) {
     .join("\n")}\n`;
 }
 
-function buildFcuFieldRemediationReportPaths(config = {}) {
-  const docsDir = config.fcuFinalControlOutputDir || fileURLToPath(new URL("../../../../docs/", import.meta.url));
+function buildFcuFieldRemediationReportPaths(config = {}, siteId = "") {
+  const docsDir = resolveFcuEvidenceDirectory(config.fcuFinalControlOutputDir, siteId);
   return {
     docsDir,
     quality: path.join(docsDir, "fcu-quality-remediation-latest.json"),
@@ -443,8 +445,8 @@ function slugifyFcuDeviceCode(value) {
   return normalizeText(value).replace(/[^a-zA-Z0-9_-]/g, "-").toLowerCase() || "unknown";
 }
 
-function buildFcuAdminCanaryPaths(config = {}, deviceCode = "") {
-  const docsDir = config.fcuFinalControlOutputDir || fileURLToPath(new URL("../../../../docs/", import.meta.url));
+function buildFcuAdminCanaryPaths(config = {}, deviceCode = "", siteId = "") {
+  const docsDir = resolveFcuEvidenceDirectory(config.fcuFinalControlOutputDir, siteId);
   const slug = slugifyFcuDeviceCode(deviceCode);
   return {
     docsDir,
@@ -673,7 +675,7 @@ function runFcuFinalEvidenceRefreshScripts(paths, siteId) {
 }
 
 function buildFcuFieldRemediationStatus(config, siteId) {
-  const paths = buildFcuFieldRemediationReportPaths(config);
+  const paths = buildFcuFieldRemediationReportPaths(config, siteId);
   const reports = {
     workOrders: readAdminJsonReport(paths.workOrders, "FCU field remediation work orders"),
     executionPack: readAdminJsonReport(paths.executionPack, "FCU field remediation execution pack"),
@@ -802,7 +804,7 @@ function runFcuFieldRemediationSignoffPreview(config, siteId, signoffCsvText) {
       hint: "请粘贴 FCU 现场签字 CSV 内容后再校验。"
     });
   }
-  const paths = buildFcuFieldRemediationReportPaths(config);
+  const paths = buildFcuFieldRemediationReportPaths(config, siteId);
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "fcu-admin-signoff-preview-"));
   const inputCsv = path.join(tmpDir, "signoff-input.csv");
   const outputJson = path.join(tmpDir, "signoff-preview.json");
@@ -869,7 +871,7 @@ function runFcuFieldRemediationSignoffPromote(config, siteId, signoffCsvText, co
     });
   }
 
-  const paths = buildFcuFieldRemediationReportPaths(config);
+  const paths = buildFcuFieldRemediationReportPaths(config, siteId);
   const preview = runFcuFieldRemediationSignoffPreview(config, siteId, text);
   if ((preview.summary?.missingColumns || []).length > 0) {
     throw badRequest("FCU signoff CSV is missing required columns", {
@@ -994,7 +996,7 @@ function runFcuFieldRemediationSignoffCleanPromote(config, siteId, confirmPhrase
       hint: "清理旧签字行会备份并替换现场签字输入 CSV；该动作不下发 BA/PLC。"
     });
   }
-  const paths = buildFcuFieldRemediationReportPaths(config);
+  const paths = buildFcuFieldRemediationReportPaths(config, siteId);
   const scripts = {};
   scripts.clean = runFcuAdminScript("build-fcu-field-remediation-signoff-clean-input.js", {
     SITE_ID: siteId,
@@ -1076,7 +1078,7 @@ function runFcuFieldRemediationSignoffCleanPromote(config, siteId, confirmPhrase
 }
 
 function runFcuFieldRemediationStatusRefresh(config, siteId) {
-  const paths = buildFcuFieldRemediationReportPaths(config);
+  const paths = buildFcuFieldRemediationReportPaths(config, siteId);
   const scripts = runFcuFinalEvidenceRefreshScripts(paths, siteId);
   const status = buildFcuFieldRemediationStatus(config, siteId);
   return {
@@ -1138,7 +1140,7 @@ function runFcuFieldRemediationSignoffRowSave(config, siteId, body) {
       hint: "保存单台签字行会更新现场签字输入 CSV；该动作不下发 BA/PLC。"
     });
   }
-  const paths = buildFcuFieldRemediationReportPaths(config);
+  const paths = buildFcuFieldRemediationReportPaths(config, siteId);
   const record = normalizeFcuSignoffRowPayload(body?.record || body || {});
   const csvUpdate = updateFcuSignoffInputCsvRow(paths.signoffInputCsv, record);
 
@@ -1206,7 +1208,7 @@ function runFcuDeviceFieldArmPackage(config, siteId, deviceCode) {
   if (!normalizedDeviceCode) {
     throw badRequest("deviceCode is required", { field: "deviceCode" });
   }
-  const paths = buildFcuAdminCanaryPaths(config, normalizedDeviceCode);
+  const paths = buildFcuAdminCanaryPaths(config, normalizedDeviceCode, siteId);
   const scripts = {};
   scripts.canaryWindow = runFcuAdminScript("execute-fcu-canary-window.js", {
     SITE_ID: siteId,
@@ -1493,6 +1495,168 @@ export function buildAdminRouter(options) {
         requestId: req.requestId
       });
       toResponse(res, req.requestId, subsystems);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/sites/:siteId/stations", (req, res, next) => {
+    try {
+      const siteId = normalizeText(req.params.siteId);
+      const context = requireAdminContext(adminStore, req.adminUser.userId);
+      assertCanReadSite(context, siteId);
+      const stations = adminStore.listStationInstances(siteId, {
+        publishedOnly: normalizeText(req.query.publishedOnly).toLowerCase() === "true",
+        parentSubsystemType: normalizeText(req.query.parentSubsystemType)
+      });
+      toResponse(res, req.requestId, stations);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.put("/sites/:siteId/stations", (req, res, next) => {
+    try {
+      const siteId = normalizeText(req.params.siteId);
+      const context = requireAdminContext(adminStore, req.adminUser.userId);
+      assertCanWriteSite(context, siteId);
+      const stations = adminStore.upsertStationInstances(siteId, req.body || {}, req.adminUser, {
+        requestId: req.requestId
+      });
+      toResponse(res, req.requestId, stations);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get("/sites/:siteId/stations/:stationId/runtime-binding", (req, res, next) => {
+    try {
+      const siteId = normalizeText(req.params.siteId);
+      const stationId = normalizeText(req.params.stationId);
+      const context = requireAdminContext(adminStore, req.adminUser.userId);
+      assertCanReadSite(context, siteId);
+      const state = adminStore.getStationRuntimeBindingState(siteId, stationId);
+      toResponse(res, req.requestId, {
+        siteId,
+        stationId,
+        binding: state.draftBinding || state.publishedBinding,
+        draftBinding: state.draftBinding,
+        publishedBinding: state.publishedBinding,
+        draftVersion: state.draftVersion,
+        publishedVersion: state.publishedVersion,
+        configured: Boolean(state.draftBinding || state.publishedBinding)
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.put("/sites/:siteId/stations/:stationId/runtime-binding", (req, res, next) => {
+    try {
+      const siteId = normalizeText(req.params.siteId);
+      const stationId = normalizeText(req.params.stationId);
+      const context = requireAdminContext(adminStore, req.adminUser.userId);
+      assertCanWriteSite(context, siteId);
+      const binding = adminStore.upsertStationRuntimeBinding(
+        siteId,
+        stationId,
+        req.body || {},
+        req.adminUser,
+        { requestId: req.requestId }
+      );
+      const state = adminStore.getStationRuntimeBindingState(siteId, stationId);
+      toResponse(res, req.requestId, {
+        siteId,
+        stationId,
+        binding,
+        draftBinding: state.draftBinding,
+        publishedBinding: state.publishedBinding,
+        draftVersion: state.draftVersion,
+        publishedVersion: state.publishedVersion,
+        configured: true
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/sites/:siteId/stations/:stationId/runtime-binding/validate", async (req, res, next) => {
+    try {
+      const siteId = normalizeText(req.params.siteId);
+      const stationId = normalizeText(req.params.stationId);
+      const context = requireAdminContext(adminStore, req.adminUser.userId);
+      assertCanWriteSite(context, siteId);
+      const expectedVersion = Number(req.body?.expectedVersion);
+      const binding = adminStore.getStationRuntimeBinding(siteId, stationId, { view: "draft" });
+      if (!binding || binding.bindingVersion !== expectedVersion) {
+        const state = adminStore.getStationRuntimeBindingState(siteId, stationId);
+        throw conflict("expectedVersion does not identify the current draft", {
+          field: "expectedVersion",
+          expectedVersion,
+          currentVersion: state.draftVersion || state.publishedVersion || 0
+        });
+      }
+      const runtimeConfig = resolveSiteRuntimeConfig(config, adminStore, siteId);
+      const validation = await validateStationRuntimeBindingSource(runtimeConfig, siteId, binding);
+      const validatedBinding = adminStore.recordStationRuntimeBindingValidation(
+        siteId,
+        stationId,
+        expectedVersion,
+        validation,
+        req.adminUser,
+        { requestId: req.requestId }
+      );
+      const state = adminStore.getStationRuntimeBindingState(siteId, stationId);
+      const responseBody = {
+        siteId,
+        stationId,
+        binding: validatedBinding,
+        draftBinding: state.draftBinding,
+        publishedBinding: state.publishedBinding,
+        draftVersion: state.draftVersion,
+        publishedVersion: state.publishedVersion,
+        validation
+      };
+      if (validation.ok) {
+        toResponse(res, req.requestId, responseBody);
+      } else {
+        res.status(422).json({
+          ok: false,
+          code: "STATION_RUNTIME_BINDING_VALIDATION_FAILED",
+          error: "Station runtime binding did not pass real-source validation.",
+          requestId: req.requestId,
+          ...responseBody
+        });
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post("/sites/:siteId/stations/:stationId/runtime-binding/publish", (req, res, next) => {
+    try {
+      const siteId = normalizeText(req.params.siteId);
+      const stationId = normalizeText(req.params.stationId);
+      const context = requireAdminContext(adminStore, req.adminUser.userId);
+      if (context.platformRole !== "platform_admin") {
+        throw forbidden("Only platform admins can publish station runtime bindings");
+      }
+      const binding = adminStore.publishStationRuntimeBinding(
+        siteId,
+        stationId,
+        req.body?.expectedVersion,
+        req.adminUser,
+        { requestId: req.requestId }
+      );
+      const state = adminStore.getStationRuntimeBindingState(siteId, stationId);
+      toResponse(res, req.requestId, {
+        siteId,
+        stationId,
+        binding,
+        draftVersion: state.draftVersion,
+        publishedVersion: state.publishedVersion,
+        configured: true
+      });
     } catch (error) {
       next(error);
     }

@@ -4,6 +4,9 @@ import yaml from "js-yaml";
 
 const OPENAPI_FILE = path.resolve(process.cwd(), "openapi/bff-v1.yaml");
 const CONTRACT_PATHS = [
+  "/admin/v1/sites/{siteId}/stations",
+  "/bff/v1/sites/{siteId}/capabilities",
+  "/bff/v1/sites/{siteId}/subsystems",
   "/bff/v1/sites/{siteId}/dashboard/overview",
   "/bff/v1/sites/{siteId}/dashboard/trends",
   "/bff/v1/sites/{siteId}/anomalies/summary",
@@ -274,6 +277,8 @@ const TRENDS_PATH = "/bff/v1/sites/{siteId}/dashboard/trends";
 const OVERVIEW_PATH = "/bff/v1/sites/{siteId}/dashboard/overview";
 const ANOMALIES_LIST_PATH = "/bff/v1/sites/{siteId}/anomalies/list";
 const SYSTEM_DIAGRAM_PATH = "/bff/v1/sites/{siteId}/system/diagram";
+const CAPABILITIES_PATH = "/bff/v1/sites/{siteId}/capabilities";
+const SUBSYSTEMS_PATH = "/bff/v1/sites/{siteId}/subsystems";
 const SOURCE_STATUS_SUMMARY_CASES_FILE = path.resolve(
   process.cwd(),
   "openapi/examples/source-status-summary-cases.json"
@@ -1694,6 +1699,40 @@ function runTrendsRegressions(exampleByPath, errors) {
   }
 }
 
+function runStationRegistryRegressions(exampleByPath, errors) {
+  for (const pathName of [CAPABILITIES_PATH, SUBSYSTEMS_PATH]) {
+    const payload = exampleByPath.get(pathName);
+    if (!payload) {
+      continue;
+    }
+    const stations = Array.isArray(payload.stationInstances) ? payload.stationInstances : [];
+    if (payload.stationTotal !== stations.length) {
+      errors.push(`${pathName}: stationTotal must equal stationInstances.length`);
+    }
+    const subsystemTypes = new Set(
+      (Array.isArray(payload.items) ? payload.items : [])
+        .map((item) => item?.subsystemType)
+        .filter(Boolean)
+    );
+    const stationIds = new Set();
+    for (const station of stations) {
+      if (stationIds.has(station.stationId)) {
+        errors.push(`${pathName}: duplicate stationId ${String(station.stationId)}`);
+      }
+      stationIds.add(station.stationId);
+      if (!subsystemTypes.has(station.parentSubsystemType)) {
+        errors.push(`${pathName}: station ${String(station.stationId)} references missing parentSubsystemType`);
+      }
+      if (station.siteId !== payload.site?.siteId) {
+        errors.push(`${pathName}: station ${String(station.stationId)} siteId does not match response site`);
+      }
+    }
+    if (payload.dataScope?.stationId !== null) {
+      errors.push(`${pathName}: registry dataScope.stationId must remain null`);
+    }
+  }
+}
+
 function runAnomaliesListRegressions(exampleByPath, errors) {
   const listExample = exampleByPath.get(ANOMALIES_LIST_PATH);
   if (!listExample || typeof listExample !== "object") {
@@ -2022,6 +2061,7 @@ async function run() {
   runSourceStatusRegressions(doc, exampleByPath, errors);
   runSourceStatusSummaryCasesRegressions(errors);
   runRecommendationsRegressions(doc, checks, errors);
+  runStationRegistryRegressions(exampleByPath, errors);
   runRecommendationsStationCopMissingNonBlockingProbe(exampleByPath);
   runTrendsRegressions(exampleByPath, errors);
   runAnomaliesListRegressions(exampleByPath, errors);
