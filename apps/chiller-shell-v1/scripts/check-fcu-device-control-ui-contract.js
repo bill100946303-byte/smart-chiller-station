@@ -103,6 +103,41 @@ assertRegex(
   /handleRunControlCycle\(true,\s*selectedDeviceCode\)/,
   "Single-device dispatch confirmation must target selectedDeviceCode."
 );
+assertContains(
+  pageSource,
+  "const FCU_CONTROL_PREVIEW_TTL_MS = HVAC_TERMINAL_REFRESH_MS;",
+  "FCU dispatch preview must expire no later than the live refresh cycle."
+);
+assertContains(
+  pageSource,
+  "clearFcuControlPreview();",
+  "Refreshing FCU evidence must invalidate the previous dispatch preview."
+);
+assertContains(
+  pageSource,
+  "!canConfirmDispatch || !previewMatchesCurrentTarget || !controlPreviewFresh",
+  "Automatic FCU dispatch handler must recheck target, freshness, and all current gates."
+);
+assertContains(
+  pageSource,
+  "lastControlPreview?.dispatchRequested === false",
+  "FCU confirmation must use an explicit non-dispatch preview response."
+);
+assertContains(
+  pageSource,
+  "lastControlPreview.dispatchAllowed === true",
+  "FCU confirmation must require backend preview authorization."
+);
+assertContains(
+  pageSource,
+  "lastControlPreview.controlMutation !== true",
+  "FCU simulation evidence must prove no write side effect before confirmation."
+);
+assertContains(
+  pageSource,
+  "!canConfirmManualCommand(kind) || lastControlPreviewSignature !== signature || !controlPreviewFresh",
+  "Manual FCU dispatch handler must recheck command signature, freshness, and current gates."
+);
 assertRegex(
   pageSource,
   /runFcuManualControlCommand\(siteId,[\s\S]+?deviceCode:\s*targetDeviceCode/,

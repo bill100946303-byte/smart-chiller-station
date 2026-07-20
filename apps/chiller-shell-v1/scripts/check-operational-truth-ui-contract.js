@@ -197,6 +197,15 @@ requireText(readiness, "就绪状态待确认", "readiness unknown fallback", fa
 requireText(optimize, "executionPermissions?.canApprove === true", "approval permission fail-closed", failures);
 requireText(optimize, "executionPermissions?.canRollback === true", "rollback permission fail-closed", failures);
 requireText(optimize, "executionPermissions?.canDispatch === true", "dispatch permission fail-closed", failures);
+requireText(optimize, "resultContextKey === activeProjectContextKey", "optimize result must be bound to the active project context", failures);
+requireText(optimize, "activeProjectContextKeyRef.current !== requestContextKey", "late optimize responses must not cross project context", failures);
+requireText(optimize, "invalidateOptimizeRecommendation", "changed optimize inputs must invalidate the previous recommendation", failures);
+requireText(optimize, "executionContextKey === activeProjectContextKey", "execution records must be scoped to the active project", failures);
+requireText(optimize, "shadowVerificationContextKey === activeProjectContextKey", "shadow records must be scoped to the active project", failures);
+requireText(optimize, "executionRecordBelongsToActiveContext", "execution handlers must reject stale cross-project records", failures);
+requireText(optimize, "towerBlockers.length === 0", "tower approval creation must honor current blockers", failures);
+requireText(optimize, "pumpBlockers.length === 0", "pump approval creation must honor current blockers", failures);
+requireText(optimize, 'gate?.level !== "blocked"', "approval creation must honor the optimize safety gate", failures);
 requireText(optimize, "resolveAuthProjectDisplayName", "optimize diagnostic scope project label", failures);
 forbidText(optimize, "现有 140/B25 数据能支撑哪些诊断", "optimize fixed-project diagnostic heading", failures);
 requireText(scene, "const sceneControlBlocked = Boolean(plantOverviewProfile) || Boolean(runtimeStationId)", "project/station scene no-write gate", failures);

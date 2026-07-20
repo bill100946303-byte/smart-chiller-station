@@ -2985,6 +2985,7 @@ export default function OptimizeDemoPage() {
   const operationalDiagnosticsHref = `/operational-diagnostics?siteId=${encodeURIComponent(activeSiteId)}`;
   const showInlineOperationalDiagnosticsDetails = false;
   const activeProjectContextKey = [
+    activeSiteId,
     currentProject?.siteId,
     currentProject?.modelKey,
     currentProject?.databaseKey,
@@ -2995,11 +2996,14 @@ export default function OptimizeDemoPage() {
   const [mode, setMode] = useState("cooling");
   const [submitting, setSubmitting] = useState(false);
   const [resultError, setResultError] = useState<OptimizeDraftErrorDto | null>(null);
+  const [resultContextKey, setResultContextKey] = useState("");
   const [executions, setExecutions] = useState<OptimizeExecutionRecordDto[]>([]);
+  const [executionContextKey, setExecutionContextKey] = useState("");
   const [executionLoading, setExecutionLoading] = useState(false);
   const [executionSubmitting, setExecutionSubmitting] = useState(false);
   const [executionError, setExecutionError] = useState<string | null>(null);
   const [shadowVerificationRecords, setShadowVerificationRecords] = useState<ShadowVerificationRecordDto[]>([]);
+  const [shadowVerificationContextKey, setShadowVerificationContextKey] = useState("");
   const [shadowVerificationSummary, setShadowVerificationSummary] = useState<ShadowVerificationSummaryDto | null>(null);
   const [shadowVerificationTypeFilter, setShadowVerificationTypeFilter] = useState<ShadowVerificationTypeFilter>("all");
   const [shadowVerificationExecutionFilter, setShadowVerificationExecutionFilter] =
@@ -3021,31 +3025,51 @@ export default function OptimizeDemoPage() {
   const loadDirtyRef = useRef(false);
   const wetBulbDirtyRef = useRef(false);
   const autoPrefillRequestIdRef = useRef(0);
+  const optimizeInputRevisionRef = useRef(0);
+  const activeProjectContextKeyRef = useRef(activeProjectContextKey);
+  activeProjectContextKeyRef.current = activeProjectContextKey;
 
-  const details = readOptimizeDetails(resultError);
+  const scopedResultError = resultContextKey === activeProjectContextKey ? resultError : null;
+  const details = readOptimizeDetails(scopedResultError);
   const extendedDetails = asExtendedDetails(details);
   const isStructuredOptimizeResponse = Boolean(details) && (
-    resultError?.ok === true ||
-    resultError?.code === "OK" ||
-    resultError?.code === "NOT_IMPLEMENTED"
+    scopedResultError?.ok === true ||
+    scopedResultError?.code === "OK" ||
+    scopedResultError?.code === "NOT_IMPLEMENTED"
   );
-  const hasValidationError = Boolean(resultError) && !isStructuredOptimizeResponse;
+  const hasValidationError = Boolean(scopedResultError) && !isStructuredOptimizeResponse;
   const parsedLoadKwInput = parseOptionalFiniteNumber(loadKw);
   const parsedOutdoorTempCInput = parseOptionalFiniteNumber(outdoorWetBulbC);
   const canSubmitOptimize =
     typeof parsedLoadKwInput === "number" && typeof parsedOutdoorTempCInput === "number" && !submitting;
   const sourceSummary = summarizeSourceStatus([details?.sourceStatus]);
 
+  function invalidateOptimizeRecommendation() {
+    optimizeInputRevisionRef.current += 1;
+    setResultError(null);
+    setResultContextKey("");
+    setSubmitting(false);
+  }
+
   async function reloadExecutions() {
+    const requestContextKey = activeProjectContextKey;
     setExecutionLoading(true);
     try {
       const executionResult = await fetchOptimizeExecutions(activeSiteId, { limit: 12 });
+      if (activeProjectContextKeyRef.current !== requestContextKey) {
+        return;
+      }
       setExecutions(Array.isArray(executionResult.items) ? executionResult.items : []);
+      setExecutionContextKey(requestContextKey);
       setExecutionError(null);
     } catch (error) {
-      setExecutionError(extractBffErrorMessage(error));
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setExecutionError(extractBffErrorMessage(error));
+      }
     } finally {
-      setExecutionLoading(false);
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setExecutionLoading(false);
+      }
     }
   }
 
@@ -3053,6 +3077,7 @@ export default function OptimizeDemoPage() {
     filter = shadowVerificationTypeFilter,
     executionFilter = shadowVerificationExecutionFilter
   ) {
+    const requestContextKey = activeProjectContextKey;
     setShadowVerificationLoading(true);
     const normalizedExecutionFilter =
       typeof executionFilter === "string" && executionFilter.trim() ? executionFilter.trim() : "all";
@@ -3062,20 +3087,43 @@ export default function OptimizeDemoPage() {
         verificationType: filter === "all" ? undefined : filter,
         executionId: normalizedExecutionFilter === "all" ? undefined : normalizedExecutionFilter
       });
+      if (activeProjectContextKeyRef.current !== requestContextKey) {
+        return;
+      }
       setShadowVerificationRecords(Array.isArray(recordResult.items) ? recordResult.items : []);
+      setShadowVerificationContextKey(requestContextKey);
       setShadowVerificationSummary(recordResult.summary || null);
       setShadowVerificationError(null);
     } catch (error) {
-      setShadowVerificationError(extractBffErrorMessage(error));
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setShadowVerificationError(extractBffErrorMessage(error));
+      }
     } finally {
-      setShadowVerificationLoading(false);
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setShadowVerificationLoading(false);
+      }
     }
   }
 
+  function executionRecordBelongsToActiveContext(record: OptimizeExecutionRecordDto): boolean {
+    const executionId = record.executionId;
+    return Boolean(
+      executionId
+      && executionContextKey === activeProjectContextKey
+      && scopedExecutions.some((item) => item.executionId === executionId)
+    );
+  }
+
+  function blockUnsafeExecutionAction() {
+    setExecutionError("当前建议、项目上下文或操作权限已变化；请刷新并重新复核后再操作。");
+  }
+
   async function submitTowerApproachExecution() {
-    if (!details) {
+    if (!details || !canSubmitTowerApproach) {
+      blockUnsafeExecutionAction();
       return;
     }
+    const requestContextKey = activeProjectContextKey;
     setExecutionSubmitting(true);
     const towerActions = buildTowerApproachExecutionActions(towerApproachAdvisor);
     const minGuardrail = findTowerApproachMinGuardrail(towerApproachAdvisor);
@@ -3132,16 +3180,22 @@ export default function OptimizeDemoPage() {
       });
       await reloadExecutions();
     } catch (error) {
-      setExecutionError(extractBffErrorMessage(error));
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setExecutionError(extractBffErrorMessage(error));
+      }
     } finally {
-      setExecutionSubmitting(false);
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setExecutionSubmitting(false);
+      }
     }
   }
 
   async function submitPumpDeltaTExecution() {
-    if (!details) {
+    if (!details || !canSubmitPumpDeltaT) {
+      blockUnsafeExecutionAction();
       return;
     }
+    const requestContextKey = activeProjectContextKey;
     setExecutionSubmitting(true);
     const pumpActions = buildPumpDeltaTExecutionActions(pumpDeltaTAdvisor);
     try {
@@ -3187,17 +3241,26 @@ export default function OptimizeDemoPage() {
       });
       await reloadExecutions();
     } catch (error) {
-      setExecutionError(extractBffErrorMessage(error));
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setExecutionError(extractBffErrorMessage(error));
+      }
     } finally {
-      setExecutionSubmitting(false);
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setExecutionSubmitting(false);
+      }
     }
   }
 
   async function approveExecution(record: OptimizeExecutionRecordDto) {
     const executionId = record.executionId;
-    if (!executionId) {
+    const recordCanApprove = record.execution?.type === "tower-approach"
+      ? canApproveTowerApproach && pendingTowerApproachExecution?.executionId === executionId
+      : canApprovePumpDeltaT && pendingPumpDeltaTExecution?.executionId === executionId;
+    if (!executionId || !executionRecordBelongsToActiveContext(record) || !recordCanApprove) {
+      blockUnsafeExecutionAction();
       return;
     }
+    const requestContextKey = activeProjectContextKey;
     setExecutionSubmitting(true);
     try {
       if (record.execution?.type === "tower-approach") {
@@ -3211,17 +3274,26 @@ export default function OptimizeDemoPage() {
       }
       await reloadExecutions();
     } catch (error) {
-      setExecutionError(extractBffErrorMessage(error));
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setExecutionError(extractBffErrorMessage(error));
+      }
     } finally {
-      setExecutionSubmitting(false);
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setExecutionSubmitting(false);
+      }
     }
   }
 
   async function rollbackExecution(record: OptimizeExecutionRecordDto) {
     const executionId = record.executionId;
-    if (!executionId) {
+    const recordCanRollback = record.execution?.type === "tower-approach"
+      ? canRollbackTowerApproach && approvedTowerApproachExecution?.executionId === executionId
+      : canRollbackPumpDeltaT && approvedPumpDeltaTExecution?.executionId === executionId;
+    if (!executionId || !executionRecordBelongsToActiveContext(record) || !recordCanRollback) {
+      blockUnsafeExecutionAction();
       return;
     }
+    const requestContextKey = activeProjectContextKey;
     setExecutionSubmitting(true);
     try {
       if (record.execution?.type === "tower-approach") {
@@ -3235,17 +3307,26 @@ export default function OptimizeDemoPage() {
       }
       await reloadExecutions();
     } catch (error) {
-      setExecutionError(extractBffErrorMessage(error));
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setExecutionError(extractBffErrorMessage(error));
+      }
     } finally {
-      setExecutionSubmitting(false);
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setExecutionSubmitting(false);
+      }
     }
   }
 
   async function dispatchExecution(record: OptimizeExecutionRecordDto) {
     const executionId = record.executionId;
-    if (!executionId) {
+    const recordCanDispatch = record.execution?.type === "tower-approach"
+      ? canDispatchTowerApproach && approvedTowerApproachExecution?.executionId === executionId
+      : canDispatchPumpDeltaT && approvedPumpDeltaTExecution?.executionId === executionId;
+    if (!executionId || !executionRecordBelongsToActiveContext(record) || !recordCanDispatch) {
+      blockUnsafeExecutionAction();
       return;
     }
+    const requestContextKey = activeProjectContextKey;
     setExecutionSubmitting(true);
     try {
       await dispatchOptimizeExecution(activeSiteId, executionId, {
@@ -3256,16 +3337,22 @@ export default function OptimizeDemoPage() {
       });
       await reloadExecutions();
     } catch (error) {
-      setExecutionError(extractBffErrorMessage(error));
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setExecutionError(extractBffErrorMessage(error));
+      }
     } finally {
-      setExecutionSubmitting(false);
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setExecutionSubmitting(false);
+      }
     }
   }
 
   async function saveShadowVerificationRecord() {
-    if (!details) {
+    if (!details || !canSaveShadowVerificationRecord) {
+      setShadowVerificationError("当前建议已失效或保存操作尚未就绪；请重新生成并复核。");
       return;
     }
+    const requestContextKey = activeProjectContextKey;
     setShadowVerificationSubmitting(true);
     try {
       const latestExecutionId =
@@ -3298,14 +3385,21 @@ export default function OptimizeDemoPage() {
           recordedAt: new Date().toISOString()
         }
       });
+      if (activeProjectContextKeyRef.current !== requestContextKey) {
+        return;
+      }
       const nextExecutionFilter = latestExecutionId || "all";
       setShadowVerificationTypeFilter("chiller-staging");
       setShadowVerificationExecutionFilter(nextExecutionFilter);
       await reloadShadowVerificationRecords("chiller-staging", nextExecutionFilter);
     } catch (error) {
-      setShadowVerificationError(extractBffErrorMessage(error));
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setShadowVerificationError(extractBffErrorMessage(error));
+      }
     } finally {
-      setShadowVerificationSubmitting(false);
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setShadowVerificationSubmitting(false);
+      }
     }
   }
 
@@ -3402,9 +3496,16 @@ export default function OptimizeDemoPage() {
     outcome: ShadowVerificationReviewOutcome
   ) {
     const sourceRecordId = record.recordId;
-    if (!sourceRecordId) {
+    const recordBelongsToActiveContext = Boolean(
+      sourceRecordId
+      && shadowVerificationContextKey === activeProjectContextKey
+      && scopedShadowVerificationRecords.some((item) => item.recordId === sourceRecordId)
+    );
+    if (!sourceRecordId || !recordBelongsToActiveContext) {
+      setShadowVerificationError("当前验证记录不属于正在查看的项目；请刷新后重新选择。");
       return;
     }
+    const requestContextKey = activeProjectContextKey;
     const reviewKey = `${sourceRecordId}:${outcome}`;
     setShadowVerificationReviewingId(reviewKey);
     try {
@@ -3422,6 +3523,9 @@ export default function OptimizeDemoPage() {
           recordedAt: new Date().toISOString()
         }
       });
+      if (activeProjectContextKeyRef.current !== requestContextKey) {
+        return;
+      }
       const reviewType: ShadowVerificationTypeFilter =
         record.verificationType === "tower-approach" ||
         record.verificationType === "pump-delta-t" ||
@@ -3434,14 +3538,20 @@ export default function OptimizeDemoPage() {
       await reloadShadowVerificationRecords(reviewType, nextExecutionFilter);
       setShadowVerificationError(null);
     } catch (error) {
-      setShadowVerificationError(extractBffErrorMessage(error));
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setShadowVerificationError(extractBffErrorMessage(error));
+      }
     } finally {
-      setShadowVerificationReviewingId(null);
+      if (activeProjectContextKeyRef.current === requestContextKey) {
+        setShadowVerificationReviewingId(null);
+      }
     }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const requestContextKey = activeProjectContextKey;
+    const requestInputRevision = optimizeInputRevisionRef.current;
     const parsedLoadKw = parseOptionalFiniteNumber(loadKw);
     const parsedOutdoorTempC = parseOptionalFiniteNumber(outdoorWetBulbC);
 
@@ -3453,12 +3563,15 @@ export default function OptimizeDemoPage() {
             ? "Invalid optimize input: loadKw is required"
             : "Invalid optimize input: outdoorTempC is required"
       });
+      setResultContextKey(requestContextKey);
       return;
     }
 
     loadDirtyRef.current = true;
     wetBulbDirtyRef.current = true;
     setSubmitting(true);
+    setResultError(null);
+    setResultContextKey("");
     try {
       const payload = await postOptimizeDraft(activeSiteId, {
         context: {
@@ -3471,15 +3584,34 @@ export default function OptimizeDemoPage() {
           equipmentContext: deriveEquipmentContextFromAdvisor(towerApproachAdvisor)
         }
       });
+      if (
+        activeProjectContextKeyRef.current !== requestContextKey
+        || optimizeInputRevisionRef.current !== requestInputRevision
+      ) {
+        return;
+      }
       setResultError(payload);
+      setResultContextKey(requestContextKey);
     } catch (error) {
       const payload = (error as { payload?: OptimizeDraftErrorDto })?.payload || {
         code: "UNKNOWN",
         error: String((error as Error)?.message || error)
       };
+      if (
+        activeProjectContextKeyRef.current !== requestContextKey
+        || optimizeInputRevisionRef.current !== requestInputRevision
+      ) {
+        return;
+      }
       setResultError(payload);
+      setResultContextKey(requestContextKey);
     } finally {
-      setSubmitting(false);
+      if (
+        activeProjectContextKeyRef.current === requestContextKey
+        && optimizeInputRevisionRef.current === requestInputRevision
+      ) {
+        setSubmitting(false);
+      }
     }
   }
 
@@ -3501,12 +3633,15 @@ export default function OptimizeDemoPage() {
   const operationalDiagnosticsAdvisor = extendedDetails?.operationalDiagnosticsAdvisor;
   const reviewReadiness = extendedDetails?.reviewReadiness;
   const executionHub = extendedDetails?.executionHub;
-  const towerApproachExecutions = executions.filter((item) => item?.execution?.type === "tower-approach");
+  const scopedExecutions = executionContextKey === activeProjectContextKey ? executions : [];
+  const scopedShadowVerificationRecords =
+    shadowVerificationContextKey === activeProjectContextKey ? shadowVerificationRecords : [];
+  const towerApproachExecutions = scopedExecutions.filter((item) => item?.execution?.type === "tower-approach");
   const towerApproachLatestExecution = towerApproachExecutions[0];
   const towerApproachExecutionHistory = towerApproachExecutions.slice(0, 10);
   const pendingTowerApproachExecution = towerApproachExecutions.find((item) => item?.status === "pending_approval");
   const approvedTowerApproachExecution = towerApproachExecutions.find((item) => item?.status === "approved");
-  const pumpDeltaTExecutions = executions.filter((item) => item?.execution?.type === "pump-delta-t");
+  const pumpDeltaTExecutions = scopedExecutions.filter((item) => item?.execution?.type === "pump-delta-t");
   const pumpDeltaTLatestExecution = pumpDeltaTExecutions[0];
   const pumpDeltaTExecutionHistory = pumpDeltaTExecutions.slice(0, 10);
   const pendingPumpDeltaTExecution = pumpDeltaTExecutions.find((item) => item?.status === "pending_approval");
@@ -3584,7 +3719,14 @@ export default function OptimizeDemoPage() {
   const pageModeHint = readOnlyMode
     ? localeText("保留审阅与历史记录，不允许执行。", "Review and history are available; execution is blocked.", "Cho phép xem và lịch sử; không cho phép thực thi.")
     : localeText("允许创建影子审批单，真实 PLC 下发仍锁定。", "Shadow approval records can be created; real PLC dispatch remains locked.", "Co the tao phieu shadow; phat lenh PLC that van bi khoa.");
-  const canSubmitTowerApproach = Boolean(towerApproachExecutionReady && !executionSubmitting && !readOnlyMode);
+  const canSubmitTowerApproach = Boolean(
+    responseReady
+    && towerApproachExecutionReady
+    && towerBlockers.length === 0
+    && gate?.level !== "blocked"
+    && !executionSubmitting
+    && !readOnlyMode
+  );
   const canApproveTowerApproach = Boolean(
     pendingTowerApproachExecution && !executionSubmitting && !readOnlyMode && canApproveByPermission
   );
@@ -3598,7 +3740,14 @@ export default function OptimizeDemoPage() {
     !readOnlyMode &&
     canDispatchByPermission
   );
-  const canSubmitPumpDeltaT = Boolean(pumpDeltaTExecutionReady && !executionSubmitting && !readOnlyMode);
+  const canSubmitPumpDeltaT = Boolean(
+    responseReady
+    && pumpDeltaTExecutionReady
+    && pumpBlockers.length === 0
+    && gate?.level !== "blocked"
+    && !executionSubmitting
+    && !readOnlyMode
+  );
   const canApprovePumpDeltaT = Boolean(
     pendingPumpDeltaTExecution && !executionSubmitting && !readOnlyMode && canApproveByPermission
   );
@@ -4543,7 +4692,7 @@ export default function OptimizeDemoPage() {
       note: "真实收益以人工记录和审计报表为准"
     }
   ];
-  const displayShadowVerificationRecords = shadowVerificationRecords.map(normalizeShadowVerificationRecordForDisplay);
+  const displayShadowVerificationRecords = scopedShadowVerificationRecords.map(normalizeShadowVerificationRecordForDisplay);
   const shadowVerificationHasMetricIssues = displayShadowVerificationRecords.some((record) => record.invalidReason);
   const recentShadowVerificationRecords = displayShadowVerificationRecords.slice(0, 3);
   const effectiveShadowVerificationSummary =
@@ -4582,7 +4731,7 @@ export default function OptimizeDemoPage() {
         note
       });
     };
-    for (const execution of executions) {
+    for (const execution of scopedExecutions) {
       addOption(execution.executionId, execution.execution?.type, "执行单");
     }
     for (const record of displayShadowVerificationRecords) {
@@ -4743,7 +4892,7 @@ export default function OptimizeDemoPage() {
     shadowVerificationExecutionFilter !== "all" && !shadowVerificationPrintOpening;
   const shadowVerificationRecordCountSummary = shadowVerificationLoading
     ? "加载中"
-    : `${formatNumber(shadowVerificationRecords.length, 0)} 条`;
+    : `${formatNumber(scopedShadowVerificationRecords.length, 0)} 条`;
   const informationCompletenessRows = [
     { label: "重复项", value: "已收敛", note: "影子/下发状态保留一次" },
     { label: "遗漏项", value: "未发现", note: "目标、边界、收益、动作齐全" },
@@ -4854,6 +5003,13 @@ export default function OptimizeDemoPage() {
   }
 
   useEffect(() => {
+    optimizeInputRevisionRef.current += 1;
+    setResultError(null);
+    setResultContextKey("");
+    setSubmitting(false);
+    setExecutionSubmitting(false);
+    setShadowVerificationSubmitting(false);
+    setShadowVerificationReviewingId(null);
     loadDirtyRef.current = false;
     wetBulbDirtyRef.current = false;
     void hydrateCurrentScenario(true);
@@ -4898,13 +5054,21 @@ export default function OptimizeDemoPage() {
 
   useEffect(() => {
     setExecutions([]);
+    setExecutionContextKey("");
     setShadowVerificationRecords([]);
+    setShadowVerificationContextKey("");
     setShadowVerificationSummary(null);
     setExecutionError(null);
     setShadowVerificationError(null);
     void reloadExecutions();
     void reloadShadowVerificationRecords();
-  }, [activeSiteId, details?.generatedAt, shadowVerificationTypeFilter, shadowVerificationExecutionFilter]);
+  }, [
+    activeProjectContextKey,
+    activeSiteId,
+    details?.generatedAt,
+    shadowVerificationTypeFilter,
+    shadowVerificationExecutionFilter
+  ]);
 
   function renderShadowVerificationRecordPanel() {
     return (
@@ -5215,6 +5379,7 @@ export default function OptimizeDemoPage() {
                     step="1"
                     value={loadKw}
                     onChange={(event) => {
+                      invalidateOptimizeRecommendation();
                       loadDirtyRef.current = true;
                       setLoadKw(event.target.value);
                     }}
@@ -5227,6 +5392,7 @@ export default function OptimizeDemoPage() {
                     step="0.1"
                     value={outdoorWetBulbC}
                     onChange={(event) => {
+                      invalidateOptimizeRecommendation();
                       wetBulbDirtyRef.current = true;
                       setOutdoorWetBulbC(event.target.value);
                     }}
@@ -5234,7 +5400,13 @@ export default function OptimizeDemoPage() {
                 </label>
                 <label>
                   <span>{zhCN.optimizeDemo.inputMode}</span>
-                  <select value={mode} onChange={(event) => setMode(event.target.value)}>
+                  <select
+                    value={mode}
+                    onChange={(event) => {
+                      invalidateOptimizeRecommendation();
+                      setMode(event.target.value);
+                    }}
+                  >
                     <option value="cooling">{zhCN.optimizeDemo.modeCooling}</option>
                   </select>
                 </label>
@@ -5253,6 +5425,7 @@ export default function OptimizeDemoPage() {
                   className="optimize-form-refresh"
                   disabled={autoPrefill.kind === "loading"}
                   onClick={() => {
+                    invalidateOptimizeRecommendation();
                     loadDirtyRef.current = false;
                     wetBulbDirtyRef.current = false;
                     void hydrateCurrentScenario(true);

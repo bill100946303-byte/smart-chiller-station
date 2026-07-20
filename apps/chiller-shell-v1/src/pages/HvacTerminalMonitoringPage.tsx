@@ -59,6 +59,7 @@ type TerminalView = "overview" | "control" | "quality" | "devices" | "device";
 
 const HVAC_TERMINAL_REFRESH_MS = 20_000;
 const HVAC_TERMINAL_STALE_MS = 5 * 60 * 1000;
+const FCU_CONTROL_PREVIEW_TTL_MS = HVAC_TERMINAL_REFRESH_MS;
 const OFFICE_TERMINAL_BUILD = 1;
 const OFFICE_TERMINAL_FLOOR = 1;
 const CONTROL_QUEUE_STATUSES = new Set(["ready", "blocked", "held", "shadow", "pending_approval", "dispatch_failed", "dispatched"]);
@@ -1103,6 +1104,7 @@ export default function HvacTerminalMonitoringPage() {
   const [lastControlPreview, setLastControlPreview] = useState<FcuControlCycleDto | null>(null);
   const [lastControlPreviewTarget, setLastControlPreviewTarget] = useState("");
   const [lastControlPreviewSignature, setLastControlPreviewSignature] = useState("");
+  const [lastControlPreviewAtMs, setLastControlPreviewAtMs] = useState<number | null>(null);
   const [controlNotice, setControlNotice] = useState("");
   const [manualSetpointText, setManualSetpointText] = useState("");
   const [manualSetpointInputDeviceCode, setManualSetpointInputDeviceCode] = useState("");
@@ -1123,6 +1125,13 @@ export default function HvacTerminalMonitoringPage() {
   const [finalRolloutConfirmText, setFinalRolloutConfirmText] = useState("");
   const [selectedFinalRolloutExecution, setSelectedFinalRolloutExecution] = useState<FcuFinalControlRolloutResponseDto | null>(null);
 
+  function clearFcuControlPreview() {
+    setLastControlPreview(null);
+    setLastControlPreviewTarget("");
+    setLastControlPreviewSignature("");
+    setLastControlPreviewAtMs(null);
+  }
+
   function clearFcuOperationalEvidence() {
     setFanCoilHistory(null);
     setControlPolicy(null);
@@ -1130,14 +1139,13 @@ export default function HvacTerminalMonitoringPage() {
     setDeviceCommissioningStatus(null);
     setFieldArmCheck(null);
     setFinalControlStatus(null);
-    setLastControlPreview(null);
-    setLastControlPreviewTarget("");
-    setLastControlPreviewSignature("");
+    clearFcuControlPreview();
   }
 
   async function loadData() {
     setLoading(true);
     setErrorText("");
+    clearFcuControlPreview();
     try {
       const capabilityData = await fetchSiteCapabilities(siteId);
       setCapabilities(capabilityData);
@@ -1214,6 +1222,15 @@ export default function HvacTerminalMonitoringPage() {
       return;
     }
     const targetDeviceCode = normalizeDeviceKey(deviceCode);
+    if (dispatch && (!canConfirmDispatch || !previewMatchesCurrentTarget || !controlPreviewFresh)) {
+      setErrorText(hvacCopy(
+        "当前控制预演已过期、目标变化或门禁不再放行；请重新预演后再确认下发。",
+        "The control simulation expired, its target changed, or a gate is no longer open. Simulate again before dispatch.",
+        "Mô phỏng điều khiển đã hết hạn, mục tiêu thay đổi hoặc gate không còn mở. Hãy mô phỏng lại trước khi phát lệnh."
+      ));
+      clearFcuControlPreview();
+      return;
+    }
     if (dispatch) {
       setControlDispatching(true);
     } else {
@@ -1244,6 +1261,7 @@ export default function HvacTerminalMonitoringPage() {
       setLastControlPreview(dispatch ? null : result);
       setLastControlPreviewTarget(dispatch ? "" : targetDeviceCode);
       setLastControlPreviewSignature(dispatch ? "" : `auto:${targetDeviceCode}`);
+      setLastControlPreviewAtMs(dispatch ? null : Date.now());
       setControlNotice(
         hvacCopy(
           `${dispatch ? (result.dispatchAllowed ? "确认下发完成" : "确认请求已按只读保护记录") : "控制预演完成"}${targetDeviceCode ? `（${targetDeviceCode}）` : ""}：${result.summary?.commandCount || 0} 条命令候选，${result.summary?.blockedCount || 0} 台保护阻断，写控制副作用 ${result.summary?.controlMutation ? "存在" : "无"}。`,
@@ -1289,7 +1307,7 @@ export default function HvacTerminalMonitoringPage() {
       setErrorText(hvacCopy("温度设定值无效，请输入数字。", "Invalid temperature setpoint. Enter a number.", "Điểm đặt nhiệt độ không hợp lệ. Hãy nhập số."));
       return;
     }
-    if (dispatch && lastControlPreviewSignature !== signature) {
+    if (dispatch && (!canConfirmManualCommand(kind) || lastControlPreviewSignature !== signature || !controlPreviewFresh)) {
       setErrorText(hvacCopy(
         "当前手动命令未完成同目标预演，请先预演后再确认下发。",
         "This manual command has not been simulated for the current target. Simulate it before confirming dispatch.",
@@ -1326,6 +1344,7 @@ export default function HvacTerminalMonitoringPage() {
       setLastControlPreview(dispatch ? null : result);
       setLastControlPreviewTarget(dispatch ? "" : targetDeviceCode);
       setLastControlPreviewSignature(dispatch ? "" : signature);
+      setLastControlPreviewAtMs(dispatch ? null : Date.now());
       setControlNotice(
         hvacCopy(
           `${dispatch ? (result.dispatchAllowed ? "手动命令确认下发完成" : "手动命令确认请求已按只读保护记录") : "手动命令预演完成"}（${targetDeviceCode}）：${result.summary?.commandCount || 0} 条命令候选，${result.summary?.blockedCount || 0} 台保护阻断，写控制副作用 ${result.summary?.controlMutation ? "存在" : "无"}。`,
@@ -1809,7 +1828,21 @@ export default function HvacTerminalMonitoringPage() {
   const activeControlTarget = terminalView === "device" ? selectedDeviceCode : "";
   const selectedDevicePanelLoading = terminalView === "device" && loading && Boolean(selectedDeviceCode);
   const activeAutoControlSignature = `auto:${activeControlTarget}`;
-  const previewMatchesCurrentTarget = lastControlPreviewTarget === activeControlTarget && lastControlPreviewSignature === activeAutoControlSignature;
+  const controlPreviewFresh = Boolean(
+    lastControlPreviewAtMs != null
+    && Date.now() - lastControlPreviewAtMs >= 0
+    && Date.now() - lastControlPreviewAtMs <= FCU_CONTROL_PREVIEW_TTL_MS
+  );
+  const controlPreviewAuthorizesDispatch = Boolean(
+    lastControlPreview?.dispatchRequested === false
+    && lastControlPreview.dispatchAllowed === true
+    && lastControlPreview.controlMutation !== true
+  );
+  const previewMatchesCurrentTarget =
+    controlPreviewFresh
+    && controlPreviewAuthorizesDispatch
+    && lastControlPreviewTarget === activeControlTarget
+    && lastControlPreviewSignature === activeAutoControlSignature;
   const manualPreviewReadyCount = lastControlPreviewTarget === selectedDeviceCode ? lastControlPreview?.summary?.readyCount || 0 : 0;
   const selectedCommissioning =
     deviceCommissioningStatus?.commissioningStatus ||
@@ -1829,7 +1862,15 @@ export default function HvacTerminalMonitoringPage() {
     selectedFieldPreflightVerdict === "canary_ready" ||
     selectedFieldPreflightVerdict === "final_control_complete";
   function canConfirmManualCommand(kind: ManualFcuCommandKind): boolean {
-    if (!selectedDeviceCode || !selectedFanCoil || !selectedFcuWriteEnabled || !selectedFieldPreflightReady || manualPreviewReadyCount <= 0) {
+    if (
+      !controlPreviewFresh
+      || !controlPreviewAuthorizesDispatch
+      || !selectedDeviceCode
+      || !selectedFanCoil
+      || !selectedFcuWriteEnabled
+      || !selectedFieldPreflightReady
+      || manualPreviewReadyCount <= 0
+    ) {
       return false;
     }
     return lastControlPreviewSignature === buildManualCommandSignature(kind, selectedDeviceCode);
