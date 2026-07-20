@@ -1,0 +1,659 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-18T11:06:25.247Z",
+  "scope": "fcu_field_handoff_pack",
+  "siteId": "126lnoffice",
+  "build": "1",
+  "floor": "1",
+  "controlMutation": false,
+  "dispatch": false,
+  "conclusion": "最终门禁未通过，本包只用于现场消缺和签核，不允许真实 BA/PLC 写入。",
+  "summary": {
+    "totalWorkOrders": 8,
+    "openP0Devices": 8,
+    "staleSignoffRows": 1,
+    "signoffCompleteRows": 0,
+    "signoffExpectedRows": 8,
+    "finalGatePassed": false,
+    "canaryReady": false,
+    "nextAllowedStep": "先清理过期签核行，生成 current-only 输入表。"
+  },
+  "sourceFiles": {
+    "workOrders": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-work-orders-latest.json",
+    "executionPack": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-execution-pack-latest.json",
+    "signoffClean": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-clean-input-latest.json",
+    "signoff": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-latest.json",
+    "runbook": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-runbook-latest.json"
+  },
+  "outputFiles": {
+    "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-handoff-pack-latest.json",
+    "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-handoff-pack-latest.md",
+    "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-handoff-pack-latest.csv",
+    "signoffInputCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-input-latest.csv",
+    "currentOnlyCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-current-only-latest.csv",
+    "staleCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-stale-rows-latest.csv"
+  },
+  "todaySequence": [
+    {
+      "phase": "restore_communication",
+      "deviceCount": 8,
+      "deviceCodes": [
+        "BGS03",
+        "BGS04",
+        "BGS06",
+        "GCBGQ03",
+        "QT02",
+        "WSJ02",
+        "ZHYS",
+        "ZZBGS"
+      ],
+      "owners": [
+        "BA/自控工程师",
+        "平台工程师 + BA工程师",
+        "现场值班",
+        "平台工程师"
+      ],
+      "acceptance": "通讯报警为 0，连续两次采样正常。"
+    },
+    {
+      "phase": "restore_temperature",
+      "deviceCount": 4,
+      "deviceCodes": [
+        "BGS03",
+        "BGS04",
+        "WSJ02",
+        "ZHYS"
+      ],
+      "owners": [
+        "BA/自控工程师",
+        "平台工程师 + BA工程师",
+        "现场值班",
+        "平台工程师"
+      ],
+      "acceptance": "温度在 5-45°C，0°C/越界温度消失。"
+    },
+    {
+      "phase": "normalize_setpoint_feedback",
+      "deviceCount": 6,
+      "deviceCodes": [
+        "BGS03",
+        "BGS04",
+        "GCBGQ03",
+        "WSJ02",
+        "ZHYS",
+        "ZZBGS"
+      ],
+      "owners": [
+        "BA/自控工程师",
+        "平台工程师 + BA工程师",
+        "现场值班",
+        "平台工程师"
+      ],
+      "acceptance": "设定反馈留空或在 10-32°C，并与现场面板一致。"
+    },
+    {
+      "phase": "verify_write_mapping",
+      "deviceCount": 8,
+      "deviceCodes": [
+        "BGS03",
+        "BGS04",
+        "BGS06",
+        "GCBGQ03",
+        "QT02",
+        "WSJ02",
+        "ZHYS",
+        "ZZBGS"
+      ],
+      "owners": [
+        "BA/自控工程师",
+        "平台工程师 + BA工程师",
+        "现场值班",
+        "平台工程师"
+      ],
+      "acceptance": "写点映射核对完成，本包不产生写入。"
+    },
+    {
+      "phase": "two_sample_validation",
+      "deviceCount": 8,
+      "deviceCodes": [
+        "BGS03",
+        "BGS04",
+        "BGS06",
+        "GCBGQ03",
+        "QT02",
+        "WSJ02",
+        "ZHYS",
+        "ZZBGS"
+      ],
+      "owners": [
+        "BA/自控工程师",
+        "平台工程师 + BA工程师",
+        "现场值班",
+        "平台工程师"
+      ],
+      "acceptance": "连续两次 BA 采样均正常。"
+    },
+    {
+      "phase": "onsite_signoff",
+      "deviceCount": 8,
+      "deviceCodes": [
+        "BGS03",
+        "BGS04",
+        "BGS06",
+        "GCBGQ03",
+        "QT02",
+        "WSJ02",
+        "ZHYS",
+        "ZZBGS"
+      ],
+      "owners": [
+        "BA/自控工程师",
+        "平台工程师 + BA工程师",
+        "现场值班",
+        "平台工程师"
+      ],
+      "acceptance": "处理和复核签字完整，releaseDecision=release。"
+    },
+    {
+      "phase": "rerun_closeout",
+      "deviceCount": 8,
+      "deviceCodes": [
+        "BGS03",
+        "BGS04",
+        "BGS06",
+        "GCBGQ03",
+        "QT02",
+        "WSJ02",
+        "ZHYS",
+        "ZZBGS"
+      ],
+      "owners": [
+        "BA/自控工程师",
+        "平台工程师 + BA工程师",
+        "现场值班",
+        "平台工程师"
+      ],
+      "acceptance": "重跑证据链后 closeout/canary readiness 不再被现场 P0 卡住。"
+    }
+  ],
+  "staleSignoffRows": [
+    {
+      "workOrderId": "FCU-P0-CWS",
+      "deviceCode": "CWS",
+      "deviceName": "财务室",
+      "reason": "not_in_current_work_orders"
+    }
+  ],
+  "devices": [
+    {
+      "workOrderId": "FCU-P0-BGS03",
+      "priority": "P0",
+      "deviceCode": "BGS03",
+      "deviceName": "办公室03",
+      "owner": "BA/自控工程师",
+      "reasons": [
+        "communication_alarm",
+        "zero_temperature",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "reasonLabels": [
+        "通讯报警",
+        "0°C异常",
+        "温度无效",
+        "温度质量门槛",
+        "设定反馈越界"
+      ],
+      "currentEvidence": {
+        "zoneTemperatureC": 0,
+        "setpointC": 0,
+        "communicationAlarm": true,
+        "qualityStatus": "invalid",
+        "reasons": [
+          "communication_alarm",
+          "zero_temperature",
+          "invalid_temperature",
+          "temperature_quality_guard",
+          "setpoint_feedback_out_of_bounds"
+        ]
+      },
+      "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+      "requiredReturnFields": {
+        "handledBy": "必填",
+        "handledAt": "必填",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "必填：5-45",
+        "setpointFeedbackAfterC": "必填：10-32",
+        "writePointMappingChecked": "yes",
+        "twoSampleNormal": "yes",
+        "localManualLockout": "none",
+        "releaseDecision": "release",
+        "reviewedBy": "必填",
+        "reviewedAt": "必填"
+      },
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ],
+      "plannedAction": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 BGS03-502-40078 是否仍为 1。",
+        "核对内置温度点 BGS03-506-40219，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 BGS03-506-40219，缺温度时禁止进入闭环。",
+        "复核设定反馈点 BGS03-506-40223，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ]
+    },
+    {
+      "workOrderId": "FCU-P0-BGS04",
+      "priority": "P0",
+      "deviceCode": "BGS04",
+      "deviceName": "办公室04",
+      "owner": "BA/自控工程师",
+      "reasons": [
+        "communication_alarm",
+        "zero_temperature",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "reasonLabels": [
+        "通讯报警",
+        "0°C异常",
+        "温度无效",
+        "温度质量门槛",
+        "设定反馈越界"
+      ],
+      "currentEvidence": {
+        "zoneTemperatureC": 0,
+        "setpointC": 0,
+        "communicationAlarm": true,
+        "qualityStatus": "invalid",
+        "reasons": [
+          "communication_alarm",
+          "zero_temperature",
+          "invalid_temperature",
+          "temperature_quality_guard",
+          "setpoint_feedback_out_of_bounds"
+        ]
+      },
+      "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+      "requiredReturnFields": {
+        "handledBy": "必填",
+        "handledAt": "必填",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "必填：5-45",
+        "setpointFeedbackAfterC": "必填：10-32",
+        "writePointMappingChecked": "yes",
+        "twoSampleNormal": "yes",
+        "localManualLockout": "none",
+        "releaseDecision": "release",
+        "reviewedBy": "必填",
+        "reviewedAt": "必填"
+      },
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ],
+      "plannedAction": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 BGS04-502-40158 是否仍为 1。",
+        "核对内置温度点 BGS04-506-40539，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 BGS04-506-40539，缺温度时禁止进入闭环。",
+        "复核设定反馈点 BGS04-506-40543，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ]
+    },
+    {
+      "workOrderId": "FCU-P0-BGS06",
+      "priority": "P0",
+      "deviceCode": "BGS06",
+      "deviceName": "办公室06",
+      "owner": "BA/自控工程师",
+      "reasons": [
+        "communication_alarm"
+      ],
+      "reasonLabels": [
+        "通讯报警"
+      ],
+      "currentEvidence": {
+        "zoneTemperatureC": 22,
+        "setpointC": 24,
+        "communicationAlarm": true,
+        "qualityStatus": "invalid",
+        "reasons": [
+          "communication_alarm"
+        ]
+      },
+      "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+      "requiredReturnFields": {
+        "handledBy": "必填",
+        "handledAt": "必填",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "可选",
+        "setpointFeedbackAfterC": "可选",
+        "writePointMappingChecked": "yes",
+        "twoSampleNormal": "yes",
+        "localManualLockout": "none",
+        "releaseDecision": "release",
+        "reviewedBy": "必填",
+        "reviewedAt": "必填"
+      },
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ],
+      "plannedAction": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 BGS06-502-40166 是否仍为 1。"
+      ]
+    },
+    {
+      "workOrderId": "FCU-P0-GCBGQ03",
+      "priority": "P0",
+      "deviceCode": "GCBGQ03",
+      "deviceName": "工程办公区03",
+      "owner": "BA/自控工程师",
+      "reasons": [
+        "communication_alarm",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "reasonLabels": [
+        "通讯报警",
+        "设定反馈越界"
+      ],
+      "currentEvidence": {
+        "zoneTemperatureC": 31,
+        "setpointC": 19,
+        "communicationAlarm": true,
+        "qualityStatus": "invalid",
+        "reasons": [
+          "communication_alarm",
+          "setpoint_feedback_out_of_bounds"
+        ]
+      },
+      "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+      "requiredReturnFields": {
+        "handledBy": "必填",
+        "handledAt": "必填",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "可选",
+        "setpointFeedbackAfterC": "可选",
+        "writePointMappingChecked": "yes",
+        "twoSampleNormal": "yes",
+        "localManualLockout": "none",
+        "releaseDecision": "release",
+        "reviewedBy": "必填",
+        "reviewedAt": "必填"
+      },
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ],
+      "plannedAction": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 GCBGQ03-502-40150 是否仍为 1。",
+        "复核设定反馈点 GCBGQ03-506-40511，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ]
+    },
+    {
+      "workOrderId": "FCU-P0-QT02",
+      "priority": "P0",
+      "deviceCode": "QT02",
+      "deviceName": "前厅02",
+      "owner": "BA/自控工程师",
+      "reasons": [
+        "communication_alarm"
+      ],
+      "reasonLabels": [
+        "通讯报警"
+      ],
+      "currentEvidence": {
+        "zoneTemperatureC": 26,
+        "setpointC": 26,
+        "communicationAlarm": true,
+        "qualityStatus": "invalid",
+        "reasons": [
+          "communication_alarm"
+        ]
+      },
+      "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+      "requiredReturnFields": {
+        "handledBy": "必填",
+        "handledAt": "必填",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "可选",
+        "setpointFeedbackAfterC": "可选",
+        "writePointMappingChecked": "yes",
+        "twoSampleNormal": "yes",
+        "localManualLockout": "none",
+        "releaseDecision": "release",
+        "reviewedBy": "必填",
+        "reviewedAt": "必填"
+      },
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ],
+      "plannedAction": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 QT02-502-40122 是否仍为 1。"
+      ]
+    },
+    {
+      "workOrderId": "FCU-P0-WSJ02",
+      "priority": "P0",
+      "deviceCode": "WSJ02",
+      "deviceName": "卫生间02",
+      "owner": "BA/自控工程师",
+      "reasons": [
+        "communication_alarm",
+        "zero_temperature",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "reasonLabels": [
+        "通讯报警",
+        "0°C异常",
+        "温度无效",
+        "温度质量门槛",
+        "设定反馈越界"
+      ],
+      "currentEvidence": {
+        "zoneTemperatureC": 0,
+        "setpointC": 0,
+        "communicationAlarm": true,
+        "qualityStatus": "invalid",
+        "reasons": [
+          "communication_alarm",
+          "zero_temperature",
+          "invalid_temperature",
+          "temperature_quality_guard",
+          "setpoint_feedback_out_of_bounds"
+        ]
+      },
+      "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+      "requiredReturnFields": {
+        "handledBy": "必填",
+        "handledAt": "必填",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "必填：5-45",
+        "setpointFeedbackAfterC": "必填：10-32",
+        "writePointMappingChecked": "yes",
+        "twoSampleNormal": "yes",
+        "localManualLockout": "none",
+        "releaseDecision": "release",
+        "reviewedBy": "必填",
+        "reviewedAt": "必填"
+      },
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ],
+      "plannedAction": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 WSJ02-502-40130 是否仍为 1。",
+        "核对内置温度点 WSJ02-506-40427，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 WSJ02-506-40427，缺温度时禁止进入闭环。",
+        "复核设定反馈点 WSJ02-506-40431，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ]
+    },
+    {
+      "workOrderId": "FCU-P0-ZHYS",
+      "priority": "P0",
+      "deviceCode": "ZHYS",
+      "deviceName": "中会议室",
+      "owner": "BA/自控工程师",
+      "reasons": [
+        "communication_alarm",
+        "zero_temperature",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "reasonLabels": [
+        "通讯报警",
+        "0°C异常",
+        "温度无效",
+        "温度质量门槛",
+        "设定反馈越界"
+      ],
+      "currentEvidence": {
+        "zoneTemperatureC": 0,
+        "setpointC": 0,
+        "communicationAlarm": true,
+        "qualityStatus": "invalid",
+        "reasons": [
+          "communication_alarm",
+          "zero_temperature",
+          "invalid_temperature",
+          "temperature_quality_guard",
+          "setpoint_feedback_out_of_bounds"
+        ]
+      },
+      "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+      "requiredReturnFields": {
+        "handledBy": "必填",
+        "handledAt": "必填",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "必填：5-45",
+        "setpointFeedbackAfterC": "必填：10-32",
+        "writePointMappingChecked": "yes",
+        "twoSampleNormal": "yes",
+        "localManualLockout": "none",
+        "releaseDecision": "release",
+        "reviewedBy": "必填",
+        "reviewedAt": "必填"
+      },
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ],
+      "plannedAction": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 ZHYS-502-40170 是否仍为 1。",
+        "核对内置温度点 ZHYS-506-40587，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 ZHYS-506-40587，缺温度时禁止进入闭环。",
+        "复核设定反馈点 ZHYS-506-40591，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ]
+    },
+    {
+      "workOrderId": "FCU-P0-ZZBGS",
+      "priority": "P0",
+      "deviceCode": "ZZBGS",
+      "deviceName": "周总",
+      "owner": "BA/自控工程师",
+      "reasons": [
+        "communication_alarm",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "reasonLabels": [
+        "通讯报警",
+        "设定反馈越界"
+      ],
+      "currentEvidence": {
+        "zoneTemperatureC": 24,
+        "setpointC": 35,
+        "communicationAlarm": true,
+        "qualityStatus": "invalid",
+        "reasons": [
+          "communication_alarm",
+          "setpoint_feedback_out_of_bounds"
+        ]
+      },
+      "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+      "requiredReturnFields": {
+        "handledBy": "必填",
+        "handledAt": "必填",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "可选",
+        "setpointFeedbackAfterC": "必填：10-32",
+        "writePointMappingChecked": "yes",
+        "twoSampleNormal": "yes",
+        "localManualLockout": "none",
+        "releaseDecision": "release",
+        "reviewedBy": "必填",
+        "reviewedAt": "必填"
+      },
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ],
+      "plannedAction": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 ZZBGS-502-40082 是否仍为 1。",
+        "复核设定反馈点 ZZBGS-506-40239，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ]
+    }
+  ],
+  "safetyBoundary": [
+    "本交接包不产生 BA/PLC 写入。",
+    "releaseDecision=release 只是现场签核结果，不等于系统自动放行。",
+    "必须重跑质量整改、closeout、signoff、Canary readiness 和最终总门禁。",
+    "首台 Canary 反馈确认前，不允许小批量或全量下发。"
+  ]
+}

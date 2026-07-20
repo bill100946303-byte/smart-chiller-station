@@ -1,0 +1,47 @@
+{
+  "ok": true,
+  "generatedAt": "2026-06-18T04:05:15.761Z",
+  "siteId": "126lnoffice",
+  "scope": "fcu_site_authorization",
+  "persisted": true,
+  "dryRun": false,
+  "controlMutation": false,
+  "adminConfigMutation": true,
+  "dbFile": "/Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/.local/admin.sqlite",
+  "confirmRequired": "I_APPROVE_FCU_SITE_AUTHORIZATION",
+  "confirmMatched": true,
+  "window": {
+    "start": "2026-06-18T04:00:15.498Z",
+    "end": "2026-06-18T05:00:15.498Z",
+    "configured": true,
+    "active": true,
+    "status": "授权窗口当前生效"
+  },
+  "before": {
+    "siteAuthorizationStatus": "not_started",
+    "siteAuthorizationBy": "",
+    "commissioningOwner": "",
+    "baOwner": "",
+    "siteAuthorizationWindowStart": "",
+    "siteAuthorizationWindowEnd": "",
+    "baWriteConfirmArmed": false,
+    "finalRolloutConfirmArmed": false
+  },
+  "after": {
+    "siteAuthorizationStatus": "approved",
+    "siteAuthorizationBy": "业主值班长",
+    "commissioningOwner": "平台工程师",
+    "baOwner": "BA工程师",
+    "siteAuthorizationWindowStart": "2026-06-18T04:00:15.498Z",
+    "siteAuthorizationWindowEnd": "2026-06-18T05:00:15.498Z",
+    "baWriteConfirmArmed": true,
+    "finalRolloutConfirmArmed": true
+  },
+  "blockers": [],
+  "nextSteps": [
+    "确认 3002 授权状态与责任人显示正确",
+    "确认授权窗口当前生效后重跑 check:fcu-field-arm",
+    "确认 BFF 后端只读总闸仍按现场投运计划打开",
+    "执行 BGS01 首台 Canary 前再次核对 BA 写入确认短语"
+  ]
+}

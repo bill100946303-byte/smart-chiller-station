@@ -1,0 +1,255 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-18T03:46:36.551Z",
+  "siteId": "126lnoffice",
+  "scope": "fcu_canary_window",
+  "mode": "blocked_before_dispatch",
+  "verdict": "canary_window_blocked",
+  "controlMutation": false,
+  "canary": {
+    "deviceCode": "LZBGS",
+    "dispatchConfirmed": false,
+    "feedbackStatus": null,
+    "feedbackConfirmed": false,
+    "rollbackTriggered": false
+  },
+  "phases": [
+    {
+      "key": "canaryPackage",
+      "label": "生成单台执行包",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-lzbgs.json",
+      "stdout": "FCU_CANARY_EXECUTION_PACKAGE ok=false verdict=canary_package_ready_with_open_gates canary=LZBGS blockers=6 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-lzbgs.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-lzbgs.md\ncsv=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-lzbgs.csv",
+      "stderr": ""
+    },
+    {
+      "key": "baReadiness",
+      "label": "BA 写适配器就绪自检",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-lzbgs.json",
+      "stdout": "FCU_BA_WRITE_ADAPTER_READINESS ok=false verdict=ba_write_adapter_blocked canary=LZBGS blockers=9 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-lzbgs.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-lzbgs.md\ncsv=/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-lzbgs.csv",
+      "stderr": ""
+    },
+    {
+      "key": "feedbackMonitor",
+      "label": "单台反馈监视",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-feedback-monitor-lzbgs.json",
+      "stdout": "FCU_CANARY_FEEDBACK_MONITOR ok=false verdict=waiting_for_canary_dispatch canary=LZBGS feedback=-- mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-feedback-monitor-lzbgs.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-feedback-monitor-lzbgs.md\ncsv=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-feedback-monitor-lzbgs.csv",
+      "stderr": ""
+    },
+    {
+      "key": "finalCompletion",
+      "label": "最终完成度检查",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-completion-latest.json",
+      "stdout": "FCU_FINAL_CONTROL_COMPLETION ok=false verdict=final_control_incomplete scope=fcu_all_device_final_control first=BGS01 blockers=7 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-completion-latest.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-completion-latest.md",
+      "stderr": ""
+    },
+    {
+      "key": "finalWorklist",
+      "label": "刷新最终投运清单",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-worklist-latest.json",
+      "stdout": "FCU_FINAL_CONTROL_WORKLIST ok=false verdict=worklist_open p0=13 actions=13 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-worklist-latest.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-worklist-latest.md",
+      "stderr": ""
+    }
+  ],
+  "skipped": [
+    {
+      "key": "canaryDispatch",
+      "label": "执行 LZBGS 单台真实下发",
+      "reason": "BA readiness is not ok"
+    }
+  ],
+  "evidence": {
+    "readiness": {
+      "ok": false,
+      "verdict": "ba_write_adapter_blocked",
+      "blockers": [
+        {
+          "key": "bff_reachable",
+          "label": "BFF 可访问",
+          "ok": false,
+          "severity": "P0",
+          "evidence": "status=404, ok=undefined",
+          "action": ""
+        },
+        {
+          "key": "backend_write_gate",
+          "label": "后端写入总闸",
+          "ok": false,
+          "severity": "P0",
+          "evidence": "readOnlyMode=undefined",
+          "action": "以 READ_ONLY_MODE=false CHILLER_READ_ONLY_MODE=false 重启 BFF"
+        },
+        {
+          "key": "policy_enforced",
+          "label": "FCU 策略 enforced",
+          "ok": false,
+          "severity": "P0",
+          "evidence": "enabled=true, mode=shadow",
+          "action": ""
+        },
+        {
+          "key": "subsystem_write_enabled",
+          "label": "子系统写总闸",
+          "ok": false,
+          "severity": "P0",
+          "evidence": "subsystemWriteEnabled=false, boundary=read_only",
+          "action": ""
+        },
+        {
+          "key": "adapter_configured",
+          "label": "BA 写适配器已配置",
+          "ok": false,
+          "severity": "P0",
+          "evidence": "dispatchAdapter=none",
+          "action": ""
+        },
+        {
+          "key": "execution_gate_open",
+          "label": "全局执行闸门",
+          "ok": false,
+          "severity": "P0",
+          "evidence": "dispatchAllowed=false, blocked=mode_enforced/subsystem_write_enabled/dispatch_adapter_configured/whitelist_not_empty/site_authorization_approved/site_authorization_owner_recorded/site_authorization_window_configured/site_authorization_window_active/ba_write_confirm_armed/final_rollout_confirm_armed/backend_not_readonly",
+          "action": ""
+        },
+        {
+          "key": "whitelist_contains_canary",
+          "label": "白名单包含首台 Canary",
+          "ok": false,
+          "severity": "P0",
+          "evidence": "LZBGS in whitelist=false",
+          "action": ""
+        },
+        {
+          "key": "canary_snapshot_quality",
+          "label": "Canary 当前快照质量",
+          "ok": false,
+          "severity": "P0",
+          "evidence": "snapshot missing",
+          "action": ""
+        },
+        {
+          "key": "ba_write_confirm",
+          "label": "BA 写入确认短语",
+          "ok": false,
+          "severity": "P0",
+          "evidence": "FCU_SMALL_BATCH_CONFIRM=missing",
+          "action": "export FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE"
+        }
+      ]
+    },
+    "dispatch": {
+      "ok": false,
+      "mode": null,
+      "controlMutation": false
+    },
+    "feedback": {
+      "ok": false,
+      "verdict": "waiting_for_canary_dispatch",
+      "canary": {
+        "deviceCode": "LZBGS",
+        "recordId": null,
+        "dispatchConfirmed": false,
+        "feedbackStatus": null,
+        "feedbackConfirmed": false,
+        "rollbackTriggered": false
+      }
+    },
+    "finalCompletion": {
+      "ok": false,
+      "verdict": "final_control_incomplete",
+      "milestones": {
+        "canary": {
+          "ok": false,
+          "deviceCode": "BGS01",
+          "feedbackStatus": null
+        },
+        "smallBatch": {
+          "ok": false,
+          "devices": 0,
+          "feedbackConfirmed": false
+        },
+        "allDevice": {
+          "ok": false,
+          "targetDevices": 29,
+          "confirmedDevices": 0,
+          "confirmedDeviceCodes": []
+        }
+      }
+    },
+    "worklist": {
+      "ok": false,
+      "verdict": "worklist_open",
+      "summary": {
+        "openActions": 13,
+        "p0OpenActions": 13,
+        "qualityP0Devices": 0,
+        "fieldCloseoutReady": false,
+        "plannedDeviceCount": 0,
+        "blockedDeviceCount": 0
+      }
+    }
+  },
+  "nextActions": [
+    {
+      "priority": "P0",
+      "action": "BFF 可访问",
+      "reason": "status=404, ok=undefined",
+      "command": ""
+    },
+    {
+      "priority": "P0",
+      "action": "后端写入总闸",
+      "reason": "readOnlyMode=undefined",
+      "command": "以 READ_ONLY_MODE=false CHILLER_READ_ONLY_MODE=false 重启 BFF"
+    },
+    {
+      "priority": "P0",
+      "action": "FCU 策略 enforced",
+      "reason": "enabled=true, mode=shadow",
+      "command": ""
+    },
+    {
+      "priority": "P0",
+      "action": "子系统写总闸",
+      "reason": "subsystemWriteEnabled=false, boundary=read_only",
+      "command": ""
+    },
+    {
+      "priority": "P0",
+      "action": "BA 写适配器已配置",
+      "reason": "dispatchAdapter=none",
+      "command": ""
+    },
+    {
+      "priority": "P0",
+      "action": "全局执行闸门",
+      "reason": "dispatchAllowed=false, blocked=mode_enforced/subsystem_write_enabled/dispatch_adapter_configured/whitelist_not_empty/site_authorization_approved/site_authorization_owner_recorded/site_authorization_window_configured/site_authorization_window_active/ba_write_confirm_armed/final_rollout_confirm_armed/backend_not_readonly",
+      "command": ""
+    },
+    {
+      "priority": "P0",
+      "action": "白名单包含首台 Canary",
+      "reason": "LZBGS in whitelist=false",
+      "command": ""
+    },
+    {
+      "priority": "P0",
+      "action": "Canary 当前快照质量",
+      "reason": "snapshot missing",
+      "command": ""
+    }
+  ],
+  "outputs": {
+    "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-window-lzbgs.json",
+    "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-window-lzbgs.md"
+  }
+}

@@ -1,0 +1,232 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-20T04:31:52.212Z",
+  "siteId": "126lnoffice",
+  "scope": "fcu_canary_readiness",
+  "verdict": "canary_blocked",
+  "controlMutation": false,
+  "dispatch": false,
+  "firstCanary": "WSJ01",
+  "summary": {
+    "canaryReady": false,
+    "gateCount": 6,
+    "blockedCount": 5,
+    "p0BlockedCount": 5
+  },
+  "gates": [
+    {
+      "key": "field_signoff_complete",
+      "label": "现场工单签字完成",
+      "ok": false,
+      "severity": "P0",
+      "evidence": "0/8 complete",
+      "action": "填写并复核 fcu-field-remediation-signoff-input-latest.csv 后重跑 check:fcu-field-remediation-signoff"
+    },
+    {
+      "key": "realtime_closeout_ready",
+      "label": "实时消缺关闭",
+      "ok": false,
+      "severity": "P0",
+      "evidence": "field_remediation_open remaining=8",
+      "action": "重跑 check:fcu-field-remediation-closeout，必须 field_remediation_ready_for_canary"
+    },
+    {
+      "key": "field_arm_ready",
+      "label": "现场 Arm-Check 通过",
+      "ok": false,
+      "severity": "P0",
+      "evidence": "field_arm_blocked first=WSJ01",
+      "action": "重跑 check:fcu-field-arm，现场授权、窗口、确认短语和 readOnly 必须通过"
+    },
+    {
+      "key": "ba_adapter_ready",
+      "label": "BA 写适配器通过",
+      "ok": false,
+      "severity": "P0",
+      "evidence": "ba_write_adapter_blocked blockers=3",
+      "action": "重跑 check:fcu-ba-write-adapter-readiness，写点映射、确认短语和执行闸门必须通过"
+    },
+    {
+      "key": "canary_package_ready",
+      "label": "首台 Canary 执行包就绪",
+      "ok": false,
+      "severity": "P0",
+      "evidence": "canary_package_ready_with_open_gates device=WSJ01",
+      "action": "重跑 build:fcu-canary-execution-package，确保 blockers 为空"
+    },
+    {
+      "key": "no_control_mutation",
+      "label": "Readiness 检查无写入副作用",
+      "ok": true,
+      "severity": "P0",
+      "evidence": "all referenced reports controlMutation=false",
+      "action": "Readiness 阶段不得调用 execute:* 下发脚本"
+    }
+  ],
+  "blockers": [
+    {
+      "key": "field_signoff_complete",
+      "label": "现场工单签字完成",
+      "ok": false,
+      "severity": "P0",
+      "evidence": "0/8 complete",
+      "action": "填写并复核 fcu-field-remediation-signoff-input-latest.csv 后重跑 check:fcu-field-remediation-signoff"
+    },
+    {
+      "key": "realtime_closeout_ready",
+      "label": "实时消缺关闭",
+      "ok": false,
+      "severity": "P0",
+      "evidence": "field_remediation_open remaining=8",
+      "action": "重跑 check:fcu-field-remediation-closeout，必须 field_remediation_ready_for_canary"
+    },
+    {
+      "key": "field_arm_ready",
+      "label": "现场 Arm-Check 通过",
+      "ok": false,
+      "severity": "P0",
+      "evidence": "field_arm_blocked first=WSJ01",
+      "action": "重跑 check:fcu-field-arm，现场授权、窗口、确认短语和 readOnly 必须通过"
+    },
+    {
+      "key": "ba_adapter_ready",
+      "label": "BA 写适配器通过",
+      "ok": false,
+      "severity": "P0",
+      "evidence": "ba_write_adapter_blocked blockers=3",
+      "action": "重跑 check:fcu-ba-write-adapter-readiness，写点映射、确认短语和执行闸门必须通过"
+    },
+    {
+      "key": "canary_package_ready",
+      "label": "首台 Canary 执行包就绪",
+      "ok": false,
+      "severity": "P0",
+      "evidence": "canary_package_ready_with_open_gates device=WSJ01",
+      "action": "重跑 build:fcu-canary-execution-package，确保 blockers 为空"
+    }
+  ],
+  "readinessPlaybook": {
+    "canExecuteCanary": false,
+    "readyGateCount": 1,
+    "blockedGateCount": 5,
+    "firstBlockedPhase": "现场签字",
+    "firstBlockedOwner": "现场/运维",
+    "firstBlockedAction": "填写并复核 fcu-field-remediation-signoff-input-latest.csv 后重跑 check:fcu-field-remediation-signoff",
+    "fieldBlocked": true,
+    "baBlocked": true,
+    "canaryPackageBlocked": true,
+    "safetyBlocked": false,
+    "phasePlan": [
+      {
+        "key": "field_signoff_complete",
+        "phase": "现场签字",
+        "owner": "现场/运维",
+        "ready": false,
+        "blocking": true,
+        "severity": "P0",
+        "evidence": "0/8 complete",
+        "sourceFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-latest.json",
+        "sourceReadable": true,
+        "nextAction": "填写并复核 fcu-field-remediation-signoff-input-latest.csv 后重跑 check:fcu-field-remediation-signoff"
+      },
+      {
+        "key": "realtime_closeout_ready",
+        "phase": "实时消缺",
+        "owner": "现场/平台",
+        "ready": false,
+        "blocking": true,
+        "severity": "P0",
+        "evidence": "field_remediation_open remaining=8",
+        "sourceFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-closeout-latest.json",
+        "sourceReadable": true,
+        "nextAction": "重跑 check:fcu-field-remediation-closeout，必须 field_remediation_ready_for_canary"
+      },
+      {
+        "key": "field_arm_ready",
+        "phase": "现场授权",
+        "owner": "现场/BA",
+        "ready": false,
+        "blocking": true,
+        "severity": "P0",
+        "evidence": "field_arm_blocked first=WSJ01",
+        "sourceFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-arm-check-latest.json",
+        "sourceReadable": true,
+        "nextAction": "重跑 check:fcu-field-arm，现场授权、窗口、确认短语和 readOnly 必须通过"
+      },
+      {
+        "key": "ba_adapter_ready",
+        "phase": "BA写适配器",
+        "owner": "BA/自控",
+        "ready": false,
+        "blocking": true,
+        "severity": "P0",
+        "evidence": "ba_write_adapter_blocked blockers=3",
+        "sourceFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-latest.json",
+        "sourceReadable": true,
+        "nextAction": "重跑 check:fcu-ba-write-adapter-readiness，写点映射、确认短语和执行闸门必须通过"
+      },
+      {
+        "key": "canary_package_ready",
+        "phase": "Canary执行包",
+        "owner": "平台",
+        "ready": false,
+        "blocking": true,
+        "severity": "P0",
+        "evidence": "canary_package_ready_with_open_gates device=WSJ01",
+        "sourceFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-latest.json",
+        "sourceReadable": true,
+        "nextAction": "重跑 build:fcu-canary-execution-package，确保 blockers 为空"
+      },
+      {
+        "key": "no_control_mutation",
+        "phase": "安全边界",
+        "owner": "平台",
+        "ready": true,
+        "blocking": false,
+        "severity": "P0",
+        "evidence": "all referenced reports controlMutation=false",
+        "sourceFile": null,
+        "sourceReadable": false,
+        "nextAction": "保持当前证据，继续下一门禁。"
+      }
+    ],
+    "safetyBoundary": [
+      "readinessPlaybook 只拆解阻断和下一步动作，不放宽任何门禁。",
+      "blockedGateCount 不为 0 时，禁止 execute:fcu-canary-dispatch。",
+      "controlMutation 必须保持 false，dispatch 必须保持 false。",
+      "Canary 只能在现场签字、实时消缺、现场授权、BA写适配器和执行包全部通过后进入。"
+    ]
+  },
+  "nextCommand": "先处理 blockers；禁止执行 execute:fcu-canary-dispatch",
+  "evidence": {
+    "signoff": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-latest.json",
+      "error": null
+    },
+    "closeout": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-closeout-latest.json",
+      "error": null
+    },
+    "fieldArm": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-arm-check-latest.json",
+      "error": null
+    },
+    "adapter": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-latest.json",
+      "error": null
+    },
+    "canaryPackage": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-latest.json",
+      "error": null
+    }
+  },
+  "outputs": {
+    "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-readiness-latest.json",
+    "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-readiness-latest.md"
+  }
+}

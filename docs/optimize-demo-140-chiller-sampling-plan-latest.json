@@ -1,0 +1,430 @@
+{
+  "generatedAt": "2026-06-12T21:50:23.356Z",
+  "siteId": "140",
+  "bffBaseUrl": "http://127.0.0.1:8799",
+  "finalDecision": "CHILLER_SAMPLING_PLAN_READY_TO_COLLECT",
+  "coverageStatus": "baseline_high_confidence_only",
+  "basis": "append_only_chiller_staging_sample_governance",
+  "constraints": {
+    "minSampleCount": 30,
+    "highConfidenceSampleCount": 100,
+    "minCurrentRunMinutes": 90,
+    "minCapacityReservePct": 12,
+    "sampleIntervalMinutes": 5,
+    "noSingleMachineCopSplit": true,
+    "noAutoStartStop": true,
+    "noPlcWrite": true
+  },
+  "sampleSource": {
+    "endpoint": "http://127.0.0.1:8799/bff/v1/sites/140/optimize/chiller-staging/samples?limit=1000",
+    "ok": true,
+    "status": 200,
+    "basis": "append_only_chiller_staging_samples",
+    "total": 115,
+    "returnedItems": 115,
+    "generatedAt": "2026-06-12T21:50:23.312Z"
+  },
+  "inventory": [
+    {
+      "id": "CH1",
+      "label": "CH1 旧机",
+      "generation": "old",
+      "conditionLevel": "old_fair",
+      "ratedCapacityRt": 1100,
+      "ratedCapacityKw": 3868.5,
+      "maxPracticalCapacityRt": null,
+      "available": true,
+      "lockedByOperator": false,
+      "conditionNote": "旧机，状况低于 CH2/CH4。"
+    },
+    {
+      "id": "CH2",
+      "label": "CH2 旧机",
+      "generation": "old",
+      "conditionLevel": "old_better",
+      "ratedCapacityRt": 1100,
+      "ratedCapacityKw": 3868.5,
+      "maxPracticalCapacityRt": null,
+      "available": true,
+      "lockedByOperator": false,
+      "conditionNote": "旧机，状况好于 CH1/CH3。"
+    },
+    {
+      "id": "CH3",
+      "label": "CH3 旧机",
+      "generation": "old",
+      "conditionLevel": "old_fair",
+      "ratedCapacityRt": 1100,
+      "ratedCapacityKw": 3868.5,
+      "maxPracticalCapacityRt": null,
+      "available": true,
+      "lockedByOperator": false,
+      "conditionNote": "旧机，状况低于 CH2/CH4。"
+    },
+    {
+      "id": "CH4",
+      "label": "CH4 旧机",
+      "generation": "old",
+      "conditionLevel": "old_better",
+      "ratedCapacityRt": 1100,
+      "ratedCapacityKw": 3868.5,
+      "maxPracticalCapacityRt": null,
+      "available": true,
+      "lockedByOperator": false,
+      "conditionNote": "旧机，状况好于 CH1/CH3。"
+    },
+    {
+      "id": "CH5",
+      "label": "CH5 次新机",
+      "generation": "near_new",
+      "conditionLevel": "near_new",
+      "ratedCapacityRt": 1300,
+      "ratedCapacityKw": 4571.9,
+      "maxPracticalCapacityRt": null,
+      "available": true,
+      "lockedByOperator": false,
+      "conditionNote": "1300RT 次新机。"
+    },
+    {
+      "id": "CH6",
+      "label": "CH6 停机",
+      "generation": "unknown",
+      "conditionLevel": "stopped",
+      "ratedCapacityRt": null,
+      "ratedCapacityKw": null,
+      "maxPracticalCapacityRt": null,
+      "available": false,
+      "lockedByOperator": true,
+      "conditionNote": "当前停机状态，容量规格待确认，第一版不进入候选组合。"
+    },
+    {
+      "id": "CH7",
+      "label": "CH7 新机",
+      "generation": "new",
+      "conditionLevel": "new",
+      "ratedCapacityRt": 1500,
+      "ratedCapacityKw": 5275.3,
+      "maxPracticalCapacityRt": 1700,
+      "available": true,
+      "lockedByOperator": false,
+      "conditionNote": "1500RT 规格新机，现场可跑到 1700RT；常规容量余量按 1500RT 额定规格计算。"
+    }
+  ],
+  "summary": {
+    "candidateCombinationCount": 8,
+    "coveredCandidateCount": 1,
+    "lowReadyCandidateCount": 1,
+    "highConfidenceCandidateCount": 1,
+    "compareReadyCandidateCount": 0,
+    "missingMinCandidateCount": 7,
+    "totalValidSamples": 115
+  },
+  "candidatePlan": [
+    {
+      "priority": "P0-baseline",
+      "combinationKey": "CH4+CH5+CH7",
+      "combination": [
+        "CH4",
+        "CH5",
+        "CH7"
+      ],
+      "capacityKw": 13715.7,
+      "sampleCount": 115,
+      "validSampleCount": 115,
+      "sampleMinutes": 575,
+      "confidence": "high",
+      "deficitToMin": 0,
+      "deficitToHigh": 0,
+      "latestCapturedAt": "2026-06-12T21:36:37.615Z",
+      "loadRatePctRange": {
+        "min": 8.7,
+        "max": 94.5
+      },
+      "wetBulbCRange": {
+        "min": 21.7,
+        "max": 32.5
+      },
+      "stationCopRange": {
+        "min": 0.67,
+        "max": 7.47
+      },
+      "comboCopRange": {
+        "min": 0.8,
+        "max": 8.99
+      },
+      "availableForPlan": true,
+      "unavailableChillerIds": [],
+      "warnings": [
+        "COP/负荷口径异常，比较前需按同工况 band 和数据质量过滤。"
+      ]
+    },
+    {
+      "priority": "P0-compare",
+      "combinationKey": "CH2+CH5+CH7",
+      "combination": [
+        "CH2",
+        "CH5",
+        "CH7"
+      ],
+      "capacityKw": 13715.7,
+      "sampleCount": 0,
+      "validSampleCount": 0,
+      "sampleMinutes": 0,
+      "confidence": "insufficient",
+      "deficitToMin": 30,
+      "deficitToHigh": 100,
+      "latestCapturedAt": null,
+      "loadRatePctRange": {
+        "min": null,
+        "max": null
+      },
+      "wetBulbCRange": {
+        "min": null,
+        "max": null
+      },
+      "stationCopRange": {
+        "min": null,
+        "max": null
+      },
+      "comboCopRange": {
+        "min": null,
+        "max": null
+      },
+      "availableForPlan": true,
+      "unavailableChillerIds": [],
+      "warnings": []
+    },
+    {
+      "priority": "P0-compare",
+      "combinationKey": "CH1+CH5+CH7",
+      "combination": [
+        "CH1",
+        "CH5",
+        "CH7"
+      ],
+      "capacityKw": 13715.7,
+      "sampleCount": 0,
+      "validSampleCount": 0,
+      "sampleMinutes": 0,
+      "confidence": "insufficient",
+      "deficitToMin": 30,
+      "deficitToHigh": 100,
+      "latestCapturedAt": null,
+      "loadRatePctRange": {
+        "min": null,
+        "max": null
+      },
+      "wetBulbCRange": {
+        "min": null,
+        "max": null
+      },
+      "stationCopRange": {
+        "min": null,
+        "max": null
+      },
+      "comboCopRange": {
+        "min": null,
+        "max": null
+      },
+      "availableForPlan": true,
+      "unavailableChillerIds": [],
+      "warnings": []
+    },
+    {
+      "priority": "P1-coverage",
+      "combinationKey": "CH3+CH5+CH7",
+      "combination": [
+        "CH3",
+        "CH5",
+        "CH7"
+      ],
+      "capacityKw": 13715.7,
+      "sampleCount": 0,
+      "validSampleCount": 0,
+      "sampleMinutes": 0,
+      "confidence": "insufficient",
+      "deficitToMin": 30,
+      "deficitToHigh": 100,
+      "latestCapturedAt": null,
+      "loadRatePctRange": {
+        "min": null,
+        "max": null
+      },
+      "wetBulbCRange": {
+        "min": null,
+        "max": null
+      },
+      "stationCopRange": {
+        "min": null,
+        "max": null
+      },
+      "comboCopRange": {
+        "min": null,
+        "max": null
+      },
+      "availableForPlan": true,
+      "unavailableChillerIds": [],
+      "warnings": []
+    },
+    {
+      "priority": "P1-coverage",
+      "combinationKey": "CH2+CH4+CH7",
+      "combination": [
+        "CH2",
+        "CH4",
+        "CH7"
+      ],
+      "capacityKw": 13012.3,
+      "sampleCount": 0,
+      "validSampleCount": 0,
+      "sampleMinutes": 0,
+      "confidence": "insufficient",
+      "deficitToMin": 30,
+      "deficitToHigh": 100,
+      "latestCapturedAt": null,
+      "loadRatePctRange": {
+        "min": null,
+        "max": null
+      },
+      "wetBulbCRange": {
+        "min": null,
+        "max": null
+      },
+      "stationCopRange": {
+        "min": null,
+        "max": null
+      },
+      "comboCopRange": {
+        "min": null,
+        "max": null
+      },
+      "availableForPlan": true,
+      "unavailableChillerIds": [],
+      "warnings": []
+    },
+    {
+      "priority": "P1-coverage",
+      "combinationKey": "CH2+CH4+CH5",
+      "combination": [
+        "CH2",
+        "CH4",
+        "CH5"
+      ],
+      "capacityKw": 12308.9,
+      "sampleCount": 0,
+      "validSampleCount": 0,
+      "sampleMinutes": 0,
+      "confidence": "insufficient",
+      "deficitToMin": 30,
+      "deficitToHigh": 100,
+      "latestCapturedAt": null,
+      "loadRatePctRange": {
+        "min": null,
+        "max": null
+      },
+      "wetBulbCRange": {
+        "min": null,
+        "max": null
+      },
+      "stationCopRange": {
+        "min": null,
+        "max": null
+      },
+      "comboCopRange": {
+        "min": null,
+        "max": null
+      },
+      "availableForPlan": true,
+      "unavailableChillerIds": [],
+      "warnings": []
+    },
+    {
+      "priority": "P1-coverage",
+      "combinationKey": "CH4+CH7",
+      "combination": [
+        "CH4",
+        "CH7"
+      ],
+      "capacityKw": 9143.8,
+      "sampleCount": 0,
+      "validSampleCount": 0,
+      "sampleMinutes": 0,
+      "confidence": "insufficient",
+      "deficitToMin": 30,
+      "deficitToHigh": 100,
+      "latestCapturedAt": null,
+      "loadRatePctRange": {
+        "min": null,
+        "max": null
+      },
+      "wetBulbCRange": {
+        "min": null,
+        "max": null
+      },
+      "stationCopRange": {
+        "min": null,
+        "max": null
+      },
+      "comboCopRange": {
+        "min": null,
+        "max": null
+      },
+      "availableForPlan": true,
+      "unavailableChillerIds": [],
+      "warnings": []
+    },
+    {
+      "priority": "P1-coverage",
+      "combinationKey": "CH5+CH7",
+      "combination": [
+        "CH5",
+        "CH7"
+      ],
+      "capacityKw": 9847.2,
+      "sampleCount": 0,
+      "validSampleCount": 0,
+      "sampleMinutes": 0,
+      "confidence": "insufficient",
+      "deficitToMin": 30,
+      "deficitToHigh": 100,
+      "latestCapturedAt": null,
+      "loadRatePctRange": {
+        "min": null,
+        "max": null
+      },
+      "wetBulbCRange": {
+        "min": null,
+        "max": null
+      },
+      "stationCopRange": {
+        "min": null,
+        "max": null
+      },
+      "comboCopRange": {
+        "min": null,
+        "max": null
+      },
+      "availableForPlan": true,
+      "unavailableChillerIds": [],
+      "warnings": []
+    }
+  ],
+  "nextActions": [
+    "继续保留 CH4+CH5+CH7 作为当前基线组合样本，但不要把单一组合样本解释为切换收益。",
+    "优先等待或人工安排 CH2+CH5+CH7、CH4+CH7、CH5+CH7 等候选组合的安全运行窗口。",
+    "每个候选组合至少达到 30 条同负荷/湿球/供水温 band 样本后，才允许进入组合间排序。",
+    "达到 100 条只能说明该组合自身样本高置信；仍需目标组合同工况样本才能承诺切换方向。",
+    "所有组合切换仍必须人工执行和 shadow 验证，AI 不自动启停主机。"
+  ],
+  "blockers": [],
+  "warnings": [
+    "当前只有一个候选组合有样本，不能做组合间节能排序。",
+    "缺少达到 30 条的候选对比组合，主机组合 Advisor 仍应保持 keep/continue sampling。",
+    "当前基线组合可能已达到高置信，但目标组合样本不足，不能单边承诺切换收益。",
+    "CH4+CH5+CH7: COP/负荷口径异常，比较前需按同工况 band 和数据质量过滤。"
+  ],
+  "reportFiles": {
+    "json": "docs/optimize-demo-140-chiller-sampling-plan-latest.json",
+    "markdown": "docs/optimize-demo-140-chiller-sampling-plan-latest.md"
+  }
+}

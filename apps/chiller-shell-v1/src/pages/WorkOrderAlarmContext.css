@@ -1,0 +1,67 @@
+.work-order-alarm-context {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 183, 77, 0.34);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(67, 45, 14, 0.7), rgba(20, 32, 41, 0.9));
+}
+
+.work-order-alarm-context-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.work-order-alarm-context-copy > span {
+  color: #ffd28a;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.work-order-alarm-context-copy > strong {
+  color: #f8fbff;
+  font-size: 13px;
+}
+
+.work-order-alarm-context-copy > p {
+  margin: 0;
+  color: #b7c5d1;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.work-order-alarm-context-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.work-order-alarm-context-meta > span {
+  padding: 3px 7px;
+  border: 1px solid rgba(255, 210, 138, 0.2);
+  border-radius: 5px;
+  color: #d8e1e8;
+  background: rgba(11, 28, 40, 0.44);
+  font-size: 10px;
+}
+
+.work-order-alarm-context.is-rejected {
+  border-color: rgba(255, 112, 112, 0.44);
+  background: linear-gradient(135deg, rgba(72, 24, 24, 0.78), rgba(20, 32, 41, 0.92));
+}
+
+.work-order-alarm-context.is-rejected .work-order-alarm-context-copy > span {
+  color: #ffb2b2;
+}
+
+@media (max-width: 900px) {
+  .work-order-alarm-context {
+    grid-template-columns: 1fr;
+  }
+
+  .work-order-alarm-context .work-order-button {
+    min-height: 44px;
+  }
+}

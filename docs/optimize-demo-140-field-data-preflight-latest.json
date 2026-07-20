@@ -1,0 +1,110 @@
+{
+  "generatedAt": "2026-06-16T05:24:25.231Z",
+  "siteId": "140",
+  "finalDecision": "FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS",
+  "scope": "optimize_demo_140_field_data_preflight",
+  "executionMode": "read_only",
+  "controlBoundary": "预检只校验 4 张正式现场 CSV 的可读性、字段映射和证据边界；不判定仪表故障，不自动修正测点，不自动改 PID，不自动启停设备，不写真实 PLC，不覆盖正式 latest 导入报告。",
+  "inputs": [
+    {
+      "key": "sensor_calibration_installation_ledger",
+      "title": "传感器校准/安装位置台账",
+      "env": "OPTIMIZE_DEMO_SENSOR_LEDGER_INPUT_CSV",
+      "path": "docs/field-data/optimize-demo-140/sensor-calibration-installation.csv",
+      "exists": false,
+      "mode": "missing",
+      "preflight": "sensorLedger",
+      "requiredForReady": true
+    },
+    {
+      "key": "control_command_feedback_trend",
+      "title": "控制命令/反馈高频趋势",
+      "env": "OPTIMIZE_DEMO_CONTROL_TREND_INPUT_CSV",
+      "path": "docs/field-data/optimize-demo-140/control-command-feedback.csv",
+      "exists": false,
+      "mode": "missing",
+      "preflight": "controlLedgerImport",
+      "requiredForReady": true
+    },
+    {
+      "key": "start_stop_event_ledger",
+      "title": "设备启停事件台账",
+      "env": "OPTIMIZE_DEMO_START_STOP_INPUT_CSV",
+      "path": "docs/field-data/optimize-demo-140/start-stop-event.csv",
+      "exists": false,
+      "mode": "missing",
+      "preflight": "controlLedgerImport",
+      "requiredForReady": true
+    },
+    {
+      "key": "control_parameter_ledger",
+      "title": "PID/死区/延时参数台账",
+      "env": "OPTIMIZE_DEMO_CONTROL_PARAMETER_INPUT_CSV",
+      "path": "docs/field-data/optimize-demo-140/control-parameter.csv",
+      "exists": false,
+      "mode": "missing",
+      "preflight": "controlLedgerImport",
+      "requiredForReady": true
+    }
+  ],
+  "sensorLedger": {
+    "status": "SENSOR_LEDGER_PREFLIGHT_WAITING_FOR_INPUTS",
+    "exitCode": 0,
+    "signal": null,
+    "acceptedRows": 0,
+    "totalRows": 0,
+    "warningsCount": 0,
+    "blockersCount": 1,
+    "reportJson": "docs/optimize-demo-140-sensor-ledger-preflight-latest.json",
+    "reportMarkdown": "docs/optimize-demo-140-sensor-ledger-preflight-latest.md",
+    "normalizedOutput": "docs/optimize-demo-140-sensor-calibration-installation-normalized-latest.csv",
+    "stdout": [
+      "optimize-demo 140 sensor ledger preflight: SENSOR_LEDGER_PREFLIGHT_WAITING_FOR_INPUTS",
+      "accepted=0 warnings=0 blockers=1",
+      "json=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-sensor-ledger-preflight-latest.json",
+      "markdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-sensor-ledger-preflight-latest.md",
+      "blockers=1",
+      "- 缺少传感器校准/安装位置台账 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/sensor-calibration-installation.csv"
+    ],
+    "stderr": []
+  },
+  "import": {
+    "status": "CONTROL_LEDGER_IMPORT_BLOCKED",
+    "exitCode": 0,
+    "signal": null,
+    "acceptedRows": 0,
+    "totalRows": 0,
+    "warningsCount": 0,
+    "blockersCount": 3,
+    "reportJson": "docs/optimize-demo-140-control-ledger-field-preflight-import-latest.json",
+    "reportMarkdown": "docs/optimize-demo-140-control-ledger-field-preflight-import-latest.md",
+    "normalizedOutputs": {
+      "sensorLedgerCsv": "docs/optimize-demo-140-sensor-calibration-installation-normalized-latest.csv",
+      "controlTrendCsv": "docs/optimize-demo-140-control-command-feedback-field-preflight-normalized-latest.csv",
+      "startStopCsv": "docs/optimize-demo-140-start-stop-event-field-preflight-normalized-latest.csv",
+      "controlParameterCsv": "docs/optimize-demo-140-control-parameter-field-preflight-normalized-latest.csv"
+    },
+    "stdout": [
+      "optimize-demo 140 control ledger import: CONTROL_LEDGER_IMPORT_BLOCKED",
+      "tables=3 rows=0 accepted=0",
+      "json=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-control-ledger-field-preflight-import-latest.json",
+      "markdown=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-control-ledger-field-preflight-import-latest.md",
+      "controlTrendCsv=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-control-command-feedback-field-preflight-normalized-latest.csv",
+      "startStopCsv=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-start-stop-event-field-preflight-normalized-latest.csv",
+      "controlParameterCsv=/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-control-parameter-field-preflight-normalized-latest.csv",
+      "blockers=3",
+      "- 控制命令/反馈高频趋势: 缺少输入文件：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-command-feedback.csv",
+      "- 设备启停事件台账: 缺少输入文件：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv",
+      "- PID/死区/延时参数台账: 缺少输入文件：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv"
+    ],
+    "stderr": []
+  },
+  "nextImportCommand": "SITE_ID='140' OPTIMIZE_DEMO_CONTROL_TREND_INPUT_CSV='/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-command-feedback.csv' OPTIMIZE_DEMO_START_STOP_INPUT_CSV='/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv' OPTIMIZE_DEMO_CONTROL_PARAMETER_INPUT_CSV='/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv' npm --prefix apps/chiller-bff run import:optimize-demo-140-control-ledgers",
+  "blockers": [
+    "传感器校准/安装位置台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/sensor-calibration-installation.csv",
+    "控制命令/反馈高频趋势 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-command-feedback.csv",
+    "设备启停事件台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv",
+    "PID/死区/延时参数台账 缺少现场 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv"
+  ],
+  "warnings": []
+}

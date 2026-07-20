@@ -1,0 +1,30 @@
+.distribution-energy-workspace .distribution-workspace-title {
+  margin: 0;
+  color: var(--text-1);
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+html body #root#root#root .content.is-subpage-compact:has(> .distribution-energy-workspace.hvac-terminal-page) .power-monitor-hero .power-monitor-summary {
+  display: grid !important;
+}
+
+html body #root#root#root .content.is-subpage-compact:has(> .distribution-energy-workspace.hvac-terminal-page) .power-monitor-hero .distribution-critical-banner {
+  display: block !important;
+}
+
+@media (max-width: 720px) {
+  .distribution-energy-workspace .distribution-workspace-title {
+    font-size: 17px;
+  }
+
+  html body #root#root#root .power-monitor-page.distribution-energy-workspace .power-monitor-summary,
+  html body #root#root#root .content.is-subpage-compact .power-monitor-page.distribution-energy-workspace .power-monitor-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  html body #root#root#root .power-monitor-page.distribution-energy-workspace .power-monitor-summary > div:last-child,
+  html body #root#root#root .content.is-subpage-compact .power-monitor-page.distribution-energy-workspace .power-monitor-summary > div:last-child {
+    grid-column: 1 / -1;
+  }
+}

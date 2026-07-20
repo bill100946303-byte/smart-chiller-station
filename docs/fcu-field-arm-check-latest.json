@@ -1,0 +1,310 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-20T04:31:50.150Z",
+  "siteId": "126lnoffice",
+  "build": "1",
+  "floor": "1",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "verdict": "field_arm_blocked",
+  "controlMutation": false,
+  "firstCanary": "WSJ01",
+  "confirmPhraseRequired": "I_UNDERSTAND_REAL_BA_WRITE",
+  "executionGate": {
+    "ready": false,
+    "dispatchAllowed": false,
+    "readOnlyMode": true,
+    "subsystemWriteEnabled": true,
+    "boundaryMode": "enforced",
+    "policyMode": "enforced",
+    "adapterConfigured": true,
+    "whitelistCount": 29,
+    "authorizationStatus": "approved",
+    "authorizationOwnerReady": true,
+    "authorizationWindowConfigured": true,
+    "authorizationWindowActive": false,
+    "authorizationWindowStart": "2026-06-18T04:00:15.498Z",
+    "authorizationWindowEnd": "2026-06-18T05:00:15.498Z",
+    "authorizationWindowNow": "2026-06-20T04:31:49.967Z",
+    "baWriteConfirmArmed": true,
+    "finalRolloutConfirmArmed": true,
+    "sourceStatus": "demo_data",
+    "conditions": [
+      {
+        "key": "policy_enabled",
+        "label": "FCU策略启用",
+        "ok": true
+      },
+      {
+        "key": "mode_enforced",
+        "label": "控制模式为自动闭环",
+        "ok": true
+      },
+      {
+        "key": "subsystem_write_enabled",
+        "label": "空调末端子系统写总闸",
+        "ok": true
+      },
+      {
+        "key": "dispatch_adapter_configured",
+        "label": "BA写适配器已配置",
+        "ok": true
+      },
+      {
+        "key": "whitelist_not_empty",
+        "label": "单台白名单非空",
+        "ok": true
+      },
+      {
+        "key": "site_authorization_approved",
+        "label": "现场授权已批准",
+        "ok": true
+      },
+      {
+        "key": "site_authorization_owner_recorded",
+        "label": "现场授权责任人已记录",
+        "ok": true
+      },
+      {
+        "key": "site_authorization_window_configured",
+        "label": "现场授权窗口已配置",
+        "ok": true
+      },
+      {
+        "key": "site_authorization_window_active",
+        "label": "现场授权窗口当前有效",
+        "ok": false
+      },
+      {
+        "key": "ba_write_confirm_armed",
+        "label": "BA写入确认已装载",
+        "ok": true
+      },
+      {
+        "key": "final_rollout_confirm_armed",
+        "label": "最终控制总确认已装载",
+        "ok": true
+      },
+      {
+        "key": "backend_not_readonly",
+        "label": "后端环境允许真实写入",
+        "ok": false
+      }
+    ],
+    "blockedReasons": [
+      "site_authorization_window_active",
+      "backend_not_readonly"
+    ]
+  },
+  "policy": {
+    "enabled": true,
+    "defaultMode": "enforced",
+    "dispatchAdapter": "legacy-scene-command",
+    "whitelistCount": 29
+  },
+  "commissioningSummary": {
+    "total": 29,
+    "ready": 0,
+    "environmentBlocked": 9,
+    "deviceBlocked": 20,
+    "notFound": 0,
+    "deviceReady": 9,
+    "canDispatch": 0
+  },
+  "queueSummary": {
+    "plannedDevices": 2,
+    "readyPrimaryCommands": 2,
+    "readySecondaryCommands": 2,
+    "firstCanary": "WSJ01",
+    "requiresPreflightGo": true,
+    "requiresFeedbackBeforeNext": true
+  },
+  "preflightVerdict": "go_live_blocked",
+  "checks": [
+    {
+      "key": "bff_health",
+      "label": "BFF 服务在线",
+      "ok": true,
+      "severity": "P0",
+      "message": "BFF healthz 正常。"
+    },
+    {
+      "key": "backend_write_gate",
+      "label": "后端写入总闸",
+      "ok": false,
+      "severity": "P0",
+      "message": "当前 /healthz 显示 readOnlyMode=true。"
+    },
+    {
+      "key": "policy_enforced",
+      "label": "FCU 策略 enforced",
+      "ok": true,
+      "severity": "P0",
+      "message": "enabled=true, mode=enforced"
+    },
+    {
+      "key": "adapter_configured",
+      "label": "BA 写适配器",
+      "ok": true,
+      "severity": "P0",
+      "message": "dispatchAdapter=legacy-scene-command"
+    },
+    {
+      "key": "whitelist_present",
+      "label": "白名单覆盖",
+      "ok": true,
+      "severity": "P0",
+      "message": "白名单 29 台。"
+    },
+    {
+      "key": "commissioning_has_ready_devices",
+      "label": "设备侧就绪",
+      "ok": true,
+      "severity": "P0",
+      "message": "设备侧就绪 9/29 台。"
+    },
+    {
+      "key": "execution_gate_open",
+      "label": "全局投运闸门",
+      "ok": false,
+      "severity": "P0",
+      "message": "未打开：site_authorization_window_active / backend_not_readonly"
+    },
+    {
+      "key": "confirm_phrase_present",
+      "label": "真实写入确认短语",
+      "ok": false,
+      "severity": "P0",
+      "message": "必须设置 FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE。"
+    },
+    {
+      "key": "canary_queue_ready",
+      "label": "Canary 队列 ready",
+      "ok": true,
+      "severity": "P0",
+      "message": "队列 2 台，首台 WSJ01。"
+    },
+    {
+      "key": "canary_feedback_rule",
+      "label": "逐台反馈规则",
+      "ok": true,
+      "severity": "P0",
+      "message": "已要求反馈通过后进入下一台。"
+    },
+    {
+      "key": "preflight_recent",
+      "label": "预检报告新鲜",
+      "ok": true,
+      "severity": "P1",
+      "message": "预检报告距今 0 min。"
+    },
+    {
+      "key": "queue_recent",
+      "label": "Canary 队列新鲜",
+      "ok": true,
+      "severity": "P1",
+      "message": "队列报告距今 0 min。"
+    },
+    {
+      "key": "runbook_recent",
+      "label": "Runbook 新鲜",
+      "ok": false,
+      "severity": "P1",
+      "message": "Runbook 距今 2485 min。"
+    }
+  ],
+  "blockingItems": [
+    {
+      "key": "backend_write_gate",
+      "label": "后端写入总闸",
+      "ok": false,
+      "severity": "P0",
+      "message": "当前 /healthz 显示 readOnlyMode=true。"
+    },
+    {
+      "key": "execution_gate_open",
+      "label": "全局投运闸门",
+      "ok": false,
+      "severity": "P0",
+      "message": "未打开：site_authorization_window_active / backend_not_readonly"
+    },
+    {
+      "key": "confirm_phrase_present",
+      "label": "真实写入确认短语",
+      "ok": false,
+      "severity": "P0",
+      "message": "必须设置 FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE。"
+    }
+  ],
+  "warningItems": [
+    {
+      "key": "runbook_recent",
+      "label": "Runbook 新鲜",
+      "ok": false,
+      "severity": "P1",
+      "message": "Runbook 距今 2485 min。"
+    }
+  ],
+  "nextCommand": "FCU_CANARY_DEVICE_CODE=WSJ01 FCU_CANARY_COMMAND_KIND=setpoint FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE npm --prefix apps/chiller-bff run execute:fcu-canary-dispatch",
+  "nextActions": [
+    {
+      "priority": "P0",
+      "action": "关闭后端只读总闸并重启 BFF",
+      "target": "READ_ONLY_MODE / CHILLER_READ_ONLY_MODE",
+      "command": "READ_ONLY_MODE=false CHILLER_READ_ONLY_MODE=false npm --prefix apps/chiller-bff run dev",
+      "reason": "当前 /healthz 显示 readOnlyMode=true，真实下发会被后端阻断。"
+    },
+    {
+      "priority": "P0",
+      "action": "设置真实写入确认短语",
+      "target": "FCU_SMALL_BATCH_CONFIRM",
+      "command": "export FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE",
+      "reason": "防止误触发真实 BA 写入。"
+    },
+    {
+      "priority": "P1",
+      "action": "重跑 Arm-Check",
+      "target": "WSJ01",
+      "command": "npm --prefix apps/chiller-bff run check:fcu-field-arm",
+      "reason": "只允许先执行首台 Canary；反馈通过后再扩大。"
+    },
+    {
+      "priority": "P0",
+      "action": "反馈校验与失败回退",
+      "target": "control-record verify-feedback / rollback",
+      "command": "",
+      "reason": "真实下发后必须在 60-120 秒内校验反馈；不一致时锁定设备并回退。"
+    }
+  ],
+  "evidence": {
+    "health": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/healthz",
+      "readOnlyMode": true
+    },
+    "policy": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/hvac-terminal/fan-coils/control-policy"
+    },
+    "commissioning": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/hvac-terminal/fan-coils/commissioning-status?build=1&floor=1"
+    },
+    "files": {
+      "queue": {
+        "ok": true,
+        "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-queue-latest.json"
+      },
+      "preflight": {
+        "ok": true,
+        "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-go-live-preflight-latest.json"
+      },
+      "runbook": {
+        "ok": true,
+        "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-runbook-latest.json"
+      }
+    }
+  }
+}

@@ -1,0 +1,416 @@
+/* Project-level multi-energy configuration hub. */
+
+.config-center-entry-page {
+  min-width: 0;
+}
+
+.config-center-entry-page .section-card {
+  overflow: hidden;
+}
+
+.config-center-entry-page .section-card-header h1,
+.config-center-entry-page .section-card-header h2,
+.config-center-entry-page .config-center-section-heading h2,
+.config-center-entry-page .config-center-module-card h3 {
+  margin: 0;
+  color: var(--text-1);
+}
+
+.config-center-entry-page .section-card-header h1 {
+  margin-top: 3px;
+  font-size: clamp(22px, 1.8vw, 30px);
+  line-height: 1.15;
+}
+
+.config-center-eyebrow,
+.config-center-module-copy > span,
+.config-center-section-heading > div > span {
+  color: #78d7ff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.config-center-hero {
+  background:
+    radial-gradient(circle at 78% 0%, rgba(99, 203, 255, 0.12), transparent 36%),
+    linear-gradient(145deg, rgba(16, 45, 68, 0.92), rgba(7, 20, 34, 0.96));
+}
+
+.config-center-identity-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.42fr);
+  gap: 10px;
+}
+
+.config-center-project-identity,
+.config-center-scope-proof {
+  min-width: 0;
+  display: grid;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(118, 202, 246, 0.22);
+  border-radius: 10px;
+  background: rgba(4, 17, 29, 0.54);
+}
+
+.config-center-project-identity {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.config-center-project-identity > div,
+.config-center-scope-proof {
+  align-content: center;
+}
+
+.config-center-project-identity > div,
+.config-center-scope-proof {
+  display: grid;
+  gap: 2px;
+}
+
+.config-center-project-icon,
+.config-center-module-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(112, 208, 255, 0.25);
+  background: rgba(62, 163, 218, 0.12);
+  color: #72d4ff;
+}
+
+.config-center-project-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+}
+
+.config-center-project-identity span,
+.config-center-scope-proof span {
+  color: var(--text-2);
+  font-size: 11px;
+}
+
+.config-center-project-identity strong,
+.config-center-scope-proof strong {
+  color: var(--text-1);
+  font-size: 15px;
+}
+
+.config-center-project-identity small,
+.config-center-scope-proof small {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: 10px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.config-center-hub {
+  display: grid;
+  gap: 10px;
+}
+
+.config-center-section-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 0 3px;
+}
+
+.config-center-section-heading > div {
+  display: grid;
+  gap: 2px;
+}
+
+.config-center-section-heading h2 {
+  font-size: 17px;
+}
+
+.config-center-section-heading > small {
+  color: var(--text-3);
+  font-size: 10px;
+}
+
+.config-center-admin-state.is-available {
+  color: #77e2b0;
+}
+
+.config-center-admin-state.is-checking {
+  color: #d9c28c;
+}
+
+.config-center-admin-state.is-unavailable {
+  color: #ffb3aa;
+}
+
+.config-center-hub-grid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.config-center-module-card {
+  position: relative;
+  min-width: 0;
+  min-height: 188px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 10px 11px;
+  padding: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(115, 177, 215, 0.2);
+  border-radius: 12px;
+  background:
+    linear-gradient(145deg, rgba(18, 45, 65, 0.72), rgba(7, 21, 35, 0.94)),
+    var(--panel);
+}
+
+.config-center-module-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: rgba(104, 216, 255, 0.76);
+}
+
+.config-center-module-card.is-primary {
+  border-color: rgba(105, 223, 174, 0.34);
+}
+
+.config-center-module-card.is-primary::before {
+  background: #69dfae;
+}
+
+.config-center-module-card.is-station {
+  border-color: rgba(112, 207, 255, 0.42);
+  box-shadow: inset 0 0 24px rgba(62, 158, 216, 0.06);
+}
+
+.config-center-module-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+}
+
+.config-center-module-copy {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+}
+
+.config-center-module-copy h3 {
+  font-size: 15px;
+}
+
+.config-center-module-copy p {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 11px;
+  line-height: 1.52;
+}
+
+.config-center-module-copy small {
+  color: var(--text-3);
+  font-size: 9.5px;
+  line-height: 1.45;
+}
+
+.config-center-module-card > a,
+.config-center-module-card > button {
+  grid-column: 1 / -1;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 11px;
+  border: 1px solid rgba(120, 201, 244, 0.26);
+  border-radius: 9px;
+  background: rgba(71, 156, 206, 0.1);
+  color: var(--text-1);
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.config-center-module-card > a:hover,
+.config-center-module-card > a:focus-visible,
+.config-center-module-card > button:hover:not(:disabled),
+.config-center-module-card > button:focus-visible {
+  border-color: rgba(120, 213, 255, 0.62);
+  background: rgba(76, 180, 232, 0.17);
+}
+
+.config-center-module-card > button {
+  cursor: pointer;
+}
+
+.config-center-module-card > button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.config-center-flow .section-card-header h2 {
+  font-size: 16px;
+}
+
+.config-center-flow-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.34fr);
+  gap: 10px;
+}
+
+.config-center-flow-steps {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.config-center-flow-steps li {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px 9px;
+  border: 1px solid rgba(113, 186, 226, 0.18);
+  border-radius: 9px;
+  background: rgba(4, 18, 30, 0.48);
+}
+
+.config-center-flow-steps li > span {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(96, 201, 248, 0.14);
+  color: #79d6ff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.config-center-flow-steps li > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.config-center-flow-steps strong {
+  overflow: hidden;
+  color: var(--text-1);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.config-center-flow-steps small {
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: 8.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.config-center-safety-note {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  border: 1px solid rgba(99, 225, 168, 0.24);
+  border-radius: 9px;
+  background: rgba(42, 111, 77, 0.12);
+  color: #69dfa8;
+}
+
+.config-center-safety-note > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.config-center-safety-note strong {
+  color: #bff4d8;
+  font-size: 10.5px;
+}
+
+.config-center-safety-note small {
+  color: var(--text-2);
+  font-size: 8.5px;
+  line-height: 1.45;
+}
+
+@media (max-width: 1260px) {
+  .config-center-hub-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .config-center-flow-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .config-center-entry-page {
+    gap: 12px;
+  }
+
+  .config-center-entry-page .section-card-header,
+  .config-center-section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .config-center-identity-wrap,
+  .config-center-hub-grid,
+  .config-center-flow-steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .config-center-module-card > a,
+  .config-center-module-card > button {
+    min-height: 44px;
+  }
+
+  .config-center-project-identity small,
+  .config-center-scope-proof small,
+  .config-center-flow-steps strong,
+  .config-center-flow-steps small {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .config-center-module-card {
+    min-height: 184px;
+  }
+
+  .config-center-module-card > a {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .config-center-entry-page *,
+  .config-center-entry-page *::before,
+  .config-center-entry-page *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}

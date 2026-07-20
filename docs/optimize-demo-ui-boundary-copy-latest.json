@@ -1,0 +1,381 @@
+{
+  "generatedAt": "2026-06-16T05:23:59.870Z",
+  "sourceFile": "apps/chiller-shell-v1/src/pages/OptimizeDemoPage.tsx",
+  "finalDecision": "UI_BOUNDARY_COPY_READY",
+  "required": [
+    {
+      "key": "real_plc_locked",
+      "label": "真实 PLC 下发锁定",
+      "ok": true,
+      "matchedText": "真实 PLC 下发锁定",
+      "lineNumber": 4185
+    },
+    {
+      "key": "shadow_only_execution",
+      "label": "只生成影子记录",
+      "ok": true,
+      "matchedText": "审批后只生成影子记录",
+      "lineNumber": 4177
+    },
+    {
+      "key": "no_multi_chiller_single_cop",
+      "label": "多机不计算单台 COP",
+      "ok": true,
+      "matchedText": "不计算多机单台 COP",
+      "lineNumber": 4144
+    },
+    {
+      "key": "no_new_plc_dispatch",
+      "label": "不新增 PLC 下发能力",
+      "ok": true,
+      "matchedText": "不新增 PLC 下发能力",
+      "lineNumber": 5832
+    },
+    {
+      "key": "read_only_diagnostics",
+      "label": "只读诊断",
+      "ok": true,
+      "matchedText": "只读诊断",
+      "lineNumber": 1924
+    },
+    {
+      "key": "advisor_operational_scope",
+      "label": "运行诊断覆盖口径",
+      "ok": true,
+      "matchedText": "仪表、水力、控制震荡、低温差、冷却塔和主机样本只读诊断",
+      "lineNumber": 5831
+    },
+    {
+      "key": "instrument_drift_v1",
+      "label": "仪表偏移 V1",
+      "ok": true,
+      "matchedText": "仪表偏移 V1",
+      "lineNumber": 5887
+    },
+    {
+      "key": "instrument_no_auto_correction",
+      "label": "不自动修正测点",
+      "ok": true,
+      "matchedText": "不自动修正测点",
+      "lineNumber": 4056
+    },
+    {
+      "key": "hydraulic_balance_v1",
+      "label": "水力平衡 V1",
+      "ok": true,
+      "matchedText": "水力平衡 V1",
+      "lineNumber": 5999
+    },
+    {
+      "key": "hydraulic_no_auto_pump_down",
+      "label": "不自动降泵",
+      "ok": true,
+      "matchedText": "不自动降泵",
+      "lineNumber": 4073
+    },
+    {
+      "key": "hydraulic_no_terminal_fault",
+      "label": "不直接判定末端阀门故障",
+      "ok": true,
+      "matchedText": "不直接判定末端阀门故障",
+      "lineNumber": 4073
+    },
+    {
+      "key": "control_oscillation_v1",
+      "label": "控制震荡 V1",
+      "ok": true,
+      "matchedText": "控制震荡 V1",
+      "lineNumber": 6093
+    },
+    {
+      "key": "control_no_auto_pid",
+      "label": "不自动改 PID",
+      "ok": true,
+      "matchedText": "不自动改 PID",
+      "lineNumber": 4090
+    },
+    {
+      "key": "control_no_auto_start_stop",
+      "label": "不自动启停设备",
+      "ok": true,
+      "matchedText": "不自动启停设备",
+      "lineNumber": 4090
+    },
+    {
+      "key": "manual_review_gate",
+      "label": "人工审阅门禁",
+      "ok": true,
+      "matchedText": "人工审阅门禁",
+      "lineNumber": 5581
+    },
+    {
+      "key": "shadow_suite_gate",
+      "label": "140 shadow suite",
+      "ok": true,
+      "matchedText": "140 shadow suite",
+      "lineNumber": 5588
+    },
+    {
+      "key": "no_control_mutation_gate",
+      "label": "控制副作用防护",
+      "ok": true,
+      "matchedText": "NO_CONTROL_MUTATION",
+      "lineNumber": 4000
+    },
+    {
+      "key": "one_vote_stop_gate",
+      "label": "一票否决",
+      "ok": true,
+      "matchedText": "一票否决",
+      "lineNumber": 5615
+    },
+    {
+      "key": "shadow_verification_record",
+      "label": "影子验证记录",
+      "ok": true,
+      "matchedText": "影子验证记录",
+      "lineNumber": 5623
+    },
+    {
+      "key": "shadow_verification_window",
+      "label": "30-60min 同工况验证",
+      "ok": true,
+      "matchedText": "30-60min 同负荷/湿球 band 对比",
+      "lineNumber": 1860
+    },
+    {
+      "key": "manual_recording_boundary",
+      "label": "人工记录边界",
+      "ok": true,
+      "matchedText": "人工记录",
+      "lineNumber": 4499
+    },
+    {
+      "key": "no_fixed_savings_commitment",
+      "label": "不承诺固定节能",
+      "ok": true,
+      "matchedText": "不作为固定节能承诺",
+      "lineNumber": 1233
+    },
+    {
+      "key": "append_only_shadow_record",
+      "label": "append-only 验证记录",
+      "ok": true,
+      "matchedText": "append-only 记录",
+      "lineNumber": 4913
+    },
+    {
+      "key": "manual_shadow_record_save",
+      "label": "保存人工验证记录",
+      "ok": true,
+      "matchedText": "保存人工验证记录",
+      "lineNumber": 4928
+    },
+    {
+      "key": "shadow_review_append_only",
+      "label": "补录复核结果",
+      "ok": true,
+      "matchedText": "补录复核结果",
+      "lineNumber": 4913
+    },
+    {
+      "key": "shadow_review_summary",
+      "label": "影子复核统计",
+      "ok": true,
+      "matchedText": "影子复核统计",
+      "lineNumber": 5006
+    },
+    {
+      "key": "readonly_shadow_summary",
+      "label": "只读统计摘要",
+      "ok": true,
+      "matchedText": "只读统计摘要",
+      "lineNumber": 5007
+    },
+    {
+      "key": "advisor_type_filter",
+      "label": "Advisor 类型筛选",
+      "ok": true,
+      "matchedText": "Advisor 类型筛选",
+      "lineNumber": 4957
+    },
+    {
+      "key": "advisor_type_summary",
+      "label": "按 Advisor 类型统计",
+      "ok": true,
+      "matchedText": "按 Advisor 类型统计",
+      "lineNumber": 5066
+    },
+    {
+      "key": "execution_drilldown_filter",
+      "label": "执行单 ID 下钻",
+      "ok": true,
+      "matchedText": "执行单 ID 下钻",
+      "lineNumber": 4980
+    },
+    {
+      "key": "execution_drilldown_boundary",
+      "label": "执行单下钻只读边界",
+      "ok": true,
+      "matchedText": "按单个 shadow 执行单查看",
+      "lineNumber": 4981
+    },
+    {
+      "key": "single_shadow_review_summary",
+      "label": "单次 shadow 复盘摘要",
+      "ok": true,
+      "matchedText": "单次 shadow 复盘摘要",
+      "lineNumber": 5020
+    },
+    {
+      "key": "single_shadow_review_boundary",
+      "label": "单次复盘只读边界",
+      "ok": true,
+      "matchedText": "只做审计复盘",
+      "lineNumber": 5022
+    },
+    {
+      "key": "shadow_review_archive_checksum",
+      "label": "报告ID/校验码",
+      "ok": true,
+      "matchedText": "报告ID/校验码",
+      "lineNumber": 5022
+    },
+    {
+      "key": "shadow_review_not_e_signature",
+      "label": "不是电子签名",
+      "ok": true,
+      "matchedText": "不是电子签名",
+      "lineNumber": 5022
+    },
+    {
+      "key": "single_shadow_review_report_export",
+      "label": "导出复盘报告",
+      "ok": true,
+      "matchedText": "导出复盘报告",
+      "lineNumber": 5037
+    },
+    {
+      "key": "shadow_review_print_style",
+      "label": "A4 打印样式",
+      "ok": true,
+      "matchedText": "A4 打印样式",
+      "lineNumber": 5022
+    },
+    {
+      "key": "shadow_review_print_page",
+      "label": "打开打印版",
+      "ok": true,
+      "matchedText": "打开打印版",
+      "lineNumber": 5051
+    },
+    {
+      "key": "shadow_review_signature_area",
+      "label": "甲方/值班员签字确认区",
+      "ok": true,
+      "matchedText": "甲方/值班员签字确认区",
+      "lineNumber": 5022
+    },
+    {
+      "key": "advisor_type_split",
+      "label": "主机组合 / 冷却塔 / 泵 Delta-T",
+      "ok": true,
+      "matchedText": "主机组合 / 冷却塔 / 泵 Delta-T",
+      "lineNumber": 5067
+    },
+    {
+      "key": "shadow_record_audit_export",
+      "label": "导出审计 CSV",
+      "ok": true,
+      "matchedText": "导出审计 CSV",
+      "lineNumber": 4913
+    },
+    {
+      "key": "diagnostic_readiness_matrix",
+      "label": "数据资源与诊断可行性",
+      "ok": true,
+      "matchedText": "数据资源与诊断可行性",
+      "lineNumber": 5668
+    },
+    {
+      "key": "directional_diagnostics_boundary",
+      "label": "只能疑似判断",
+      "ok": true,
+      "matchedText": "只能疑似判断",
+      "lineNumber": 2129
+    },
+    {
+      "key": "point_gap_plan",
+      "label": "暂不能做",
+      "ok": true,
+      "matchedText": "暂不能做",
+      "lineNumber": 2132
+    },
+    {
+      "key": "field_verification_checklist",
+      "label": "现场复核清单",
+      "ok": true,
+      "matchedText": "现场复核清单",
+      "lineNumber": 5737
+    },
+    {
+      "key": "field_verification_readonly_boundary",
+      "label": "只读点位/资料补齐",
+      "ok": true,
+      "matchedText": "只读点位/资料补齐",
+      "lineNumber": 5738
+    },
+    {
+      "key": "no_fault_diagnosis_commitment",
+      "label": "不判定设备故障",
+      "ok": true,
+      "matchedText": "不判定设备故障",
+      "lineNumber": 5675
+    },
+    {
+      "key": "client_demo_readiness_gate",
+      "label": "甲方演示 readiness",
+      "ok": true,
+      "matchedText": "甲方演示 readiness",
+      "lineNumber": 5551
+    }
+  ],
+  "forbidden": [
+    {
+      "key": "automatic_start_stop",
+      "label": "自动启停",
+      "ok": true,
+      "matchedText": null,
+      "lineNumber": null
+    },
+    {
+      "key": "real_plc_dispatch_enabled",
+      "label": "真实 PLC 下发已开启",
+      "ok": true,
+      "matchedText": null,
+      "lineNumber": null
+    },
+    {
+      "key": "automatic_dispatch",
+      "label": "自动下发",
+      "ok": true,
+      "matchedText": null,
+      "lineNumber": null
+    },
+    {
+      "key": "unattended_closed_loop",
+      "label": "无人值守闭环",
+      "ok": true,
+      "matchedText": null,
+      "lineNumber": null
+    },
+    {
+      "key": "enforced_enabled",
+      "label": "enforced 已启用",
+      "ok": true,
+      "matchedText": null,
+      "lineNumber": null
+    }
+  ],
+  "blockers": []
+}

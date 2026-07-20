@@ -1,17 +1,16 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { runtimeConfig } from "../config/runtimeConfig";
 import { zhCN } from "../i18n/zhCN";
 import { loginWithLegacy, resolveAuthDestination } from "../services/auth";
+import "./LoginMobile.css";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("123456");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorText, setErrorText] = useState("");
-  const showRuntimeNotice = runtimeConfig.appMode !== "local" || runtimeConfig.readOnlyMode;
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -44,7 +43,8 @@ export default function LoginPage() {
         <section className="login-intro">
           <p className="eyebrow">{zhCN.login.eyebrow}</p>
           <h1>{zhCN.login.heading}</h1>
-          <p className="login-intro-copy">{zhCN.login.footer}</p>
+          <p className="login-intro-copy">统一查看项目运行、设备状态与能效分析。</p>
+          <p className="login-intro-copy">登录后会保留当前入口，并进入对应项目页面继续操作。</p>
           <div className="login-intro-grid">
             <article>
               <span>{zhCN.appShell.navDashboard}</span>
@@ -62,22 +62,16 @@ export default function LoginPage() {
         </section>
 
         <section className="login-card">
-          <p className="eyebrow">{zhCN.login.eyebrow}</p>
-          <h2>{zhCN.login.heading}</h2>
-          {showRuntimeNotice ? (
-            <div className="runtime-mode-notice">
-              <div className="runtime-mode-notice-tags">
-                {runtimeConfig.appMode !== "local" ? <span>{runtimeConfig.appModeLabel}</span> : null}
-                {runtimeConfig.readOnlyMode ? <span>{zhCN.runtimeMode.readOnlyBadge}</span> : null}
-              </div>
-              <p>{runtimeConfig.readOnlyMode ? zhCN.runtimeMode.remoteReadOnlyHint : zhCN.runtimeMode.remoteHint}</p>
-            </div>
-          ) : null}
+          <h2>账号登录</h2>
           <form onSubmit={handleSubmit}>
             <label>
               {zhCN.login.username}
               <input
                 autoComplete="username"
+                name="username"
+                required
+                aria-invalid={errorText ? true : undefined}
+                aria-describedby={errorText ? "login-error" : undefined}
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
               />
@@ -86,7 +80,11 @@ export default function LoginPage() {
               {zhCN.login.password}
               <input
                 autoComplete="current-password"
+                name="password"
+                required
                 type="password"
+                aria-invalid={errorText ? true : undefined}
+                aria-describedby={errorText ? "login-error" : undefined}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder={zhCN.login.passwordPlaceholder}
@@ -96,9 +94,12 @@ export default function LoginPage() {
               {submitting ? zhCN.login.submitting : zhCN.login.submit}
             </button>
           </form>
-          {errorText ? <p className="login-error">{errorText}</p> : null}
-          <p className="login-hint">{zhCN.login.hint}</p>
-          <small>{zhCN.login.footer}</small>
+          {errorText ? (
+            <p id="login-error" className="login-error" role="alert" aria-live="polite">
+              {errorText}
+            </p>
+          ) : null}
+          <p className="login-hint">适合远端联调和日常登录，默认会返回你刚才打开的页面。</p>
         </section>
       </div>
     </div>

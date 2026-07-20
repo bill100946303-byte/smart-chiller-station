@@ -1,0 +1,484 @@
+{
+  "generatedAt": "2026-06-16T05:25:01.460Z",
+  "site": {
+    "siteId": "140",
+    "siteCode": "btwentyfive",
+    "databaseKey": "140btwentyfive",
+    "projectKey": "126lnoffice",
+    "template": "1"
+  },
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "finalDecision": "GO_SHADOW",
+  "readOnlyAdviceStatus": "READY",
+  "shadowReadinessStatus": "GO",
+  "optimizeInputs": {
+    "inputs": {
+      "loadKw": 12979.5,
+      "outdoorTempC": 25.9,
+      "mode": "cooling"
+    },
+    "notes": [
+      "loadKw 使用 dashboard.totalCoolingCapacity",
+      "outdoorTempC 使用 dashboard.outdoorTempC"
+    ]
+  },
+  "telemetry": {
+    "systemCop": 6.6,
+    "totalPowerKw": 1940.3,
+    "totalCoolingCapacity": 12979.5,
+    "currentLoadRate": 51.3,
+    "coolingReturnTemp": 28.3,
+    "coolingDeltaT": 4.7,
+    "calculatedTcwsC": 28.3,
+    "outdoorWetBulbC": 25.6,
+    "calculatedApproachC": 2.7,
+    "advisorApproachC": 2.7,
+    "advisorTargetApproachC": 3.2,
+    "advisorTargetTcwsC": 28.8,
+    "coolingTowerPowerKw": 59.5,
+    "chillerPowerKw": 1630.2,
+    "thermalUnbalanceRateRaw": 11.1,
+    "thermalUnbalancePct": 11.1,
+    "activeAlarmCount": 8
+  },
+  "advisor": {
+    "status": "ready",
+    "reason": "目标冷却水温受最低冷凝器进水温保护约束，已生成多步 shadow 计划；本次只提交下一步目标。",
+    "executionMode": "shadow",
+    "dispatchMode": "shadow",
+    "controlMode": "shadow-verification",
+    "executionReady": true,
+    "dispatchReady": true,
+    "blockers": [],
+    "warnings": [
+      "历史样本置信度低，节能评估需 shadow 对比验证。",
+      "最终冷却水出水温目标 30℃ 需分 4 步 shadow 验证，本次仅提交 28.8℃。"
+    ],
+    "inputSignals": [
+      {
+        "key": "outdoorWetBulbC",
+        "label": "室外湿球温度",
+        "value": 25.6,
+        "unit": "℃",
+        "required": true,
+        "ok": true,
+        "reason": null
+      },
+      {
+        "key": "currentTcwsC",
+        "label": "冷却水出水温",
+        "value": 28.3,
+        "unit": "℃",
+        "required": true,
+        "ok": true,
+        "reason": null
+      },
+      {
+        "key": "currentApproachC",
+        "label": "当前接近度",
+        "value": 2.7,
+        "unit": "℃",
+        "required": true,
+        "ok": true,
+        "reason": null
+      },
+      {
+        "key": "towerFanFeedback",
+        "label": "冷却塔风机反馈",
+        "value": 59.5,
+        "unit": "kW",
+        "required": true,
+        "ok": true,
+        "reason": null
+      },
+      {
+        "key": "chillerRunningState",
+        "label": "冷机运行状态",
+        "value": 1630.2,
+        "unit": "kW",
+        "required": true,
+        "ok": true,
+        "reason": null
+      },
+      {
+        "key": "totalPowerKw",
+        "label": "系统总功率",
+        "value": 1940.3,
+        "unit": "kW",
+        "required": true,
+        "ok": true,
+        "reason": null
+      },
+      {
+        "key": "minCondenserInletTempC",
+        "label": "冷机最低冷凝器进水温",
+        "value": 30,
+        "unit": "℃",
+        "required": true,
+        "ok": true,
+        "reason": null
+      }
+    ],
+    "guardrails": [
+      {
+        "key": "alarmGate",
+        "status": "ready",
+        "value": "ready",
+        "message": "门禁允许继续评审接近度调节建议。"
+      },
+      {
+        "key": "chillerMinCondenserInletTempC",
+        "status": "ready",
+        "value": 30,
+        "message": "目标冷却水温必须高于该下限。",
+        "resolvedBy": "default",
+        "matchedKeys": []
+      },
+      {
+        "key": "towerControlStep",
+        "status": "ready",
+        "value": "≤0.5℃/step",
+        "message": "最终目标触及最低冷凝器进水温，已拆分为 4 步 shadow；本次目标变化不超过 0.5℃。"
+      },
+      {
+        "key": "plcControlPointMapping",
+        "status": "ready",
+        "value": "mapped",
+        "message": "已具备接近度目标控制点/下发端点映射，可进入对应模式校验。"
+      }
+    ],
+    "execution": {
+      "approvalRequired": true,
+      "allowedToCreateExecution": true,
+      "allowedToDispatch": true,
+      "dispatchMode": "shadow",
+      "approveEndpointConfigured": true,
+      "rollbackEndpointConfigured": true,
+      "controlPointMapped": true,
+      "rollbackMapped": true
+    },
+    "outputTargets": {
+      "targetApproachC": 3.2,
+      "targetTcwsC": 28.8,
+      "finalTargetApproachC": 4.4,
+      "finalTargetTcwsC": 30,
+      "nextStepTargetApproachC": 3.2,
+      "nextStepTargetTcwsC": 28.8,
+      "rawTargetApproachC": 2.5,
+      "currentApproachC": 2.7,
+      "currentTcwsC": 28.3,
+      "targetBandC": {
+        "low": 1.8,
+        "high": 3.8,
+        "label": "低负荷区间"
+      },
+      "multiStepPlan": {
+        "required": true,
+        "reason": "min_condenser_guardrail",
+        "finalTargetTcwsC": 30,
+        "finalTargetApproachC": 4.4,
+        "nextStepTargetTcwsC": 28.8,
+        "nextStepTargetApproachC": 3.2,
+        "stepCount": 4,
+        "maxStepC": 0.5,
+        "steps": [
+          {
+            "index": 1,
+            "targetTcwsC": 28.8,
+            "targetApproachC": 3.2
+          },
+          {
+            "index": 2,
+            "targetTcwsC": 29.3,
+            "targetApproachC": 3.7
+          },
+          {
+            "index": 3,
+            "targetTcwsC": 29.8,
+            "targetApproachC": 4.2
+          },
+          {
+            "index": 4,
+            "targetTcwsC": 30,
+            "targetApproachC": 4.4
+          }
+        ]
+      },
+      "targetAdjustedByMinCondenserGuardrail": true,
+      "stepLimited": true,
+      "maxStepC": 0.5,
+      "deadbandC": 0.2
+    }
+  },
+  "wetBulbTrend": {
+    "tagname": "SY-1-509-42048",
+    "title": "Wet Bulb Temperature",
+    "pointCount": 144,
+    "latest": null,
+    "sourceStatus": {
+      "overall": "ok",
+      "sources": [
+        {
+          "key": "sceneLegacyTrend",
+          "endpoint": "/zsqy/homepage/140btwentyfive/getRunParamsCurveByTagName?title=Wet+Bulb+Temperature&tagname=SY-1-509-42048",
+          "ok": true,
+          "fallback": false,
+          "reasonCode": null,
+          "status": 200,
+          "message": "OK",
+          "error": null,
+          "rows": 144,
+          "baseUrl": null,
+          "interfaceKind": null,
+          "originLabel": null
+        }
+      ]
+    }
+  },
+  "executionGovernance": {
+    "listOk": true,
+    "total": 7,
+    "latestExecutionId": "opx-140-1781587399486-17y2n9",
+    "latestStatus": "pending_approval"
+  },
+  "sourceEvidence": {
+    "dashboard": {
+      "ok": true,
+      "status": 200,
+      "overall": "ok",
+      "sources": [
+        {
+          "key": "energy",
+          "ok": true,
+          "status": 200,
+          "reasonCode": null,
+          "rows": 4,
+          "endpoint": "/zsqy/homepage/140btwentyfive/getEquipmentEnergyStatisticsCurve",
+          "message": "OK; coreMetricsReady=3/3; fallback=runParamsByTag.chilledDeltaT:rows=144,runParamsByTag.chilledDeltaT:failed,runParamsByTag.chilledDeltaT:rows=144,runParamsByTag.coolingDeltaT:rows=144,runParamsByTag.coolingDeltaT:failed,runParamsByTag.coolingDeltaT:rows=144,runParamsByTag.currentCop:rows=144,runParamsByTag.currentCop:failed,runParamsByTag.currentCop:rows=144,homeEnergyEfficiency:rows=25,homeEnergyEfficiency:rows=0,homeEnergyEfficiency:rows=25",
+          "error": null
+        },
+        {
+          "key": "realtimeParameters",
+          "ok": true,
+          "status": 200,
+          "reasonCode": null,
+          "rows": 17,
+          "endpoint": "/wx/device/140btwentyfive/listRealTimeParameters?modelKey=140btwentyfive",
+          "message": "OK",
+          "error": null
+        },
+        {
+          "key": "devices",
+          "ok": true,
+          "status": 200,
+          "reasonCode": null,
+          "rows": 184,
+          "endpoint": "/zsqy/drinfo/140btwentyfive/findObject?pageCurrent=1&pageSize=200",
+          "message": "OK",
+          "error": null
+        },
+        {
+          "key": "alarms",
+          "ok": true,
+          "status": 200,
+          "reasonCode": null,
+          "rows": 8,
+          "endpoint": "/zsqy/qsAlarmlog/126lnoffice/findAlarm?pageCurrent=1&pageSize=20&alarmstate=&alarmtypelevel=&drtypeid=0&language=zh&unit=KW&modelKey=126lnoffice&template=1",
+          "message": "OK; identifierProbe=140btwentyfive:rows=0,140:failed,126lnoffice:rows=8; selected=126lnoffice",
+          "error": null
+        }
+      ]
+    },
+    "advice": {
+      "ok": true,
+      "status": 200,
+      "overall": "ok",
+      "sources": [
+        {
+          "key": "dashboardOverview",
+          "ok": true,
+          "status": null,
+          "reasonCode": "ready",
+          "rows": 4,
+          "endpoint": "/bff/v1/sites/140/dashboard/overview",
+          "message": "ok",
+          "error": null
+        },
+        {
+          "key": "anomalySummary",
+          "ok": true,
+          "status": null,
+          "reasonCode": "ready",
+          "rows": 2,
+          "endpoint": "/bff/v1/sites/140/anomalies/summary",
+          "message": "ok",
+          "error": null
+        },
+        {
+          "key": "recommendations",
+          "ok": true,
+          "status": null,
+          "reasonCode": "ready",
+          "rows": 8,
+          "endpoint": "/bff/v1/sites/140/recommendations",
+          "message": "ok",
+          "error": null
+        },
+        {
+          "key": "chillerStagingRuntime",
+          "ok": true,
+          "status": null,
+          "reasonCode": "ready",
+          "rows": 2,
+          "endpoint": "/bff/v1/sites/140/devices/tree",
+          "message": "ok",
+          "error": null
+        },
+        {
+          "key": "historyBenchmark",
+          "ok": true,
+          "status": null,
+          "reasonCode": "history_match_load_only",
+          "rows": 3,
+          "endpoint": "/bff/v1/sites/140/energy-efficiency/proportion",
+          "message": "ready",
+          "error": null
+        },
+        {
+          "key": "optimizeEngine",
+          "ok": true,
+          "status": null,
+          "reasonCode": "advisor_result_ready",
+          "rows": null,
+          "endpoint": "/bff/v1/sites/140/optimize",
+          "message": "chiller staging, tower approach and pump delta-t advisor result generated",
+          "error": null
+        },
+        {
+          "key": "pumpDeltaTAdvisor",
+          "ok": true,
+          "status": null,
+          "reasonCode": "pump_delta_t_advisor_ready",
+          "rows": null,
+          "endpoint": "/bff/v1/sites/140/optimize",
+          "message": "低温差条件成立，已生成运行泵频率小步长降频建议。",
+          "error": null
+        },
+        {
+          "key": "chillerStagingAdvisor",
+          "ok": true,
+          "status": null,
+          "reasonCode": "chiller_staging_advisor_partial",
+          "rows": 5,
+          "endpoint": "/bff/v1/sites/140/optimize",
+          "message": "未发现满足样本、容量余量和节能门槛的候选组合，保持当前组合。",
+          "error": null
+        },
+        {
+          "key": "operationalDiagnosticsAdvisor",
+          "ok": true,
+          "status": null,
+          "reasonCode": "operational_diagnostics_partial",
+          "rows": 6,
+          "endpoint": "/bff/v1/sites/140/optimize",
+          "message": "ready=5, partial=1, unavailable=0",
+          "error": null
+        }
+      ]
+    },
+    "wetBulbTrend": {
+      "ok": true,
+      "status": 200,
+      "overall": "ok",
+      "sources": [
+        {
+          "key": "sceneLegacyTrend",
+          "ok": true,
+          "status": 200,
+          "reasonCode": null,
+          "rows": 144,
+          "endpoint": "/zsqy/homepage/140btwentyfive/getRunParamsCurveByTagName?title=Wet+Bulb+Temperature&tagname=SY-1-509-42048",
+          "message": "OK",
+          "error": null
+        }
+      ]
+    }
+  },
+  "dataReadinessGate": {
+    "finalDecision": "READY",
+    "readyCount": 8,
+    "total": 8,
+    "items": [
+      {
+        "key": "dashboard_overview",
+        "label": "Dashboard 实时总览",
+        "status": "ready",
+        "evidence": "http=200 / overall=ok",
+        "recoveryAction": "先恢复 dashboard/overview 数据源；核对 siteId=140、databaseKey=140btwentyfive、projectKey=126lnoffice 与上游接口可用性。"
+      },
+      {
+        "key": "system_power",
+        "label": "系统总功率",
+        "status": "ready",
+        "evidence": "totalPowerKw=1940.3 kW",
+        "recoveryAction": "核对冷站总电表、主机/泵/塔功率汇总点和 Dashboard 能源卡片映射。"
+      },
+      {
+        "key": "cooling_load",
+        "label": "系统总冷量",
+        "status": "ready",
+        "evidence": "totalCoolingCapacity=12979.5 kW",
+        "recoveryAction": "核对冷冻水总流量、供回水温差、冷量计算和额定冷量配置。"
+      },
+      {
+        "key": "tcws",
+        "label": "冷却水出水/Tcws",
+        "status": "ready",
+        "evidence": "coolingReturnTemp=28.3℃ / signal=ok",
+        "recoveryAction": "核对冷却塔出水、冷机冷凝器进水或冷却回水点位；确认物理位置和单位。"
+      },
+      {
+        "key": "wet_bulb_live",
+        "label": "实时湿球",
+        "status": "ready",
+        "evidence": "outdoorWetBulbC=25.6℃ / signal=ok",
+        "recoveryAction": "核对室外湿球点位、气象站通讯和湿球计算来源；缺失时 Approach 只能只读。"
+      },
+      {
+        "key": "wet_bulb_trend",
+        "label": "湿球历史趋势",
+        "status": "ready",
+        "evidence": "tag=SY-1-509-42048 / points=144 / overall=ok",
+        "recoveryAction": "核对湿球趋势 tagname=SY-1-509-42048 是否正确，并确认历史曲线接口有 30-60min 对比样本。"
+      },
+      {
+        "key": "tower_fan_feedback",
+        "label": "冷却塔风机功率/反馈",
+        "status": "ready",
+        "evidence": "coolingTowerPowerKw=59.5 kW",
+        "recoveryAction": "核对塔风机运行反馈、频率反馈、功率或分组运行状态；无反馈时不做闭环目标。"
+      },
+      {
+        "key": "active_chillers",
+        "label": "活跃主机上下文",
+        "status": "ready",
+        "evidence": "advisor blocker not present",
+        "recoveryAction": "核对 CH1-CH7 运行状态、机组启停信号和当前主机组合；缺失时不能判断最低冷凝水温边界。"
+      }
+    ]
+  },
+  "blockers": [],
+  "warnings": [
+    "历史样本置信度低，节能评估需 shadow 对比验证。",
+    "最终冷却水出水温目标 30℃ 需分 4 步 shadow 验证，本次仅提交 28.8℃。",
+    "当前活动告警 8 条，shadow 前需确认无严重告警、传感器冻结或塔风机反馈异常。"
+  ],
+  "humanIntervention": [
+    "复核当前活动告警等级；存在严重告警、传感器冻结、塔风机反馈异常时禁止下发。"
+  ],
+  "nextActions": [
+    "保留 read_only 与 shadow 双轨观察，先不要打开 enforced。",
+    "按同负荷/相近湿球工况对比 COP、kW/RT、总功率、冷机功率、塔风机功率和告警次数。",
+    "shadow 至少覆盖高/中/低负荷样本后，再评审 assisted。"
+  ]
+}

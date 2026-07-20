@@ -1,0 +1,215 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-17T18:54:49.965Z",
+  "siteId": "126lnoffice",
+  "build": "1",
+  "floor": "1",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "verdict": "environment_blocked",
+  "summary": {
+    "total": 29,
+    "ready": 0,
+    "environmentBlocked": 21,
+    "deviceBlocked": 8,
+    "notFound": 0,
+    "deviceReady": 21,
+    "canDispatch": 0
+  },
+  "executionGate": {
+    "ready": false,
+    "dispatchAllowed": false,
+    "readOnlyMode": true,
+    "subsystemWriteEnabled": true,
+    "boundaryMode": "enforced",
+    "policyMode": "enforced",
+    "adapterConfigured": true,
+    "whitelistCount": 29,
+    "sourceStatus": "demo_data",
+    "conditions": [
+      {
+        "key": "policy_enabled",
+        "label": "FCU策略启用",
+        "ok": true
+      },
+      {
+        "key": "mode_enforced",
+        "label": "控制模式为自动闭环",
+        "ok": true
+      },
+      {
+        "key": "subsystem_write_enabled",
+        "label": "空调末端子系统写总闸",
+        "ok": true
+      },
+      {
+        "key": "dispatch_adapter_configured",
+        "label": "BA写适配器已配置",
+        "ok": true
+      },
+      {
+        "key": "whitelist_not_empty",
+        "label": "单台白名单非空",
+        "ok": true
+      },
+      {
+        "key": "backend_not_readonly",
+        "label": "后端环境允许真实写入",
+        "ok": false
+      }
+    ],
+    "blockedReasons": [
+      "backend_not_readonly"
+    ]
+  },
+  "report": {
+    "verdict": "environment_blocked",
+    "generatedAt": "2026-06-17T18:54:49.960Z",
+    "summaryText": "21台 FCU 设备侧就绪，但全局投运闸门仍阻断真实写入。",
+    "conditionBlockers": [
+      {
+        "key": "global_execution_gate",
+        "label": "全局投运闸门",
+        "count": 29,
+        "deviceCodes": [
+          "BGS01",
+          "BGS02",
+          "BGS03",
+          "BGS04",
+          "BGS05",
+          "BGS06",
+          "CWS",
+          "DHYS",
+          "DTT",
+          "GCBGQ01",
+          "GCBGQ02",
+          "GCBGQ03",
+          "JDS",
+          "LZBGS",
+          "QT01",
+          "QT02",
+          "QTS",
+          "SYS",
+          "TNFBQ01",
+          "TNFBQ02"
+        ]
+      },
+      {
+        "key": "communication_ok",
+        "label": "通讯正常",
+        "count": 8,
+        "deviceCodes": [
+          "BGS03",
+          "BGS04",
+          "BGS06",
+          "GCBGQ03",
+          "QT02",
+          "WSJ02",
+          "ZHYS",
+          "ZZBGS"
+        ]
+      },
+      {
+        "key": "temperature_valid",
+        "label": "温度有效",
+        "count": 8,
+        "deviceCodes": [
+          "BGS03",
+          "BGS04",
+          "BGS06",
+          "GCBGQ03",
+          "QT02",
+          "WSJ02",
+          "ZHYS",
+          "ZZBGS"
+        ]
+      }
+    ],
+    "releaseCandidateDeviceCodes": [
+      "BGS01",
+      "BGS02",
+      "BGS05",
+      "CWS",
+      "DHYS",
+      "DTT",
+      "GCBGQ01",
+      "GCBGQ02",
+      "JDS",
+      "LZBGS",
+      "QT01",
+      "QTS",
+      "SYS",
+      "TNFBQ01",
+      "TNFBQ02",
+      "WSJ01",
+      "XZBGS",
+      "YFBGQ01",
+      "YFBGQ02",
+      "YFBGQ03",
+      "YFBGQ04"
+    ],
+    "blockedDeviceCodes": [
+      "BGS03",
+      "BGS04",
+      "BGS06",
+      "GCBGQ03",
+      "QT02",
+      "WSJ02",
+      "ZHYS",
+      "ZZBGS"
+    ],
+    "nextActions": [
+      {
+        "priority": "P0",
+        "action": "处理单台质量阻断",
+        "target": "8台 FCU",
+        "reason": "通讯报警、温度无效、写点缺失或反馈锁定会阻断自动/手动确认下发。"
+      },
+      {
+        "priority": "P0",
+        "action": "打开全局投运闸门",
+        "target": "后端只读总闸 / 子系统写总闸 / BA适配器",
+        "reason": "backend_not_readonly"
+      }
+    ]
+  },
+  "blockingItems": [
+    {
+      "key": "device_blocked",
+      "severity": "P0",
+      "message": "8 台 FCU 存在单台通讯、温度、写点或反馈锁定阻断。",
+      "deviceCodes": [
+        "BGS03",
+        "BGS04",
+        "BGS06",
+        "GCBGQ03",
+        "QT02",
+        "WSJ02",
+        "ZHYS",
+        "ZZBGS"
+      ]
+    },
+    {
+      "key": "global_execution_gate",
+      "severity": "P0",
+      "message": "全局投运闸门未打开：backend_not_readonly",
+      "blockedReasons": [
+        "backend_not_readonly"
+      ]
+    }
+  ],
+  "evidence": {
+    "health": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/healthz",
+      "readOnlyMode": true,
+      "appMode": "local"
+    },
+    "commissioning": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/hvac-terminal/fan-coils/commissioning-status?build=1&floor=1",
+      "requestId": "req-1781722489732-7gd1jf"
+    }
+  }
+}

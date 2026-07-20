@@ -6,12 +6,15 @@ import { fetchUiBadgeState, type UiBadgeDecisionDto, type UiBadgeStateDto } from
 
 type ReadinessBadgeProps = {
   pageKey: "dashboard" | "systemOverview";
+  liveViewModel?: ReadinessBadgeViewModel | null;
 };
 
-type BadgeViewModel = {
+export type ReadinessBadgeViewModel = {
   pass: boolean;
   text: string;
 };
+
+type BadgeViewModel = ReadinessBadgeViewModel;
 
 function pickLocaleText(decision: UiBadgeDecisionDto | undefined, locale: LocaleCode): string | null {
   const textMap = decision?.text;
@@ -43,10 +46,14 @@ function resolveBadgeViewModel(
   return { pass, text };
 }
 
-export default function ReadinessBadge({ pageKey }: ReadinessBadgeProps) {
+export default function ReadinessBadge({ pageKey, liveViewModel = null }: ReadinessBadgeProps) {
   const [viewModel, setViewModel] = useState<BadgeViewModel | null>(null);
+  const [requestSettled, setRequestSettled] = useState(false);
 
   useEffect(() => {
+    if (liveViewModel) {
+      return;
+    }
     let active = true;
 
     async function load() {
@@ -61,6 +68,10 @@ export default function ReadinessBadge({ pageKey }: ReadinessBadgeProps) {
           return;
         }
         setViewModel(null);
+      } finally {
+        if (active) {
+          setRequestSettled(true);
+        }
       }
     }
 
@@ -68,16 +79,25 @@ export default function ReadinessBadge({ pageKey }: ReadinessBadgeProps) {
     return () => {
       active = false;
     };
-  }, [pageKey]);
+  }, [pageKey, liveViewModel]);
 
-  if (!viewModel) {
+  const resolvedViewModel = liveViewModel || viewModel;
+
+  if (!resolvedViewModel && !requestSettled) {
     return null;
   }
 
+  const fallbackText = getCurrentLocale() === "en-US"
+    ? "Readiness pending confirmation"
+    : getCurrentLocale() === "vi-VN"
+      ? "Mức sẵn sàng chờ xác nhận"
+      : "就绪状态待确认";
+  const displayViewModel = resolvedViewModel || { pass: false, text: fallbackText };
+
   return (
     <div className="readiness-badge-row">
-      <span className={`status-pill readiness-badge-pill ${viewModel.pass ? "good" : "warn"}`}>
-        {viewModel.text}
+      <span className={`status-pill readiness-badge-pill ${displayViewModel.pass ? "good" : "warn"}`}>
+        {displayViewModel.text}
       </span>
     </div>
   );

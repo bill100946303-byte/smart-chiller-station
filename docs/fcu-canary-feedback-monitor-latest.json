@@ -1,0 +1,87 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-18T01:41:38.153Z",
+  "siteId": "126lnoffice",
+  "scope": "fcu_canary_feedback_monitor",
+  "verdict": "waiting_for_canary_dispatch",
+  "controlMutation": false,
+  "canary": {
+    "deviceCode": "BGS01",
+    "recordId": null,
+    "dispatchConfirmed": false,
+    "feedbackStatus": null,
+    "feedbackConfirmed": false,
+    "rollbackTriggered": false
+  },
+  "checks": [
+    {
+      "key": "canary_dispatch_report",
+      "label": "Canary 执行报告",
+      "ok": true,
+      "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-dispatch-latest.json"
+    },
+    {
+      "key": "canary_record_id",
+      "label": "执行记录 ID",
+      "ok": false,
+      "evidence": "missing"
+    },
+    {
+      "key": "canary_dispatch_confirmed",
+      "label": "真实下发已确认",
+      "ok": false,
+      "evidence": "blocked_before_canary_dispatch"
+    },
+    {
+      "key": "feedback_confirmed",
+      "label": "反馈已确认",
+      "ok": false,
+      "evidence": "missing"
+    },
+    {
+      "key": "rollback_not_triggered",
+      "label": "未触发回退",
+      "ok": true,
+      "evidence": "none"
+    }
+  ],
+  "nextActions": [
+    {
+      "priority": "P0",
+      "action": "执行 BGS01 单台真实下发",
+      "command": "FCU_CANARY_DEVICE_CODE=BGS01 FCU_CANARY_COMMAND_KIND=setpoint FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE npm --prefix apps/chiller-bff run execute:fcu-canary-dispatch",
+      "reason": "尚未形成 confirmed_canary_dispatch。"
+    }
+  ],
+  "evidence": {
+    "dispatch": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-dispatch-latest.json",
+      "mode": "blocked_before_canary_dispatch",
+      "error": null
+    },
+    "finalCompletion": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-completion-latest.json",
+      "verdict": "final_control_incomplete",
+      "error": null
+    },
+    "canaryPackage": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-latest.json",
+      "verdict": "canary_package_ready_with_open_gates",
+      "error": null
+    },
+    "adapterReadiness": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-latest.json",
+      "verdict": "ba_write_adapter_blocked",
+      "error": null
+    }
+  },
+  "outputs": {
+    "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-feedback-monitor-latest.json",
+    "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-feedback-monitor-latest.md",
+    "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-feedback-monitor-latest.csv"
+  }
+}

@@ -1,0 +1,29 @@
+.ai-rec-unavailable,
+.ai-chart-unavailable {
+  min-height: 132px;
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  padding: 18px;
+  border: 1px dashed rgba(247, 194, 96, 0.42);
+  border-radius: 12px;
+  background: rgba(80, 55, 19, 0.16);
+  color: rgba(219, 235, 247, 0.9);
+  text-align: center;
+}
+
+.ai-rec-unavailable strong,
+.ai-chart-unavailable strong {
+  color: #ffd58a;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.ai-rec-unavailable p,
+.ai-chart-unavailable p {
+  max-width: 520px;
+  margin: 0;
+  color: rgba(180, 205, 222, 0.82);
+  font-size: 13px;
+  line-height: 1.5;
+}

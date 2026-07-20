@@ -1,0 +1,16 @@
+section,key,label,status,evidence,action
+precondition,go_live_preflight,上线前预检,open,go_live_blocked,npm --prefix apps/chiller-bff run check:fcu-go-live-preflight
+precondition,field_arm,现场 Arm-Check,open,field_arm_blocked,npm --prefix apps/chiller-bff run check:fcu-field-arm
+precondition,canary_queue,Canary 队列,passed,"target=BGS01, first=BGS01 devices=2",npm --prefix apps/chiller-bff run build:fcu-canary-queue
+precondition,canary_quality,首台数据质量,passed,not_in_p0_quality_list,如为 P0，先按 docs/fcu-quality-remediation-latest.csv 完成现场整改。
+precondition,ba_write_confirm,BA 写入二次确认,open,requires FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE,export FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE
+precondition,backend_write_gate,BFF 写入总闸,open,requires /healthz readOnlyMode=false,READ_ONLY_MODE=false CHILLER_READ_ONLY_MODE=false npm --prefix apps/chiller-bff run dev
+feedback,record_status,执行报告 verification.recordStatus,required,feedback_confirmed,
+feedback,completion_milestone,docs/fcu-final-control-completion-latest.json milestones.canary.ok,required,true,
+feedback,control_mutation,Canary 执行报告 controlMutation,required,true，仅在授权真实写入窗口内允许,
+feedback,no_rollback,执行报告 rollback / blockers,required,无 rollback，阻断项为空,
+rollback,rollback_1,60-120 秒内反馈未变更为 feedback_confirmed,trigger,,如执行报告生成 recordId：npm --prefix apps/chiller-bff run rollback:fcu-small-batch-dispatch -- --record-id=<recordId>
+rollback,rollback_2,反馈值与执行单目标不一致或 verify-feedback 返回 mismatch/failed,trigger,,如执行报告生成 recordId：npm --prefix apps/chiller-bff run rollback:fcu-small-batch-dispatch -- --record-id=<recordId>
+rollback,rollback_3,通讯报警、0°C/越界温度、就地/手动模式、本地锁定任一出现,trigger,,如执行报告生成 recordId：npm --prefix apps/chiller-bff run rollback:fcu-small-batch-dispatch -- --record-id=<recordId>
+rollback,rollback_4,现场人员报告投诉、禁控或面板抢控制,trigger,,如执行报告生成 recordId：npm --prefix apps/chiller-bff run rollback:fcu-small-batch-dispatch -- --record-id=<recordId>
+rollback,rollback_5,回退失败时进入 rollback_watch，禁止继续 Canary 或扩批,trigger,,如执行报告生成 recordId：npm --prefix apps/chiller-bff run rollback:fcu-small-batch-dispatch -- --record-id=<recordId>

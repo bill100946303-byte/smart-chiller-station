@@ -41,6 +41,42 @@ function parseLegacyUserInfoXml(xmlText) {
   };
 }
 
+function isLocalDevAuthEnabled(config) {
+  if (config?.adminDevAuth !== true) {
+    return false;
+  }
+  const appMode = normalizeText(config?.appMode).toLowerCase();
+  return !appMode || ["local", "test", "development"].includes(appMode);
+}
+
+function parseDevAuthUser(config, token, hintedUserId = "") {
+  if (!isLocalDevAuthEnabled(config)) {
+    return null;
+  }
+  const normalizedToken = normalizeText(token);
+  if (!normalizedToken) {
+    return null;
+  }
+  const configuredToken = normalizeText(config?.adminDevAuthToken);
+  const acceptsConfiguredToken = configuredToken && normalizedToken === configuredToken;
+  const mockMatch = /^mock-token-(.+)$/i.exec(normalizedToken);
+  const devMatch = /^dev-admin(?:-(.+))?$/i.exec(normalizedToken);
+  if (!acceptsConfiguredToken && !mockMatch && !devMatch) {
+    return null;
+  }
+  const username =
+    normalizeText(hintedUserId) ||
+    normalizeText(mockMatch?.[1]) ||
+    normalizeText(devMatch?.[1]) ||
+    "admin";
+  return {
+    userId: username,
+    username,
+    role: "platform_admin",
+    token: normalizedToken
+  };
+}
+
 function parseLegacyProjectBlocks(xmlText) {
   const status = readFirstTag(xmlText, "status");
   if (status && status !== "20000") {
@@ -204,7 +240,21 @@ export function createAdminLegacyAuthService(config, options = {}) {
       return cached.user;
     }
 
-    const user = await fetchUserInfo(token);
+    const devUser = parseDevAuthUser(config, token, hintedUserId);
+    if (devUser) {
+      cache.set(token, {
+        user: devUser,
+        expiresAt: nowMs() + cacheTtlMs
+      });
+      return devUser;
+    }
+
+    let user = null;
+    try {
+      user = await fetchUserInfo(token);
+    } catch (_error) {
+      user = null;
+    }
     const effectiveUserId = normalizeText(user?.userId) || normalizeText(hintedUserId);
     const effectiveUsername = normalizeText(user?.username);
     if (!effectiveUserId || !effectiveUsername) {
@@ -227,6 +277,9 @@ export function createAdminLegacyAuthService(config, options = {}) {
   async function fetchProjectRoster(token, userId) {
     const normalizedUserId = normalizeText(userId);
     if (!normalizedUserId) {
+      return [];
+    }
+    if (parseDevAuthUser(config, token, normalizedUserId)) {
       return [];
     }
 

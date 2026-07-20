@@ -1,0 +1,2 @@
+pointCode,pointName,sensorType,systemSide,equipmentId,location,installPosition,unit,rangeLow,rangeHigh,accuracyClass,lastCalibrationDate,calibrationDueDate,calibrationProvider,owner,sourceSystem,remark
+B25_CHW_SUPPLY_TEMP,冷冻水总供水温度,temperature,chilled_water,CHW-HEADER,冷冻站机房总管,冷冻水供水总管出站侧,C,0,50,0.2C,2026-01-01,2027-01-01,field_provider,site_operator,field_ledger,示例，请替换为现场真实台账

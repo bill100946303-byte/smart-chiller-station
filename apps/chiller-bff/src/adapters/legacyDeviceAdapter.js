@@ -1,7 +1,19 @@
-import { deepArrayProbe, fetchLegacyJson } from "../lib/http.js";
+﻿import { deepArrayProbe, fetchLegacyJson } from "../lib/http.js";
 
 const DEVICE_LIST_PAGE_SIZE = 200;
 const DEVICE_DETAIL_RUNTIME_PAGE_SIZE = 200;
+const DEVICE_REGISTER_COLLECTION_PAGE_SIZE = 5000;
+const ACTIVE_FREQUENCY_FALLBACK_THRESHOLD_HZ = 5;
+const STATUS_TEXT_RUNNING = "\u8fd0\u884c\u4e2d";
+const STATUS_TEXT_STOPPED = "\u5df2\u505c\u6b62";
+const STATUS_TEXT_ALARM = "\u62a5\u8b66\u4e2d";
+const STATUS_TEXT_NORMAL = "\u6b63\u5e38";
+const ALARM_TEXT_PATTERN =
+  /(?:alarm|fault|error|trip|fail|warning|protect|interlock|\u62a5\u8b66|\u544a\u8b66|\u6545\u969c|\u5f02\u5e38|\u5931\u8d25|\u8df3\u95f8|\u4fdd\u62a4|\u8054\u9501|\u901a\u8baf)/i;
+const NORMAL_TEXT_PATTERN =
+  /(?:normal|ok|healthy|clear|resolved|\u6b63\u5e38|\u5df2\u6062\u590d|\u65e0\u544a\u8b66|\u4e0d\u62a5\u8b66)/i;
+const RUNNING_TEXT_PATTERN = /(?:running|run|start|on|\u8fd0\u884c|\u542f\u52a8|\u5f00\u542f)/i;
+const STOPPED_TEXT_PATTERN = /(?:stopp|shutdown|off|idle|standby|\u505c\u6b62|\u505c\u673a|\u5f85\u673a)/i;
 const PLACEHOLDER_DEVICE_COUNTS = {
   chiller: 3,
   chilledPump: 3,
@@ -11,32 +23,61 @@ const PLACEHOLDER_DEVICE_COUNTS = {
 const PLACEHOLDER_SYSTEM_ORDER = ["chiller", "chilledPump", "coolingPump", "coolingTower"];
 const PLACEHOLDER_DEVICE_META = {
   chiller: {
-    labelPrefix: "冷机",
+    labelPrefix: "\u51b7\u673a",
     deviceTypeId: "placeholder-chiller",
-    deviceTypeName: "冷水机组",
-    usageType: "冷水机组"
+    deviceTypeName: "\u51b7\u6c34\u673a\u7ec4",
+    usageType: "\u51b7\u6c34\u673a\u7ec4"
   },
   chilledPump: {
-    labelPrefix: "冷冻泵",
+    labelPrefix: "\u51b7\u51bb\u6cf5",
     deviceTypeId: "placeholder-chilled-pump",
-    deviceTypeName: "冷冻水泵",
-    usageType: "冷冻水泵"
+    deviceTypeName: "\u51b7\u51bb\u6c34\u6cf5",
+    usageType: "\u51b7\u51bb\u6c34\u6cf5"
   },
   coolingPump: {
-    labelPrefix: "冷却泵",
+    labelPrefix: "\u51b7\u5374\u6cf5",
     deviceTypeId: "placeholder-cooling-pump",
-    deviceTypeName: "冷却水泵",
-    usageType: "冷却水泵"
+    deviceTypeName: "\u51b7\u5374\u6c34\u6cf5",
+    usageType: "\u51b7\u5374\u6c34\u6cf5"
   },
   coolingTower: {
-    labelPrefix: "冷却塔",
+    labelPrefix: "\u51b7\u5374\u5854",
     deviceTypeId: "placeholder-cooling-tower",
-    deviceTypeName: "冷却塔",
-    usageType: "冷却塔"
+    deviceTypeName: "\u51b7\u5374\u5854",
+    usageType: "\u51b7\u5374\u5854"
   }
 };
 
+function enforceLegacyBusinessSuccess(response) {
+  if (!response?.ok || !response.payload || typeof response.payload !== "object") {
+    return response;
+  }
+  const payload = response.payload;
+  const rawStatus = payload.status ?? payload.code ?? payload.statusCode;
+  const explicitFailure = payload.ok === false || payload.success === false;
+  if (rawStatus == null && !explicitFailure) {
+    return response;
+  }
+  const normalizedStatus = rawStatus == null ? "" : String(rawStatus).trim();
+  const businessOk = !explicitFailure
+    && (rawStatus == null || ["0", "200", "20000"].includes(normalizedStatus));
+  return businessOk
+    ? response
+    : {
+        ...response,
+        ok: false,
+        error: `Legacy business response failed${normalizedStatus ? ` with status ${normalizedStatus}` : ""}`
+      };
+}
+
 function normalizeLegacyPath(siteId, options = {}) {
+  const databaseKey =
+    typeof options.databaseKey === "string" && options.databaseKey.trim()
+      ? options.databaseKey.trim()
+      : "";
+  if (databaseKey) {
+    return databaseKey;
+  }
   const projectKey =
     typeof options.projectKey === "string" && options.projectKey.trim()
       ? options.projectKey.trim()
@@ -45,11 +86,190 @@ function normalizeLegacyPath(siteId, options = {}) {
 }
 
 function buildDeviceListEndpoint(siteId, options = {}) {
-  return `/zsqy/drinfo/${normalizeLegacyPath(siteId, options)}/findObject?pageCurrent=1&pageSize=${DEVICE_LIST_PAGE_SIZE}`;
+  const requestedPageSize = Number(options.sourcePageSize);
+  const pageSize = Number.isSafeInteger(requestedPageSize) && requestedPageSize > 0
+    ? Math.min(requestedPageSize, 5000)
+    : DEVICE_LIST_PAGE_SIZE;
+  return `/zsqy/drinfo/${normalizeLegacyPath(siteId, options)}/findObject?pageCurrent=1&pageSize=${pageSize}`;
 }
 
 function buildDeviceDetailRuntimeEndpoint(siteId, deviceId, options = {}) {
   return `/zsqy/reg/${normalizeLegacyPath(siteId, options)}/findObject?pageCurrent=1&pageSize=${DEVICE_DETAIL_RUNTIME_PAGE_SIZE}&drId=${encodeURIComponent(deviceId)}`;
+}
+
+function normalizeExactSelectorSet(value, { upper = false } = {}) {
+  const items = Array.isArray(value) ? value : [];
+  return new Set(
+    items
+      .map((item) => toTrimmedString(item))
+      .filter(Boolean)
+      .map((item) => (upper ? item.toUpperCase() : item))
+  );
+}
+
+function hasStationDeviceAllowlist(options = {}) {
+  return Array.isArray(options.allowedDeviceIds) && options.allowedDeviceIds.length > 0;
+}
+
+function rowDeviceIdentity(row) {
+  return {
+    deviceId: toTrimmedString(row?.drid ?? row?.drId ?? row?.deviceId ?? row?.id),
+    deviceCode: toTrimmedString(row?.drcode ?? row?.drCode ?? row?.deviceCode).toUpperCase()
+  };
+}
+
+function stationBindingAllowsRow(row, options = {}) {
+  if (!hasStationDeviceAllowlist(options)) {
+    return true;
+  }
+  const allowedDeviceIds = normalizeExactSelectorSet(options.allowedDeviceIds);
+  const allowedDeviceCodes = normalizeExactSelectorSet(options.allowedDeviceCodes, { upper: true });
+  const { deviceId, deviceCode } = rowDeviceIdentity(row);
+  // The immutable device id is the authorization boundary. A device code is
+  // only a secondary identity check; it must never broaden the allowlist when
+  // an upstream catalog later introduces a duplicate code.
+  return allowedDeviceIds.has(deviceId)
+    && (allowedDeviceCodes.size === 0 || Boolean(deviceCode && allowedDeviceCodes.has(deviceCode)));
+}
+
+function findAmbiguousStationDeviceIds(rows, options = {}) {
+  if (!hasStationDeviceAllowlist(options)) {
+    return [];
+  }
+  const allowedDeviceIds = normalizeExactSelectorSet(options.allowedDeviceIds);
+  const counts = new Map();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const { deviceId } = rowDeviceIdentity(row);
+    if (allowedDeviceIds.has(deviceId)) {
+      counts.set(deviceId, (counts.get(deviceId) || 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([deviceId]) => deviceId)
+    .sort();
+}
+
+function stationBindingAllowsPoint(record, options = {}) {
+  const allowedPointCodes = normalizeExactSelectorSet(options.allowedPointCodes);
+  if (allowedPointCodes.size === 0) {
+    return true;
+  }
+  const candidates = [
+    record?.pointCode,
+    record?.tagName,
+    record?.tagname,
+    record?.regId,
+    record?.regid
+  ].map((item) => toTrimmedString(item)).filter(Boolean);
+  return candidates.some((item) => allowedPointCodes.has(item));
+}
+
+function runtimeRecordBelongsToDevice(record, deviceId) {
+  const recordDeviceId = toTrimmedString(record?.drId ?? record?.drid ?? record?.deviceId);
+  // Some legacy per-device register endpoints omit drId on every row. When an
+  // identity is present, however, it must agree with the requested device; an
+  // upstream that ignores the drId query must not leak mixed-device records.
+  return !recordDeviceId || recordDeviceId === toTrimmedString(deviceId);
+}
+
+function filterRuntimeRowForStation(row, options = {}) {
+  if (!stationBindingAllowsRow(row, options)) {
+    return null;
+  }
+  if (!Array.isArray(options.allowedPointCodes) || options.allowedPointCodes.length === 0) {
+    return row;
+  }
+  const registers = getRuntimeRecords(row?.reglist).filter((record) => (
+    stationBindingAllowsPoint(record, options)
+  ));
+  return {
+    ...row,
+    reglist: registers
+  };
+}
+
+function filterRowsForStation(rows, options = {}, { runtime = false } = {}) {
+  if (!hasStationDeviceAllowlist(options)) {
+    return Array.isArray(rows) ? rows : [];
+  }
+  const ambiguousDeviceIds = new Set(findAmbiguousStationDeviceIds(rows, options));
+  return (Array.isArray(rows) ? rows : [])
+    .filter((row) => !ambiguousDeviceIds.has(rowDeviceIdentity(row).deviceId))
+    .map((row) => (runtime ? filterRuntimeRowForStation(row, options) : stationBindingAllowsRow(row, options) ? row : null))
+    .filter(Boolean);
+}
+
+function buildDeviceRegisterCollectionEndpoint(siteId, options = {}) {
+  const configuredPageSize = Number(options.pageSize);
+  const pageSize = Number.isFinite(configuredPageSize) && configuredPageSize > 0
+    ? Math.floor(configuredPageSize)
+    : DEVICE_REGISTER_COLLECTION_PAGE_SIZE;
+  return `/zsqy/reg/${normalizeLegacyPath(siteId, options)}/findObject?pageCurrent=1&pageSize=${pageSize}`;
+}
+
+function parseBuildFloorFromProjectKey(projectKey) {
+  const normalized = toTrimmedString(projectKey);
+  if (!normalized) {
+    return null;
+  }
+  const parts = normalized.split("-");
+  if (parts.length === 1) {
+    return { build: 1, floor: 0 };
+  }
+  const buildPart = toFiniteNumber(parts[1]);
+  const floorPart = parts.length >= 3 ? toFiniteNumber(parts[2]) : 0;
+  return {
+    build: buildPart != null ? Math.max(0, Math.floor(buildPart)) : 1,
+    floor: floorPart != null ? Math.max(0, Math.floor(floorPart)) : 0
+  };
+}
+
+function resolveLegacyRegBuildFloor(options = {}) {
+  const explicitBuild = Number.isFinite(Number(options.build)) ? Math.max(0, Number(options.build)) : null;
+  const explicitFloor = Number.isFinite(Number(options.floor)) ? Math.max(0, Number(options.floor)) : null;
+  const fromProjectKey = parseBuildFloorFromProjectKey(options.projectKey);
+  return {
+    build: explicitBuild != null ? explicitBuild : fromProjectKey?.build ?? 1,
+    floor: explicitFloor != null ? explicitFloor : fromProjectKey?.floor ?? 0
+  };
+}
+
+function buildDeviceRealtimeCollectionEndpoint(siteId, options = {}) {
+  const endpointKind = toTrimmedString(options.realtimeEndpointKind);
+  if (!endpointKind) {
+    return null;
+  }
+
+  const build = Number.isFinite(Number(options.build)) ? Math.max(0, Number(options.build)) : null;
+  const floor = Number.isFinite(Number(options.floor)) ? Math.max(0, Number(options.floor)) : null;
+  const query = new URLSearchParams();
+
+  if (endpointKind === "api-device-data") {
+    if (build !== null) {
+      query.set("build", String(build));
+    }
+    if (floor !== null) {
+      query.set("floor", String(floor));
+    }
+    if (options.mock === true) {
+      query.set("mock", "1");
+    } else if (options.mock === false) {
+      query.set("mock", "0");
+    }
+    const search = query.toString();
+    return `/api/device/${normalizeLegacyPath(siteId, options)}/data${search ? `?${search}` : ""}`;
+  }
+
+  if (endpointKind === "legacy-reg-findAllByDrTypeId") {
+    const legacyBuildFloor = resolveLegacyRegBuildFloor(options);
+    query.set("build", String(legacyBuildFloor.build));
+    query.set("floor", String(legacyBuildFloor.floor));
+    const search = query.toString();
+    return `/zsqy/reg/${normalizeLegacyPath(siteId, options)}/findAllByDrTypeId${search ? `?${search}` : ""}`;
+  }
+
+  return null;
 }
 
 function extractMessage(payload, fallback = null) {
@@ -61,9 +281,61 @@ function extractMessage(payload, fallback = null) {
 }
 
 function normalizeSystemType(item) {
-  const raw = String(item?.drtypename || item?.typeYT || item?.drTypeCode || "").toUpperCase();
-  if (raw.includes("CH")) {
+  const codeRaw = pickFirstNonEmptyText(item?.drcode, item?.drCode, item?.drTypeCode, item?.rawTypeCode).toUpperCase();
+  const nameRaw = [
+    item?.drtypename,
+    item?.deviceTypeName,
+    item?.drUseExplain,
+    item?.assetstypename,
+    item?.drname,
+    item?.deviceName,
+    item?.name
+  ]
+    .map((value) => toTrimmedString(value).toUpperCase())
+    .filter(Boolean)
+    .join(" ");
+  const raw = `${codeRaw} ${nameRaw}`.trim();
+
+  // Prefer device code mapping to avoid locale/encoding mismatches.
+  if (/(?:\u9600|\u95f8|VALVE)/i.test(raw)) {
+    return "valve";
+  }
+  if (codeRaw.startsWith("HWP")) {
+    return "hotWaterPump";
+  }
+  if (codeRaw.startsWith("FM")) {
+    return "valve";
+  }
+  if (codeRaw.startsWith("CHP")) {
+    return "chilledPump";
+  }
+  if (codeRaw.startsWith("CWP")) {
+    return "coolingPump";
+  }
+  if (codeRaw.startsWith("CTE") || codeRaw.startsWith("CTHDE")) {
+    return "other";
+  }
+  if (
+    codeRaw.startsWith("CTF")
+    || /^CT\d+/.test(codeRaw)
+    || codeRaw === "CT"
+  ) {
+    return "coolingTower";
+  }
+  if (
+    codeRaw.startsWith("LCH")
+    || codeRaw.startsWith("MCH")
+    || codeRaw.startsWith("HCH")
+    || codeRaw.startsWith("FCH")
+  ) {
     return "chiller";
+  }
+  if (codeRaw.startsWith("CH")) {
+    return "chiller";
+  }
+
+  if (raw.includes("HWP") || raw.includes("HOT WATER PUMP")) {
+    return "hotWaterPump";
   }
   if (raw.includes("CHP")) {
     return "chilledPump";
@@ -71,20 +343,31 @@ function normalizeSystemType(item) {
   if (raw.includes("CWP")) {
     return "coolingPump";
   }
-  if (raw.includes("CT") || raw.includes("CTF") || raw.includes("CTE") || raw.includes("CTHDE")) {
+  if (raw.includes("CTF") || /\bCT\d+\b/.test(raw)) {
     return "coolingTower";
   }
-  if (raw.includes("主机") || raw.includes("冷机")) {
+  if (raw.includes("COOLING TOWER")) {
+    return "coolingTower";
+  }
+  if (
+    raw.includes("LCH")
+    || raw.includes("MCH")
+    || raw.includes("HCH")
+    || raw.includes("FCH")
+  ) {
     return "chiller";
   }
-  if (raw.includes("冷冻水泵") || raw.includes("冷冻泵")) {
+  if (raw.includes("CH")) {
+    return "chiller";
+  }
+  if (raw.includes("CHILLER")) {
+    return "chiller";
+  }
+  if (raw.includes("CHILLED PUMP")) {
     return "chilledPump";
   }
-  if (raw.includes("冷却水泵") || raw.includes("冷却泵")) {
+  if (raw.includes("COOLING PUMP")) {
     return "coolingPump";
-  }
-  if (raw.includes("冷却塔")) {
-    return "coolingTower";
   }
   return "other";
 }
@@ -102,8 +385,8 @@ function buildPlaceholderSourceStatus(siteId, kind, count) {
 }
 
 function buildPlaceholderDeviceRows(siteId, options = {}) {
-  const floorName = options.floorName == null ? "未知楼层" : String(options.floorName);
-  const buildingName = options.buildingName == null ? "占位拓扑" : String(options.buildingName);
+  const floorName = options.floorName == null ? "\u672a\u77e5\u697c\u5c42" : String(options.floorName);
+  const buildingName = options.buildingName == null ? "\u9ed8\u8ba4" : String(options.buildingName);
   const rows = [];
   for (const systemType of PLACEHOLDER_SYSTEM_ORDER) {
     const meta = PLACEHOLDER_DEVICE_META[systemType];
@@ -162,8 +445,8 @@ function buildPlaceholderTree(siteId, items) {
       deviceCode: null,
       deviceName: null,
       systemType,
-      floorName: "未知楼层",
-      buildingName: "占位拓扑",
+      floorName: "\u672a\u77e5\u697c\u5c42",
+      buildingName: "\u9ed8\u8ba4",
       status: "unknown",
       lastReportAt: null,
       childCount: groupChildren.length,
@@ -233,8 +516,25 @@ function normalizeDeviceRow(row, index) {
     buildingName: String(normalizedBuildingName),
     usageType: String(normalizedUsageType),
     iconPath: row?.iconpath == null ? null : String(row.iconpath || ""),
-    status: "unknown",
-    lastReportAt: null,
+    status:
+      pickFirstNonEmptyText(
+        row?.status,
+        row?.runStatus,
+        row?.runstatus,
+        row?.run_state,
+        row?.runState,
+        row?.drstatus,
+        row?.drstate,
+        row?.state,
+        row?.workStatus,
+        row?.workstatus,
+        row?.deviceStatus,
+        row?.device_state,
+        row?.isRun,
+        row?.isrun,
+        row?.isRunning
+      ) || "unknown",
+    lastReportAt: pickFirstNonEmptyText(row?.lastReportAt) || null,
     rawTypeCode:
       row?.rawTypeCode != null
         ? String(row.rawTypeCode)
@@ -285,22 +585,39 @@ function isPrimaryEquipmentRow(row) {
   if (!fingerprint) {
     return false;
   }
+  const fingerprintUpper = fingerprint.toUpperCase();
 
-  if (/(电量|流量|温度|压力|液位|制冷量|湿度|参数设置|电动阀|阀门|液位计|风机)/.test(fingerprint)) {
+  if (
+    /\b(CHE|CHPE|CWPE|CTE|LZE|TBCC|FT|PT|TT|RH)\d*\b/.test(fingerprintUpper)
+    || /(ELECTRIC|ENERGY|FLOW|TEMP|TEMPERATURE|PRESSURE|LEVEL|SENSOR|SETPOINT|PARAMETER|METER|KWH)/.test(fingerprintUpper)
+  ) {
     return false;
   }
 
   if (row.systemType === "chiller") {
-    return /(冷水机组|冷机|主机)/.test(fingerprint);
+    return (
+      /\b(CH|LCH|MCH|HCH|FCH)\d+\b/.test(fingerprintUpper)
+      || fingerprintUpper.includes("CHILLER")
+    );
   }
   if (row.systemType === "chilledPump") {
-    return /冷冻泵/.test(fingerprint);
+    return /\bCHP\d+\b/.test(fingerprintUpper) || fingerprintUpper.includes("CHILLED PUMP");
   }
   if (row.systemType === "coolingPump") {
-    return /冷却泵/.test(fingerprint);
+    return /\bCWP\d+\b/.test(fingerprintUpper) || fingerprintUpper.includes("COOLING PUMP");
+  }
+  if (row.systemType === "hotWaterPump") {
+    return /\bHWP\d+\b/.test(fingerprintUpper) || fingerprintUpper.includes("HOT WATER PUMP");
   }
   if (row.systemType === "coolingTower") {
-    return /冷却塔/.test(fingerprint);
+    return (
+      /\bCT\d+\b/.test(fingerprintUpper)
+      || /\bCTF\d+\b/.test(fingerprintUpper)
+      || fingerprintUpper.includes("COOLING TOWER")
+    );
+  }
+  if (row.systemType === "valve") {
+    return /\bFM\d+\b/.test(fingerprintUpper) || fingerprintUpper.includes("VALVE") || /(?:\u9600|\u95f8)/.test(fingerprint);
   }
   return false;
 }
@@ -448,6 +765,16 @@ function toFiniteNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function pickFirstFiniteNumber(...values) {
+  for (const value of values) {
+    const parsed = toFiniteNumber(value);
+    if (parsed != null) {
+      return parsed;
+    }
+  }
+  return null;
+}
+
 function looksLikeDateTime(value) {
   return /^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(toTrimmedString(value));
 }
@@ -511,14 +838,14 @@ function deriveRunStatusText(record) {
     return null;
   }
 
-  const explicit = toTrimmedString(record.showStatus);
+  const explicit = normalizeDisplayStatusText(record.showStatus);
   if (explicit) {
     return explicit;
   }
 
   const numericValue = toFiniteNumber(record.newtagvalue ?? record.tagValue ?? record.qstagvalue);
   if (numericValue != null) {
-    return numericValue > 0 ? "运行中" : "已停止";
+    return numericValue > 0 ? STATUS_TEXT_RUNNING : STATUS_TEXT_STOPPED;
   }
 
   return null;
@@ -529,19 +856,19 @@ function deriveAlarmStatusText(record) {
     return null;
   }
 
-  const explicit = toTrimmedString(record.showStatus);
+  const explicit = normalizeDisplayStatusText(record.showStatus);
   if (explicit) {
     return explicit;
   }
 
   const numericValue = toFiniteNumber(record.newtagvalue ?? record.tagValue ?? record.qstagvalue);
   if (numericValue != null) {
-    return numericValue > 0 ? "报警中" : "正常";
+    return numericValue > 0 ? STATUS_TEXT_ALARM : STATUS_TEXT_NORMAL;
   }
 
   const alarmState = toFiniteNumber(record.tagAlarmState);
   if (alarmState != null) {
-    return alarmState > 0 ? "报警中" : "正常";
+    return alarmState > 0 ? STATUS_TEXT_ALARM : STATUS_TEXT_NORMAL;
   }
 
   return null;
@@ -552,13 +879,218 @@ function deriveRuntimeText(record) {
     return null;
   }
 
-  const explicit = toTrimmedString(record.showStatus);
+  const explicit = normalizeDisplayStatusText(record.showStatus);
   if (explicit) {
     return explicit;
   }
 
   const numericValue = toFiniteNumber(record.newtagvalue ?? record.tagValue ?? record.qstagvalue);
   return numericValue == null ? null : String(numericValue);
+}
+
+function normalizeDisplayStatusText(value) {
+  const normalized = toTrimmedString(value);
+  if (!normalized) {
+    return "";
+  }
+  return /^-?\d+(\.\d+)?$/.test(normalized) ? "" : normalized;
+}
+
+function isRunningText(value) {
+  const normalized = toTrimmedString(value);
+  return Boolean(normalized) && RUNNING_TEXT_PATTERN.test(normalized) && !STOPPED_TEXT_PATTERN.test(normalized);
+}
+
+function isStoppedText(value) {
+  const normalized = toTrimmedString(value);
+  return Boolean(normalized) && STOPPED_TEXT_PATTERN.test(normalized) && !RUNNING_TEXT_PATTERN.test(normalized);
+}
+
+function isAlarmText(value) {
+  const normalized = toTrimmedString(value);
+  return Boolean(normalized) && ALARM_TEXT_PATTERN.test(normalized) && !NORMAL_TEXT_PATTERN.test(normalized);
+}
+
+function isNormalText(value) {
+  const normalized = toTrimmedString(value);
+  return Boolean(normalized) && NORMAL_TEXT_PATTERN.test(normalized);
+}
+
+function isAlarmIndicatorRecord(record) {
+  if (!record || typeof record !== "object") {
+    return false;
+  }
+  const regName = toTrimmedString(record.regName);
+  const tagName = toTrimmedString(record.tagName);
+  const alarmState = toFiniteNumber(record.tagAlarmState);
+  const alarmLevel = toFiniteNumber(record.alarmLevel);
+  const alarmTypeLevel = toFiniteNumber(record.alarmtypelevel);
+  const isalarm = toTrimmedString(record.isalarm);
+
+  return (
+    /40170$/.test(tagName)
+    || /40144$/.test(tagName)
+    || /42321$/.test(tagName)
+    || ALARM_TEXT_PATTERN.test(regName)
+    || (alarmState != null && alarmState > 0)
+    || (alarmLevel != null && alarmLevel > 0)
+    || (alarmTypeLevel != null && alarmTypeLevel > 0)
+    || isalarm === "1"
+    || Boolean(toTrimmedString(record.alarmtype))
+    || Boolean(toTrimmedString(record.alarmtypelevel))
+  );
+}
+
+function deriveAlarmFlagByRequestedRule(record) {
+  if (!record || typeof record !== "object") {
+    return null;
+  }
+  const regDrShowType = pickFirstFiniteNumber(record.regDrShowType, record.regdrshowtype);
+  const tagValue = pickFirstFiniteNumber(record.tagValue, record.newtagvalue, record.qstagvalue);
+  const isAlarm = pickFirstFiniteNumber(record.isAlarm, record.isalarm);
+  const tagAlarmState = pickFirstFiniteNumber(record.tagAlarmState, record.tagalarmstate);
+  const explicitStatus = normalizeDisplayStatusText(record.showStatus);
+
+  const hasLeftClause = regDrShowType != null && tagValue != null;
+  const hasRightClause = isAlarm != null && tagAlarmState != null && tagValue != null;
+  if (!hasLeftClause && !hasRightClause) {
+    return null;
+  }
+
+  // Some sites expose isAlarm/tagAlarmState as alarm point metadata instead of active state.
+  // Require active value bit for this branch to avoid false-positive alarm flooding.
+  const rightClauseMatched = hasRightClause && isAlarm === 1 && tagAlarmState === 1 && tagValue === 1;
+
+  return (
+    (hasLeftClause && regDrShowType === 2 && tagValue === 1)
+    || rightClauseMatched
+    || (Boolean(explicitStatus) && isAlarm === 1 && tagAlarmState === 1 && isAlarmText(explicitStatus))
+  );
+}
+
+function deriveAlarmFlagFromRecord(record) {
+  if (!record || typeof record !== "object") {
+    return null;
+  }
+
+  const requestedRuleResult = deriveAlarmFlagByRequestedRule(record);
+  if (requestedRuleResult != null) {
+    return requestedRuleResult;
+  }
+
+  const explicit = normalizeDisplayStatusText(record.showStatus);
+  if (explicit) {
+    if (isAlarmText(explicit)) {
+      return true;
+    }
+    if (isNormalText(explicit)) {
+      return false;
+    }
+  }
+
+  const alarmState = toFiniteNumber(record.tagAlarmState);
+  if (alarmState != null) {
+    return alarmState > 0;
+  }
+
+  const alarmLevel = toFiniteNumber(record.alarmLevel);
+  if (alarmLevel != null) {
+    return alarmLevel > 0;
+  }
+
+  const alarmTypeLevel = toFiniteNumber(record.alarmtypelevel);
+  if (alarmTypeLevel != null) {
+    return alarmTypeLevel > 0;
+  }
+
+  const numericValue = toFiniteNumber(record.newtagvalue ?? record.tagValue ?? record.qstagvalue);
+  if (numericValue != null && isAlarmIndicatorRecord(record)) {
+    return numericValue > 0;
+  }
+
+  if (isAlarmIndicatorRecord(record)) {
+    return false;
+  }
+
+  return null;
+}
+
+function deriveAlarmStatusFromRecords(records) {
+  const runtimeRecords = Array.isArray(records) ? records : [];
+  let observed = false;
+  for (const record of runtimeRecords) {
+    const alarmFlag = deriveAlarmFlagFromRecord(record);
+    if (alarmFlag == null) {
+      continue;
+    }
+    observed = true;
+    if (alarmFlag) {
+      return STATUS_TEXT_ALARM;
+    }
+  }
+  return observed ? STATUS_TEXT_NORMAL : null;
+}
+
+function mergeAlarmStatusText(primary, secondary) {
+  if (isAlarmText(primary) || isAlarmText(secondary)) {
+    return STATUS_TEXT_ALARM;
+  }
+  if (primary) {
+    return primary;
+  }
+  return secondary || null;
+}
+
+function pickLatestIsoDateTime(values, fallback = null) {
+  const candidates = values.filter((value) => typeof value === "string" && value.trim());
+  if (candidates.length === 0) {
+    return fallback;
+  }
+  return candidates.reduce((current, candidate) => (candidate > current ? candidate : current), candidates[0]) || fallback;
+}
+
+function buildRuntimeSnapshot(records, fallbackLatestUpdateAt = null) {
+  const runtimeRecords = Array.isArray(records) ? records : [];
+  const runRecord = pickRuntimeRecord(runtimeRecords, (record) => {
+    const regName = toTrimmedString(record.regName);
+    const regNameLower = regName.toLowerCase();
+    const tagName = toTrimmedString(record.tagName);
+    return (
+      /40169$/.test(tagName)
+      || /40143$/.test(tagName)
+      || regName === "\u8fd0\u884c"
+      || regNameLower === "run"
+      || /(?:^|\b)run(?:ning)?(?:$|\b)/.test(regNameLower)
+    );
+  });
+  const alarmRecord = pickRuntimeRecord(runtimeRecords, (record) => {
+    const regName = toTrimmedString(record.regName);
+    const tagName = toTrimmedString(record.tagName);
+    return /40170$|40144$|42321$/.test(tagName) || ALARM_TEXT_PATTERN.test(regName) || isAlarmIndicatorRecord(record);
+  });
+  const frequencyRecord =
+    pickRuntimeRecord(runtimeRecords, (record) => toTrimmedString(record.regName) === "\u9891\u7387\u53cd\u9988") ||
+    pickRuntimeRecord(runtimeRecords, (record) => {
+      const regNameLower = toTrimmedString(record.regName).toLowerCase();
+      return /42015$/.test(toTrimmedString(record.tagName)) || regNameLower.includes("frequency");
+    });
+  const runStatusText = deriveRunStatusText(runRecord);
+  const alarmStatusText = mergeAlarmStatusText(
+    deriveAlarmStatusText(alarmRecord),
+    deriveAlarmStatusFromRecords(runtimeRecords)
+  );
+  const latestUpdateAt = deriveRuntimeLatestUpdateAt(runtimeRecords, fallbackLatestUpdateAt);
+  const controlSignals = deriveControlSignals(runtimeRecords);
+  const frequencyHz = toFiniteNumber(frequencyRecord?.newtagvalue ?? frequencyRecord?.tagValue ?? frequencyRecord?.qstagvalue);
+
+  return {
+    runStatusText,
+    alarmStatusText,
+    latestUpdateAt,
+    controlSignals,
+    frequencyHz,
+    recordCount: runtimeRecords.length
+  };
 }
 
 function buildControlSignal(record, options) {
@@ -588,45 +1120,48 @@ function buildControlSignal(record, options) {
 }
 
 function deriveControlSignals(records) {
-  const remoteRecord = pickRuntimeRecord(records, (record) => toTrimmedString(record.regName) === "远程");
-  const manualModeRecord = pickRuntimeRecord(records, (record) => toTrimmedString(record.regName) === "频率手自动");
-  const manualStartRecord = pickRuntimeRecord(records, (record) => toTrimmedString(record.regName) === "手动启动");
-  const manualStopRecord = pickRuntimeRecord(records, (record) => toTrimmedString(record.regName) === "手动停止");
-  const disabledRecord = pickRuntimeRecord(records, (record) => toTrimmedString(record.regName) === "设备禁用");
-  const modeRecord = pickRuntimeRecord(records, (record) => toTrimmedString(record.regName) === "运行模式");
+  const findByRegNames = (...names) =>
+    pickRuntimeRecord(records, (record) => names.includes(toTrimmedString(record.regName)));
+
+  const remoteRecord = findByRegNames("\u8fdc\u7a0b", "REMOTE");
+  const manualModeRecord = findByRegNames("\u9891\u7387\u624b\u81ea\u52a8", "\u9891\u7387\u6a21\u5f0f", "AUTO/MANUAL");
+  const manualStartRecord = findByRegNames("\u624b\u52a8\u542f\u52a8", "MANUAL START");
+  const manualStopRecord = findByRegNames("\u624b\u52a8\u505c\u6b62", "MANUAL STOP");
+  const disabledRecord = findByRegNames("\u8bbe\u5907\u7981\u7528", "\u7981\u7528", "DISABLED");
+  const modeRecord = findByRegNames("\u8fd0\u884c\u6a21\u5f0f", "MODE");
 
   const remoteSignal = buildControlSignal(remoteRecord, {
     key: "remoteLocal",
-    label: "控制位置",
+    label: "\u63a7\u5236\u4f4d\u7f6e",
     fromNumeric: (numericValue) => {
       if (numericValue == null) {
         return "";
       }
-      return numericValue > 0 ? "远程" : "就地";
+      return numericValue > 0 ? "\u8fdc\u7a0b" : "\u5c31\u5730";
     },
-    resolveTone: (value) => (value.includes("远程") ? "good" : "warn")
+    resolveTone: (value) => (value.includes("\u8fdc\u7a0b") ? "good" : "warn")
   });
 
   const manualModeSignal = buildControlSignal(manualModeRecord, {
     key: "frequencyMode",
-    label: "频率模式",
+    label: "\u9891\u7387\u6a21\u5f0f",
     fromNumeric: (numericValue) => {
       if (numericValue == null) {
         return "";
       }
-      return numericValue > 0 ? "自动" : "手动";
+      return numericValue > 0 ? "\u81ea\u52a8" : "\u624b\u52a8";
     },
-    resolveTone: (value) => (value.includes("自动") ? "good" : "warn")
+    resolveTone: (value) => (value.includes("\u81ea\u52a8") ? "good" : "warn")
   });
 
   const manualStartSignal = buildControlSignal(manualStartRecord, {
     key: "manualStart",
-    label: "手动启动",
+    label: "\u624b\u52a8\u542f\u52a8",
     fromNumeric: (numericValue) => {
       if (numericValue == null || numericValue <= 0) {
         return "";
       }
-      return "有效";
+      return "\u6709\u6548";
     },
     isActive: (_value, numericValue) => numericValue != null && numericValue > 0,
     resolveTone: (_value, _numericValue, active) => (active ? "warn" : "neutral")
@@ -634,12 +1169,12 @@ function deriveControlSignals(records) {
 
   const manualStopSignal = buildControlSignal(manualStopRecord, {
     key: "manualStop",
-    label: "手动停止",
+    label: "\u624b\u52a8\u505c\u6b62",
     fromNumeric: (numericValue) => {
       if (numericValue == null || numericValue <= 0) {
         return "";
       }
-      return "有效";
+      return "\u6709\u6548";
     },
     isActive: (_value, numericValue) => numericValue != null && numericValue > 0,
     resolveTone: (_value, _numericValue, active) => (active ? "warn" : "neutral")
@@ -647,19 +1182,19 @@ function deriveControlSignals(records) {
 
   const disabledSignal = buildControlSignal(disabledRecord, {
     key: "deviceDisabled",
-    label: "设备状态",
+    label: "\u8bbe\u5907\u72b6\u6001",
     fromNumeric: (numericValue) => {
       if (numericValue == null) {
         return "";
       }
-      return numericValue > 0 ? "已禁用" : "启用";
+      return numericValue > 0 ? "\u7981\u7528" : "\u542f\u7528";
     },
-    resolveTone: (value) => (value.includes("禁用") ? "warn" : "good")
+    resolveTone: (value) => (value.includes("\u7981\u7528") ? "warn" : "good")
   });
 
   const operationModeSignal = buildControlSignal(modeRecord, {
     key: "operationMode",
-    label: "运行模式",
+    label: "\u8fd0\u884c\u6a21\u5f0f",
     fromNumeric: () => "",
     resolveTone: () => "neutral"
   });
@@ -674,11 +1209,362 @@ function deriveControlSignals(records) {
   ].filter(Boolean);
 }
 
+function extractCoolingTowerSequence(device) {
+  const code = toTrimmedString(device?.deviceCode);
+  const fromTowerCode = code.match(/^CT(\d+)$/i);
+  if (fromTowerCode) {
+    return fromTowerCode[1];
+  }
+  const fromFanCode = code.match(/^CTF(\d+)\d+$/i);
+  if (fromFanCode) {
+    return fromFanCode[1];
+  }
+
+  const fromName = pickFirstNonEmptyText(device?.deviceName, device?.usageType).match(/^(\d+)#/);
+  if (fromName) {
+    return fromName[1];
+  }
+  return "";
+}
+
+function findCoolingTowerProxyRows(realtimeRows, device) {
+  if (!Array.isArray(realtimeRows) || realtimeRows.length === 0 || device?.systemType !== "coolingTower") {
+    return [];
+  }
+
+  const towerSequence = extractCoolingTowerSequence(device);
+  if (!towerSequence) {
+    return [];
+  }
+
+  const codePattern = new RegExp("^CTF" + towerSequence + "\\d+$", "i");
+  const codeMatches = realtimeRows.filter((row) =>
+    codePattern.test(toTrimmedString(row?.drcode ?? row?.deviceCode ?? row?.drCode))
+  );
+  if (codeMatches.length > 0) {
+    return codeMatches;
+  }
+
+  const namePrefix = towerSequence + "#";
+  return realtimeRows.filter((row) => toTrimmedString(row?.drname ?? row?.deviceName).startsWith(namePrefix));
+}
+
+function buildCoolingTowerProxySnapshot(proxyRows, fallbackLatestUpdateAt = null) {
+  if (!Array.isArray(proxyRows) || proxyRows.length === 0) {
+    return null;
+  }
+
+  const snapshots = proxyRows.map((row) =>
+    buildRuntimeSnapshot(getRuntimeRecords(row?.reglist), deriveRuntimeLatestUpdateAt(getRuntimeRecords(row?.reglist), row?.lastReportAt || null))
+  );
+  const runningCount = snapshots.filter((snapshot) => {
+    if (isRunningText(snapshot.runStatusText)) {
+      return true;
+    }
+    if (snapshot.runStatusText != null) {
+      return false;
+    }
+    return snapshot.frequencyHz != null && snapshot.frequencyHz >= ACTIVE_FREQUENCY_FALLBACK_THRESHOLD_HZ;
+  }).length;
+  const explicitRunCount = snapshots.filter((snapshot) => snapshot.runStatusText != null).length;
+  const alarmCount = snapshots.filter((snapshot) => isAlarmText(snapshot.alarmStatusText)).length;
+  const explicitAlarmCount = snapshots.filter((snapshot) => snapshot.alarmStatusText != null).length;
+  const latestUpdateAt = pickLatestIsoDateTime(
+    [...snapshots.map((snapshot) => snapshot.latestUpdateAt), fallbackLatestUpdateAt],
+    fallbackLatestUpdateAt
+  );
+
+  return {
+    runStatusText:
+      runningCount > 0
+        ? "\u8fd0\u884c\u4e2d"
+        : explicitRunCount > 0 && explicitRunCount === snapshots.length
+          ? "\u5df2\u505c\u6b62"
+          : null,
+    alarmStatusText:
+      alarmCount > 0
+        ? "\u62a5\u8b66\u4e2d"
+        : explicitAlarmCount > 0 && explicitAlarmCount === snapshots.length
+          ? "\u6b63\u5e38"
+          : null,
+    latestUpdateAt,
+    controlSignals: [],
+    proxyRowsCount: proxyRows.length,
+    runningCount
+  };
+}
+
 async function loadDeviceCatalogRows(baseUrl, siteId, options = {}) {
   const endpoint = buildDeviceListEndpoint(siteId, options);
-  const response = await fetchLegacyJson(baseUrl, endpoint);
-  const rows = response.ok ? deepArrayProbe(response.payload) : [];
-  return { endpoint, response, rows };
+  const upstreamResponse = enforceLegacyBusinessSuccess(await fetchLegacyJson(baseUrl, endpoint));
+  const sourceRows = upstreamResponse.ok ? deepArrayProbe(upstreamResponse.payload) : [];
+  const ambiguousDeviceIds = findAmbiguousStationDeviceIds(sourceRows, options);
+  const response = ambiguousDeviceIds.length > 0
+    ? {
+        ...upstreamResponse,
+        ok: false,
+        reasonCode: "STATION_DEVICE_IDS_AMBIGUOUS",
+        error: `Station catalog contains duplicate device ids: ${ambiguousDeviceIds.join(", ")}`
+      }
+    : upstreamResponse;
+  const rows = response.ok ? filterRowsForStation(sourceRows, options) : [];
+  return { endpoint, response, rows, ambiguousDeviceIds };
+}
+
+function deriveDeviceNodeStatus(runStatusText, alarmStatusText) {
+  const alarmNumeric = toFiniteNumber(alarmStatusText);
+  if (alarmNumeric != null) {
+    return alarmNumeric > 0 ? "alarm" : "normal";
+  }
+  const runNumeric = toFiniteNumber(runStatusText);
+  if (runNumeric != null) {
+    return runNumeric > 0 ? "running" : "stopped";
+  }
+  if (isAlarmText(alarmStatusText)) {
+    return "alarm";
+  }
+  if (isRunningText(runStatusText)) {
+    return "running";
+  }
+  if (isStoppedText(runStatusText)) {
+    return "stopped";
+  }
+  return "unknown";
+}
+
+function enrichRealtimeCollectionRow(row) {
+  const runtimeRecords = getRuntimeRecords(row?.reglist);
+  const snapshot = buildRuntimeSnapshot(runtimeRecords, null);
+
+  return {
+    ...row,
+    status: deriveDeviceNodeStatus(snapshot.runStatusText, snapshot.alarmStatusText),
+    lastReportAt: snapshot.latestUpdateAt
+  };
+}
+
+function mergeCatalogRowsWithRealtime(catalogRows, realtimeRows) {
+  if (!Array.isArray(catalogRows) || catalogRows.length === 0 || !Array.isArray(realtimeRows) || realtimeRows.length === 0) {
+    return catalogRows;
+  }
+
+  const realtimeByDeviceId = new Map(
+    realtimeRows.map((row) => [toTrimmedString(row?.drid ?? row?.deviceId ?? row?.id), row])
+  );
+
+  return catalogRows.map((row) => {
+    const realtimeRow = realtimeByDeviceId.get(toTrimmedString(row?.drid ?? row?.deviceId ?? row?.id));
+    if (!realtimeRow) {
+      return row;
+    }
+    return {
+      ...row,
+      status: realtimeRow.status || row.status,
+      lastReportAt: realtimeRow.lastReportAt || row.lastReportAt || null
+    };
+  });
+}
+
+function shouldTryRealtimeStatusFallback({ useRealtimeCollectionForTree, treeResponse, catalogRows }) {
+  if (useRealtimeCollectionForTree) {
+    return false;
+  }
+  if (!Array.isArray(catalogRows) || catalogRows.length === 0) {
+    return false;
+  }
+  const treeUnavailable = !treeResponse || treeResponse.ok !== true;
+  const statusAllUnknown = catalogRows.every((row) => toTrimmedString(row?.status).toLowerCase() === "unknown");
+  return treeUnavailable || statusAllUnknown;
+}
+
+async function loadDeviceRealtimeCollectionRows(baseUrl, siteId, options = {}) {
+  const endpoint = buildDeviceRealtimeCollectionEndpoint(siteId, options);
+  if (!endpoint) {
+    return null;
+  }
+  const upstreamResponse = enforceLegacyBusinessSuccess(await fetchLegacyJson(baseUrl, endpoint));
+  const sourceRows = upstreamResponse.ok ? deepArrayProbe(upstreamResponse.payload).filter((item) => item && typeof item === "object") : [];
+  const ambiguousDeviceIds = findAmbiguousStationDeviceIds(sourceRows, options);
+  const response = ambiguousDeviceIds.length > 0
+    ? {
+        ...upstreamResponse,
+        ok: false,
+        reasonCode: "STATION_DEVICE_IDS_AMBIGUOUS",
+        error: `Station runtime contains duplicate device ids: ${ambiguousDeviceIds.join(", ")}`
+      }
+    : upstreamResponse;
+  const rows = response.ok ? filterRowsForStation(sourceRows, options, { runtime: true }) : [];
+  return {
+    endpoint,
+    response,
+    rows: rows.map(enrichRealtimeCollectionRow)
+  };
+}
+
+function buildStationCatalogTree(siteId, items) {
+  const groups = new Map();
+  for (const item of Array.isArray(items) ? items : []) {
+    const groupKey = toTrimmedString(item.systemType || item.deviceTypeName || item.usageType) || "other";
+    if (!groups.has(groupKey)) {
+      groups.set(groupKey, []);
+    }
+    groups.get(groupKey).push(item);
+  }
+  const children = [...groups.entries()].map(([groupKey, groupItems]) => {
+    const groupId = `${siteId}/group/${groupKey}`;
+    const deviceChildren = groupItems.map((item) => ({
+      id: `${groupId}/${item.deviceId}`,
+      label: item.deviceName,
+      nodeType: "device",
+      parentId: groupId,
+      deviceIdRef: item.deviceId,
+      deviceCode: item.deviceCode || null,
+      deviceName: item.deviceName || null,
+      systemType: item.systemType || null,
+      floorName: item.floorName || null,
+      buildingName: item.buildingName || null,
+      status: item.status || "unknown",
+      lastReportAt: item.lastReportAt || null,
+      childCount: 0,
+      children: []
+    }));
+    return {
+      id: groupId,
+      label: groupItems[0]?.deviceTypeName || groupItems[0]?.usageType || groupKey,
+      nodeType: "group",
+      parentId: siteId,
+      deviceIdRef: null,
+      deviceCode: null,
+      deviceName: null,
+      systemType: groupKey,
+      floorName: null,
+      buildingName: null,
+      status: "unknown",
+      lastReportAt: null,
+      childCount: deviceChildren.length,
+      children: deviceChildren
+    };
+  });
+  return {
+    id: siteId,
+    label: siteId,
+    nodeType: "root",
+    parentId: null,
+    deviceIdRef: null,
+    deviceCode: null,
+    deviceName: null,
+    systemType: null,
+    floorName: null,
+    buildingName: null,
+    status: "unknown",
+    lastReportAt: null,
+    childCount: children.length,
+    children
+  };
+}
+
+function filterNormalizedTreeForStation(node, options = {}) {
+  if (!node || !hasStationDeviceAllowlist(options)) {
+    return node;
+  }
+  const allowedDeviceIds = normalizeExactSelectorSet(options.allowedDeviceIds);
+  const allowedPointCodes = normalizeExactSelectorSet(options.allowedPointCodes);
+  const filterNode = (current) => {
+    if (!current || typeof current !== "object") {
+      return null;
+    }
+    if (current.nodeType === "device" && !allowedDeviceIds.has(toTrimmedString(current.deviceIdRef))) {
+      return null;
+    }
+    if (current.nodeType === "point") {
+      if (!allowedDeviceIds.has(toTrimmedString(current.deviceIdRef))) {
+        return null;
+      }
+      if (allowedPointCodes.size > 0) {
+        const rawNodeId = toTrimmedString(current.id).split("/").at(-1) || "";
+        if (!allowedPointCodes.has(rawNodeId) && !allowedPointCodes.has(toTrimmedString(current.label))) {
+          return null;
+        }
+      }
+    }
+    const children = (Array.isArray(current.children) ? current.children : [])
+      .map(filterNode)
+      .filter(Boolean);
+    if (current.nodeType === "group" && children.length === 0) {
+      return null;
+    }
+    return {
+      ...current,
+      children,
+      childCount: children.length
+    };
+  };
+  return filterNode(node);
+}
+
+function groupRegisterCollectionRows(records) {
+  const rowsByDeviceId = new Map();
+  for (const record of Array.isArray(records) ? records : []) {
+    if (!record || typeof record !== "object") {
+      continue;
+    }
+    const deviceId = toTrimmedString(record.drId ?? record.drid ?? record.deviceId);
+    if (!deviceId) {
+      continue;
+    }
+    let row = rowsByDeviceId.get(deviceId);
+    if (!row) {
+      row = {
+        drid: deviceId,
+        drcode: toTrimmedString(record.drcode ?? record.drCode ?? record.deviceCode),
+        drname: toTrimmedString(record.drname ?? record.drName ?? record.deviceName),
+        drtypename: toTrimmedString(record.drtypename ?? record.drTypeName ?? record.deviceTypeName),
+        reglist: []
+      };
+      rowsByDeviceId.set(deviceId, row);
+    }
+    row.reglist.push(record);
+  }
+  return [...rowsByDeviceId.values()];
+}
+
+/**
+ * Reads the legacy register collection once and groups its flat register rows by
+ * device. This adapter is GET-only; filtering and B25 equipment authorization
+ * remain the service layer's responsibility.
+ */
+export async function loadDeviceRegisterCollection(baseUrl, siteId, options = {}) {
+  const endpoint = buildDeviceRegisterCollectionEndpoint(siteId, options);
+  const fetchedAt = new Date().toISOString();
+  const response = enforceLegacyBusinessSuccess(await fetchLegacyJson(baseUrl, endpoint));
+  const sourceRecords = response.ok
+    ? deepArrayProbe(response.payload).filter((item) => item && typeof item === "object")
+    : [];
+  const records = sourceRecords.filter((record) => (
+    stationBindingAllowsRow(record, options) && stationBindingAllowsPoint(record, options)
+  ));
+  const rows = groupRegisterCollectionRows(records);
+  const ok = response.ok && records.length > 0 && rows.length > 0;
+
+  return {
+    endpoint,
+    fetchedAt,
+    records,
+    rows,
+    sourceStatus: {
+      endpoint,
+      ok,
+      status: response.status ?? null,
+      message: ok ? extractMessage(response.payload, "OK") : null,
+      rows: records.length,
+      error: ok
+        ? null
+        : response.ok
+          ? "Legacy register collection payload contained no device register rows"
+          : response.error || "Legacy register collection unavailable",
+      fallback: false
+    }
+  };
 }
 
 export async function loadDeviceSummary(baseUrl, siteId, options = {}) {
@@ -729,7 +1615,9 @@ export async function loadDeviceSummary(baseUrl, siteId, options = {}) {
         id: item.deviceId,
         name: item.deviceName,
         type: item.systemType,
-        floor: item.floorName
+        floor: item.floorName,
+        typeName: item.deviceTypeName || item.usageType || null,
+        code: item.deviceCode || null
       }))
     };
   }
@@ -756,7 +1644,9 @@ export async function loadDeviceSummary(baseUrl, siteId, options = {}) {
     id: row.deviceId,
     name: row.deviceName,
     type: row.systemType,
-    floor: row.floorName
+    floor: row.floorName,
+    typeName: row.deviceTypeName || row.usageType || row.rawTypeName || null,
+    code: row.deviceCode || null
   }));
 
   return {
@@ -789,7 +1679,9 @@ export async function loadDeviceList(baseUrl, siteId, options = {}) {
     ? buildPlaceholderDeviceRows(siteId, {
         floorName: floorFilter || "1"
       })
-    : selectDisplayRows(rows.map(normalizeDeviceRow));
+    : hasStationDeviceAllowlist(options) || options.includeAllCatalogRows === true
+      ? rows.map(normalizeDeviceRow)
+      : selectDisplayRows(rows.map(normalizeDeviceRow));
   const enforceFloorFilter = Boolean(floorFilter) && normalizedRows.some((row) => hasUsableFloorInfo(row));
   const filteredRows = normalizedRows.filter((row) => {
     if (typeFilter && row.systemType !== typeFilter) {
@@ -817,6 +1709,7 @@ export async function loadDeviceList(baseUrl, siteId, options = {}) {
     sourceStatus: {
       endpoint,
       ok: response.ok,
+      reasonCode: response.reasonCode || null,
       status: response.status ?? null,
       message: response.ok ? extractMessage(response.payload, "OK") : null,
       rows: response.ok ? rows.length : null,
@@ -829,48 +1722,90 @@ export async function loadDeviceList(baseUrl, siteId, options = {}) {
 }
 
 export async function loadDeviceTree(baseUrl, siteId, options = {}) {
-  const build = Number.isFinite(Number(options.build)) ? Math.max(1, Number(options.build)) : 1;
-  const floor = Number.isFinite(Number(options.floor)) ? Math.max(1, Number(options.floor)) : 1;
+  const useRealtimeCollectionForTree = toTrimmedString(options.realtimeEndpointKind) === "legacy-reg-findAllByDrTypeId";
+  const minQueryValue = useRealtimeCollectionForTree ? 0 : 1;
+  const build = Number.isFinite(Number(options.build)) ? Math.max(minQueryValue, Number(options.build)) : 1;
+  const floor = Number.isFinite(Number(options.floor)) ? Math.max(minQueryValue, Number(options.floor)) : 1;
   const mock = options.mock === true ? "true" : "false";
   const endpoint = `/api/device/${normalizeLegacyPath(siteId, options)}/data/tree?build=${build}&floor=${floor}&mock=${mock}`;
   const fetchedAt = new Date().toISOString();
-
-  const [treeResponse, catalog] = await Promise.all([
-    fetchLegacyJson(baseUrl, endpoint),
-    loadDeviceCatalogRows(baseUrl, siteId, options)
+  const [treeResponse, catalog, realtimeCollection] = await Promise.all([
+    useRealtimeCollectionForTree
+      ? Promise.resolve(null)
+      : fetchLegacyJson(baseUrl, endpoint).then(enforceLegacyBusinessSuccess),
+    loadDeviceCatalogRows(baseUrl, siteId, options),
+    useRealtimeCollectionForTree ? loadDeviceRealtimeCollectionRows(baseUrl, siteId, options) : Promise.resolve(null)
   ]);
+  let fallbackRealtimeCollection = null;
   const usePlaceholderFallback =
     options.placeholderFallback === true && catalog.response.ok && catalog.rows.length === 0;
+  let mergedCatalogRows = useRealtimeCollectionForTree
+    ? mergeCatalogRowsWithRealtime(catalog.rows, realtimeCollection?.rows || [])
+    : catalog.rows;
+  if (
+    shouldTryRealtimeStatusFallback({
+      useRealtimeCollectionForTree,
+      treeResponse,
+      catalogRows: mergedCatalogRows
+    })
+  ) {
+    fallbackRealtimeCollection = await loadDeviceRealtimeCollectionRows(baseUrl, siteId, {
+      ...options,
+      realtimeEndpointKind: "legacy-reg-findAllByDrTypeId"
+    });
+    if (fallbackRealtimeCollection?.response?.ok && Array.isArray(fallbackRealtimeCollection.rows) && fallbackRealtimeCollection.rows.length > 0) {
+      mergedCatalogRows = mergeCatalogRowsWithRealtime(mergedCatalogRows, fallbackRealtimeCollection.rows);
+    }
+  }
   const catalogRows = usePlaceholderFallback
     ? buildPlaceholderDeviceRows(siteId, {
         floorName: String(floor),
-        buildingName: `楼栋 ${build}`
+        buildingName: `濠德板€曢崥瀣偉?${build}`
       })
-    : selectDisplayRows(catalog.rows.map(normalizeDeviceRow));
+    : hasStationDeviceAllowlist(options) || options.includeAllCatalogRows === true
+      ? mergedCatalogRows.map(normalizeDeviceRow)
+      : selectDisplayRows(mergedCatalogRows.map(normalizeDeviceRow));
   const catalogMap = buildDeviceCatalog(catalogRows);
-  const normalizedTree = treeResponse.ok
+  const normalizedTree = filterNormalizedTreeForStation(
+    (!hasStationDeviceAllowlist(options) || catalog.response.ok) && treeResponse?.ok
     ? normalizeDeviceTree(treeResponse.payload, siteId, catalogMap)
-    : null;
+    : null,
+    options
+  );
   const treeHasDeviceNodes = countDeviceTreeNodes(normalizedTree) > 0;
   const root = treeHasDeviceNodes
     ? normalizedTree
     : catalogRows.length > 0
-      ? buildPlaceholderTree(siteId, Array.from(catalogMap.values()))
+      ? hasStationDeviceAllowlist(options)
+        ? buildStationCatalogTree(siteId, Array.from(catalogMap.values()))
+        : buildPlaceholderTree(siteId, Array.from(catalogMap.values()))
       : null;
   const treeError =
     treeHasDeviceNodes
       ? null
+      : useRealtimeCollectionForTree
+        ? realtimeCollection?.response?.ok
+          ? realtimeCollection.rows.length > 0
+            ? null
+            : "Realtime collection payload unavailable"
+          : realtimeCollection?.response?.error || "Realtime collection unavailable"
       : treeResponse.ok
         ? extractMessage(treeResponse.payload, "Legacy tree payload unavailable")
         : treeResponse.error;
   const treeMessage = treeHasDeviceNodes
     ? "OK"
+    : useRealtimeCollectionForTree
+      ? realtimeCollection?.response?.ok
+        ? extractMessage(realtimeCollection.response.payload, "OK")
+        : null
     : treeResponse.ok
       ? extractMessage(treeResponse.payload, "Legacy tree payload unavailable")
       : null;
 
   return {
     root,
+    catalogRows,
+    realtimeCollectionRows: realtimeCollection?.rows || fallbackRealtimeCollection?.rows || [],
     fetchedAt,
     filters: {
       build,
@@ -878,21 +1813,36 @@ export async function loadDeviceTree(baseUrl, siteId, options = {}) {
     },
     sourceStatus: {
       tree: {
-        endpoint,
-        ok: treeHasDeviceNodes,
-        status: treeResponse.status ?? null,
+        endpoint: useRealtimeCollectionForTree ? realtimeCollection?.endpoint || endpoint : endpoint,
+        ok: useRealtimeCollectionForTree ? Boolean(realtimeCollection?.response?.ok && realtimeCollection.rows.length > 0) : treeHasDeviceNodes,
+        reasonCode: catalog.response.reasonCode || realtimeCollection?.response?.reasonCode || null,
+        status: useRealtimeCollectionForTree ? realtimeCollection?.response?.status ?? null : treeResponse.status ?? null,
         message: treeMessage,
-        rows: treeHasDeviceNodes ? root?.childCount ?? null : null,
+        rows: useRealtimeCollectionForTree ? realtimeCollection?.rows?.length ?? null : treeHasDeviceNodes ? root?.childCount ?? null : null,
         error: treeError
       },
       catalog: {
         endpoint: catalog.endpoint,
         ok: catalog.response.ok,
+        reasonCode: catalog.response.reasonCode || null,
         status: catalog.response.status ?? null,
         message: catalog.response.ok ? extractMessage(catalog.response.payload, "OK") : null,
         rows: catalogRows.length,
         error: catalog.response.ok ? null : catalog.response.error
       },
+      runtime:
+        fallbackRealtimeCollection?.endpoint
+          ? {
+              endpoint: fallbackRealtimeCollection.endpoint,
+              ok: Boolean(fallbackRealtimeCollection?.response?.ok),
+              status: fallbackRealtimeCollection?.response?.status ?? null,
+              message: fallbackRealtimeCollection?.response?.ok
+                ? extractMessage(fallbackRealtimeCollection.response.payload, "OK")
+                : null,
+              rows: Array.isArray(fallbackRealtimeCollection?.rows) ? fallbackRealtimeCollection.rows.length : null,
+              error: fallbackRealtimeCollection?.response?.ok ? null : fallbackRealtimeCollection?.response?.error || null
+            }
+          : null,
       placeholder: usePlaceholderFallback
         ? buildPlaceholderSourceStatus(siteId, "tree", catalogRows.length)
         : null
@@ -916,7 +1866,7 @@ function findTreeNodeByDeviceId(node, deviceId) {
   return null;
 }
 
-export async function loadDeviceDetail(baseUrl, siteId, deviceId, options = {}) {
+async function resolveDeviceDetailFromTree(baseUrl, siteId, deviceId, tree, options = {}) {
   const normalizedDeviceId = String(deviceId || "").trim();
   const fetchedAt = new Date().toISOString();
   const build = Number.isFinite(Number(options.build)) ? Math.max(1, Number(options.build)) : 1;
@@ -955,22 +1905,20 @@ export async function loadDeviceDetail(baseUrl, siteId, deviceId, options = {}) 
     };
   }
 
-  const [catalog, tree] = await Promise.all([
-    loadDeviceCatalogRows(baseUrl, siteId, options),
-    loadDeviceTree(baseUrl, siteId, { ...options, placeholderFallback: true })
-  ]);
-
-  const usePlaceholderFallback =
-    options.placeholderFallback === true && catalog.response.ok && catalog.rows.length === 0;
-  const normalizedRows = usePlaceholderFallback
-    ? buildPlaceholderDeviceRows(siteId, {
-        floorName: String(floor),
-        buildingName: `楼栋 ${build}`
-      })
-    : catalog.rows.map(normalizeDeviceRow);
+  const normalizedRows = Array.isArray(tree.catalogRows) ? tree.catalogRows : [];
   const matched = normalizedRows.find((row) => row.deviceId === normalizedDeviceId) || null;
   const treeNode = findTreeNodeByDeviceId(tree.root, normalizedDeviceId);
-  const runtime = matched?.isPlaceholder
+  const realtimeCollectionRows = Array.isArray(tree.realtimeCollectionRows) ? tree.realtimeCollectionRows : [];
+  const matchedRealtimeRow =
+    realtimeCollectionRows.find((row) => toTrimmedString(row?.drid ?? row?.deviceId ?? row?.id) === normalizedDeviceId) || null;
+  const runtime = !matched
+    ? {
+        ok: false,
+        status: null,
+        payload: null,
+        error: "Device is absent from an unambiguous station catalog"
+      }
+    : matched?.isPlaceholder
     ? {
         ok: true,
         status: 200,
@@ -979,19 +1927,75 @@ export async function loadDeviceDetail(baseUrl, siteId, deviceId, options = {}) 
         },
         error: null
       }
-    : await fetchLegacyJson(baseUrl, runtimeEndpoint);
-  const runtimeRecords = runtime.ok ? getRuntimeRecords(runtime.payload) : [];
-  const runRecord =
-    pickRuntimeRecord(runtimeRecords, (record) => toTrimmedString(record.regName) === "运行") ||
-    pickRuntimeRecord(runtimeRecords, (record) => /40169$/.test(toTrimmedString(record.tagName)));
-  const alarmRecord =
-    pickRuntimeRecord(runtimeRecords, (record) => toTrimmedString(record.regName) === "通讯报警") ||
-    pickRuntimeRecord(runtimeRecords, (record) => /40170$/.test(toTrimmedString(record.tagName))) ||
-    pickRuntimeRecord(runtimeRecords, (record) => toTrimmedString(record.regName).includes("报警"));
-  const runStatusText = deriveRunStatusText(runRecord);
-  const alarmStatusText = deriveAlarmStatusText(alarmRecord);
-  const latestUpdateAt = deriveRuntimeLatestUpdateAt(runtimeRecords, matched?.lastReportAt || null);
-  const controlSignals = deriveControlSignals(runtimeRecords);
+    : enforceLegacyBusinessSuccess(await fetchLegacyJson(baseUrl, runtimeEndpoint));
+  const runtimeRecords = runtime.ok
+    ? getRuntimeRecords(runtime.payload).filter((record) => (
+        runtimeRecordBelongsToDevice(record, normalizedDeviceId)
+        && stationBindingAllowsPoint(record, options)
+      ))
+    : [];
+  const runtimeSnapshot = buildRuntimeSnapshot(runtimeRecords, matched?.lastReportAt || null);
+  const collectionSnapshot = matchedRealtimeRow
+    ? buildRuntimeSnapshot(getRuntimeRecords(matchedRealtimeRow?.reglist), matchedRealtimeRow?.lastReportAt || null)
+    : null;
+  const coolingTowerProxyRows = findCoolingTowerProxyRows(realtimeCollectionRows, matched);
+  const coolingTowerProxySnapshot =
+    matched?.systemType === "coolingTower"
+      ? buildCoolingTowerProxySnapshot(coolingTowerProxyRows, matched?.lastReportAt || null)
+      : null;
+  const proxyResolved =
+    matched?.systemType === "coolingTower" &&
+    !runtimeSnapshot.runStatusText &&
+    !collectionSnapshot?.runStatusText &&
+    Boolean(coolingTowerProxySnapshot?.runStatusText);
+  const collectionResolved = !runtimeSnapshot.runStatusText && Boolean(collectionSnapshot?.runStatusText);
+  const runStatusText =
+    runtimeSnapshot.runStatusText ||
+    collectionSnapshot?.runStatusText ||
+    coolingTowerProxySnapshot?.runStatusText ||
+    null;
+  const alarmStatusText =
+    runtimeSnapshot.alarmStatusText ||
+    collectionSnapshot?.alarmStatusText ||
+    coolingTowerProxySnapshot?.alarmStatusText ||
+    null;
+  const latestUpdateAt = pickLatestIsoDateTime(
+    [
+      runtimeSnapshot.latestUpdateAt,
+      collectionSnapshot?.latestUpdateAt || null,
+      coolingTowerProxySnapshot?.latestUpdateAt || null,
+      matched?.lastReportAt || null
+    ],
+    matched?.lastReportAt || null
+  );
+  const controlSignals =
+    runtimeSnapshot.controlSignals.length > 0
+      ? runtimeSnapshot.controlSignals
+      : collectionSnapshot?.controlSignals?.length > 0
+        ? collectionSnapshot.controlSignals
+        : [];
+  const runtimeResolved = Boolean(runStatusText || alarmStatusText || controlSignals.length > 0 || latestUpdateAt);
+  const runtimeSourceEndpoint = proxyResolved || collectionResolved
+    ? tree.sourceStatus?.tree?.endpoint || runtimeEndpoint
+    : runtimeEndpoint;
+  const runtimeSourceMessage =
+    matched?.isPlaceholder
+      ? "Placeholder device has no runtime records"
+      : proxyResolved
+        ? `OK; cooling tower runtime mapped from ${coolingTowerProxySnapshot?.proxyRowsCount ?? 0} fan points`
+        : collectionResolved
+          ? "OK; runtime resolved from realtime collection"
+          : runtime.ok && runtimeRecords.length > 0
+            ? extractMessage(runtime.payload, "OK")
+            : runtime.ok
+              ? "No runtime records"
+              : null;
+  const runtimeSourceRows =
+    proxyResolved
+      ? coolingTowerProxySnapshot?.proxyRowsCount ?? null
+      : collectionResolved
+        ? collectionSnapshot?.recordCount ?? null
+        : runtimeRecords.length;
 
   return {
     detail: matched
@@ -1007,8 +2011,8 @@ export async function loadDeviceDetail(baseUrl, siteId, deviceId, options = {}) 
           iconPath: matched.iconPath,
           isVirtual: matched.isVirtual,
           isPlaceholder: matched.isPlaceholder === true,
-          runStatusText: runStatusText || (matched.isPlaceholder ? "占位设备" : null),
-          alarmStatusText: alarmStatusText || (matched.isPlaceholder ? "无实时告警" : null),
+          runStatusText: runStatusText || (matched.isPlaceholder ? "\u5360\u4f4d\u8bbe\u5907" : null),
+          alarmStatusText: alarmStatusText || (matched.isPlaceholder ? "\u65e0\u5b9e\u65f6\u544a\u8b66" : null),
           latestUpdateAt,
           controlSignals,
           treeNodeType: treeNode?.nodeType || null,
@@ -1018,13 +2022,13 @@ export async function loadDeviceDetail(baseUrl, siteId, deviceId, options = {}) 
       : null,
     fetchedAt,
     sourceStatus: {
-      catalog: {
-        endpoint: catalog.endpoint,
-        ok: catalog.response.ok,
-        status: catalog.response.status ?? null,
-        message: catalog.response.ok ? extractMessage(catalog.response.payload, "OK") : null,
-        rows: catalog.rows.length,
-        error: catalog.response.ok ? null : catalog.response.error
+      catalog: tree.sourceStatus?.catalog || {
+        endpoint: buildDeviceListEndpoint(siteId, options),
+        ok: false,
+        status: null,
+        message: null,
+        rows: normalizedRows.length,
+        error: "Catalog source unavailable"
       },
       tree: tree.sourceStatus?.tree || {
         endpoint: `/api/device/${normalizeLegacyPath(siteId, options)}/data/tree?build=1&floor=1&mock=false`,
@@ -1035,23 +2039,69 @@ export async function loadDeviceDetail(baseUrl, siteId, deviceId, options = {}) 
         error: "Tree source unavailable"
       },
       runtime: {
-        endpoint: runtimeEndpoint,
-        ok: matched?.isPlaceholder ? true : runtime.ok && runtimeRecords.length > 0,
+        endpoint: runtimeSourceEndpoint,
+        ok: matched?.isPlaceholder ? true : runtimeResolved,
         status: runtime.status ?? null,
-        message:
-          matched?.isPlaceholder
-            ? "Placeholder device has no runtime records"
-            : runtime.ok && runtimeRecords.length > 0
-            ? extractMessage(runtime.payload, "OK")
-            : runtime.ok
-              ? "No runtime records"
-              : null,
-        rows: runtimeRecords.length,
-        error: matched?.isPlaceholder ? null : runtime.ok ? null : runtime.error
+        message: runtimeSourceMessage,
+        rows: runtimeSourceRows,
+        error: matched?.isPlaceholder ? null : runtimeResolved ? null : runtime.error,
+        fallback: proxyResolved || collectionResolved
       },
-      placeholder: usePlaceholderFallback
-        ? buildPlaceholderSourceStatus(siteId, "detail", normalizedRows.length)
-        : null
+      placeholder: tree.sourceStatus?.placeholder || null
     }
+  };
+}
+
+export async function loadDeviceDetail(baseUrl, siteId, deviceId, options = {}) {
+  const tree = await loadDeviceTree(baseUrl, siteId, {
+    ...options,
+    placeholderFallback: options.placeholderFallback !== false
+  });
+  return resolveDeviceDetailFromTree(baseUrl, siteId, deviceId, tree, options);
+}
+
+export async function loadDeviceDetails(baseUrl, siteId, deviceIds, options = {}) {
+  const normalizedDeviceIds = Array.from(
+    new Set(
+      (Array.isArray(deviceIds) ? deviceIds : [])
+        .map((value) => String(value || "").trim())
+        .filter(Boolean)
+    )
+  );
+  const fetchedAt = new Date().toISOString();
+
+  if (normalizedDeviceIds.length === 0) {
+    return {
+      fetchedAt,
+      items: [],
+      sourceStatus: null
+    };
+  }
+
+  const tree = await loadDeviceTree(baseUrl, siteId, {
+    ...options,
+    placeholderFallback: options.placeholderFallback !== false
+  });
+  const batchSize =
+    Number.isFinite(Number(options.batchSize)) && Number(options.batchSize) > 0
+      ? Math.max(1, Math.floor(Number(options.batchSize)))
+      : 4;
+  const items = [];
+
+  for (let start = 0; start < normalizedDeviceIds.length; start += batchSize) {
+    const batchDeviceIds = normalizedDeviceIds.slice(start, start + batchSize);
+    const batchResults = await Promise.all(
+      batchDeviceIds.map(async (deviceId) => ({
+        deviceId,
+        ...(await resolveDeviceDetailFromTree(baseUrl, siteId, deviceId, tree, options))
+      }))
+    );
+    items.push(...batchResults);
+  }
+
+  return {
+    fetchedAt,
+    items,
+    sourceStatus: tree.sourceStatus || null
   };
 }

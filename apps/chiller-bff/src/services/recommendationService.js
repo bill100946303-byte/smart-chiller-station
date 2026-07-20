@@ -39,6 +39,18 @@ function asFiniteNumber(value) {
   return Number.isFinite(number) ? number : null;
 }
 
+function asTrimmedText(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function resolveDatabasePathKey(siteId, requestContext = {}) {
+  return (
+    asTrimmedText(requestContext?.databaseKey) ||
+    asTrimmedText(requestContext?.projectKey) ||
+    asTrimmedText(siteId)
+  );
+}
+
 function healthFromSourceStatus(key, sourceStatus, endpoint) {
   const statusOverall = sourceStatus?.overall;
   const ok = statusOverall === "ok" || statusOverall === "partial";
@@ -53,7 +65,7 @@ function healthFromSourceStatus(key, sourceStatus, endpoint) {
   };
 }
 
-function healthFromRuleMetricSources(ruleMetricsStatus, siteId) {
+function healthFromRuleMetricSources(ruleMetricsStatus, pathKey) {
   const sources = Array.isArray(ruleMetricsStatus) ? ruleMetricsStatus : [];
   const okCount = sources.filter((source) => source?.ok).length;
   const overall = okCount === sources.length ? "ok" : okCount === 0 ? "failed" : "partial";
@@ -61,9 +73,9 @@ function healthFromRuleMetricSources(ruleMetricsStatus, siteId) {
   return {
     key: "ruleMetrics",
     endpoint: [
-      `/zsqy/homepage/${siteId}/getEquipmentEnergyStatisticsCurve`,
-      `/zsqy/homepage/${siteId}/getEnergyStatisticsCurve`,
-      `/zsqy/homepage/${siteId}/getRunParamsCurve`
+      `/zsqy/homepage/${pathKey}/getEquipmentEnergyStatisticsCurve`,
+      `/zsqy/homepage/${pathKey}/getEnergyStatisticsCurve`,
+      `/zsqy/homepage/${pathKey}/getRunParamsCurve`
     ].join(";"),
     ok,
     status: null,
@@ -73,12 +85,12 @@ function healthFromRuleMetricSources(ruleMetricsStatus, siteId) {
   };
 }
 
-function buildCoreMetricObservability(dashboardOverview, siteId) {
+function buildCoreMetricObservability(dashboardOverview, pathKey) {
   const energyCards = dashboardOverview?.energyCards || {};
   const energySource = dashboardOverview?.sourceStatus?.sources?.find(
     (source) => source?.key === "energy"
   );
-  const fallbackEndpoint = `/zsqy/homepage/${siteId}/getEquipmentEnergyStatisticsCurve`;
+  const fallbackEndpoint = `/zsqy/homepage/${pathKey}/getEquipmentEnergyStatisticsCurve`;
 
   const metricContexts = {};
   const sourceEntries = [];
@@ -137,9 +149,10 @@ function buildCoreMetricObservability(dashboardOverview, siteId) {
   };
 }
 
-export async function getRecommendations(config, siteId, dashboardOverview, anomalySummary) {
-  const ruleMetricResult = await loadRuleMetrics(config.legacyBaseUrl, siteId);
-  const coreMetricObservability = buildCoreMetricObservability(dashboardOverview, siteId);
+export async function getRecommendations(config, siteId, dashboardOverview, anomalySummary, requestContext = {}) {
+  const databasePathKey = resolveDatabasePathKey(siteId, requestContext);
+  const ruleMetricResult = await loadRuleMetrics(config.legacyBaseUrl, siteId, requestContext);
+  const coreMetricObservability = buildCoreMetricObservability(dashboardOverview, databasePathKey);
   const evaluated = evaluateRuleCards(
     config,
     dashboardOverview,
@@ -174,7 +187,7 @@ export async function getRecommendations(config, siteId, dashboardOverview, anom
         anomalySummary?.sourceStatus,
         `/bff/v1/sites/${siteId}/anomalies/summary`
       ),
-      healthFromRuleMetricSources(ruleMetricResult?.sourceStatus, siteId),
+      healthFromRuleMetricSources(ruleMetricResult?.sourceStatus, databasePathKey),
       ...coreMetricObservability.sourceEntries
     ])
   };

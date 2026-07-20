@@ -4,6 +4,15 @@
     "siteName": "6期1栋冷站"
   },
   "generatedAt": "2026-03-13T14:58:50.642Z",
+  "dataScope": {
+    "siteId": "126lnoffice",
+    "requestedSubsystemType": null,
+    "effectiveSubsystemType": "chilled_plant",
+    "stationId": null,
+    "filterMode": "fixed_subsystem",
+    "applied": true,
+    "reason": "ENDPOINT_FIXED_SCOPE"
+  },
   "range": "24h",
   "series": [
     {

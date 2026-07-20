@@ -1,0 +1,68 @@
+{
+  "ok": true,
+  "requestId": "req-20260408-rollback-0001",
+  "execution": {
+    "executionId": "opx-btwentyfive-1775237600000-cn4t8v",
+    "siteId": "btwentyfive",
+    "createdAt": "2026-04-08T09:33:20.000Z",
+    "updatedAt": "2026-04-08T09:34:31.000Z",
+    "approvedAt": "2026-04-08T09:34:02.000Z",
+    "approvedBy": "site-admin-b25",
+    "rolledBackAt": "2026-04-08T09:34:31.000Z",
+    "rolledBackBy": "platform-admin",
+    "status": "rolled_back",
+    "draft": {
+      "generatedAt": "2026-04-08T09:32:58.000Z",
+      "gateLevel": "caution"
+    },
+    "execution": {
+      "type": "scheme",
+      "schemeKey": "conservative",
+      "title": "保守方案",
+      "targetCop": 7.4,
+      "targetPowerKw": 1188.6,
+      "targetApproachC": null,
+      "targetTcwsC": null,
+      "reason": "关键现态信号缺失，先维持保守运行",
+      "actions": [
+        "维持当前主机组合",
+        "优先补齐 COP 与温差连续测点"
+      ]
+    },
+    "approval": {
+      "required": true,
+      "status": "approved",
+      "requestedAt": "2026-04-08T09:33:20.000Z",
+      "approvedAt": "2026-04-08T09:34:02.000Z",
+      "approverUserId": "site-admin-b25",
+      "note": "值班站点管理员审批"
+    },
+    "rollback": {
+      "status": "completed",
+      "reason": "平台管理员回退",
+      "requestedBy": "platform-admin",
+      "requestedAt": "2026-04-08T09:34:31.000Z",
+      "completedAt": "2026-04-08T09:34:31.000Z"
+    },
+    "timeline": [
+      {
+        "at": "2026-04-08T09:33:20.000Z",
+        "actorUserId": "operator",
+        "action": "created",
+        "note": null
+      },
+      {
+        "at": "2026-04-08T09:34:02.000Z",
+        "actorUserId": "site-admin-b25",
+        "action": "approved",
+        "note": "值班站点管理员审批"
+      },
+      {
+        "at": "2026-04-08T09:34:31.000Z",
+        "actorUserId": "platform-admin",
+        "action": "rolled_back",
+        "note": "平台管理员回退"
+      }
+    ]
+  }
+}

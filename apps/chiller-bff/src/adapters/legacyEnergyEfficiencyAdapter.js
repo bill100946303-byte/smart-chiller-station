@@ -1,4 +1,4 @@
-import { fetchLegacyJson } from "../lib/http.js";
+﻿import { fetchLegacyJson } from "../lib/http.js";
 
 function asTrimmedString(value, fallback = "") {
   if (value == null) {
@@ -59,6 +59,16 @@ function normalizeStringList(value) {
   return [];
 }
 
+function toArray(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (value == null || value === "") {
+    return [];
+  }
+  return [value];
+}
+
 function normalizeTimeSpace(value, fallback = "1") {
   const normalized = asTrimmedString(value, fallback);
   return ["1", "2", "3"].includes(normalized) ? normalized : fallback;
@@ -69,14 +79,40 @@ function normalizeProportionDateType(value, fallback = "2") {
   return ["2", "3"].includes(normalized) ? normalized : fallback;
 }
 
-function buildIdentifierCandidates(siteId, projectKey) {
+function buildIdentifierCandidates(
+  siteId,
+  projectKey,
+  projectKeyCandidates = [],
+  databaseKey = "",
+  databaseKeyCandidates = []
+) {
+  const dbCandidates = Array.isArray(databaseKeyCandidates) ? databaseKeyCandidates : [];
+  const extraCandidates = Array.isArray(projectKeyCandidates) ? projectKeyCandidates : [];
   return Array.from(
-    new Set([projectKey, siteId].map((value) => asTrimmedString(value)).filter(Boolean))
+    new Set(
+      [...dbCandidates, databaseKey, ...extraCandidates, projectKey, siteId]
+        .map((value) => asTrimmedString(value))
+        .filter(Boolean)
+    )
   );
 }
 
-async function fetchAcrossIdentifiers(baseUrl, siteId, projectKey, endpointBuilder) {
-  const identifiers = buildIdentifierCandidates(siteId, projectKey);
+async function fetchAcrossIdentifiers(
+  baseUrl,
+  siteId,
+  projectKey,
+  projectKeyCandidates,
+  endpointBuilder,
+  databaseKey = "",
+  databaseKeyCandidates = []
+) {
+  const identifiers = buildIdentifierCandidates(
+    siteId,
+    projectKey,
+    projectKeyCandidates,
+    databaseKey,
+    databaseKeyCandidates
+  );
   let selectedIdentifier = asTrimmedString(siteId);
   let selectedEndpoint = endpointBuilder(selectedIdentifier);
   let selectedResponse = {
@@ -107,9 +143,13 @@ async function fetchAcrossIdentifiers(baseUrl, siteId, projectKey, endpointBuild
 function buildSearchEndpoint(siteId, options) {
   const search = new URLSearchParams();
   search.set("drNameList", options.deviceKeys.join(","));
+  search.set("timeSpace", options.timeSpace);
   search.set("startTime", options.startDate);
   search.set("endTime", options.endDate);
-  search.set("timeSpace", options.timeSpace);
+  search.set("language", options.language || "zh");
+  search.set("unit", options.unit || "KW");
+  search.set("modelKey", options.modelKey || options.projectKey || siteId);
+  search.set("template", options.template || "1");
   return `/zsqy/energycalendar/${siteId}/findEnergySearch?${search.toString()}`;
 }
 
@@ -117,6 +157,11 @@ function buildCompareEndpoint(siteId, options) {
   const search = new URLSearchParams();
   search.set("drName", options.deviceKey);
   search.set("timeList", options.dates.join(","));
+  search.set("timeSpace", options.timeSpace || "1");
+  search.set("language", options.language || "zh");
+  search.set("unit", options.unit || "KW");
+  search.set("modelKey", options.modelKey || options.projectKey || siteId);
+  search.set("template", options.template || "1");
   return `/zsqy/energycalendar/${siteId}/findEnergyContrast?${search.toString()}`;
 }
 
@@ -124,6 +169,10 @@ function buildProportionEndpoint(siteId, options) {
   const search = new URLSearchParams();
   search.set("date", options.date);
   search.set("dateType", options.dateType);
+  search.set("language", options.language || "zh");
+  search.set("unit", options.unit || "KW");
+  search.set("modelKey", options.modelKey || options.projectKey || siteId);
+  search.set("template", options.template || "1");
   return `/zsqy/energycalendar/${siteId}/findLoadSpecificGravity?${search.toString()}`;
 }
 
@@ -138,9 +187,9 @@ function buildImbalanceCurveEndpoint(siteId, options) {
   return `/zsqy/energyanalysis/getEnergyAnalysisCurve?${search.toString()}`;
 }
 
-function buildImbalanceTableEndpoint(siteId, options) {
+function buildImbalanceTableEndpoint(siteId, appId, options) {
   const search = new URLSearchParams();
-  search.set("appId", siteId);
+  search.set("appId", appId);
   search.set("date", options.endDate);
   search.set("dateType", "0");
   search.set("energyType", "4");
@@ -175,12 +224,16 @@ function pickFirstNumericField(item, keys) {
 
 function normalizeWetBulbValue(item) {
   const wetBulbKeys = [
-    "湿球温度",
-    "湿球",
-    "室外湿球温度",
-    "室外湿球",
-    "湿球温度(℃)",
-    "湿球温度（℃）",
+    "\u6e7f\u7403\u6e29\u5ea6",
+    "\u6e7f\u7403",
+    "\u5ba4\u5916\u6e7f\u7403\u6e29\u5ea6",
+    "\u5ba4\u5916\u6e7f\u7403",
+    "\u5ba4\u5916\u6e7f\u7403\u6e29\u5ea6(\u2103)",
+    "\u5ba4\u5916\u6e7f\u7403\u6e29\u5ea6(\u00b0C)",
+    "婀跨悆娓╁害",
+    "婀跨悆",
+    "瀹ゅ婀跨悆娓╁害",
+    "瀹ゅ婀跨悆",
     "wetBulbC",
     "wetBulb",
     "wetBulbTempC",
@@ -195,7 +248,7 @@ function normalizeWetBulbValue(item) {
 function normalizeTableRow(item, index) {
   return {
     id: asTrimmedString(item?.id || item?.object || `energy-efficiency-${index + 1}`),
-    object: asTrimmedString(item?.object, `对象 ${index + 1}`),
+    object: asTrimmedString(item?.object, `瀵硅薄 ${index + 1}`),
     wholeValue: asTrimmedString(item?.wholeValue, "--"),
     averageValue: asTrimmedString(item?.averageValue, "--"),
     tenPercentGoodAverageValue: asTrimmedString(item?.tenPercentGoodAverageValue, "--"),
@@ -211,7 +264,7 @@ function normalizeSeriesPoint(item, index) {
 }
 
 function normalizeSeries(item, index) {
-  const points = Array.isArray(item?.data) ? item.data.map(normalizeSeriesPoint) : [];
+  const points = toArray(item?.data).map(normalizeSeriesPoint);
   return {
     id: asTrimmedString(item?.id || item?.title || `series-${index + 1}`),
     name: asTrimmedString(item?.title, `series-${index + 1}`),
@@ -220,17 +273,15 @@ function normalizeSeries(item, index) {
 }
 
 function normalizeReportPayload(payload) {
-  const tableRowsRaw = Array.isArray(payload?.data?.tableList)
-    ? payload.data.tableList
-    : Array.isArray(payload?.tableList)
-      ? payload.tableList
-      : [];
-  const seriesRaw = Array.isArray(payload?.data?.curveList)
-    ? payload.data.curveList
-    : Array.isArray(payload?.curveList)
-      ? payload.curveList
-      : [];
-  const series = seriesRaw.map(normalizeSeries);
+  const tableRowsRaw = toArray(payload?.data?.tableList ?? payload?.tableList);
+  const seriesRaw = toArray(payload?.data?.curveList ?? payload?.curveList);
+  const normalizedTableRows = tableRowsRaw.map(normalizeTableRow);
+  const series = seriesRaw.map((item, index) => normalizeSeries(
+    item && typeof item === "object" && !item.title && normalizedTableRows[index]?.object
+      ? { ...item, title: normalizedTableRows[index].object }
+      : item,
+    index
+  ));
   const axisLabels = series.reduce((current, item) => (
     (item.points?.length || 0) > current.length
       ? (item.points || []).map((point) => point.label || "")
@@ -238,7 +289,7 @@ function normalizeReportPayload(payload) {
   ), []);
 
   return {
-    tableRows: tableRowsRaw.map(normalizeTableRow),
+    tableRows: normalizedTableRows,
     series,
     axisLabels
   };
@@ -247,11 +298,54 @@ function normalizeReportPayload(payload) {
 function normalizeProportionRow(item, index) {
   return {
     id: `proportion-${index + 1}`,
-    rangeLabel: asTrimmedString(item?.["负荷区间"] || item?.rangeLabel, `range-${index + 1}`),
-    loadRatioPct: toNullableNumber(item?.["负荷比重比例"] || item?.loadRatioPct),
-    stationEfficiency: toNullableNumber(item?.["冷站效能"] || item?.stationEfficiency),
+    rangeLabel: asTrimmedString(
+      item?.["\u8d1f\u8377\u533a\u95f4"] ||
+      item?.["璐熻嵎鍖洪棿"] ||
+      item?.rangeLabel ||
+      item?.range ||
+      item?.name,
+      `range-${index + 1}`
+    ),
+    loadRatioPct: toNullableNumber(
+      item?.["\u8d1f\u8377\u6bd4\u91cd\u6bd4\u4f8b"] ||
+      item?.["\u8d1f\u8377\u6bd4\u91cd"] ||
+      item?.["璐熻嵎姣旈噸姣斾緥"] ||
+      item?.loadRatioPct ||
+      item?.ratio ||
+      item?.value
+    ),
+    stationEfficiency: toNullableNumber(
+      item?.["\u51b7\u7ad9\u6548\u80fd"] ||
+      item?.["鍐风珯鏁堣兘"] ||
+      item?.stationEfficiency ||
+      item?.efficiency ||
+      item?.cop
+    ),
     wetBulbC: normalizeWetBulbValue(item)
   };
+}
+
+function extractProportionRows(payload) {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+  const candidates = [
+    payload.data,
+    payload.rows,
+    payload.list,
+    payload.tableList,
+    payload.result
+  ];
+  for (const candidate of candidates) {
+    const rows = toArray(candidate).filter((item) => item && typeof item === "object");
+    if (rows.length > 0) {
+      return rows;
+    }
+  }
+  return [];
 }
 
 function normalizeImbalancePoint(item, index) {
@@ -259,6 +353,36 @@ function normalizeImbalancePoint(item, index) {
     label: asTrimmedString(item?.name ?? item?.time ?? `point-${index + 1}`),
     value: toNullableNumber(item?.value)
   };
+}
+
+function extractImbalanceCurveRows(payload) {
+  if (Array.isArray(payload?.data)) {
+    return payload.data;
+  }
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  const data = payload?.data;
+  if (!data || typeof data !== "object") {
+    return [];
+  }
+  if (Array.isArray(data?.curveValueList)) {
+    return [
+      {
+        title: data?.title,
+        curveValueList: data.curveValueList
+      }
+    ];
+  }
+  if (Array.isArray(data?.curveValueList?.curveValueList)) {
+    return [
+      {
+        title: data?.title,
+        curveValueList: data.curveValueList.curveValueList
+      }
+    ];
+  }
+  return [];
 }
 
 function normalizeImbalanceSeries(item, index) {
@@ -275,7 +399,7 @@ function normalizeImbalanceSeries(item, index) {
 function normalizeImbalanceStatisticRow(item, index) {
   return {
     id: asTrimmedString(item?.id || item?.acquisitionValue || `imbalance-stat-${index + 1}`),
-    acquisitionValue: asTrimmedString(item?.acquisitionValue, `采集值 ${index + 1}`),
+    acquisitionValue: asTrimmedString(item?.acquisitionValue, `閲囬泦鍊?${index + 1}`),
     scalar: toNullableNumber(item?.scalar),
     noScalar: toNullableNumber(item?.noScalar),
     scalarRate: toNullableNumber(item?.scalarRate)
@@ -284,11 +408,27 @@ function normalizeImbalanceStatisticRow(item, index) {
 
 function normalizeImbalanceDeviceRow(item, index) {
   return {
-    id: asTrimmedString(item?.id || item?.drName || `imbalance-device-${index + 1}`),
-    deviceName: asTrimmedString(item?.drName, `设备 ${index + 1}`),
+    id: asTrimmedString(item?.id || item?.drName || item?.scalarRate || `imbalance-device-${index + 1}`),
+    deviceName: asTrimmedString(item?.drName, "--"),
     deviceTypeName: asTrimmedString(item?.drTypeName, "--"),
     scalarRate: toNullableNumber(item?.scalarRate)
   };
+}
+
+function extractImbalanceTableSections(payload) {
+  if (Array.isArray(payload?.data)) {
+    return payload.data;
+  }
+  if (payload?.data && typeof payload.data === "object") {
+    return [payload.data];
+  }
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  if (payload && typeof payload === "object" && (payload?.dataStatisticsList || payload?.tableList)) {
+    return [payload];
+  }
+  return [];
 }
 
 export async function loadEnergyEfficiencySearch(baseUrl, siteId, options = {}) {
@@ -296,12 +436,19 @@ export async function loadEnergyEfficiencySearch(baseUrl, siteId, options = {}) 
   const endDate = normalizeDateInput(options.endDate, startDate);
   const timeSpace = normalizeTimeSpace(options.timeSpace, "1");
   const deviceKeys = normalizeStringList(options.deviceKeys);
+  const language = asTrimmedString(options.language, "zh");
+  const unit = asTrimmedString(options.unit, "KW");
+  const modelKey = asTrimmedString(options.modelKey || options.projectKey, "");
+  const template = asTrimmedString(options.template, "1");
   const fetchedAt = new Date().toISOString();
   const { endpoint, response } = await fetchAcrossIdentifiers(
     baseUrl,
     siteId,
     options.projectKey,
-    (identifier) => buildSearchEndpoint(identifier, { startDate, endDate, timeSpace, deviceKeys })
+    options.projectKeyCandidates,
+    (identifier) => buildSearchEndpoint(identifier, { startDate, endDate, timeSpace, deviceKeys, language, unit, modelKey, template }),
+    options.databaseKey,
+    options.databaseKeyCandidates
   );
   const payload = response.ok && response.payload && typeof response.payload === "object" ? response.payload : null;
   const normalized = normalizeReportPayload(payload);
@@ -311,7 +458,11 @@ export async function loadEnergyEfficiencySearch(baseUrl, siteId, options = {}) 
       startDate,
       endDate,
       timeSpace,
-      deviceKeys
+      deviceKeys,
+      language,
+      unit,
+      modelKey,
+      template
     },
     tableRows: normalized.tableRows,
     series: normalized.series,
@@ -331,12 +482,20 @@ export async function loadEnergyEfficiencySearch(baseUrl, siteId, options = {}) 
 export async function loadEnergyEfficiencyCompare(baseUrl, siteId, options = {}) {
   const deviceKey = asTrimmedString(options.deviceKey, "CoolingStation");
   const dates = normalizeStringList(options.dates).map((item) => normalizeDateInput(item, item));
+  const timeSpace = normalizeTimeSpace(options.timeSpace, "1");
+  const language = asTrimmedString(options.language, "zh");
+  const unit = asTrimmedString(options.unit, "KW");
+  const modelKey = asTrimmedString(options.modelKey || options.projectKey, "");
+  const template = asTrimmedString(options.template, "1");
   const fetchedAt = new Date().toISOString();
   const { endpoint, response } = await fetchAcrossIdentifiers(
     baseUrl,
     siteId,
     options.projectKey,
-    (identifier) => buildCompareEndpoint(identifier, { deviceKey, dates })
+    options.projectKeyCandidates,
+    (identifier) => buildCompareEndpoint(identifier, { deviceKey, dates, timeSpace, language, unit, modelKey, template }),
+    options.databaseKey,
+    options.databaseKeyCandidates
   );
   const payload = response.ok && response.payload && typeof response.payload === "object" ? response.payload : null;
   const normalized = normalizeReportPayload(payload);
@@ -344,7 +503,12 @@ export async function loadEnergyEfficiencyCompare(baseUrl, siteId, options = {})
   return {
     filters: {
       deviceKey,
-      dates
+      dates,
+      timeSpace,
+      language,
+      unit,
+      modelKey,
+      template
     },
     tableRows: normalized.tableRows,
     series: normalized.series,
@@ -366,25 +530,32 @@ export async function loadEnergyEfficiencyProportion(baseUrl, siteId, options = 
   const date = dateType === "3"
     ? normalizeYearInput(options.date)
     : normalizeMonthInput(options.date);
+  const language = asTrimmedString(options.language, "zh");
+  const unit = asTrimmedString(options.unit, "KW");
+  const modelKey = asTrimmedString(options.modelKey || options.projectKey, "");
+  const template = asTrimmedString(options.template, "1");
   const fetchedAt = new Date().toISOString();
   const { endpoint, response } = await fetchAcrossIdentifiers(
     baseUrl,
     siteId,
     options.projectKey,
-    (identifier) => buildProportionEndpoint(identifier, { date, dateType })
+    options.projectKeyCandidates,
+    (identifier) => buildProportionEndpoint(identifier, { date, dateType, language, unit, modelKey, template }),
+    options.databaseKey,
+    options.databaseKeyCandidates
   );
   const payload = response.ok && response.payload && typeof response.payload === "object" ? response.payload : null;
-  const rowsRaw = Array.isArray(payload?.data)
-    ? payload.data
-    : Array.isArray(payload)
-      ? payload
-      : [];
+  const rowsRaw = extractProportionRows(payload);
   const rows = rowsRaw.map(normalizeProportionRow);
 
   return {
     filters: {
       date,
-      dateType
+      dateType,
+      language,
+      unit,
+      modelKey,
+      template
     },
     rows,
     latestTimestamp: fetchedAt,
@@ -403,33 +574,30 @@ export async function loadEnergyEfficiencyImbalance(baseUrl, siteId, options = {
   const startDate = normalizeDateInput(options.startDate);
   const endDate = normalizeDateInput(options.endDate, startDate);
   const fetchedAt = new Date().toISOString();
-  const identifiers = buildIdentifierCandidates(siteId, options.projectKey);
-  let curveEndpoint = buildImbalanceCurveEndpoint(siteId, { startDate, endDate });
-  let tableEndpoint = buildImbalanceTableEndpoint(siteId, { startDate, endDate });
-  let curveResponse = {
-    ok: false,
-    status: null,
-    error: null,
-    payload: null
-  };
-  let tableResponse = {
-    ok: false,
-    status: null,
-    error: null,
-    payload: null
-  };
+  const tableAppId = asTrimmedString(options.appId, asTrimmedString(siteId));
+  const curveResult = await fetchAcrossIdentifiers(
+    baseUrl,
+    siteId,
+    options.appId,
+    options.appIdCandidates,
+    (identifier) => buildImbalanceCurveEndpoint(identifier, { startDate, endDate }),
+    "",
+    []
+  );
+  const tableResult = await fetchAcrossIdentifiers(
+    baseUrl,
+    siteId,
+    options.tableIdentifier,
+    options.tableIdentifierCandidates,
+    (identifier) => buildImbalanceTableEndpoint(identifier, tableAppId, { startDate, endDate }),
+    options.databaseKey,
+    options.databaseKeyCandidates
+  );
 
-  for (const identifier of identifiers) {
-    curveEndpoint = buildImbalanceCurveEndpoint(identifier, { startDate, endDate });
-    tableEndpoint = buildImbalanceTableEndpoint(identifier, { startDate, endDate });
-    [curveResponse, tableResponse] = await Promise.all([
-      fetchLegacyJson(baseUrl, curveEndpoint),
-      fetchLegacyJson(baseUrl, tableEndpoint)
-    ]);
-    if (curveResponse.ok || tableResponse.ok) {
-      break;
-    }
-  }
+  const curveEndpoint = curveResult.endpoint;
+  const curveResponse = curveResult.response;
+  const tableEndpoint = tableResult.endpoint;
+  const tableResponse = tableResult.response;
 
   const curvePayload = curveResponse.ok && curveResponse.payload && typeof curveResponse.payload === "object"
     ? curveResponse.payload
@@ -438,16 +606,8 @@ export async function loadEnergyEfficiencyImbalance(baseUrl, siteId, options = {
     ? tableResponse.payload
     : null;
 
-  const curveRows = Array.isArray(curvePayload?.data)
-    ? curvePayload.data
-    : Array.isArray(curvePayload)
-      ? curvePayload
-      : [];
-  const tableRows = Array.isArray(tablePayload?.data)
-    ? tablePayload.data
-    : Array.isArray(tablePayload)
-      ? tablePayload
-      : [];
+  const curveRows = extractImbalanceCurveRows(curvePayload);
+  const tableSections = extractImbalanceTableSections(tablePayload);
 
   const series = curveRows.map(normalizeImbalanceSeries);
   const axisLabels = series.reduce((current, item) => (
@@ -455,13 +615,12 @@ export async function loadEnergyEfficiencyImbalance(baseUrl, siteId, options = {
       ? (item.points || []).map((point) => point.label || "")
       : current
   ), []);
-  const firstTableSection = tableRows[0] || {};
-  const statisticsRows = Array.isArray(firstTableSection?.dataStatisticsList)
-    ? firstTableSection.dataStatisticsList.map(normalizeImbalanceStatisticRow)
-    : [];
-  const deviceRows = Array.isArray(firstTableSection?.tableList)
-    ? firstTableSection.tableList.map(normalizeImbalanceDeviceRow)
-    : [];
+  const statisticsRows = tableSections.flatMap((section) =>
+    toArray(section?.dataStatisticsList).map(normalizeImbalanceStatisticRow)
+  );
+  const deviceRows = tableSections.flatMap((section) =>
+    toArray(section?.tableList).map(normalizeImbalanceDeviceRow)
+  );
 
   return {
     filters: {

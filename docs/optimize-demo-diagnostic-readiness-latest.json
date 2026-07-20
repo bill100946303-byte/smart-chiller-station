@@ -1,0 +1,1661 @@
+{
+  "generatedAt": "2026-06-16T05:24:24.944Z",
+  "siteId": "140",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "finalDecision": "DIAGNOSTIC_READINESS_READY",
+  "inputs": {
+    "loadKw": 1422,
+    "outdoorTempC": 22.9,
+    "mode": "cooling"
+  },
+  "response": {
+    "ok": true,
+    "status": 200,
+    "url": "http://127.0.0.1:8787/bff/v1/sites/140/optimize",
+    "error": null
+  },
+  "summary": {
+    "ok": true,
+    "finalDecision": "DIAGNOSTIC_READINESS_READY",
+    "advisorStatus": "partial",
+    "executionMode": "read_only",
+    "matrix": {
+      "basis": "available_runtime_history_and_safety_signals",
+      "scope": "optimize_demo_read_only_extension",
+      "total": 10,
+      "readyNowCount": 4,
+      "directionalCount": 5,
+      "pointGapCount": 1,
+      "controlBoundary": "read_only_or_shadow_only",
+      "boundaryNotes": [
+        "A档可进入 /optimize-demo 作为 V1 只读诊断或 shadow 证据。",
+        "B档只能输出疑似风险、待复核和样本治理建议。",
+        "C档只进入点位改造清单，不能输出正式诊断结论。",
+        "所有项均不新增真实 PLC 下发、自动启停或 enforced 能力。"
+      ],
+      "items": [
+        {
+          "key": "instrumentDataQuality",
+          "title": "仪表数据偏移诊断",
+          "tier": "A",
+          "status": "ready",
+          "currentFeasibility": "can_do_v1",
+          "firstVersionOutput": "实时闭合校验、24h 稳态窗口 COP/功率/温差偏移复核。",
+          "availableData": [
+            "1215 个实时寄存器点",
+            "24h COP/总功率/温差趋势",
+            "冷站总功率、分项功率、COP、冷冻/冷却温差"
+          ],
+          "missingData": [
+            "传感器校准记录",
+            "安装位置台账",
+            "冗余仪表或现场热平衡复核"
+          ],
+          "boundary": "只能提示疑似偏移和复核对象，不判定设备故障，不自动修正测点。",
+          "allowedMode": "read_only",
+          "confidence": "high"
+        },
+        {
+          "key": "chilledHydraulicBalance",
+          "title": "冷冻水水力平衡诊断",
+          "tier": "A/B",
+          "status": "ready",
+          "currentFeasibility": "can_do_v1",
+          "firstVersionOutput": "站级低温差持续性、实时支路流量/压力离散度、旁通分流风险。",
+          "availableData": [
+            "7 个支路线索",
+            "24h 冷冻水温差和总功率趋势",
+            "冷冻总管供回水温度/压差、旁通阀反馈"
+          ],
+          "missingData": [
+            "支路历史趋势",
+            "末端阀位",
+            "末端压差",
+            "代表房间温度"
+          ],
+          "boundary": "可做水力失衡风险提示，不能把实时支路差异外推为全天失衡或末端阀门故障。",
+          "allowedMode": "read_only",
+          "confidence": "medium"
+        },
+        {
+          "key": "lowDeltaTRootCause",
+          "title": "低温差根因诊断",
+          "tier": "A/B",
+          "status": "ready",
+          "currentFeasibility": "can_do_v1",
+          "firstVersionOutput": "持续低温差、大流量小温差、旁通、支路分配和末端安全缺口排序。",
+          "availableData": [
+            "24h 低温差持续性趋势",
+            "运行泵频率反馈",
+            "实时温差、泵频、旁通阀和支路线索"
+          ],
+          "missingData": [
+            "末端阀位/室温/压差",
+            "支路历史趋势",
+            "真实 PLC 降泵保护状态"
+          ],
+          "boundary": "只支持根因排序和 shadow 验证建议，不能自动降泵。",
+          "allowedMode": "read_only",
+          "confidence": "medium"
+        },
+        {
+          "key": "coolingTowerCapability",
+          "title": "冷却塔能力诊断",
+          "tier": "A",
+          "status": "ready",
+          "currentFeasibility": "can_do_v1",
+          "firstVersionOutput": "湿球、冷却水出水、Approach、塔风机/塔流量一致性复核。",
+          "availableData": [
+            "实时湿球",
+            "冷却水温度",
+            "塔风机功率/频率",
+            "塔侧流量/压力线索"
+          ],
+          "missingData": [
+            "塔单元长周期分摊",
+            "填料/布水现场巡检",
+            "厂家最低冷凝器进水温确认"
+          ],
+          "boundary": "只生成 Approach shadow 证据，不承诺自动调塔或突破最低水温保护。",
+          "allowedMode": "shadow_review",
+          "confidence": "medium"
+        },
+        {
+          "key": "chillerCombinationOptimization",
+          "title": "主机组合优化",
+          "tier": "A/B",
+          "status": "partial",
+          "currentFeasibility": "directional_review",
+          "firstVersionOutput": "当前组合、组合容量、组合负荷率、组合 COP/冷站 COP、候选组合样本置信度。",
+          "availableData": [
+            "当前运行组合",
+            "主机总功率",
+            "冷站功率/COP",
+            "组合样本 113 条"
+          ],
+          "missingData": [
+            "组合历史样本",
+            "当前组合连续运行时间",
+            "同工况人工切换验证"
+          ],
+          "boundary": "多机无单台冷冻水流量时只评价组合，不拆分单台主机实时 COP，不自动启停主机。",
+          "allowedMode": "shadow_review",
+          "confidence": "low"
+        },
+        {
+          "key": "chillerHealthDegradation",
+          "title": "主机健康劣化诊断",
+          "tier": "B",
+          "status": "partial",
+          "currentFeasibility": "directional_review",
+          "firstVersionOutput": "同组合/同负荷下冷站 COP 漂移、功率偏高和故障风险提示。",
+          "availableData": [
+            "主机运行状态",
+            "主机功率",
+            "组合 COP/冷站 COP",
+            "告警数量"
+          ],
+          "missingData": [
+            "单台冷冻水流量",
+            "厂家 COP 曲线",
+            "压缩机细码/维护记录"
+          ],
+          "boundary": "只能输出健康风险线索；多机运行时不能做单机实时 COP 排名。",
+          "allowedMode": "read_only",
+          "confidence": "low"
+        },
+        {
+          "key": "pumpEfficiency",
+          "title": "水泵效率诊断",
+          "tier": "B/C",
+          "status": "partial",
+          "currentFeasibility": "directional_review",
+          "firstVersionOutput": "频率/功率/压差异常、疑似偏离高效区提示。",
+          "availableData": [
+            "泵频率反馈",
+            "部分总管压差/流量线索"
+          ],
+          "missingData": [
+            "单泵流量",
+            "泵曲线",
+            "稳定压差口径",
+            "阀位和并联泵分摊"
+          ],
+          "boundary": "不能输出水泵效率百分比或高置信节能结论。",
+          "allowedMode": "read_only",
+          "confidence": "low"
+        },
+        {
+          "key": "valveStiction",
+          "title": "阀门卡滞/执行器诊断",
+          "tier": "B/C",
+          "status": "partial",
+          "currentFeasibility": "directional_review",
+          "firstVersionOutput": "阀位长期饱和、旁通分流和命令/反馈缺口提示。",
+          "availableData": [
+            "阀门/旁通反馈线索",
+            "实时阀类点位关键词"
+          ],
+          "missingData": [
+            "阀门命令值",
+            "阀门反馈值",
+            "控制模式",
+            "动作历史"
+          ],
+          "boundary": "只生成检修线索，不能直接判定阀门卡死。",
+          "allowedMode": "read_only",
+          "confidence": "low"
+        },
+        {
+          "key": "controlOscillation",
+          "title": "控制震荡/频繁启停诊断",
+          "tier": "B",
+          "status": "partial",
+          "currentFeasibility": "directional_review",
+          "firstVersionOutput": "温差锯齿波、总功率 hunting、频率命令/反馈缺口和启停事件缺口。",
+          "availableData": [
+            "24h COP/总功率/温差趋势",
+            "运行状态和频率实时摘要"
+          ],
+          "missingData": [
+            "高频历史",
+            "控制命令历史",
+            "PID 参数",
+            "精确启停事件"
+          ],
+          "boundary": "只能提示震荡风险，不自动改 PID，不自动启停设备。",
+          "allowedMode": "read_only",
+          "confidence": "low"
+        },
+        {
+          "key": "terminalComfortProtection",
+          "title": "末端舒适/缺冷风险诊断",
+          "tier": "C",
+          "status": "unavailable",
+          "currentFeasibility": "point_gap",
+          "firstVersionOutput": "代表末端缺冷风险、降泵前安全闭锁和投诉状态复核。",
+          "availableData": [],
+          "missingData": [
+            "代表房间温度",
+            "末端阀位",
+            "末端压差",
+            "缺冷投诉/工单联动"
+          ],
+          "boundary": "未闭合末端安全前，泵频建议只能 shadow/审阅，不允许 assisted 或 enforced。",
+          "allowedMode": "point_plan",
+          "confidence": "low"
+        }
+      ]
+    },
+    "fieldVerificationChecklist": {
+      "basis": "diagnostic_readiness_missing_data_to_field_tasks",
+      "scope": "optimize_demo_field_verification_only",
+      "total": 7,
+      "p0Count": 4,
+      "p1Count": 3,
+      "controlBoundary": "read_only_point_verification_only",
+      "items": [
+        {
+          "key": "chiller-combination-sampling-plan",
+          "priority": "P0",
+          "title": "制定主机组合样本采集计划",
+          "sourceDiagnosticKey": "chillerCombinationOptimization",
+          "sourceTier": "A/B",
+          "verificationTarget": "CH4+CH5+CH7 等当前组合及候选组合",
+          "requiredEvidence": [
+            "组合连续运行时长",
+            "同负荷/湿球 band",
+            "组合 COP",
+            "冷站 COP",
+            "人工切换记录"
+          ],
+          "reason": "组合样本不足时只能 keep/continue sampling，不能承诺换机节能。",
+          "missingData": [
+            "组合历史样本",
+            "当前组合连续运行时间",
+            "同工况人工切换验证"
+          ],
+          "acceptanceCriteria": "每个候选组合形成 >=30 条低置信可用样本，>=100 条才允许高置信表达。",
+          "boundary": "多机运行无单台冷冻水流量时仍只评价组合，不拆单台 COP，不自动启停主机。",
+          "ownerRole": "节能工程师 / 运行值班员",
+          "allowedMode": "field_review_only"
+        },
+        {
+          "key": "plc-pump-protection-mapping",
+          "priority": "P0",
+          "title": "确认 PLC 泵频保护与回退点",
+          "sourceDiagnosticKey": "lowDeltaTRootCause",
+          "sourceTier": "A/B",
+          "verificationTarget": "冷冻泵频率目标点、回退点、最小流量、频率上下限、斜率限制",
+          "requiredEvidence": [
+            "真实 PLC/SCADA 点名",
+            "回退目标",
+            "本地联锁",
+            "最小流量保护",
+            "频率反馈"
+          ],
+          "reason": "当前低温差根因可排序，但真实降泵必须由 PLC 本地保护兜底。",
+          "missingData": [
+            "末端阀位/室温/压差",
+            "支路历史趋势",
+            "真实 PLC 降泵保护状态"
+          ],
+          "acceptanceCriteria": "approve/rollback 点名、反馈点和 PLC 本地保护均完成映射并通过只读核对。",
+          "boundary": "未完成前只允许 shadow 记录和人工复核，不允许 assisted/enforced。",
+          "ownerRole": "PLC 工程师 / 自控工程师",
+          "allowedMode": "field_review_only"
+        },
+        {
+          "key": "sensor-calibration-installation-ledger",
+          "priority": "P0",
+          "title": "补传感器校准与安装位置台账",
+          "sourceDiagnosticKey": "instrumentDataQuality",
+          "sourceTier": "A",
+          "verificationTarget": "冷量表、总功率表、冷冻/冷却供回水温度、湿球温度",
+          "requiredEvidence": [
+            "点位编号",
+            "安装位置",
+            "量程",
+            "最近校准日期",
+            "校准责任人"
+          ],
+          "reason": "仪表偏移诊断当前只能提示疑似偏移；缺校准和安装位置时不能判定仪表故障。",
+          "missingData": [
+            "传感器校准记录",
+            "安装位置台账",
+            "冗余仪表或现场热平衡复核"
+          ],
+          "acceptanceCriteria": "形成点位-位置-量程-校准日期-责任人台账，并能对应到 BFF 点位 key。",
+          "boundary": "只用于提高诊断置信度，不自动修正测点、不替代现场校验。",
+          "ownerRole": "自控工程师 / 计量校准人员",
+          "allowedMode": "field_review_only"
+        },
+        {
+          "key": "terminal-safety-signal-closure",
+          "priority": "P0",
+          "title": "闭合末端安全信号",
+          "sourceDiagnosticKey": "terminalComfortProtection",
+          "sourceTier": "C",
+          "verificationTarget": "代表房间温度、末端阀位、末端压差、缺冷投诉/工单",
+          "requiredEvidence": [
+            "至少一类末端安全信号可读",
+            "采样周期",
+            "缺冷判定阈值",
+            "与泵频建议的闭锁关系"
+          ],
+          "reason": "末端安全未闭合时，泵频建议只能 shadow/审阅，不能进入 assisted 或 enforced。",
+          "missingData": [
+            "代表房间温度",
+            "末端阀位",
+            "末端压差",
+            "缺冷投诉/工单联动"
+          ],
+          "acceptanceCriteria": "泵降频前可读取末端安全状态，并能明确缺冷时阻断建议。",
+          "boundary": "只作为降泵前置保护证据；未闭合前不允许 assisted/enforced，不生成真实降泵命令。",
+          "ownerRole": "自控工程师 / 运维值班负责人",
+          "allowedMode": "field_review_only"
+        },
+        {
+          "key": "branch-hydraulic-history-window",
+          "priority": "P1",
+          "title": "补支路水力历史趋势",
+          "sourceDiagnosticKey": "chilledHydraulicBalance",
+          "sourceTier": "A/B",
+          "verificationTarget": "支路流量、支路回水压力、支路供回水温度、旁通阀开度",
+          "requiredEvidence": [
+            "24h 支路趋势",
+            "采样周期",
+            "支路与末端区域映射",
+            "异常窗口标记"
+          ],
+          "reason": "当前水力平衡能做站级低温差趋势和实时支路线索，但不能把实时差异外推为全天失衡。",
+          "missingData": [
+            "支路历史趋势",
+            "末端阀位",
+            "末端压差",
+            "代表房间温度"
+          ],
+          "acceptanceCriteria": "支路趋势至少覆盖 24h，并能与站级低温差窗口对齐。",
+          "boundary": "没有末端阀位/室温时，不直接判定末端阀门故障。",
+          "ownerRole": "自控工程师 / 水系统调试工程师",
+          "allowedMode": "field_review_only"
+        },
+        {
+          "key": "control-command-feedback-event-window",
+          "priority": "P1",
+          "title": "补控制命令/反馈与启停事件台账",
+          "sourceDiagnosticKey": "controlOscillation",
+          "sourceTier": "B",
+          "verificationTarget": "供水温设定/反馈、泵塔频率命令/反馈、旁通阀命令/反馈、主机/泵/塔启停事件",
+          "requiredEvidence": [
+            "高频命令/反馈趋势",
+            "PID/死区/斜率/延时参数",
+            "精确启停事件",
+            "最小运行/停机时间"
+          ],
+          "reason": "控制震荡/频繁启停第一版只能从小时级趋势提示风险，缺高频控制数据时不能判定 PID 或启停问题。",
+          "missingData": [
+            "高频历史",
+            "控制命令历史",
+            "PID 参数",
+            "精确启停事件"
+          ],
+          "acceptanceCriteria": "命令、反馈、运行状态、启停事件和参数台账可按同一时间轴对齐。",
+          "boundary": "只用于复核控制震荡风险，不自动改 PID，不自动启停设备。",
+          "ownerRole": "自控工程师 / PLC 工程师",
+          "allowedMode": "field_review_only"
+        },
+        {
+          "key": "tower-field-inspection-ledger",
+          "priority": "P1",
+          "title": "补冷却塔现场巡检和长周期分摊",
+          "sourceDiagnosticKey": "coolingTowerCapability",
+          "sourceTier": "A",
+          "verificationTarget": "塔单元流量、风机频率/功率、阀门状态、填料/布水巡检",
+          "requiredEvidence": [
+            "塔单元长周期趋势",
+            "塔阀开到位",
+            "填料/布水状态",
+            "最低冷凝器进水温确认"
+          ],
+          "reason": "Approach shadow 可做，但塔能力劣化需要长周期分摊和现场状态支撑。",
+          "missingData": [
+            "塔单元长周期分摊",
+            "填料/布水现场巡检",
+            "厂家最低冷凝器进水温确认"
+          ],
+          "acceptanceCriteria": "塔单元趋势和现场巡检记录可支撑单塔能力差异复核。",
+          "boundary": "只作为塔能力诊断证据，不突破厂家/PLC 最低水温保护。",
+          "ownerRole": "运行值班员 / 节能工程师",
+          "allowedMode": "field_review_only"
+        }
+      ]
+    },
+    "diagnosticItems": [
+      {
+        "key": "instrumentDataQuality",
+        "title": "仪表数据可信度诊断",
+        "status": "ready",
+        "confidence": "high",
+        "current": {
+          "deviceRows": 184,
+          "registerPoints": 1215,
+          "subtotalPowerKw": 1940.3,
+          "totalPowerKw": 1940.3,
+          "loadKw": 1422,
+          "loadSource": "scenario",
+          "canUseLoadForCopClosure": false,
+          "subtotalDeltaPct": 0,
+          "systemCop": 6.6,
+          "calculatedCop": null,
+          "copDeltaPct": null,
+          "freshnessStale": false,
+          "driftWindow": {
+            "status": "ready",
+            "range": "24h",
+            "generatedAt": "2026-06-16T05:24:18.097Z",
+            "sourceOverall": "ok",
+            "readyMetricCount": 4,
+            "observedMetricCount": 4,
+            "steadyState": {
+              "status": "ready",
+              "basisMetric": "totalPowerKw",
+              "basisLabel": "冷站总功率",
+              "sampleCount": 20,
+              "totalSampleCount": 145,
+              "thresholdRangePct": 12,
+              "rangePct": 11.7,
+              "startAt": "2026-06-15T20:00:00.000Z",
+              "endAt": "2026-06-15T23:10:00.000Z",
+              "startMs": 1781553600000,
+              "endMs": 1781565000000,
+              "durationHours": 3.2,
+              "reason": "冷站总功率 稳态窗口样本 20 个，波动 11.7%。"
+            },
+            "metrics": [
+              {
+                "metric": "currentCop",
+                "label": "冷站COP",
+                "status": "ready",
+                "sampleCount": 20,
+                "totalSampleCount": 145,
+                "unit": null,
+                "windowBasis": "steady_state_window",
+                "first": 7.11,
+                "last": 7.11,
+                "min": 6.32,
+                "max": 7.11,
+                "mean": 6.8,
+                "range": 0.79,
+                "drift": 0,
+                "driftPct": 0.1,
+                "rangePct": 11.6,
+                "slopePerHour": 0.001,
+                "firstAt": "2026-06-15T20:00:00.000Z",
+                "lastAt": "2026-06-15T23:10:00.000Z",
+                "durationHours": 3.2
+              },
+              {
+                "metric": "totalPowerKw",
+                "label": "冷站总功率",
+                "status": "ready",
+                "sampleCount": 20,
+                "totalSampleCount": 145,
+                "unit": "kW",
+                "windowBasis": "steady_state_window",
+                "first": 1714.8,
+                "last": 1686.6,
+                "min": 1686.6,
+                "max": 1894.2,
+                "mean": 1768.7,
+                "range": 207.6,
+                "drift": -28.2,
+                "driftPct": -1.6,
+                "rangePct": 11.7,
+                "slopePerHour": -8.91,
+                "firstAt": "2026-06-15T20:00:00.000Z",
+                "lastAt": "2026-06-15T23:10:00.000Z",
+                "durationHours": 3.2
+              },
+              {
+                "metric": "chilledDeltaT",
+                "label": "冷冻水温差",
+                "status": "ready",
+                "sampleCount": 20,
+                "totalSampleCount": 145,
+                "unit": "℃",
+                "windowBasis": "steady_state_window",
+                "first": 4.1,
+                "last": 4.2,
+                "min": 4,
+                "max": 4.2,
+                "mean": 4.1,
+                "range": 0.2,
+                "drift": 0.1,
+                "driftPct": 2.4,
+                "rangePct": 4.9,
+                "slopePerHour": 0.03,
+                "firstAt": "2026-06-15T20:00:00.000Z",
+                "lastAt": "2026-06-15T23:10:00.000Z",
+                "durationHours": 3.2
+              },
+              {
+                "metric": "coolingDeltaT",
+                "label": "冷却水温差",
+                "status": "ready",
+                "sampleCount": 20,
+                "totalSampleCount": 145,
+                "unit": "℃",
+                "windowBasis": "steady_state_window",
+                "first": 4.6,
+                "last": 4.6,
+                "min": 4.6,
+                "max": 4.7,
+                "mean": 4.7,
+                "range": 0.1,
+                "drift": 0,
+                "driftPct": 0,
+                "rangePct": 2.1,
+                "slopePerHour": 0,
+                "firstAt": "2026-06-15T20:00:00.000Z",
+                "lastAt": "2026-06-15T23:10:00.000Z",
+                "durationHours": 3.2
+              }
+            ]
+          },
+          "crossChecks": [
+            {
+              "key": "power_meter_closure",
+              "label": "总功率/分项功率闭合",
+              "status": "normal",
+              "value": 0,
+              "unit": "%",
+              "threshold": "abs <= 15%",
+              "evidence": "分项合计 1940.3 kW / 总功率 1940.3 kW",
+              "reviewTarget": "冷站总电表、主机/泵/塔分项电表和计量口径",
+              "boundary": "只提示计量闭合偏差，不判定电表故障。"
+            },
+            {
+              "key": "cop_closure",
+              "label": "冷量/总功率/COP闭合",
+              "status": "insufficient",
+              "value": null,
+              "unit": "%",
+              "threshold": "abs <= 15%",
+              "evidence": "负荷来源 scenario；未声明为实测冷量，跳过 COP 闭合。",
+              "reviewTarget": "独立冷量表、总功率表和实时负荷来源",
+              "boundary": "只有独立实测冷量可用于 COP 闭合；场景输入不判定仪表偏移，不自动修正 COP。"
+            },
+            {
+              "key": "wet_bulb_physical_boundary",
+              "label": "冷却水出水/湿球物理边界",
+              "status": "normal",
+              "value": 2.7,
+              "unit": "℃",
+              "threshold": "0℃ <= Approach <= 20℃",
+              "evidence": "Tcws 28.3℃ / 湿球 25.6℃",
+              "reviewTarget": "湿球温度、冷却塔出水温度和安装位置",
+              "boundary": "只提示物理边界异常，不判定温度传感器损坏。"
+            },
+            {
+              "key": "trend_steady_state",
+              "label": "24h稳态窗口",
+              "status": "normal",
+              "value": 11.7,
+              "unit": "%",
+              "threshold": "<= 12%",
+              "evidence": "冷站总功率 稳态窗口样本 20 个，波动 11.7%。",
+              "reviewTarget": "同负荷/相近湿球历史窗口",
+              "boundary": "负荷不稳时，漂移判断降级为趋势审阅。"
+            }
+          ],
+          "driftCandidates": [
+            {
+              "confidence": "medium",
+              "status": "normal",
+              "severity": "info",
+              "key": "no_strong_drift_candidate",
+              "metric": "instrumentDataQuality",
+              "label": "暂无强偏移候选",
+              "value": null,
+              "unit": null,
+              "threshold": null,
+              "suspectedSignals": [],
+              "reason": "现有闭合校验和趋势窗口未触发强偏移候选。",
+              "requiredEvidence": [
+                "传感器校准台账",
+                "安装位置台账"
+              ],
+              "boundary": "未触发候选不等于仪表已校准，只表示当前窗口未见强异常。"
+            }
+          ],
+          "fieldReviewTargets": [
+            {
+              "key": "sensor-ledger-baseline",
+              "priority": "P1",
+              "title": "建立仪表校准与安装位置基线",
+              "trigger": "当前未触发强偏移候选，但缺校准/安装位置台账仍会限制置信度。",
+              "requiredEvidence": [
+                "点位编号",
+                "安装位置",
+                "量程",
+                "最近校准日期",
+                "责任人"
+              ],
+              "acceptanceCriteria": "形成可映射到 BFF 点位 key 的仪表台账。",
+              "boundary": "台账只用于提高诊断置信度，不自动修正测点。"
+            }
+          ],
+          "sensorLedgerEvidence": {
+            "status": "waiting",
+            "finalDecision": "SENSOR_LEDGER_PREFLIGHT_WAITING_FOR_INPUTS",
+            "readyForReview": false,
+            "generatedAt": "2026-06-16T05:15:25.427Z",
+            "reportPath": "/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-sensor-ledger-preflight-latest.json",
+            "acceptedRows": 0,
+            "totalRows": 0,
+            "blockersCount": 1,
+            "warningsCount": 0,
+            "missingInputCount": 1,
+            "expiredCalibrationCount": 0,
+            "missingRangeCount": 0,
+            "sensorTypeCount": 0,
+            "pointCodeCount": 0,
+            "inputs": [
+              {
+                "key": "sensor_calibration_installation_ledger",
+                "title": "传感器校准/安装位置台账",
+                "path": "docs/field-data/optimize-demo-140/sensor-calibration-installation.csv",
+                "exists": false,
+                "mode": "missing",
+                "requiredForReady": true
+              }
+            ],
+            "normalizedOutput": "docs/optimize-demo-140-sensor-calibration-installation-normalized-latest.csv",
+            "blockers": [
+              "缺少传感器校准/安装位置台账 CSV：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/sensor-calibration-installation.csv"
+            ],
+            "warnings": [],
+            "controlBoundary": "传感器台账预检只校验校准记录、安装位置和点位映射完整性；不判定仪表故障，不自动修正测点，不写真实 PLC。"
+          },
+          "reviewBoundary": "仪表偏移 V1 只输出疑似候选和复核对象，不判定仪表故障，不自动修正测点。"
+        },
+        "findings": [
+          "当前实时树包含 184 个设备块、1215 个寄存器点。",
+          "总功率与分项功率偏差 0%。",
+          "负荷输入来源为 scenario，未作为实测冷量参与 COP 闭合。",
+          "24h 趋势窗口状态 ready，可用于仪表偏移方向性复核。",
+          "冷站总功率 稳态窗口样本 20 个，波动 11.7%。",
+          "冷站COP首末偏移 0.1%。",
+          "仪表偏移 V1 当前未形成强偏移候选。",
+          "传感器台账预检状态 waiting，仍需补现场校准/安装位置证据。"
+        ],
+        "blockers": [],
+        "warnings": [
+          "缺传感器校准/安装位置台账，仪表偏移 V1 只能保持疑似复核口径。"
+        ],
+        "evidence": [
+          {
+            "key": "registerPoints",
+            "label": "寄存器点数",
+            "value": 1215,
+            "unit": null
+          },
+          {
+            "key": "currentCopDriftPct",
+            "label": "24h COP首末偏移",
+            "value": 0.1,
+            "unit": "%"
+          },
+          {
+            "key": "steadyStateRangePct",
+            "label": "稳态窗口波动",
+            "value": 11.7,
+            "unit": "%"
+          },
+          {
+            "key": "loadSource",
+            "label": "负荷输入来源",
+            "value": "scenario",
+            "unit": null
+          },
+          {
+            "key": "totalPowerKw",
+            "label": "冷站总功率",
+            "value": 1940.3,
+            "unit": "kW"
+          },
+          {
+            "key": "subtotalPowerKw",
+            "label": "分项功率合计",
+            "value": 1940.3,
+            "unit": "kW"
+          },
+          {
+            "key": "systemCop",
+            "label": "现态冷站COP",
+            "value": 6.6,
+            "unit": null
+          },
+          {
+            "key": "sensorLedgerAcceptedRows",
+            "label": "传感器台账接受行数",
+            "value": 0,
+            "unit": "行"
+          }
+        ],
+        "suggestions": [
+          "保持总表、分表、冷量和温差口径同步校验。",
+          "用 24h 趋势先筛查疑似偏移；真正校准结论仍需现场仪表、流量和热平衡复核。",
+          "后续可增加稳态窗口自动筛选：同负荷/相近湿球下检查冷量、电量、温度与流量闭合偏差。",
+          "补齐传感器校准/安装位置台账后，再提高仪表偏移候选的复核优先级；仍不自动修正测点。"
+        ]
+      },
+      {
+        "key": "chilledHydraulicBalance",
+        "title": "冷冻水水力平衡诊断",
+        "status": "ready",
+        "confidence": "medium",
+        "current": {
+          "chilledDeltaT": 4.4,
+          "supplyPressureKpa": 500.4,
+          "returnPressureKpa": 401.3,
+          "differentialPressureKpa": 99.1,
+          "bypassValveOpenPct": 0,
+          "branchFlowSpread": {
+            "count": 5,
+            "min": 32.8,
+            "max": 1250,
+            "ratio": 38.1,
+            "range": 1217.2
+          },
+          "branchPressureSpread": {
+            "count": 4,
+            "min": 451.7,
+            "max": 462.7,
+            "ratio": 1,
+            "range": 11
+          },
+          "trendWindow": {
+            "status": "ready",
+            "range": "24h",
+            "generatedAt": "2026-06-16T05:24:18.097Z",
+            "reason": "稳态窗口内冷冻水温差均值 4.1℃，低于目标下限占比 100%。",
+            "steadyState": {
+              "status": "ready",
+              "basisMetric": "totalPowerKw",
+              "basisLabel": "冷站总功率",
+              "sampleCount": 20,
+              "totalSampleCount": 145,
+              "thresholdRangePct": 12,
+              "rangePct": 11.7,
+              "startAt": "2026-06-15T20:00:00.000Z",
+              "endAt": "2026-06-15T23:10:00.000Z",
+              "startMs": 1781553600000,
+              "endMs": 1781565000000,
+              "durationHours": 3.2,
+              "reason": "冷站总功率 稳态窗口样本 20 个，波动 11.7%。"
+            },
+            "chilledDeltaT": {
+              "sampleCount": 20,
+              "belowCount": 20,
+              "belowPct": 100,
+              "mean": 4.1,
+              "min": 4,
+              "max": 4.2
+            },
+            "persistentLowDeltaT": true,
+            "evidenceBoundary": "当前 24h 趋势只覆盖冷冻水温差/总功率等站级指标；支路流量、压差、旁通阀仍使用实时快照，不伪造支路历史趋势。"
+          },
+          "riskIndicators": [
+            {
+              "key": "persistent_low_delta_t",
+              "label": "低温差持续性",
+              "status": "active",
+              "severity": "high",
+              "confidence": "medium",
+              "value": 100,
+              "unit": "%",
+              "threshold": "稳态窗口低于目标下限占比 >= 60%",
+              "reason": "稳态窗口内低温差占比 100%，说明低温差不是瞬时扰动。",
+              "evidence": [
+                "稳态窗口内冷冻水温差均值 4.1℃，低于目标下限占比 100%。",
+                "实时冷冻水温差 4.4℃ 低于 4.5℃。"
+              ],
+              "requiredEvidence": [
+                "24h 冷冻水温差趋势",
+                "同负荷稳态窗口",
+                "运行组合事件"
+              ],
+              "reviewTarget": "站级冷冻水温差趋势和负荷稳态窗口",
+              "boundary": "只说明低温差持续性，不自动降泵。"
+            },
+            {
+              "key": "branch_flow_imbalance",
+              "label": "支路流量离散",
+              "status": "active",
+              "severity": "medium",
+              "confidence": "medium",
+              "value": 38.1,
+              "unit": "ratio",
+              "threshold": "最大/最小流量比 > 3",
+              "reason": "实时支路流量最大/最小比 38.1。",
+              "evidence": [
+                "支路流量样本数 5"
+              ],
+              "requiredEvidence": [
+                "支路流量历史趋势",
+                "支路与末端区域映射",
+                "支路回水温度"
+              ],
+              "reviewTarget": "支路流量、支路供回水温度和末端区域映射",
+              "boundary": "实时支路差异只作为水力风险线索，不能外推为全天水力失衡。"
+            },
+            {
+              "key": "branch_pressure_spread",
+              "label": "支路压差离散",
+              "status": "watch",
+              "severity": "low",
+              "confidence": "medium",
+              "value": 11,
+              "unit": "kPa",
+              "threshold": "支路压力差范围 > 30 kPa",
+              "reason": "实时支路压力差范围 11 kPa。",
+              "evidence": [
+                "支路压力样本数 4",
+                "总管压差 99.1 kPa"
+              ],
+              "requiredEvidence": [
+                "支路压差历史趋势",
+                "远近端支路映射",
+                "压差控制点位置"
+              ],
+              "reviewTarget": "远近端支路压差、总管压差和压差控制点",
+              "boundary": "只提示远近端压差分布需复核，不自动改压差设定。"
+            },
+            {
+              "key": "bypass_short_circuit",
+              "label": "旁通分流",
+              "status": "normal",
+              "severity": "info",
+              "confidence": "medium",
+              "value": 0,
+              "unit": "%",
+              "threshold": "旁通阀开度 > 5%",
+              "reason": "冷冻旁通阀反馈开度 0%。",
+              "evidence": [
+                "旁通阀开度实时快照"
+              ],
+              "requiredEvidence": [
+                "旁通阀开度趋势",
+                "旁通阀命令/反馈",
+                "泵频变化窗口"
+              ],
+              "reviewTarget": "冷冻旁通阀命令、反馈和趋势",
+              "boundary": "只提示旁通分流风险，不直接判定阀门卡滞。"
+            },
+            {
+              "key": "terminal_safety_gap",
+              "label": "末端安全缺口",
+              "status": "gap",
+              "severity": "high",
+              "confidence": "low",
+              "value": null,
+              "unit": null,
+              "threshold": "降泵前必须闭合末端阀位/室温/末端压差",
+              "reason": "缺末端阀位、室温和末端压差趋势，不能确认水力调整或降泵后末端仍安全。",
+              "evidence": [
+                "当前仅有站级和支路实时线索"
+              ],
+              "requiredEvidence": [
+                "代表房间温度",
+                "末端阀位",
+                "末端压差",
+                "缺冷投诉/工单"
+              ],
+              "reviewTarget": "代表末端安全信号",
+              "boundary": "末端安全信号未闭合前，不允许 assisted/enforced，不自动降泵。"
+            }
+          ],
+          "fieldReviewTargets": [
+            {
+              "key": "branch-hydraulic-history-window",
+              "priority": "P0",
+              "title": "补支路水力历史趋势",
+              "trigger": "实时支路流量最大/最小比 38.1。；实时支路压力差范围 11 kPa。",
+              "requiredEvidence": [
+                "24h 支路流量趋势",
+                "24h 支路压差趋势",
+                "支路供回水温度",
+                "支路与末端区域映射"
+              ],
+              "acceptanceCriteria": "支路趋势至少覆盖 24h，并能与站级低温差稳态窗口对齐。",
+              "boundary": "不把单次实时差异外推为全天失衡，不直接判定末端阀门故障。"
+            },
+            {
+              "key": "pump-delta-t-shadow-safety-review",
+              "priority": "P0",
+              "title": "复核低温差降泵 shadow 前置条件",
+              "trigger": "稳态窗口内低温差占比 100%，说明低温差不是瞬时扰动。",
+              "requiredEvidence": [
+                "末端安全信号",
+                "旁通阀状态",
+                "泵频反馈",
+                "PLC 本地最小流量/频率保护"
+              ],
+              "acceptanceCriteria": "低温差持续、末端不缺冷、旁通状态明确且 PLC 本地保护闭合后，才允许提交 shadow 审阅。",
+              "boundary": "只允许 shadow 审阅，不自动降泵，不写 PLC。"
+            },
+            {
+              "key": "terminal-safety-signal-closure",
+              "priority": "P0",
+              "title": "闭合末端安全信号",
+              "trigger": "缺末端阀位、室温和末端压差趋势，不能确认水力调整或降泵后末端仍安全。",
+              "requiredEvidence": [
+                "代表房间温度",
+                "末端阀位",
+                "末端压差",
+                "缺冷投诉/工单"
+              ],
+              "acceptanceCriteria": "泵降频或水力调整建议前，可读取末端安全状态并能明确缺冷阻断条件。",
+              "boundary": "末端安全信号未闭合前，不允许 assisted/enforced，不自动降泵。"
+            }
+          ],
+          "activeRiskCount": 2,
+          "gapCount": 1,
+          "reviewBoundary": "水力平衡 V1 只输出水力失衡风险排序、低温差持续性和现场复核对象；不自动降泵，不直接判定末端阀门故障。"
+        },
+        "findings": [
+          "冷冻总管压差约 99.1 kPa。",
+          "支路流量最大/最小比约 38.1。",
+          "冷冻旁通阀反馈开度 0%。",
+          "稳态窗口内冷冻水温差均值 4.1℃，低于目标下限占比 100%。",
+          "水力平衡 V1 形成 2 个风险指示。",
+          "水力平衡 V1 仍有 1 个证据缺口。"
+        ],
+        "blockers": [],
+        "warnings": [
+          "冷冻水温差 4.4℃ 低于目标下限 4.5℃。",
+          "支路流量最大/最小比 38.1，存在水力分配不均风险，需结合末端阀位确认。",
+          "稳态窗口内冷冻水温差低于目标占比 100%，低温差具备持续性。",
+          "当前缺支路流量/压差/旁通阀历史趋势，不能把实时支路差异外推为全天水力失衡。",
+          "当前缺末端阀位/室温趋势，不能把支路流量差异直接判为末端故障。"
+        ],
+        "evidence": [
+          {
+            "key": "chilledDeltaT",
+            "label": "冷冻水温差",
+            "value": 4.4,
+            "unit": "℃"
+          },
+          {
+            "key": "trendChilledDeltaTMean",
+            "label": "趋势温差均值",
+            "value": 4.1,
+            "unit": "℃"
+          },
+          {
+            "key": "trendLowDeltaTPct",
+            "label": "低温差占比",
+            "value": 100,
+            "unit": "%"
+          },
+          {
+            "key": "differentialPressureKpa",
+            "label": "冷冻总管压差",
+            "value": 99.1,
+            "unit": "kPa"
+          },
+          {
+            "key": "bypassValveOpenPct",
+            "label": "旁通阀开度",
+            "value": 0,
+            "unit": "%"
+          },
+          {
+            "key": "branchFlowRatio",
+            "label": "支路流量比",
+            "value": 38.1,
+            "unit": null
+          },
+          {
+            "key": "hydraulicActiveRiskCount",
+            "label": "水力风险指示",
+            "value": 2,
+            "unit": null
+          },
+          {
+            "key": "hydraulicGapCount",
+            "label": "水力证据缺口",
+            "value": 1,
+            "unit": null
+          }
+        ],
+        "suggestions": [
+          "先对比支路流量、支路回水温度和总管压差，再判断是否需要水力平衡调整。",
+          "若低温差在稳态窗口内持续，再结合旁通阀、泵频和支路流量比决定是否进入泵降频 shadow 验证。",
+          "补齐末端阀位、末端压差、支路历史趋势和代表房间温度后，可升级为根因定位。"
+        ]
+      },
+      {
+        "key": "controlOscillation",
+        "title": "控制震荡/频繁启停诊断",
+        "status": "partial",
+        "confidence": "low",
+        "current": {
+          "trendWindow": {
+            "status": "active",
+            "range": "24h",
+            "generatedAt": "2026-06-16T05:24:18.097Z",
+            "sampleCount": 145,
+            "maxDirectionChangeCount": 100,
+            "reason": "小时级趋势存在锯齿波/hunting 线索，需补高频命令/反馈复核。"
+          },
+          "riskIndicators": [
+            {
+              "key": "chilled_delta_t_sawtooth",
+              "label": "冷冻水温差锯齿波",
+              "status": "active",
+              "severity": "high",
+              "confidence": "medium",
+              "value": 11,
+              "unit": "次",
+              "threshold": "方向反转 >= 3 且波动 >= 0.6℃",
+              "reason": "冷冻水温差锯齿波在趋势窗口内方向反转 11 次，波动 0.8℃ / 19.4%。",
+              "evidence": [
+                "样本 145 个",
+                "波动 0.8℃",
+                "波动率 19.4%"
+              ],
+              "requiredEvidence": [
+                "冷冻供回水温度高频趋势",
+                "冷冻泵频率命令/反馈",
+                "供水温设定值",
+                "旁通阀命令/反馈"
+              ],
+              "reviewTarget": "冷冻水温差、冷冻泵频率和供水温控制回路",
+              "boundary": "只提示温差锯齿波风险，不自动改 PID、不自动降泵。",
+              "metric": "chilledDeltaT",
+              "sampleCount": 145,
+              "range": 0.8,
+              "rangePct": 19.4,
+              "directionChangeCount": 11
+            },
+            {
+              "key": "cooling_delta_t_sawtooth",
+              "label": "冷却水温差锯齿波",
+              "status": "watch",
+              "severity": "low",
+              "confidence": "medium",
+              "value": 7,
+              "unit": "次",
+              "threshold": "方向反转 >= 3 且波动 >= 0.6℃",
+              "reason": "冷却水温差锯齿波存在波动线索，方向反转 7 次，需结合控制命令/反馈复核。",
+              "evidence": [
+                "样本 145 个",
+                "波动 0.5℃",
+                "波动率 10.7%"
+              ],
+              "requiredEvidence": [
+                "冷却供回水温度高频趋势",
+                "冷却泵频率命令/反馈",
+                "塔风机频率命令/反馈",
+                "冷却水温设定值"
+              ],
+              "reviewTarget": "冷却水温差、冷却泵和冷却塔控制回路",
+              "boundary": "只提示冷却侧震荡风险，不自动改塔风机或冷却泵控制参数。",
+              "metric": "coolingDeltaT",
+              "sampleCount": 145,
+              "range": 0.5,
+              "rangePct": 10.7,
+              "directionChangeCount": 7
+            },
+            {
+              "key": "station_power_hunting",
+              "label": "冷站总功率 hunting",
+              "status": "active",
+              "severity": "medium",
+              "confidence": "medium",
+              "value": 100,
+              "unit": "次",
+              "threshold": "方向反转 >= 3 且波动 >= 120kW 或 >= 6%",
+              "reason": "冷站总功率 hunting在趋势窗口内方向反转 100 次，波动 826.2kW / 43.8%。",
+              "evidence": [
+                "样本 145 个",
+                "波动 826.2kW",
+                "波动率 43.8%"
+              ],
+              "requiredEvidence": [
+                "冷站总功率高频趋势",
+                "主机/泵/塔启停状态",
+                "频率命令/反馈",
+                "运行组合事件"
+              ],
+              "reviewTarget": "冷站功率 hunting 与设备状态切换",
+              "boundary": "只提示功率 hunting 风险，不自动切换设备组合。",
+              "metric": "totalPowerKw",
+              "sampleCount": 145,
+              "range": 826.2,
+              "rangePct": 43.8,
+              "directionChangeCount": 100
+            },
+            {
+              "key": "frequency_command_feedback_gap",
+              "label": "泵塔频率命令/反馈缺口",
+              "status": "gap",
+              "severity": "medium",
+              "confidence": "low",
+              "value": null,
+              "unit": null,
+              "threshold": "需高频命令值、反馈值和控制模式同步记录",
+              "reason": "当前只有泵/塔频率实时摘要，缺高频命令/反馈历史，不能判断 PID hunting 或执行器跟随问题。",
+              "evidence": [
+                "冷冻泵均频 40.4Hz",
+                "冷却泵均频 36.6Hz",
+                "塔风机均频 29.4Hz"
+              ],
+              "requiredEvidence": [
+                "泵频命令",
+                "泵频反馈",
+                "塔频命令",
+                "塔频反馈",
+                "控制模式"
+              ],
+              "reviewTarget": "泵塔频率命令/反馈高频趋势",
+              "boundary": "缺命令/反馈闭合前，不判定 PID 参数错误，不自动改 PID。"
+            },
+            {
+              "key": "start_stop_event_gap",
+              "label": "频繁启停事件缺口",
+              "status": "gap",
+              "severity": "medium",
+              "confidence": "low",
+              "value": null,
+              "unit": null,
+              "threshold": "需精确启停事件、最小运行时间和启停延时",
+              "reason": "当前缺主机/泵/塔精确启停事件和最小运行时间，不能判断频繁启停。",
+              "evidence": [
+                "仅可从实时运行状态看到当前开停，缺事件序列。"
+              ],
+              "requiredEvidence": [
+                "主机启停事件",
+                "泵启停事件",
+                "塔风机启停事件",
+                "最小运行/停止时间",
+                "加减机延时参数"
+              ],
+              "reviewTarget": "设备启停事件台账和防频繁启停参数",
+              "boundary": "只提示启停事件缺口，不自动启停设备，不自动修改加减机延时。"
+            }
+          ],
+          "fieldReviewTargets": [
+            {
+              "key": "control-command-feedback-history-window",
+              "priority": "P0",
+              "title": "补控制命令/反馈高频趋势",
+              "trigger": "温差或功率趋势存在锯齿波/hunting 线索。",
+              "requiredEvidence": [
+                "供水温设定/反馈",
+                "泵频命令/反馈",
+                "塔频命令/反馈",
+                "旁通阀命令/反馈",
+                "控制模式"
+              ],
+              "acceptanceCriteria": "命令、反馈、运行状态和采样周期可对齐，能区分负荷扰动、执行器跟随和 PID hunting。",
+              "boundary": "只用于复核控制震荡风险，不自动改 PID，不自动写 PLC。"
+            },
+            {
+              "key": "pid-deadband-delay-parameter-ledger",
+              "priority": "P1",
+              "title": "补 PID、死区和延时参数台账",
+              "trigger": "判断控制震荡需要知道 PID、死区、斜率限制和启停延时配置。",
+              "requiredEvidence": [
+                "PID 参数",
+                "控制死区",
+                "斜率限制",
+                "加减设备延时",
+                "手自动模式"
+              ],
+              "acceptanceCriteria": "形成可审阅参数台账，变更前后能留痕并可回退。",
+              "boundary": "台账只用于人工调参评审，不自动改 PID、不自动改延时。"
+            },
+            {
+              "key": "start-stop-event-ledger",
+              "priority": "P1",
+              "title": "补设备启停事件与最小运行时间台账",
+              "trigger": "缺精确启停事件时不能判断频繁启停。",
+              "requiredEvidence": [
+                "主机启停时间",
+                "泵启停时间",
+                "塔风机启停时间",
+                "最小运行时间",
+                "加减机/加减塔延时"
+              ],
+              "acceptanceCriteria": "可统计启停次数、最短运行/停机时间，并能与告警和负荷窗口对齐。",
+              "boundary": "只输出防频繁启停风险，不自动启停设备。"
+            }
+          ],
+          "activeRiskCount": 2,
+          "watchRiskCount": 1,
+          "gapCount": 2,
+          "ledgerEvidence": {
+            "status": "partial",
+            "importStatus": "CONTROL_LEDGER_IMPORT_PARTIAL",
+            "evidenceMode": "template_sample",
+            "usableForDiagnosis": false,
+            "generatedAt": "2026-06-12T20:09:11.424Z",
+            "reportPath": "/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-control-ledger-import-latest.json",
+            "totalRows": 8,
+            "acceptedRows": 8,
+            "blockersCount": 0,
+            "warningsCount": 9,
+            "preflight": {
+              "status": "waiting",
+              "finalDecision": "FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS",
+              "readyForImport": false,
+              "generatedAt": "2026-06-16T05:15:25.517Z",
+              "reportPath": "/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-preflight-latest.json",
+              "acceptedRows": 0,
+              "totalRows": 0,
+              "blockersCount": 3,
+              "warningsCount": 0,
+              "inputCount": 4,
+              "missingInputCount": 4,
+              "importStatus": "CONTROL_LEDGER_IMPORT_BLOCKED",
+              "inputs": [
+                {
+                  "key": "sensor_calibration_installation_ledger",
+                  "title": "传感器校准/安装位置台账",
+                  "path": "docs/field-data/optimize-demo-140/sensor-calibration-installation.csv",
+                  "exists": false,
+                  "mode": "missing",
+                  "requiredForReady": true
+                },
+                {
+                  "key": "control_command_feedback_trend",
+                  "title": "控制命令/反馈高频趋势",
+                  "path": "docs/field-data/optimize-demo-140/control-command-feedback.csv",
+                  "exists": false,
+                  "mode": "missing",
+                  "requiredForReady": true
+                },
+                {
+                  "key": "start_stop_event_ledger",
+                  "title": "设备启停事件台账",
+                  "path": "docs/field-data/optimize-demo-140/start-stop-event.csv",
+                  "exists": false,
+                  "mode": "missing",
+                  "requiredForReady": true
+                },
+                {
+                  "key": "control_parameter_ledger",
+                  "title": "PID/死区/延时参数台账",
+                  "path": "docs/field-data/optimize-demo-140/control-parameter.csv",
+                  "exists": false,
+                  "mode": "missing",
+                  "requiredForReady": true
+                }
+              ],
+              "controlBoundary": "预检只校验 4 张正式现场 CSV 的可读性、字段映射和证据边界；不判定仪表故障，不自动修正测点，不自动改 PID，不自动启停设备，不写真实 PLC，不覆盖正式 latest 导入报告。"
+            },
+            "promotion": {
+              "status": "waiting",
+              "finalDecision": "FIELD_DATA_PROMOTE_WAITING_FOR_PREFLIGHT",
+              "formalImportReady": false,
+              "generatedAt": "2026-06-16T05:15:25.590Z",
+              "reportPath": "/Users/billchow/Documents/智慧冷冻站/docs/optimize-demo-140-field-data-promote-latest.json",
+              "acceptedRows": 0,
+              "totalRows": 0,
+              "blockersCount": 0,
+              "warningsCount": 0,
+              "importStatus": "CONTROL_LEDGER_IMPORT_NOT_RUN",
+              "preflightDecision": "FIELD_DATA_PREFLIGHT_WAITING_FOR_INPUTS",
+              "controlBoundary": "promotion 只在现场 CSV 预检 READY 后执行正式台账导入；不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            "tables": [
+              {
+                "key": "control_command_feedback_trend",
+                "title": "控制命令/反馈高频趋势",
+                "status": "partial",
+                "inputMode": "template_sample",
+                "rowCount": 3,
+                "acceptedRowCount": 3,
+                "outputPath": "docs/optimize-demo-140-control-command-feedback-normalized-latest.csv"
+              },
+              {
+                "key": "start_stop_event_ledger",
+                "title": "设备启停事件台账",
+                "status": "partial",
+                "inputMode": "template_sample",
+                "rowCount": 2,
+                "acceptedRowCount": 2,
+                "outputPath": "docs/optimize-demo-140-start-stop-event-normalized-latest.csv"
+              },
+              {
+                "key": "control_parameter_ledger",
+                "title": "PID/死区/延时参数台账",
+                "status": "partial",
+                "inputMode": "template_sample",
+                "rowCount": 3,
+                "acceptedRowCount": 3,
+                "outputPath": "docs/optimize-demo-140-control-parameter-normalized-latest.csv"
+              }
+            ],
+            "controlBoundary": "导入器只做现场台账回填、字段规范化和证据校验，不自动改 PID，不自动启停设备，不写真实 PLC。"
+          },
+          "reviewBoundary": "控制震荡 V1 只输出温差锯齿波、总功率 hunting、频率/启停事件缺口和现场复核对象；不自动改 PID，不自动启停设备。"
+        },
+        "findings": [
+          "控制震荡 V1 已读取 24h 趋势窗口。",
+          "控制震荡 V1 形成 2 个风险指示。",
+          "控制震荡 V1 有 1 个观察项。",
+          "仍有 2 个高频控制/启停证据缺口。"
+        ],
+        "blockers": [],
+        "warnings": [
+          "控制震荡 V1 形成 2 个风险指示，需人工复核控制命令/反馈。",
+          "控制震荡 V1 有 1 个观察项，建议补高频趋势。",
+          "控制震荡 V1 仍有 2 个证据缺口，不能下 PID 或启停结论。",
+          "控制震荡台账导入为 PARTIAL，只能用于方向性复核，不能提升为高置信控制结论。",
+          "现场 CSV 预检正在等待三张现场导出文件，不作为诊断证据。",
+          "现场 CSV 正式导入 gate 等待预检 READY，不覆盖当前正式台账证据。",
+          "当前缺高频命令/反馈、PID 参数和精确启停事件，不能判断 PID 参数错误或频繁启停。"
+        ],
+        "evidence": [
+          {
+            "key": "oscillationActiveRiskCount",
+            "label": "控制震荡风险",
+            "value": 2,
+            "unit": null
+          },
+          {
+            "key": "oscillationWatchRiskCount",
+            "label": "控制震荡观察项",
+            "value": 1,
+            "unit": null
+          },
+          {
+            "key": "oscillationGapCount",
+            "label": "控制震荡证据缺口",
+            "value": 2,
+            "unit": null
+          },
+          {
+            "key": "oscillationMaxDirectionChangeCount",
+            "label": "最大方向反转次数",
+            "value": 100,
+            "unit": null
+          },
+          {
+            "key": "controlLedgerImportStatus",
+            "label": "控制台账导入状态",
+            "value": "partial",
+            "unit": null
+          }
+        ],
+        "suggestions": [
+          "先补命令/反馈高频趋势，再判断 PID、死区、斜率限制或执行器跟随问题。",
+          "频繁启停必须基于精确启停事件和最小运行时间统计，不用实时状态快照替代事件台账。",
+          "任何 PID、延时或启停参数调整都应由 PLC 本地保护兜底，并经过人工审批和可回退记录。"
+        ]
+      },
+      {
+        "key": "lowDeltaTRootCause",
+        "title": "低温差根因诊断",
+        "status": "ready",
+        "confidence": "medium",
+        "current": {
+          "chilledDeltaT": 4.4,
+          "coolingDeltaT": 4.7,
+          "chilledPumpAvgHz": 40.4,
+          "coolingPumpAvgHz": 36.6,
+          "bypassValveOpenPct": 0,
+          "branchFlowSpread": {
+            "count": 5,
+            "min": 32.8,
+            "max": 1250,
+            "ratio": 38.1,
+            "range": 1217.2
+          },
+          "trendLinkage": {
+            "status": "active",
+            "persistentLowDeltaT": true,
+            "hydraulicTrendStatus": "ready",
+            "pumpShadowReady": true,
+            "trendDataBoundary": {
+              "pumpFrequencyHistoryAvailable": false,
+              "branchHistoryAvailable": false,
+              "terminalHistoryAvailable": false
+            },
+            "candidates": [
+              {
+                "key": "overPumping",
+                "title": "大流量小温差 / 泵频偏高",
+                "status": "active",
+                "priority": "high",
+                "confidence": "medium",
+                "reason": "冷冻泵平均频率约 40.4 Hz，需结合末端不缺冷条件判断是否可小步降频。"
+              },
+              {
+                "key": "persistentLowDeltaT",
+                "title": "低温差持续性",
+                "status": "active",
+                "priority": "medium",
+                "confidence": "medium",
+                "reason": "稳态窗口内冷冻水温差低于目标占比 100%。"
+              },
+              {
+                "key": "hydraulicDistribution",
+                "title": "支路水力分配不均",
+                "status": "active",
+                "priority": "medium",
+                "confidence": "medium",
+                "reason": "实时支路流量最大/最小比约 38.1，可能造成部分支路过流量、回水温度被稀释。"
+              },
+              {
+                "key": "bypassShortCircuit",
+                "title": "旁通分流",
+                "status": "watch",
+                "priority": "low",
+                "confidence": "medium",
+                "reason": "冷冻旁通阀反馈开度 0%。"
+              },
+              {
+                "key": "terminalUnknown",
+                "title": "末端缺冷风险未闭合",
+                "status": "unknown",
+                "priority": "medium",
+                "confidence": "low",
+                "reason": "缺末端阀位、末端压差和代表房间温度趋势，不能确认降泵后末端是否仍安全。"
+              }
+            ]
+          }
+        },
+        "findings": [
+          "当前存在低温差诊断触发条件。",
+          "稳态窗口显示冷冻侧低温差具备持续性。",
+          "运行冷冻泵平均频率约 40.4 Hz。",
+          "运行冷却泵平均频率约 36.6 Hz。",
+          "当前根因首位：大流量小温差 / 泵频偏高。"
+        ],
+        "blockers": [],
+        "warnings": [
+          "冷冻水温差 4.4℃ 偏低，优先查大流量小温差。",
+          "趋势已证明冷冻侧低温差具备持续性，根因排序优先级上调。",
+          "低温差根因候选：大流量小温差 / 泵频偏高、低温差持续性、支路水力分配不均。",
+          "支路流量差异大，可能造成部分支路过流量、回水温度被稀释。",
+          "泵温差 Advisor 已生成小步降频 shadow 条件，可作为验证动作。"
+        ],
+        "evidence": [
+          {
+            "key": "chilledDeltaT",
+            "label": "冷冻水温差",
+            "value": 4.4,
+            "unit": "℃"
+          },
+          {
+            "key": "coolingDeltaT",
+            "label": "冷却水温差",
+            "value": 4.7,
+            "unit": "℃"
+          },
+          {
+            "key": "persistentLowDeltaT",
+            "label": "持续低温差",
+            "value": true,
+            "unit": null
+          },
+          {
+            "key": "chilledPumpAvgHz",
+            "label": "冷冻泵平均频率",
+            "value": 40.4,
+            "unit": "Hz"
+          },
+          {
+            "key": "coolingPumpAvgHz",
+            "label": "冷却泵平均频率",
+            "value": 36.6,
+            "unit": "Hz"
+          }
+        ],
+        "suggestions": [
+          "先确认旁通阀、支路流量、泵频率和末端阀位，再进入泵降频 shadow 验证。",
+          "若低温差持续且末端不缺冷，优先把冷冻泵小步降频作为 shadow 验证动作；若末端缺冷，先做水力平衡。",
+          "若温差低且末端不缺冷，优先小步降低泵频；若末端缺冷，先处理水力分配。"
+        ]
+      },
+      {
+        "key": "coolingTowerCapability",
+        "title": "冷却塔能力诊断",
+        "status": "ready",
+        "confidence": "medium",
+        "current": {
+          "wetBulbC": 25.6,
+          "currentTcwsC": 28.3,
+          "currentApproachC": 2.7,
+          "targetApproachC": 3.2,
+          "targetTcwsC": 28.8,
+          "towerPowerKw": 59.5,
+          "towerAvgHz": 29.4,
+          "towerFlowSpread": {
+            "count": 0,
+            "min": null,
+            "max": null,
+            "ratio": null,
+            "range": null
+          }
+        },
+        "findings": [
+          "当前冷却塔接近度约 2.7℃。",
+          "冷却塔功率约 59.5 kW。"
+        ],
+        "blockers": [],
+        "warnings": [],
+        "evidence": [
+          {
+            "key": "wetBulbC",
+            "label": "湿球温度",
+            "value": 25.6,
+            "unit": "℃"
+          },
+          {
+            "key": "currentTcwsC",
+            "label": "冷却塔出水/冷机冷凝器进水温",
+            "value": 28.3,
+            "unit": "℃"
+          },
+          {
+            "key": "currentApproachC",
+            "label": "接近度",
+            "value": 2.7,
+            "unit": "℃"
+          },
+          {
+            "key": "towerFlowRatio",
+            "label": "塔侧流量比",
+            "value": null,
+            "unit": null
+          }
+        ],
+        "suggestions": [
+          "接近度偏高时，优先查塔风机频率、塔进出水阀、布水和填料脏堵。",
+          "接近度正常但塔功率高时，再评估塔风机降频 shadow 验证。"
+        ]
+      },
+      {
+        "key": "chillerHealthCombination",
+        "title": "主机健康与组合样本诊断",
+        "status": "ready",
+        "confidence": "low",
+        "current": {
+          "runningCombination": [
+            "CH4",
+            "CH5",
+            "CH7"
+          ],
+          "runningCount": 3,
+          "chillerPowerTotalKw": 1630.2,
+          "comboCop": 7.86,
+          "stationCop": 6.6,
+          "sampleTotal": 113,
+          "currentCombinationSamples": 19,
+          "targetCombinationSamples": 19,
+          "recommendationAction": "keep",
+          "targetCombination": [
+            "CH4",
+            "CH5",
+            "CH7"
+          ]
+        },
+        "findings": [
+          "当前运行组合：CH4+CH5+CH7。",
+          "已归集组合样本 113 条。",
+          "未发现满足样本、容量余量和节能门槛的候选组合，保持当前组合。"
+        ],
+        "blockers": [],
+        "warnings": [
+          "推荐组合样本 19 条，仍为低置信。",
+          "当前为多机并联，且无单台冷冻水流量，不计算单机实时 COP。"
+        ],
+        "evidence": [
+          {
+            "key": "runningCount",
+            "label": "运行主机台数",
+            "value": 3,
+            "unit": null
+          },
+          {
+            "key": "comboCop",
+            "label": "主机组合COP",
+            "value": 7.86,
+            "unit": null
+          },
+          {
+            "key": "stationCop",
+            "label": "冷站COP",
+            "value": 6.6,
+            "unit": null
+          },
+          {
+            "key": "sampleTotal",
+            "label": "组合样本总量",
+            "value": 113,
+            "unit": null
+          }
+        ],
+        "suggestions": [
+          "继续积累单机窗口和组合窗口样本，按同负荷/相近湿球/相近供水温比较。",
+          "主机健康诊断后续可加入同负荷下功率偏高、冷凝温差异常、启停次数和故障率。"
+        ]
+      }
+    ],
+    "blockers": [],
+    "warnings": []
+  },
+  "blockers": [],
+  "warnings": [],
+  "reportFiles": {
+    "json": "docs/optimize-demo-diagnostic-readiness-latest.json",
+    "markdown": "docs/optimize-demo-diagnostic-readiness-latest.md"
+  }
+}

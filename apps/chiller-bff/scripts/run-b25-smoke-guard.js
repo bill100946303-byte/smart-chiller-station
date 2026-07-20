@@ -9,6 +9,9 @@ const DEFAULT_ROUNDS = 24;
 const DEFAULT_INTERVAL_MINUTES = 60;
 const DEFAULT_OUT_DIR = path.resolve(ROOT_DIR, "docs/b25-smoke-guard");
 const DEFAULT_LOG_FILE = path.resolve(ROOT_DIR, "docs/b25-smoke-guard-latest.log");
+const DEFAULT_STRICT_UI = true;
+const DEFAULT_USE_SUITE = true;
+const DEFAULT_APP_BASE_URL = process.env.APP_BASE_URL || "";
 
 function parseNumberOption(name, fallback) {
   const arg = process.argv.find((item) => item.startsWith(`--${name}=`));
@@ -29,6 +32,21 @@ function parseStringOption(name, fallback) {
   }
   const value = arg.slice(name.length + 3).trim();
   return value ? value : fallback;
+}
+
+function parseBooleanOption(name, fallback) {
+  const arg = process.argv.find((item) => item.startsWith(`--${name}=`));
+  if (!arg) {
+    return fallback;
+  }
+  const raw = arg.slice(name.length + 3).trim().toLowerCase();
+  if (raw === "1" || raw === "true" || raw === "yes" || raw === "on") {
+    return true;
+  }
+  if (raw === "0" || raw === "false" || raw === "no" || raw === "off") {
+    return false;
+  }
+  return fallback;
 }
 
 function hasFlag(name) {
@@ -56,14 +74,23 @@ function appendLog(logFile, message) {
   process.stdout.write(line);
 }
 
-function runSingleSmoke(outFile, logFile) {
+function runSingleSmoke(outFile, logFile, options) {
   return new Promise((resolve) => {
-    const child = spawn("node", ["scripts/check-b25-ui-smoke.js"], {
+    const script = options.useSuite
+      ? "scripts/check-optimize-smoke-suite.js"
+      : "scripts/check-b25-ui-smoke.js";
+    const env = {
+      ...process.env,
+      B25_SMOKE_OUTPUT_PATH: outFile,
+      B25_UI_SMOKE_STRICT: options.strictUi ? "1" : "0"
+    };
+    if (options.appBaseUrl) {
+      env.APP_BASE_URL = options.appBaseUrl;
+    }
+
+    const child = spawn("node", [script], {
       cwd: BFF_DIR,
-      env: {
-        ...process.env,
-        B25_SMOKE_OUTPUT_PATH: outFile
-      },
+      env,
       stdio: ["ignore", "pipe", "pipe"]
     });
 
@@ -86,7 +113,8 @@ function runSingleSmoke(outFile, logFile) {
       resolve({
         ok: code === 0,
         code: Number(code || 0),
-        outFile
+        outFile,
+        script
       });
     });
   });
@@ -97,6 +125,9 @@ async function main() {
   const intervalMinutes = parseNumberOption("interval-minutes", DEFAULT_INTERVAL_MINUTES);
   const outDir = path.resolve(parseStringOption("out-dir", DEFAULT_OUT_DIR));
   const logFile = path.resolve(parseStringOption("log-file", DEFAULT_LOG_FILE));
+  const strictUi = parseBooleanOption("strict-ui", DEFAULT_STRICT_UI);
+  const useSuite = parseBooleanOption("suite", DEFAULT_USE_SUITE);
+  const appBaseUrl = parseStringOption("app-base-url", DEFAULT_APP_BASE_URL);
   const once = hasFlag("once");
   const totalRounds = once ? 1 : rounds;
   const intervalMs = Math.max(1, intervalMinutes) * 60_000;
@@ -104,7 +135,7 @@ async function main() {
   fs.mkdirSync(outDir, { recursive: true });
   appendLog(
     logFile,
-    `guard started rounds=${totalRounds} intervalMinutes=${intervalMinutes} outDir=${outDir}`
+    `guard started rounds=${totalRounds} intervalMinutes=${intervalMinutes} outDir=${outDir} strictUi=${strictUi} useSuite=${useSuite} appBaseUrl=${appBaseUrl || "auto"}`
   );
 
   let passed = 0;
@@ -113,13 +144,17 @@ async function main() {
     const fileName = `b25-smoke-${formatStamp()}.json`;
     const outFile = path.resolve(outDir, fileName);
     appendLog(logFile, `round ${index}/${totalRounds} started output=${outFile}`);
-    const result = await runSingleSmoke(outFile, logFile);
+    const result = await runSingleSmoke(outFile, logFile, {
+      strictUi,
+      useSuite,
+      appBaseUrl
+    });
     if (result.ok) {
       passed += 1;
-      appendLog(logFile, `round ${index}/${totalRounds} passed`);
+      appendLog(logFile, `round ${index}/${totalRounds} passed script=${result.script}`);
     } else {
       failed += 1;
-      appendLog(logFile, `round ${index}/${totalRounds} failed exit=${result.code}`);
+      appendLog(logFile, `round ${index}/${totalRounds} failed exit=${result.code} script=${result.script}`);
     }
 
     if (index < totalRounds) {

@@ -1,0 +1,25 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-18T08:37:45.675Z",
+  "siteId": "126lnoffice",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "mode": "blocked_before_rollback",
+  "controlMutation": false,
+  "executionFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-small-batch-dispatch-execution-latest.json",
+  "blockingItems": [
+    {
+      "key": "confirm_phrase_missing",
+      "message": "必须设置 FCU_SMALL_BATCH_ROLLBACK_CONFIRM=I_UNDERSTAND_FCU_ROLLBACK_LOCKOUT 才允许回退记录。"
+    },
+    {
+      "key": "no_rollback_targets",
+      "message": "执行报告中没有需要回退的真实下发记录。"
+    }
+  ],
+  "targets": [],
+  "executionSummary": {
+    "ok": false,
+    "mode": "blocked_before_dispatch",
+    "controlMutation": false
+  }
+}

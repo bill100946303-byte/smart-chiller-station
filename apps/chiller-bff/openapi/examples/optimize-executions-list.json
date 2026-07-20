@@ -1,0 +1,119 @@
+{
+  "site": {
+    "siteId": "btwentyfive"
+  },
+  "generatedAt": "2026-04-08T09:32:15.000Z",
+  "total": 2,
+  "items": [
+    {
+      "executionId": "opx-btwentyfive-1775237535000-ax7k1p",
+      "siteId": "btwentyfive",
+      "createdAt": "2026-04-08T09:30:15.000Z",
+      "updatedAt": "2026-04-08T09:30:15.000Z",
+      "approvedAt": null,
+      "approvedBy": null,
+      "rolledBackAt": null,
+      "rolledBackBy": null,
+      "status": "pending_approval",
+      "draft": {
+        "generatedAt": "2026-04-08T09:29:40.000Z",
+        "gateLevel": "caution"
+      },
+      "execution": {
+        "type": "tower-approach",
+        "schemeKey": null,
+        "title": "冷却塔接近度执行草案",
+        "targetCop": null,
+        "targetPowerKw": null,
+        "targetApproachC": 3.1,
+        "targetTcwsC": 28.4,
+        "reason": "湿球回落后建议小步下探接近度",
+        "actions": [
+          "先确认冷却塔风机运行方向与台数",
+          "按 0.5℃/step 调整目标冷却供水温"
+        ]
+      },
+      "approval": {
+        "required": true,
+        "status": "pending",
+        "requestedAt": "2026-04-08T09:30:15.000Z",
+        "approvedAt": null,
+        "approverUserId": null,
+        "note": null
+      },
+      "rollback": {
+        "status": "none",
+        "reason": null,
+        "requestedBy": null,
+        "requestedAt": null,
+        "completedAt": null
+      },
+      "timeline": [
+        {
+          "at": "2026-04-08T09:30:15.000Z",
+          "actorUserId": "admin",
+          "action": "created",
+          "note": null
+        }
+      ]
+    },
+    {
+      "executionId": "opx-btwentyfive-1775237100000-bk3d9m",
+      "siteId": "btwentyfive",
+      "createdAt": "2026-04-08T09:18:20.000Z",
+      "updatedAt": "2026-04-08T09:19:02.000Z",
+      "approvedAt": "2026-04-08T09:18:48.000Z",
+      "approvedBy": "site-admin-b25",
+      "rolledBackAt": null,
+      "rolledBackBy": null,
+      "status": "approved",
+      "draft": {
+        "generatedAt": "2026-04-08T09:17:55.000Z",
+        "gateLevel": "ready"
+      },
+      "execution": {
+        "type": "scheme",
+        "schemeKey": "balanced",
+        "title": "平衡方案",
+        "targetCop": 7.6,
+        "targetPowerKw": 1184.2,
+        "targetApproachC": null,
+        "targetTcwsC": null,
+        "reason": "先维持冷机稳定，再小步优化冷却侧",
+        "actions": [
+          "保持现有主机组合不变",
+          "优先确认冷却泵频率与冷却塔风机联动"
+        ]
+      },
+      "approval": {
+        "required": true,
+        "status": "approved",
+        "requestedAt": "2026-04-08T09:18:20.000Z",
+        "approvedAt": "2026-04-08T09:18:48.000Z",
+        "approverUserId": "site-admin-b25",
+        "note": "值班站点管理员审批"
+      },
+      "rollback": {
+        "status": "none",
+        "reason": null,
+        "requestedBy": null,
+        "requestedAt": null,
+        "completedAt": null
+      },
+      "timeline": [
+        {
+          "at": "2026-04-08T09:18:20.000Z",
+          "actorUserId": "operator",
+          "action": "created",
+          "note": null
+        },
+        {
+          "at": "2026-04-08T09:18:48.000Z",
+          "actorUserId": "site-admin-b25",
+          "action": "approved",
+          "note": "值班站点管理员审批"
+        }
+      ]
+    }
+  ]
+}

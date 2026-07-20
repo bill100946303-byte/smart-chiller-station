@@ -1,4 +1,5 @@
 import { buildGeneratedAt } from "./fieldPolicyService.js";
+import { buildSiteAiDigestResponse } from "./aiDigestService.js";
 import { buildSourceStatus } from "./sourceStatusService.js";
 import { getAnomalySummary } from "./anomalyService.js";
 import { getDashboardOverview } from "./dashboardService.js";
@@ -12,6 +13,7 @@ const DATASET_LABELS = {
     anomalySummary: "异常摘要",
     recommendations: "建议卡片",
     deviceList: "设备清单",
+    optimizeExecutions: "优化执行",
     operationsKnowledge: "运维知识"
   },
   vi: {
@@ -19,6 +21,7 @@ const DATASET_LABELS = {
     anomalySummary: "Tóm tắt cảnh báo",
     recommendations: "Thẻ khuyến nghị",
     deviceList: "Danh sách thiết bị",
+    optimizeExecutions: "Lich su toi uu",
     operationsKnowledge: "Tri thuc van hanh"
   }
 };
@@ -344,6 +347,7 @@ function localizePageHint(locale, key) {
       anomalySummary: "Trang canh bao",
       recommendations: "The khuyen nghi",
       deviceList: "Danh sach thiet bi",
+      optimizeExecutions: "Lich su toi uu",
       rawPage: "Trang goc"
     };
     return viLabels[key] || key;
@@ -353,6 +357,7 @@ function localizePageHint(locale, key) {
     anomalySummary: "告警页面",
     recommendations: "建议卡片",
     deviceList: "设备清单",
+    optimizeExecutions: "优化执行",
     rawPage: "原始页面"
   };
   return zhLabels[key] || key;
@@ -362,6 +367,25 @@ function buildPageHints(locale, keys) {
   return dedupeTextList(
     (Array.isArray(keys) ? keys : []).map((key) => localizePageHint(locale, key)).filter(Boolean),
     4
+  );
+}
+
+function normalizeAnswerText(value) {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+  if (value === null || value === undefined) {
+    return "";
+  }
+  return String(value).trim();
+}
+
+function summarizeIssueTexts(items, limit = 3) {
+  return dedupeTextList(
+    (Array.isArray(items) ? items : [])
+      .map((item) => normalizeAnswerText(item?.message || item?.summary || item?.label || item))
+      .filter(Boolean),
+    limit
   );
 }
 
@@ -439,6 +463,85 @@ function createUnsupportedAnswer(locale) {
     ["请改问站点现态、异常优先级、建议解读或运维知识类问题。"],
     []
   );
+}
+
+function createStrategyAnswer(locale, digest) {
+  const summary = digest?.summary || {};
+  const nextAction = digest?.nextAction || {};
+  const blockers = Array.isArray(digest?.blockers) ? digest.blockers : [];
+  const risks = Array.isArray(digest?.risks) ? digest.risks : [];
+  const signals = Array.isArray(digest?.signals) ? digest.signals : [];
+  const blockerNotes = summarizeIssueTexts(blockers, 3);
+  const riskNotes = summarizeIssueTexts(risks, 3);
+  const signalNotes = dedupeTextList(signals.map((item) => normalizeAnswerText(item)), 4);
+  const stageLabel = normalizeAnswerText(summary.label) || (locale === "vi" ? "Trang thai" : "阶段");
+  const stageCode = normalizeAnswerText(summary.stage) || "monitor";
+  const nextActionLabel = normalizeAnswerText(nextAction.label) || (locale === "vi" ? "Buoc tiep theo" : "下一步");
+  const nextActionSummary = normalizeAnswerText(nextAction.summary);
+  const pageHints = buildPageHints(locale, [
+    "dashboardOverview",
+    "anomalySummary",
+    "recommendations",
+    "optimizeExecutions"
+  ]);
+
+  if (locale === "vi") {
+    return buildAnswerPayload(
+      "strategy",
+      `${normalizeAnswerText(summary.headline) || "Tong hop chien luoc"}${normalizeAnswerText(summary.summary) ? `: ${normalizeAnswerText(summary.summary)}` : ""}`,
+      [
+        `Trang thai: ${stageLabel} (${stageCode}); do tin cay ${normalizeAnswerText(summary.confidence) || "khong ro"}; mau sac ${normalizeAnswerText(summary.tone) || "neutral"}.`,
+        nextActionSummary
+          ? `${nextActionLabel}: ${nextActionSummary}`
+          : `${nextActionLabel}: khong co buoc tiep theo ro rang.`,
+        blockerNotes.length > 0
+          ? `Diem chan: ${blockerNotes.join(" | ")}`
+          : "Diem chan: hien chua thay chan troi moi.",
+        riskNotes.length > 0
+          ? `Rui ro: ${riskNotes.join(" | ")}`
+          : "Rui ro: hien chua co tin hieu phat sinh moi.",
+        signalNotes.length > 0
+          ? `Tin hieu: ${signalNotes.join(" | ")}`
+          : "Tin hieu: chua co tin hieu bo sung."
+      ],
+      [
+        nextActionSummary || "Theo doi trang thai tong hop va quay lai khi co chia khoa moi.",
+        blockerNotes[0] || nextActionSummary || "Neu can quyet dinh nhanh, uu tien mo trang tong quan va lich su thuc thi.",
+        riskNotes[0] || signalNotes[0] || "Ket hop cac tin hieu tren de quyet dinh co tiep tuc toi uu hay tam dung."
+      ],
+      pageHints
+    );
+  }
+
+  return buildAnswerPayload(
+    "strategy",
+    `${normalizeAnswerText(summary.headline) || "当前治理摘要"}${normalizeAnswerText(summary.summary) ? `：${normalizeAnswerText(summary.summary)}` : ""}`,
+    [
+      `阶段：${stageLabel}（${stageCode}）；可信度 ${normalizeAnswerText(summary.confidence) || "未知"}；语气 ${normalizeAnswerText(summary.tone) || "neutral"}。`,
+      nextActionSummary
+        ? `${nextActionLabel}：${nextActionSummary}`
+        : `${nextActionLabel}：当前没有更明确的下一步。`,
+      blockerNotes.length > 0
+        ? `阻塞项：${blockerNotes.join("；")}`
+        : "阻塞项：当前没有新的硬阻塞。",
+      riskNotes.length > 0
+        ? `风险：${riskNotes.join("；")}`
+        : "风险：当前没有额外风险信号。",
+      signalNotes.length > 0
+        ? `信号：${signalNotes.join("；")}`
+        : "信号：当前未补充出新的观察信号。"
+    ],
+    [
+      nextActionSummary || "先看 digest 摘要，再决定是否继续推进。",
+      blockerNotes[0] || nextActionSummary || "优先核对阻塞项和下一步动作。",
+      riskNotes[0] || signalNotes[0] || "再结合风险信号，判断是推进还是暂停。"
+    ],
+    pageHints
+  );
+}
+
+export function buildStrategyAnswer(locale, digest) {
+  return createStrategyAnswer(locale, digest);
 }
 
 function createUnavailableAnswer(locale, kind = "status") {
@@ -1054,6 +1157,51 @@ export function buildReliabilityAnswer(locale, overview, anomalies, recommendati
 export function classifyAssistantQuery(text) {
   const normalized = String(text || "").trim().toLowerCase();
 
+  const controlKeywords = [
+    "开机",
+    "停机",
+    "启动",
+    "关闭",
+    "开停机",
+    "控制",
+    "plc",
+    "setpoint",
+    "control",
+    "shutdown",
+    "start machine",
+    "bật máy",
+    "tắt máy",
+    "điều khiển"
+  ];
+  if (controlKeywords.some((keyword) => normalized.includes(keyword))) {
+    return "unsupported";
+  }
+
+  const strategyKeywords = [
+    "优化",
+    "optimize",
+    "optimization",
+    "tối ưu",
+    "治理",
+    "draft",
+    "草案",
+    "approval",
+    "approved",
+    "审批",
+    "审评",
+    "rollback",
+    "回退",
+    "退回",
+    "执行反馈",
+    "执行记录",
+    "执行",
+    "dispatch",
+    "方案"
+  ];
+  if (strategyKeywords.some((keyword) => normalized.includes(keyword))) {
+    return "strategy";
+  }
+
   const unsupportedKeywords = [
     "趋势",
     "历史",
@@ -1067,27 +1215,10 @@ export function classifyAssistantQuery(text) {
     "knowledge",
     "manual",
     "tài liệu",
-    "优化",
-    "optimize",
-    "optimization",
-    "tối ưu",
     "simulate",
     "simulation",
     "仿真",
-    "mô phỏng",
-    "开机",
-    "停机",
-    "启动",
-    "关闭",
-    "控制",
-    "plc",
-    "setpoint",
-    "control",
-    "shutdown",
-    "start machine",
-    "bật máy",
-    "tắt máy",
-    "điều khiển"
+    "mô phỏng"
   ];
   if (unsupportedKeywords.some((keyword) => normalized.includes(keyword))) {
     return "unsupported";
@@ -1273,7 +1404,52 @@ export async function buildAssistantQueryResponse(config, siteId, request, reque
     };
   }
 
-  const anomalies = await getAnomalySummary(config, siteId);
+  if (kind === "strategy") {
+    const digest =
+      requestContext?.aiDigest
+      || (await (async () => {
+        const anomalies = await getAnomalySummary(config, siteId, requestContext);
+        const overview = await getDashboardOverview(config, siteId, anomalies, requestContext);
+        const recommendations = await getRecommendations(config, siteId, overview, anomalies);
+        return buildSiteAiDigestResponse(config, siteId, {
+          ...requestContext,
+          overview,
+          anomalies,
+          recommendations
+        });
+      })());
+    const answer = createStrategyAnswer(locale, digest);
+    return {
+      site: {
+        siteId
+      },
+      answer: {
+        kind: answer.kind,
+        summary: answer.summary,
+        details: answer.details,
+        nextSteps: answer.nextSteps,
+        pageHints: answer.pageHints,
+        citations: buildCitations(locale, [
+          "dashboardOverview",
+          "anomalySummary",
+          "recommendations",
+          "optimizeExecutions"
+        ])
+      },
+      freshness: digest?.freshness || {
+        label: "unknown",
+        latestTimestamp: null,
+        stale: false
+      },
+      sourceStatus: digest?.sourceStatus || {
+        overall: "failed",
+        sources: []
+      },
+      generatedAt: buildGeneratedAt(config)
+    };
+  }
+
+  const anomalies = await getAnomalySummary(config, siteId, requestContext);
   const overview = await getDashboardOverview(config, siteId, anomalies, requestContext);
   const recommendations = await getRecommendations(config, siteId, overview, anomalies);
   const deviceList =

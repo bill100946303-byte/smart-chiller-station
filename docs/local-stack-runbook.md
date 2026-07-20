@@ -52,13 +52,20 @@ RUNTIME_REQUIRED=0 /Users/billchow/Documents/智慧冷冻站/scripts/chiller_ctl
 BFF_PORT=8787 FRONTEND_PORT=3001 /Users/billchow/Documents/智慧冷冻站/scripts/start_local_stack.sh
 ```
 
-前端端口自动回退（默认 `3001 3002 3003`）：
+运行端前端端口自动回退（默认 `3001 3003 3004`，`3002` 固定保留给配置中心）：
 
 ```bash
-FRONTEND_PORT=3001 FRONTEND_FALLBACK_PORTS="3001 3002 3003" /Users/billchow/Documents/智慧冷冻站/scripts/start_local_stack.sh
+FRONTEND_PORT=3001 FRONTEND_FALLBACK_PORTS="3001 3003 3004" /Users/billchow/Documents/智慧冷冻站/scripts/start_local_stack.sh
 ```
 
 说明：当 `3001` 启动失败（如 `EADDRINUSE/EPERM`）时，脚本会自动尝试下一个候选端口。
+
+`3002` 是 `apps/chiller-admin-v1` 的固定配置中心入口。运行端回退端口不得占用 `3002`，否则 3001 的“物理站房登记/能源对象接入”按钮会打开错误应用。配置中心按其 README 单独启动：
+
+```bash
+cd /Users/billchow/Documents/智慧冷冻站/apps/chiller-admin-v1
+npm run dev -- --host 127.0.0.1 --port 3002
+```
 
 可选前端站点与趋势范围覆盖（不改代码切站点）：
 

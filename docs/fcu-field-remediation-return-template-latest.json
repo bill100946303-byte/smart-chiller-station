@@ -1,0 +1,978 @@
+{
+  "ok": true,
+  "generatedAt": "2026-06-18T11:06:25.311Z",
+  "scope": "fcu_field_remediation_return_template",
+  "siteId": "126lnoffice",
+  "build": "1",
+  "floor": "1",
+  "controlMutation": false,
+  "dispatch": false,
+  "summary": {
+    "deviceCount": 8,
+    "communicationBlocked": 8,
+    "temperatureBlocked": 4,
+    "setpointBlocked": 6,
+    "draftSuggestibleDevices": 4,
+    "draftTemperatureSuggestions": 4,
+    "draftSetpointSuggestions": 3,
+    "signoffCompleteRows": 0,
+    "signoffExpectedRows": 8,
+    "canaryBlockedUntil": [
+      "全部现场回填 release",
+      "重跑 signoff",
+      "重跑实时 closeout",
+      "重跑 final-control gates"
+    ]
+  },
+  "sourceFiles": {
+    "workOrders": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-work-orders-latest.json",
+    "signoff": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-latest.json",
+    "workOrdersError": null,
+    "signoffError": null
+  },
+  "outputs": {
+    "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-return-template-latest.json",
+    "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-return-template-latest.md",
+    "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-return-template-latest.csv"
+  },
+  "requiredColumns": [
+    "workOrderId",
+    "deviceCode",
+    "deviceName",
+    "handledBy",
+    "handledAt",
+    "communicationAlarmAfter",
+    "zoneTemperatureAfterC",
+    "setpointFeedbackAfterC",
+    "writePointMappingChecked",
+    "twoSampleNormal",
+    "localManualLockout",
+    "releaseDecision",
+    "reviewedBy",
+    "reviewedAt",
+    "notes"
+  ],
+  "devices": [
+    {
+      "workOrderId": "FCU-P0-BGS03",
+      "priority": "P0",
+      "deviceCode": "BGS03",
+      "deviceName": "办公室03",
+      "owner": "BA/自控工程师",
+      "currentEvidence": {
+        "communicationAlarm": true,
+        "zoneTemperatureC": 0,
+        "setpointC": 0,
+        "qualityStatus": "invalid",
+        "reasons": [
+          "communication_alarm",
+          "zero_temperature",
+          "invalid_temperature",
+          "temperature_quality_guard",
+          "setpoint_feedback_out_of_bounds"
+        ],
+        "reasonLabels": [
+          "通讯报警未恢复",
+          "温度点为0°C",
+          "温度无效",
+          "温度质量门槛未通过",
+          "设定反馈越界"
+        ]
+      },
+      "requiredValues": {
+        "workOrderId": "",
+        "deviceCode": "",
+        "deviceName": "",
+        "handledBy": "必填：现场处理人",
+        "handledAt": "必填：ISO时间",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "必填：5-45",
+        "setpointFeedbackAfterC": "必填：10-32",
+        "writePointMappingChecked": "必填：yes/no",
+        "twoSampleNormal": "必填：yes/no",
+        "localManualLockout": "必填：none/manual/lockout",
+        "releaseDecision": "必填：hold/recheck/release",
+        "reviewedBy": "必填：复核人",
+        "reviewedAt": "必填：ISO时间",
+        "notes": ""
+      },
+      "reviewDraft": {
+        "mode": "review_draft_only",
+        "releaseDecisionDefault": "recheck",
+        "suggestedValues": {},
+        "blockedAutoFillFields": [
+          "communicationAlarmAfter",
+          "zoneTemperatureAfterC",
+          "setpointFeedbackAfterC"
+        ],
+        "manualOnlyFields": [
+          "handledBy",
+          "handledAt",
+          "reviewedBy",
+          "reviewedAt",
+          "writePointMappingChecked",
+          "twoSampleNormal",
+          "localManualLockout",
+          "releaseDecision"
+        ],
+        "canSuggestAnyValue": false,
+        "cannotReleaseReasons": [
+          "communication_alarm",
+          "zero_temperature",
+          "invalid_temperature",
+          "temperature_quality_guard",
+          "setpoint_feedback_out_of_bounds",
+          "现场处理人/复核人/时间/写点核对/连续两次采样/手动锁定必须人工确认"
+        ],
+        "safetyBoundary": "草稿值只用于现场复核，不写入 signoff，不代表 release，不触发 BA/PLC。"
+      },
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ],
+      "plannedAction": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 BGS03-502-40078 是否仍为 1。",
+        "核对内置温度点 BGS03-506-40219，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 BGS03-506-40219，缺温度时禁止进入闭环。",
+        "复核设定反馈点 BGS03-506-40223，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "row": {
+        "workOrderId": "FCU-P0-BGS03",
+        "deviceCode": "BGS03",
+        "deviceName": "办公室03",
+        "handledBy": "",
+        "handledAt": "",
+        "communicationAlarmAfter": "",
+        "zoneTemperatureAfterC": "",
+        "setpointFeedbackAfterC": "",
+        "writePointMappingChecked": "",
+        "twoSampleNormal": "",
+        "localManualLockout": "",
+        "releaseDecision": "",
+        "reviewedBy": "",
+        "reviewedAt": "",
+        "notes": "当前异常=通讯报警未恢复；温度点为0°C；温度无效；温度质量门槛未通过；设定反馈越界 | 可参考草稿=无 | 必填=handledBy；handledAt；reviewedBy；reviewedAt；releaseDecision；communicationAlarmAfter；zoneTemperatureAfterC；writePointMappingChecked；twoSampleNormal；localManualLockout"
+      }
+    },
+    {
+      "workOrderId": "FCU-P0-BGS04",
+      "priority": "P0",
+      "deviceCode": "BGS04",
+      "deviceName": "办公室04",
+      "owner": "BA/自控工程师",
+      "currentEvidence": {
+        "communicationAlarm": true,
+        "zoneTemperatureC": 0,
+        "setpointC": 0,
+        "qualityStatus": "invalid",
+        "reasons": [
+          "communication_alarm",
+          "zero_temperature",
+          "invalid_temperature",
+          "temperature_quality_guard",
+          "setpoint_feedback_out_of_bounds"
+        ],
+        "reasonLabels": [
+          "通讯报警未恢复",
+          "温度点为0°C",
+          "温度无效",
+          "温度质量门槛未通过",
+          "设定反馈越界"
+        ]
+      },
+      "requiredValues": {
+        "workOrderId": "",
+        "deviceCode": "",
+        "deviceName": "",
+        "handledBy": "必填：现场处理人",
+        "handledAt": "必填：ISO时间",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "必填：5-45",
+        "setpointFeedbackAfterC": "必填：10-32",
+        "writePointMappingChecked": "必填：yes/no",
+        "twoSampleNormal": "必填：yes/no",
+        "localManualLockout": "必填：none/manual/lockout",
+        "releaseDecision": "必填：hold/recheck/release",
+        "reviewedBy": "必填：复核人",
+        "reviewedAt": "必填：ISO时间",
+        "notes": ""
+      },
+      "reviewDraft": {
+        "mode": "review_draft_only",
+        "releaseDecisionDefault": "recheck",
+        "suggestedValues": {},
+        "blockedAutoFillFields": [
+          "communicationAlarmAfter",
+          "zoneTemperatureAfterC",
+          "setpointFeedbackAfterC"
+        ],
+        "manualOnlyFields": [
+          "handledBy",
+          "handledAt",
+          "reviewedBy",
+          "reviewedAt",
+          "writePointMappingChecked",
+          "twoSampleNormal",
+          "localManualLockout",
+          "releaseDecision"
+        ],
+        "canSuggestAnyValue": false,
+        "cannotReleaseReasons": [
+          "communication_alarm",
+          "zero_temperature",
+          "invalid_temperature",
+          "temperature_quality_guard",
+          "setpoint_feedback_out_of_bounds",
+          "现场处理人/复核人/时间/写点核对/连续两次采样/手动锁定必须人工确认"
+        ],
+        "safetyBoundary": "草稿值只用于现场复核，不写入 signoff，不代表 release，不触发 BA/PLC。"
+      },
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ],
+      "plannedAction": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 BGS04-502-40158 是否仍为 1。",
+        "核对内置温度点 BGS04-506-40539，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 BGS04-506-40539，缺温度时禁止进入闭环。",
+        "复核设定反馈点 BGS04-506-40543，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "row": {
+        "workOrderId": "FCU-P0-BGS04",
+        "deviceCode": "BGS04",
+        "deviceName": "办公室04",
+        "handledBy": "",
+        "handledAt": "",
+        "communicationAlarmAfter": "",
+        "zoneTemperatureAfterC": "",
+        "setpointFeedbackAfterC": "",
+        "writePointMappingChecked": "",
+        "twoSampleNormal": "",
+        "localManualLockout": "",
+        "releaseDecision": "",
+        "reviewedBy": "",
+        "reviewedAt": "",
+        "notes": "当前异常=通讯报警未恢复；温度点为0°C；温度无效；温度质量门槛未通过；设定反馈越界 | 可参考草稿=无 | 必填=handledBy；handledAt；reviewedBy；reviewedAt；releaseDecision；communicationAlarmAfter；zoneTemperatureAfterC；writePointMappingChecked；twoSampleNormal；localManualLockout"
+      }
+    },
+    {
+      "workOrderId": "FCU-P0-BGS06",
+      "priority": "P0",
+      "deviceCode": "BGS06",
+      "deviceName": "办公室06",
+      "owner": "BA/自控工程师",
+      "currentEvidence": {
+        "communicationAlarm": true,
+        "zoneTemperatureC": 22,
+        "setpointC": 24,
+        "qualityStatus": "invalid",
+        "reasons": [
+          "communication_alarm"
+        ],
+        "reasonLabels": [
+          "通讯报警未恢复"
+        ]
+      },
+      "requiredValues": {
+        "workOrderId": "",
+        "deviceCode": "",
+        "deviceName": "",
+        "handledBy": "必填：现场处理人",
+        "handledAt": "必填：ISO时间",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "可选",
+        "setpointFeedbackAfterC": "可选",
+        "writePointMappingChecked": "必填：yes/no",
+        "twoSampleNormal": "必填：yes/no",
+        "localManualLockout": "必填：none/manual/lockout",
+        "releaseDecision": "必填：hold/recheck/release",
+        "reviewedBy": "必填：复核人",
+        "reviewedAt": "必填：ISO时间",
+        "notes": ""
+      },
+      "reviewDraft": {
+        "mode": "review_draft_only",
+        "releaseDecisionDefault": "recheck",
+        "suggestedValues": {
+          "zoneTemperatureAfterC": "22",
+          "setpointFeedbackAfterC": "24"
+        },
+        "blockedAutoFillFields": [
+          "communicationAlarmAfter"
+        ],
+        "manualOnlyFields": [
+          "handledBy",
+          "handledAt",
+          "reviewedBy",
+          "reviewedAt",
+          "writePointMappingChecked",
+          "twoSampleNormal",
+          "localManualLockout",
+          "releaseDecision"
+        ],
+        "canSuggestAnyValue": true,
+        "cannotReleaseReasons": [
+          "communication_alarm",
+          "现场处理人/复核人/时间/写点核对/连续两次采样/手动锁定必须人工确认"
+        ],
+        "safetyBoundary": "草稿值只用于现场复核，不写入 signoff，不代表 release，不触发 BA/PLC。"
+      },
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ],
+      "plannedAction": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 BGS06-502-40166 是否仍为 1。"
+      ],
+      "row": {
+        "workOrderId": "FCU-P0-BGS06",
+        "deviceCode": "BGS06",
+        "deviceName": "办公室06",
+        "handledBy": "",
+        "handledAt": "",
+        "communicationAlarmAfter": "",
+        "zoneTemperatureAfterC": "",
+        "setpointFeedbackAfterC": "",
+        "writePointMappingChecked": "",
+        "twoSampleNormal": "",
+        "localManualLockout": "",
+        "releaseDecision": "",
+        "reviewedBy": "",
+        "reviewedAt": "",
+        "notes": "当前异常=通讯报警未恢复 | 可参考草稿=zoneTemperatureAfterC:22；setpointFeedbackAfterC:24 | 必填=handledBy；handledAt；reviewedBy；reviewedAt；releaseDecision；communicationAlarmAfter；zoneTemperatureAfterC；writePointMappingChecked；twoSampleNormal；localManualLockout"
+      }
+    },
+    {
+      "workOrderId": "FCU-P0-GCBGQ03",
+      "priority": "P0",
+      "deviceCode": "GCBGQ03",
+      "deviceName": "工程办公区03",
+      "owner": "BA/自控工程师",
+      "currentEvidence": {
+        "communicationAlarm": true,
+        "zoneTemperatureC": 31,
+        "setpointC": 19,
+        "qualityStatus": "invalid",
+        "reasons": [
+          "communication_alarm",
+          "setpoint_feedback_out_of_bounds"
+        ],
+        "reasonLabels": [
+          "通讯报警未恢复",
+          "设定反馈越界"
+        ]
+      },
+      "requiredValues": {
+        "workOrderId": "",
+        "deviceCode": "",
+        "deviceName": "",
+        "handledBy": "必填：现场处理人",
+        "handledAt": "必填：ISO时间",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "可选",
+        "setpointFeedbackAfterC": "可选",
+        "writePointMappingChecked": "必填：yes/no",
+        "twoSampleNormal": "必填：yes/no",
+        "localManualLockout": "必填：none/manual/lockout",
+        "releaseDecision": "必填：hold/recheck/release",
+        "reviewedBy": "必填：复核人",
+        "reviewedAt": "必填：ISO时间",
+        "notes": ""
+      },
+      "reviewDraft": {
+        "mode": "review_draft_only",
+        "releaseDecisionDefault": "recheck",
+        "suggestedValues": {
+          "zoneTemperatureAfterC": "31",
+          "setpointFeedbackAfterC": "19"
+        },
+        "blockedAutoFillFields": [
+          "communicationAlarmAfter"
+        ],
+        "manualOnlyFields": [
+          "handledBy",
+          "handledAt",
+          "reviewedBy",
+          "reviewedAt",
+          "writePointMappingChecked",
+          "twoSampleNormal",
+          "localManualLockout",
+          "releaseDecision"
+        ],
+        "canSuggestAnyValue": true,
+        "cannotReleaseReasons": [
+          "communication_alarm",
+          "setpoint_feedback_out_of_bounds",
+          "现场处理人/复核人/时间/写点核对/连续两次采样/手动锁定必须人工确认"
+        ],
+        "safetyBoundary": "草稿值只用于现场复核，不写入 signoff，不代表 release，不触发 BA/PLC。"
+      },
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ],
+      "plannedAction": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 GCBGQ03-502-40150 是否仍为 1。",
+        "复核设定反馈点 GCBGQ03-506-40511，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "row": {
+        "workOrderId": "FCU-P0-GCBGQ03",
+        "deviceCode": "GCBGQ03",
+        "deviceName": "工程办公区03",
+        "handledBy": "",
+        "handledAt": "",
+        "communicationAlarmAfter": "",
+        "zoneTemperatureAfterC": "",
+        "setpointFeedbackAfterC": "",
+        "writePointMappingChecked": "",
+        "twoSampleNormal": "",
+        "localManualLockout": "",
+        "releaseDecision": "",
+        "reviewedBy": "",
+        "reviewedAt": "",
+        "notes": "当前异常=通讯报警未恢复；设定反馈越界 | 可参考草稿=zoneTemperatureAfterC:31；setpointFeedbackAfterC:19 | 必填=handledBy；handledAt；reviewedBy；reviewedAt；releaseDecision；communicationAlarmAfter；zoneTemperatureAfterC；writePointMappingChecked；twoSampleNormal；localManualLockout"
+      }
+    },
+    {
+      "workOrderId": "FCU-P0-QT02",
+      "priority": "P0",
+      "deviceCode": "QT02",
+      "deviceName": "前厅02",
+      "owner": "BA/自控工程师",
+      "currentEvidence": {
+        "communicationAlarm": true,
+        "zoneTemperatureC": 26,
+        "setpointC": 26,
+        "qualityStatus": "invalid",
+        "reasons": [
+          "communication_alarm"
+        ],
+        "reasonLabels": [
+          "通讯报警未恢复"
+        ]
+      },
+      "requiredValues": {
+        "workOrderId": "",
+        "deviceCode": "",
+        "deviceName": "",
+        "handledBy": "必填：现场处理人",
+        "handledAt": "必填：ISO时间",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "可选",
+        "setpointFeedbackAfterC": "可选",
+        "writePointMappingChecked": "必填：yes/no",
+        "twoSampleNormal": "必填：yes/no",
+        "localManualLockout": "必填：none/manual/lockout",
+        "releaseDecision": "必填：hold/recheck/release",
+        "reviewedBy": "必填：复核人",
+        "reviewedAt": "必填：ISO时间",
+        "notes": ""
+      },
+      "reviewDraft": {
+        "mode": "review_draft_only",
+        "releaseDecisionDefault": "recheck",
+        "suggestedValues": {
+          "zoneTemperatureAfterC": "26",
+          "setpointFeedbackAfterC": "26"
+        },
+        "blockedAutoFillFields": [
+          "communicationAlarmAfter"
+        ],
+        "manualOnlyFields": [
+          "handledBy",
+          "handledAt",
+          "reviewedBy",
+          "reviewedAt",
+          "writePointMappingChecked",
+          "twoSampleNormal",
+          "localManualLockout",
+          "releaseDecision"
+        ],
+        "canSuggestAnyValue": true,
+        "cannotReleaseReasons": [
+          "communication_alarm",
+          "现场处理人/复核人/时间/写点核对/连续两次采样/手动锁定必须人工确认"
+        ],
+        "safetyBoundary": "草稿值只用于现场复核，不写入 signoff，不代表 release，不触发 BA/PLC。"
+      },
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ],
+      "plannedAction": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 QT02-502-40122 是否仍为 1。"
+      ],
+      "row": {
+        "workOrderId": "FCU-P0-QT02",
+        "deviceCode": "QT02",
+        "deviceName": "前厅02",
+        "handledBy": "",
+        "handledAt": "",
+        "communicationAlarmAfter": "",
+        "zoneTemperatureAfterC": "",
+        "setpointFeedbackAfterC": "",
+        "writePointMappingChecked": "",
+        "twoSampleNormal": "",
+        "localManualLockout": "",
+        "releaseDecision": "",
+        "reviewedBy": "",
+        "reviewedAt": "",
+        "notes": "当前异常=通讯报警未恢复 | 可参考草稿=zoneTemperatureAfterC:26；setpointFeedbackAfterC:26 | 必填=handledBy；handledAt；reviewedBy；reviewedAt；releaseDecision；communicationAlarmAfter；zoneTemperatureAfterC；writePointMappingChecked；twoSampleNormal；localManualLockout"
+      }
+    },
+    {
+      "workOrderId": "FCU-P0-WSJ02",
+      "priority": "P0",
+      "deviceCode": "WSJ02",
+      "deviceName": "卫生间02",
+      "owner": "BA/自控工程师",
+      "currentEvidence": {
+        "communicationAlarm": true,
+        "zoneTemperatureC": 0,
+        "setpointC": 0,
+        "qualityStatus": "invalid",
+        "reasons": [
+          "communication_alarm",
+          "zero_temperature",
+          "invalid_temperature",
+          "temperature_quality_guard",
+          "setpoint_feedback_out_of_bounds"
+        ],
+        "reasonLabels": [
+          "通讯报警未恢复",
+          "温度点为0°C",
+          "温度无效",
+          "温度质量门槛未通过",
+          "设定反馈越界"
+        ]
+      },
+      "requiredValues": {
+        "workOrderId": "",
+        "deviceCode": "",
+        "deviceName": "",
+        "handledBy": "必填：现场处理人",
+        "handledAt": "必填：ISO时间",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "必填：5-45",
+        "setpointFeedbackAfterC": "必填：10-32",
+        "writePointMappingChecked": "必填：yes/no",
+        "twoSampleNormal": "必填：yes/no",
+        "localManualLockout": "必填：none/manual/lockout",
+        "releaseDecision": "必填：hold/recheck/release",
+        "reviewedBy": "必填：复核人",
+        "reviewedAt": "必填：ISO时间",
+        "notes": ""
+      },
+      "reviewDraft": {
+        "mode": "review_draft_only",
+        "releaseDecisionDefault": "recheck",
+        "suggestedValues": {},
+        "blockedAutoFillFields": [
+          "communicationAlarmAfter",
+          "zoneTemperatureAfterC",
+          "setpointFeedbackAfterC"
+        ],
+        "manualOnlyFields": [
+          "handledBy",
+          "handledAt",
+          "reviewedBy",
+          "reviewedAt",
+          "writePointMappingChecked",
+          "twoSampleNormal",
+          "localManualLockout",
+          "releaseDecision"
+        ],
+        "canSuggestAnyValue": false,
+        "cannotReleaseReasons": [
+          "communication_alarm",
+          "zero_temperature",
+          "invalid_temperature",
+          "temperature_quality_guard",
+          "setpoint_feedback_out_of_bounds",
+          "现场处理人/复核人/时间/写点核对/连续两次采样/手动锁定必须人工确认"
+        ],
+        "safetyBoundary": "草稿值只用于现场复核，不写入 signoff，不代表 release，不触发 BA/PLC。"
+      },
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ],
+      "plannedAction": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 WSJ02-502-40130 是否仍为 1。",
+        "核对内置温度点 WSJ02-506-40427，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 WSJ02-506-40427，缺温度时禁止进入闭环。",
+        "复核设定反馈点 WSJ02-506-40431，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "row": {
+        "workOrderId": "FCU-P0-WSJ02",
+        "deviceCode": "WSJ02",
+        "deviceName": "卫生间02",
+        "handledBy": "",
+        "handledAt": "",
+        "communicationAlarmAfter": "",
+        "zoneTemperatureAfterC": "",
+        "setpointFeedbackAfterC": "",
+        "writePointMappingChecked": "",
+        "twoSampleNormal": "",
+        "localManualLockout": "",
+        "releaseDecision": "",
+        "reviewedBy": "",
+        "reviewedAt": "",
+        "notes": "当前异常=通讯报警未恢复；温度点为0°C；温度无效；温度质量门槛未通过；设定反馈越界 | 可参考草稿=无 | 必填=handledBy；handledAt；reviewedBy；reviewedAt；releaseDecision；communicationAlarmAfter；zoneTemperatureAfterC；writePointMappingChecked；twoSampleNormal；localManualLockout"
+      }
+    },
+    {
+      "workOrderId": "FCU-P0-ZHYS",
+      "priority": "P0",
+      "deviceCode": "ZHYS",
+      "deviceName": "中会议室",
+      "owner": "BA/自控工程师",
+      "currentEvidence": {
+        "communicationAlarm": true,
+        "zoneTemperatureC": 0,
+        "setpointC": 0,
+        "qualityStatus": "invalid",
+        "reasons": [
+          "communication_alarm",
+          "zero_temperature",
+          "invalid_temperature",
+          "temperature_quality_guard",
+          "setpoint_feedback_out_of_bounds"
+        ],
+        "reasonLabels": [
+          "通讯报警未恢复",
+          "温度点为0°C",
+          "温度无效",
+          "温度质量门槛未通过",
+          "设定反馈越界"
+        ]
+      },
+      "requiredValues": {
+        "workOrderId": "",
+        "deviceCode": "",
+        "deviceName": "",
+        "handledBy": "必填：现场处理人",
+        "handledAt": "必填：ISO时间",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "必填：5-45",
+        "setpointFeedbackAfterC": "必填：10-32",
+        "writePointMappingChecked": "必填：yes/no",
+        "twoSampleNormal": "必填：yes/no",
+        "localManualLockout": "必填：none/manual/lockout",
+        "releaseDecision": "必填：hold/recheck/release",
+        "reviewedBy": "必填：复核人",
+        "reviewedAt": "必填：ISO时间",
+        "notes": ""
+      },
+      "reviewDraft": {
+        "mode": "review_draft_only",
+        "releaseDecisionDefault": "recheck",
+        "suggestedValues": {},
+        "blockedAutoFillFields": [
+          "communicationAlarmAfter",
+          "zoneTemperatureAfterC",
+          "setpointFeedbackAfterC"
+        ],
+        "manualOnlyFields": [
+          "handledBy",
+          "handledAt",
+          "reviewedBy",
+          "reviewedAt",
+          "writePointMappingChecked",
+          "twoSampleNormal",
+          "localManualLockout",
+          "releaseDecision"
+        ],
+        "canSuggestAnyValue": false,
+        "cannotReleaseReasons": [
+          "communication_alarm",
+          "zero_temperature",
+          "invalid_temperature",
+          "temperature_quality_guard",
+          "setpoint_feedback_out_of_bounds",
+          "现场处理人/复核人/时间/写点核对/连续两次采样/手动锁定必须人工确认"
+        ],
+        "safetyBoundary": "草稿值只用于现场复核，不写入 signoff，不代表 release，不触发 BA/PLC。"
+      },
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ],
+      "plannedAction": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 ZHYS-502-40170 是否仍为 1。",
+        "核对内置温度点 ZHYS-506-40587，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 ZHYS-506-40587，缺温度时禁止进入闭环。",
+        "复核设定反馈点 ZHYS-506-40591，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "row": {
+        "workOrderId": "FCU-P0-ZHYS",
+        "deviceCode": "ZHYS",
+        "deviceName": "中会议室",
+        "handledBy": "",
+        "handledAt": "",
+        "communicationAlarmAfter": "",
+        "zoneTemperatureAfterC": "",
+        "setpointFeedbackAfterC": "",
+        "writePointMappingChecked": "",
+        "twoSampleNormal": "",
+        "localManualLockout": "",
+        "releaseDecision": "",
+        "reviewedBy": "",
+        "reviewedAt": "",
+        "notes": "当前异常=通讯报警未恢复；温度点为0°C；温度无效；温度质量门槛未通过；设定反馈越界 | 可参考草稿=无 | 必填=handledBy；handledAt；reviewedBy；reviewedAt；releaseDecision；communicationAlarmAfter；zoneTemperatureAfterC；writePointMappingChecked；twoSampleNormal；localManualLockout"
+      }
+    },
+    {
+      "workOrderId": "FCU-P0-ZZBGS",
+      "priority": "P0",
+      "deviceCode": "ZZBGS",
+      "deviceName": "周总",
+      "owner": "BA/自控工程师",
+      "currentEvidence": {
+        "communicationAlarm": true,
+        "zoneTemperatureC": 24,
+        "setpointC": 35,
+        "qualityStatus": "invalid",
+        "reasons": [
+          "communication_alarm",
+          "setpoint_feedback_out_of_bounds"
+        ],
+        "reasonLabels": [
+          "通讯报警未恢复",
+          "设定反馈越界"
+        ]
+      },
+      "requiredValues": {
+        "workOrderId": "",
+        "deviceCode": "",
+        "deviceName": "",
+        "handledBy": "必填：现场处理人",
+        "handledAt": "必填：ISO时间",
+        "communicationAlarmAfter": "必填：0",
+        "zoneTemperatureAfterC": "可选",
+        "setpointFeedbackAfterC": "必填：10-32",
+        "writePointMappingChecked": "必填：yes/no",
+        "twoSampleNormal": "必填：yes/no",
+        "localManualLockout": "必填：none/manual/lockout",
+        "releaseDecision": "必填：hold/recheck/release",
+        "reviewedBy": "必填：复核人",
+        "reviewedAt": "必填：ISO时间",
+        "notes": ""
+      },
+      "reviewDraft": {
+        "mode": "review_draft_only",
+        "releaseDecisionDefault": "recheck",
+        "suggestedValues": {
+          "zoneTemperatureAfterC": "24"
+        },
+        "blockedAutoFillFields": [
+          "communicationAlarmAfter",
+          "setpointFeedbackAfterC"
+        ],
+        "manualOnlyFields": [
+          "handledBy",
+          "handledAt",
+          "reviewedBy",
+          "reviewedAt",
+          "writePointMappingChecked",
+          "twoSampleNormal",
+          "localManualLockout",
+          "releaseDecision"
+        ],
+        "canSuggestAnyValue": true,
+        "cannotReleaseReasons": [
+          "communication_alarm",
+          "setpoint_feedback_out_of_bounds",
+          "现场处理人/复核人/时间/写点核对/连续两次采样/手动锁定必须人工确认"
+        ],
+        "safetyBoundary": "草稿值只用于现场复核，不写入 signoff，不代表 release，不触发 BA/PLC。"
+      },
+      "missingFields": [
+        "handledBy",
+        "handledAt",
+        "reviewedBy",
+        "reviewedAt",
+        "releaseDecision",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ],
+      "plannedAction": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 ZZBGS-502-40082 是否仍为 1。",
+        "复核设定反馈点 ZZBGS-506-40239，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "row": {
+        "workOrderId": "FCU-P0-ZZBGS",
+        "deviceCode": "ZZBGS",
+        "deviceName": "周总",
+        "handledBy": "",
+        "handledAt": "",
+        "communicationAlarmAfter": "",
+        "zoneTemperatureAfterC": "",
+        "setpointFeedbackAfterC": "",
+        "writePointMappingChecked": "",
+        "twoSampleNormal": "",
+        "localManualLockout": "",
+        "releaseDecision": "",
+        "reviewedBy": "",
+        "reviewedAt": "",
+        "notes": "当前异常=通讯报警未恢复；设定反馈越界 | 可参考草稿=zoneTemperatureAfterC:24 | 必填=handledBy；handledAt；reviewedBy；reviewedAt；releaseDecision；communicationAlarmAfter；zoneTemperatureAfterC；writePointMappingChecked；twoSampleNormal；localManualLockout"
+      }
+    }
+  ],
+  "rerunCommands": [
+    "npm --prefix apps/chiller-bff run check:fcu-field-remediation-signoff",
+    "npm --prefix apps/chiller-bff run check:fcu-field-remediation-closeout",
+    "npm --prefix apps/chiller-bff run build:fcu-final-control-worklist",
+    "npm --prefix apps/chiller-bff run build:fcu-final-control-runbook",
+    "npm --prefix apps/chiller-bff run check:fcu-final-control-evidence-consistency"
+  ],
+  "safetyBoundary": [
+    "本模板只用于现场回填和复核，不产生 BA/PLC 写入。",
+    "reviewDraft 只给现场复核参考，不自动写入 signoff 输入表。",
+    "release 只是现场放行意见，不等于系统允许真实下发。",
+    "所有设备仍必须通过实时 closeout、Canary readiness 和最终总门禁。"
+  ]
+}

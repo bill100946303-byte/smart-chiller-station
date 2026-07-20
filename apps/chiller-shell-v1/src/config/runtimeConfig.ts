@@ -1,4 +1,5 @@
 import { getStoredProjectSiteId } from "../services/projectSession";
+import { readSiteIdFromSearch } from "../services/siteRouting";
 
 export type TrendRange = "24h" | "7d" | "30d";
 
@@ -30,10 +31,16 @@ function resolveAppModeLabel(appMode: string, value: string | undefined): string
   if (appMode === "remote-integration") {
     return "远端联调";
   }
-  return "本地开发";
+  return "现场调试";
 }
 
 function resolveSiteId(): string {
+  if (typeof window !== "undefined") {
+    const routeSiteId = readSiteIdFromSearch(window.location.search);
+    if (routeSiteId) {
+      return routeSiteId;
+    }
+  }
   const storedSiteId = getStoredProjectSiteId();
   if (storedSiteId) {
     return storedSiteId;
@@ -46,10 +53,19 @@ const appMode = resolveAppMode(import.meta.env.VITE_APP_MODE);
 export const runtimeConfig = {
   appMode,
   appModeLabel: resolveAppModeLabel(appMode, import.meta.env.VITE_APP_MODE_LABEL),
-  readOnlyMode: normalizeBooleanFlag(import.meta.env.VITE_APP_READ_ONLY),
-  siteId: resolveSiteId(),
+  readOnlyMode:
+    import.meta.env.VITE_APP_READ_ONLY === undefined
+      ? true
+      : normalizeBooleanFlag(import.meta.env.VITE_APP_READ_ONLY),
+  sceneControlEnabled: normalizeBooleanFlag(import.meta.env.VITE_SCENE_CONTROL_ENABLED),
+  get siteId() {
+    return resolveSiteId();
+  },
   trendRange: normalizeTrendRange(import.meta.env.VITE_TREND_RANGE),
   badgeStateUrl: import.meta.env.VITE_UI_BADGE_STATE_URL || "/ui-badge-state-v1.8.json",
   sceneBaseUrl: import.meta.env.VITE_SCENE_BASE_URL || "http://127.0.0.1:4000",
-  legacyBaseUrl: import.meta.env.VITE_LEGACY_BASE_URL || "http://127.0.0.1:8098"
+  sceneIdle3dPrewarm: import.meta.env.VITE_SCENE_IDLE_3D_PREWARM === undefined
+    ? true
+    : normalizeBooleanFlag(import.meta.env.VITE_SCENE_IDLE_3D_PREWARM),
+  legacyBaseUrl: import.meta.env.VITE_LEGACY_BASE_URL || "https://www.ssge.com.cn:8098"
 };

@@ -1,0 +1,106 @@
+{
+  "generatedAt": "2026-06-16T05:25:05.634Z",
+  "site": {
+    "siteId": "140",
+    "siteCode": "btwentyfive",
+    "databaseKey": "140btwentyfive",
+    "projectKey": "126lnoffice",
+    "template": "1"
+  },
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "finalDecision": "GO_SHADOW_PENDING",
+  "health": {
+    "ok": true,
+    "payload": {
+      "ok": true,
+      "service": "chiller-bff",
+      "port": 8787,
+      "appMode": "local",
+      "appModeLabel": "本地开发",
+      "readOnlyMode": true,
+      "legacyBaseUrl": "https://www.ssge.com.cn:8098",
+      "realtimeParamsBaseUrl": "https://ln.szgreenenergy.com",
+      "realtimeParamsTimeoutMs": 1500,
+      "adminDbFile": "/Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/.local/admin.sqlite"
+    }
+  },
+  "tower": {
+    "validationStatus": "go_shadow_pending",
+    "total": 7,
+    "latestExecution": {
+      "executionId": "opx-140-1781587399486-17y2n9",
+      "status": "pending_approval",
+      "approvalStatus": "pending",
+      "title": "冷却塔 Approach shadow 待审单",
+      "type": "tower-approach",
+      "targetTcwsC": 28,
+      "targetApproachC": 2.5,
+      "targetChwpFreqTrimHz": null,
+      "targetCwpFreqTrimHz": null,
+      "guardrailSnapshot": {
+        "key": "chillerMinCondenserInletTempC",
+        "status": "ready",
+        "value": 30,
+        "message": "shadow 演示边界：不写 PLC，真实下发前需复核活跃机组最低冷凝水温。",
+        "resolvedBy": "demo-shadow-governance-reset",
+        "matchedKeys": [
+          "CH4",
+          "CH5",
+          "CH7"
+        ]
+      },
+      "rollbackTarget": {
+        "mode": "manual",
+        "targetTcwsC": 29,
+        "targetApproachC": null,
+        "reason": "异常或人工取消时回退到上一稳定 shadow 目标。"
+      },
+      "dispatch": null,
+      "timeline": [
+        {
+          "at": "2026-06-16T05:23:19.485Z",
+          "actorUserId": "codex-shadow-demo-operator",
+          "action": "created",
+          "note": "仅用于 shadow 演示待审，不代表真实下发。"
+        }
+      ]
+    }
+  },
+  "pump": {
+    "validationStatus": "go_shadow_pending",
+    "total": 7,
+    "latestExecution": {
+      "executionId": "opx-140-1781587399499-51v72r",
+      "status": "pending_approval",
+      "approvalStatus": "pending",
+      "title": "泵温差 shadow 待审单",
+      "type": "pump-delta-t",
+      "targetTcwsC": null,
+      "targetApproachC": null,
+      "targetChwpFreqTrimHz": -1,
+      "targetCwpFreqTrimHz": 0,
+      "guardrailSnapshot": null,
+      "rollbackTarget": {
+        "mode": "zero-trim",
+        "targetTcwsC": null,
+        "targetApproachC": null,
+        "reason": "取消 shadow 建议时回退到 0Hz 修正量。",
+        "targetChwpFreqTrimHz": 0,
+        "targetCwpFreqTrimHz": 0
+      },
+      "dispatch": null,
+      "timeline": [
+        {
+          "at": "2026-06-16T05:23:19.499Z",
+          "actorUserId": "codex-shadow-demo-operator",
+          "action": "created",
+          "note": "仅用于 shadow 演示待审，不代表真实下发。"
+        }
+      ]
+    }
+  },
+  "blockers": [],
+  "warnings": [
+    "存在历史已批准 tower shadow 旧记录：opx-140-1781576068903-ag7ns3"
+  ]
+}

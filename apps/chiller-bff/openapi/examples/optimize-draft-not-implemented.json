@@ -1,0 +1,411 @@
+{
+  "ok": false,
+  "code": "NOT_IMPLEMENTED",
+  "error": "Optimize engine is not implemented yet; returning a context-backed draft",
+  "requestId": "req-1775627459631",
+  "details": {
+    "site": {
+      "siteId": "btwentyfive"
+    },
+    "decision": {
+      "summary": "context-backed draft derived from current station overview; no recommendation cards matched, requested scenario estimatedPowerRatio=0.14; historical benchmark ready (10%~20%负荷区间, samples=3)",
+      "confidence": "rule-based-draft-partial"
+    },
+    "request": {
+      "loadKw": 1200,
+      "outdoorTempC": 27.6,
+      "mode": "cooling"
+    },
+    "recommendation": {
+      "systemCop": 7.7,
+      "totalPowerKw": 1133.9,
+      "steps": [
+        "Use current station snapshot as draft baseline: COP=7.7, totalPowerKw=1133.9",
+        "Requested scenario implies lower draft power than the current snapshot (ratio=0.14); validate whether the current equipment mix can be relaxed",
+        "Requested scenario fixed for draft review: loadKw=1200, outdoorTempC=27.6, mode=cooling"
+      ]
+    },
+    "gate": {
+      "level": "caution",
+      "title": "谨慎评审",
+      "reason": "当前草案仍存在部分降级或缺测信号，建议谨慎评审。"
+    },
+    "baseline": {
+      "systemCop": 7.7,
+      "totalPowerKw": 1133.9,
+      "chilledDeltaT": 3.7,
+      "coolingDeltaT": 4.8,
+      "chillerPowerKw": 907.7,
+      "chilledPumpPowerKw": 112.8,
+      "coolingPumpPowerKw": 64.3,
+      "coolingTowerPowerKw": 49.1,
+      "chilledSupplyTemp": 9,
+      "coolingReturnTemp": 25.4,
+      "thermalUnbalanceRate": null,
+      "activeAlarmCount": 0
+    },
+    "historyBenchmark": {
+      "mode": "load-band",
+      "status": "ready",
+      "matchedBucketLabel": "10%~20%负荷区间",
+      "matchedMonthCount": 3,
+      "matchedWetBulbBands": [],
+      "sampleCount": 3,
+      "referenceCop": {
+        "low": 4.3,
+        "median": 4.47,
+        "high": 4.82
+      },
+      "currentGap": {
+        "copDeltaToMedian": -3.23,
+        "powerDeltaKwToMedian": -865.4
+      },
+      "availabilityReasonCode": "history_calendar_fallback",
+      "matchingTier": "load-only-fallback",
+      "fallbackLevel": 2,
+      "requestedWetBulbC": 27.6,
+      "matchedWetBulbBand": null,
+      "wetBulbToleranceC": 2,
+      "confidence": "low",
+      "ratedCoolingCapacityKw": 8440.8,
+      "requestedLoadRatePct": 14.2,
+      "sampleWindow": {
+        "defaultMonths": ["2026-04", "2026-03", "2026-02"],
+        "months": ["2026-04", "2026-03", "2026-02"],
+        "maxMonths": 6
+      },
+      "note": "历史对标采用草案筛选口径按负荷区间与湿球边界回退，不执行真实控制；当前历史占比样本不足，已回退到历史日历日均冷量估算。",
+      "links": {
+        "proportionHref": {
+          "href": "/energy-efficiency?tab=proportion",
+          "enabled": true,
+          "label": "看占比"
+        },
+        "compareHref": {
+          "href": "/energy-efficiency?tab=compare",
+          "enabled": true,
+          "label": "看对比"
+        }
+      }
+    },
+    "benefitEstimate": {
+      "status": "ready",
+      "opportunityLevel": "high",
+      "confidence": "low",
+      "expectedTargetCop": 4.47,
+      "expectedTargetPowerKw": 268.5,
+      "expectedPowerDeltaKw": -865.4,
+      "expectedPowerDeltaPct": -0.76,
+      "expectedCopDelta": -3.23,
+      "basis": {
+        "matchingTier": "load-only-fallback",
+        "fallbackLevel": 2,
+        "sampleCount": 3,
+        "monthCount": 3,
+        "matchedMonthCount": 3,
+        "matchedWetBulbBands": []
+      },
+      "disclaimer": "历史对标收益为草案估算，不代表真实节能结果"
+    },
+    "towerApproachAdvisor": {
+      "status": "partial",
+      "currentApproachC": -7,
+      "currentTcwsC": 20.6,
+      "requestedWetBulbC": 27.6,
+      "targetApproachC": 1.8,
+      "targetTcwsC": 29.4,
+      "targetBandC": {
+        "low": 1.8,
+        "high": 3.8,
+        "label": "低负荷区间"
+      },
+      "executionReady": false,
+      "controlMode": "manual-approval-required",
+      "reason": "目标冷却水温触及机组最低温约束，需人工复核后再执行。",
+      "disclaimer": "当前仅提供接近度草案建议，不执行真实控制。",
+      "guardrails": [
+        {
+          "key": "alarmGate",
+          "status": "ready",
+          "value": "caution",
+          "message": "门禁允许继续评审接近度调节建议。"
+        },
+        {
+          "key": "chillerMinCondenserInletTempC",
+          "status": "ready",
+          "value": 30.2,
+          "message": "目标冷却水温必须高于该下限。"
+        },
+        {
+          "key": "towerControlStep",
+          "status": "ready",
+          "value": "≤0.5℃/step",
+          "message": "建议按小步长调整，避免塔风机频繁反向。"
+        }
+      ]
+    },
+    "reviewReadiness": {
+      "status": "partial",
+      "score": 66,
+      "reason": "关键现态齐全，但门禁仍提示谨慎，建议先做保守评审",
+      "missingSignals": [],
+      "hints": [
+        "先查看设备级动作卡，确认高优先级前置条件",
+        "继续打开趋势页核对 COP 与总功率变化",
+        "若需要稳妥推进，优先从保守方案开始"
+      ]
+    },
+    "schemes": [
+      {
+        "key": "conservative",
+        "title": "保守方案",
+        "status": "ready",
+        "riskLevel": "medium",
+        "focus": "先稳住风险",
+        "label": "保守方案",
+        "targetPowerKw": 155.8,
+        "targetCop": 7.7,
+        "powerDeltaPct": -0.86,
+        "copDelta": 0,
+        "deviceActions": [
+          {
+            "system": "system",
+            "action": "维持现态观测并补齐关键测点",
+            "target": "优先确保 COP、总功率、温差连续",
+            "reason": "可用的效率信号不足以生成设备级动作",
+            "risk": "low",
+            "priority": "low",
+            "preconditions": ["持续回传核心测点后再进入设备级优化"]
+          }
+        ],
+        "readiness": {
+          "score": 56,
+          "level": "caution",
+          "reason": "当前方案可保守评审，建议先核对前置条件",
+          "blockers": [],
+          "checkpoints": ["持续回传核心测点后再进入设备级优化"]
+        },
+        "actions": [
+          "Use current station snapshot as draft baseline: COP=7.7, totalPowerKw=1133.9",
+          "Requested scenario implies lower draft power than the current snapshot (ratio=0.14); validate whether the current equipment mix can be relaxed",
+          "Requested scenario fixed for draft review: loadKw=1200, outdoorTempC=27.6, mode=cooling"
+        ],
+        "links": {
+          "devices": {
+            "href": "/devices",
+            "enabled": true,
+            "label": "看设备"
+          },
+          "trends": {
+            "href": "/trend-analysis?metric=totalPowerKw&range=24h",
+            "enabled": true,
+            "label": "看趋势"
+          },
+          "scene": {
+            "href": "/scene-control?mode=2d&floor=10",
+            "enabled": true,
+            "label": "看场景"
+          }
+        }
+      },
+      {
+        "key": "balanced",
+        "title": "平衡方案",
+        "status": "caution",
+        "riskLevel": "medium",
+        "focus": "兼顾效率与稳定",
+        "label": "平衡方案",
+        "targetPowerKw": 268.5,
+        "targetCop": 4.5,
+        "powerDeltaPct": -0.76,
+        "copDelta": -3.23,
+        "deviceActions": [
+          {
+            "system": "system",
+            "action": "维持现态观测并补齐关键测点",
+            "target": "优先确保 COP、总功率、温差连续",
+            "reason": "可用的效率信号不足以生成设备级动作",
+            "risk": "low",
+            "priority": "low",
+            "preconditions": ["持续回传核心测点后再进入设备级优化"]
+          }
+        ],
+        "readiness": {
+          "score": 55,
+          "level": "caution",
+          "reason": "当前方案可保守评审，建议先核对前置条件",
+          "blockers": [],
+          "checkpoints": ["持续回传核心测点后再进入设备级优化"]
+        },
+        "actions": [
+          "Use current station snapshot as draft baseline: COP=7.7, totalPowerKw=1133.9",
+          "Requested scenario implies lower draft power than the current snapshot (ratio=0.14); validate whether the current equipment mix can be relaxed",
+          "Requested scenario fixed for draft review: loadKw=1200, outdoorTempC=27.6, mode=cooling"
+        ],
+        "links": {
+          "devices": {
+            "href": "/devices",
+            "enabled": true,
+            "label": "看设备"
+          },
+          "trends": {
+            "href": "/trend-analysis?metric=totalPowerKw&range=24h",
+            "enabled": true,
+            "label": "看趋势"
+          },
+          "scene": {
+            "href": "/scene-control?mode=2d&floor=10",
+            "enabled": true,
+            "label": "看场景"
+          }
+        }
+      },
+      {
+        "key": "efficiencyFirst",
+        "title": "节能优先",
+        "status": "blocked",
+        "riskLevel": "high",
+        "focus": "优先挖节能空间",
+        "label": "节能优先",
+        "targetPowerKw": 249,
+        "targetCop": 4.8,
+        "powerDeltaPct": -0.78,
+        "copDelta": -2.88,
+        "deviceActions": [
+          {
+            "system": "system",
+            "action": "维持现态观测并补齐关键测点",
+            "target": "优先确保 COP、总功率、温差连续",
+            "reason": "可用的效率信号不足以生成设备级动作",
+            "risk": "low",
+            "priority": "low",
+            "preconditions": ["持续回传核心测点后再进入设备级优化"]
+          }
+        ],
+        "readiness": {
+          "score": 15,
+          "level": "blocked",
+          "reason": "关键现态或前置条件不足，方案暂不可执行",
+          "blockers": [],
+          "checkpoints": ["持续回传核心测点后再进入设备级优化"]
+        },
+        "actions": [
+          "Use current station snapshot as draft baseline: COP=7.7, totalPowerKw=1133.9",
+          "Requested scenario implies lower draft power than the current snapshot (ratio=0.14); validate whether the current equipment mix can be relaxed",
+          "Requested scenario fixed for draft review: loadKw=1200, outdoorTempC=27.6, mode=cooling"
+        ],
+        "links": {
+          "devices": {
+            "href": "/devices",
+            "enabled": true,
+            "label": "看设备"
+          },
+          "trends": {
+            "href": "/trend-analysis?metric=totalPowerKw&range=24h",
+            "enabled": true,
+            "label": "看趋势"
+          },
+          "scene": {
+            "href": "/scene-control?mode=2d&floor=10",
+            "enabled": true,
+            "label": "看场景"
+          }
+        }
+      }
+    ],
+    "ruleEvidence": {
+      "matchedCount": 0,
+      "skippedCount": 0,
+      "matchedRuleIds": [],
+      "skippedRules": [],
+      "primaryCards": []
+    },
+    "draftLabel": "规则估算草案，仅供方案评审",
+    "diagnostics": [
+      "overview.sourceStatus=ok",
+      "anomalySummary.sourceStatus=partial, totalAlarms=0",
+      "recommendations.sourceStatus=partial, cards=0",
+      "ruleEvaluation.matched=0, skipped=0",
+      "historyBenchmark.status=ready, samples=3",
+      "optimize engine is not implemented; current response is a context-backed draft only"
+    ],
+    "freshness": {
+      "latestTimestamp": "2026-04-08T05:50:00.000Z",
+      "stale": false,
+      "ageHours": 0.02
+    },
+    "sourceStatus": {
+      "overall": "partial",
+      "sources": [
+        {
+          "key": "dashboardOverview",
+          "endpoint": "/bff/v1/sites/btwentyfive/dashboard/overview",
+          "ok": true,
+          "fallback": false,
+          "reasonCode": "ready",
+          "status": null,
+          "message": "ok",
+          "error": null,
+          "rows": 3
+        },
+        {
+          "key": "anomalySummary",
+          "endpoint": "/bff/v1/sites/btwentyfive/anomalies/summary",
+          "ok": true,
+          "fallback": false,
+          "reasonCode": "upstream_5xx",
+          "status": null,
+          "message": "partial",
+          "error": null,
+          "rows": 2
+        },
+        {
+          "key": "recommendations",
+          "endpoint": "/bff/v1/sites/btwentyfive/recommendations",
+          "ok": true,
+          "fallback": false,
+          "reasonCode": "partial_fallback",
+          "status": null,
+          "message": "partial",
+          "error": null,
+          "rows": 8
+        },
+        {
+          "key": "historyBenchmark",
+          "endpoint": "/bff/v1/sites/btwentyfive/energy-efficiency/calendar",
+          "ok": true,
+          "fallback": false,
+          "reasonCode": "history_calendar_fallback",
+          "status": null,
+          "message": "ready",
+          "error": null,
+          "rows": 3
+        },
+        {
+          "key": "optimizeDraft",
+          "endpoint": "/bff/v1/sites/btwentyfive/optimize",
+          "ok": false,
+          "fallback": false,
+          "reasonCode": "draft_not_implemented",
+          "status": null,
+          "message": "context-backed draft only",
+          "error": "not implemented",
+          "rows": null
+        }
+      ]
+    },
+    "generatedAt": "2026-04-08T05:50:59.630Z",
+    "executionHub": {
+      "status": "pending",
+      "approvalRequired": true,
+      "endpoint": "/bff/v1/sites/btwentyfive/optimize/executions",
+      "pendingApprovalCount": 2,
+      "approvedCount": 1,
+      "rolledBackCount": 11,
+      "latestExecutionId": "opx-btwentyfive-1775626156227-fns53u",
+      "latestExecutionStatus": "rolled_back",
+      "latestExecutionAt": "2026-04-08T05:29:17.637Z",
+      "note": "执行链路为治理态模拟，不下发真实控制。"
+    }
+  }
+}

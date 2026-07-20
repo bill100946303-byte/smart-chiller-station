@@ -1,0 +1,75 @@
+.boiler-room-page {
+  --boiler-accent: #f2aa61;
+  --boiler-accent-soft: rgba(242, 170, 97, 0.16);
+  --station-accent: var(--boiler-accent);
+  --station-accent-soft: var(--boiler-accent-soft);
+}
+
+.boiler-room-page .section-card-header h2 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: #eaf5ff;
+  font-size: clamp(12px, 1.04vw, 13.5px);
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.boiler-room-page .boiler-room-hero {
+  border-color: rgba(242, 170, 97, 0.2);
+  background:
+    linear-gradient(110deg, rgba(242, 170, 97, 0.08), transparent 38%),
+    var(--panel-bg);
+}
+
+.boiler-room-page .boiler-process-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.boiler-room-page .boiler-process-card::after {
+  position: absolute;
+  right: 24px;
+  bottom: -44px;
+  width: 160px;
+  height: 160px;
+  border: 1px solid rgba(242, 170, 97, 0.12);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.boiler-room-page .boiler-source-node,
+.boiler-room-page .boiler-single-line.is-enabled .power-node {
+  border-color: rgba(242, 170, 97, 0.24);
+}
+
+.boiler-room-page .boiler-source-node > svg,
+.boiler-room-page .boiler-single-line .power-node > svg {
+  color: var(--boiler-accent);
+}
+
+.boiler-room-page .boiler-single-line .power-bus::before,
+.boiler-room-page .boiler-single-line .power-bus::after {
+  background: rgba(242, 170, 97, 0.42);
+}
+
+.boiler-room-page .boiler-boundary-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 8px !important;
+}
+
+.boiler-room-page .boiler-boundary-note svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--boiler-accent);
+}
+
+@media (max-width: 720px) {
+  .boiler-room-page .boiler-process-card::after {
+    display: none;
+  }
+}

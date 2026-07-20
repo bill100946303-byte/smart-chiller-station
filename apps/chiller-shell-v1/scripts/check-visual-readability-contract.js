@@ -1,0 +1,1850 @@
+import fs from "node:fs";
+import path from "node:path";
+
+// Guards the compact industrial UI against the readability regressions found in
+// browser QA: active status text must remain visible and engineering chart labels
+// must not collapse below the operator-readable size.
+
+const SHELL_ROOT = path.resolve(process.cwd());
+const STYLE_FILES = [
+  path.join(SHELL_ROOT, "src/styles/global.css"),
+  path.join(SHELL_ROOT, "src/pages/AlarmPageExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/WorkOrdersExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/EnergyEfficiencyExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/DashboardExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/OptimizeDemoExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/SceneControlExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/ReportRecordsExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/OperationRecordsExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/EnergyParametersExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/MeterReadingExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/PerformanceReportExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/ColdStationLogExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/EnvironmentConditionsExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/SystemOverviewExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/KnowledgeBaseExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/ProjectSelectionExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/AiOverviewExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/OperationalDiagnosticsExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/ConfigCenterEntryExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/HvacTerminalExtracted.css"),
+  path.join(SHELL_ROOT, "src/pages/EnergyAnalysisShared.css"),
+  path.join(SHELL_ROOT, "src/components/dashboard/TrendAnalysisShared.css"),
+  path.join(SHELL_ROOT, "src/pages/PowerMonitoringShared.css"),
+  path.join(SHELL_ROOT, "src/pages/DeviceOverviewShared.css")
+];
+const DASHBOARD_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/DashboardPage.tsx");
+const APP_SHELL_FILE = path.join(SHELL_ROOT, "src/layout/AppShell.tsx");
+const ALARM_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/AlarmPage.tsx");
+const SYSTEM_OVERVIEW_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/SystemOverviewPage.tsx");
+const OPTIMIZE_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/OptimizeDemoPage.tsx");
+const SCENE_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/SceneControlPage.tsx");
+const COMPRESSED_AIR_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/CompressedAirMonitoringPage.tsx");
+const HVAC_TERMINAL_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/HvacTerminalMonitoringPage.tsx");
+const AI_OVERVIEW_PAGE_FILE = path.join(SHELL_ROOT, "src/pages/AiOverviewPage.tsx");
+const BFF_CLIENT_FILE = path.join(SHELL_ROOT, "src/services/bffClient.ts");
+const SUBSYSTEM_STATUS_FILE = path.join(SHELL_ROOT, "src/utils/subsystemStatus.ts");
+const QA_SEED_FILE = path.join(SHELL_ROOT, "public/qa-auth-seed.html");
+const COMPACT_MOBILE_SAFETY_FILE = path.join(SHELL_ROOT, "src/styles/compact-mobile-safety.css");
+
+const TREND_ACTIVE_MARKER =
+  "/* Trend control active state: avoid dark text disappearing when gradient rendering is degraded. */";
+const TREND_ACTIVE_SELECTOR =
+  ".trend-analysis-page--effect .trend-control-row button.is-active";
+const TREND_GENERIC_BUTTON_SELECTOR =
+  ".trend-analysis-page button,\n.content.is-subpage-compact .trend-analysis-page button";
+const THERMAL_LABEL_SELECTOR =
+  "html body #root .energy-efficiency-page .energy-efficiency-imbalance-threshold-label";
+const THERMAL_BASE_SELECTOR =
+  ".energy-efficiency-page .energy-efficiency-imbalance-threshold-label";
+const ALARM_QUEUE_GUARD_MARKER =
+  "/* Alarm queue final guard: keep row facts readable without expanding page scroll. */";
+const SYSTEM_VERDICT_MARKER =
+  "/* System overview verdict badge: keep shadow-validation status readable on low-brightness displays. */";
+const SYSTEM_VERDICT_SELECTOR =
+  ".system-overview-one-screen .system-overview-verdict em";
+const SYSTEM_OVERVIEW_768P_MARKER =
+  "/* System overview 768p terminal guard: keep topology, diagnosis and audit actions in one duty-screen viewport. */";
+const SYSTEM_OVERVIEW_768P_PAGE_SELECTOR =
+  "html body #root#root#root#root .content.is-subpage-compact > .system-page.system-overview-one-screen";
+const HVAC_OVERVIEW_NO_OVERLAP_MARKER =
+  "/* HVAC overview desktop no-overlap guard: align grid tracks with rendered hero/KPI minimum heights. */";
+const DEVICE_OVERVIEW_NO_OVERLAP_MARKER =
+  "/* Device overview desktop no-overlap guard: the title track must match the rendered header minimum height. */";
+const PROJECT_RANK_MARKER =
+  "/* Project queue rank badge: avoid low-contrast green-on-green badges on the selected card. */";
+const PROJECT_RANK_SELECTOR =
+  ".project-switch-page .project-switch-rank";
+const DENSE_PAGE_GUARD_MARKER =
+  "/* 720p final no-clip guard: keep dense audit/status panels readable without adding page scroll. */";
+const HIGHEST_PRIORITY_GUARD_MARKER =
+  "/* Highest-priority 720p no-clip correction after rendered audit. */";
+const NAV_COUNT_SELECTOR = ".nav-module-count";
+const PROJECT_PAGE_SELECTOR = ".content.is-subpage-compact > .project-switch-page";
+const PERFORMANCE_SIDE_SELECTOR = ".performance-report-page--compact .performance-report-compact-side";
+const PERFORMANCE_SUMMARY_PANEL_SELECTOR = ".performance-report-page--compact .performance-report-summary-panel";
+const WORK_ORDER_PAGE_SELECTOR = "html body #root .content.is-subpage-compact .work-order-page";
+const ENERGY_ANALYSIS_METRIC_SELECTOR =
+  "html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-metric";
+const STATUS_CHIP_CONTRAST_MARKER =
+  "/* Status chip contrast guard: colored pills must remain readable on dark SCADA panels. */";
+const ENERGY_TREE_COUNT_SELECTOR =
+  "html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-tree-count";
+const STATUS_CHIP_WARN_SELECTOR =
+  "html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-source-row em.is-warn";
+const RENDERED_720P_NO_CLIP_MARKER =
+  "/* Rendered 720p no-clip pass: keep compact engineering panels complete at 1280x720. */";
+const PERFORMANCE_SUMMARY_FINAL_MARKER =
+  "/* Performance report summary final two-row guard: show all four summary facts. */";
+const DASHBOARD_COCKPIT_FINAL_MARKER =
+  "/* Dashboard cockpit final no-cut guard: small status facts must not clip vertically at 1280x720. */";
+const WORK_ORDER_HEADER_FINAL_MARKER =
+  "/* Work-order header final no-overlap guard: top status metrics must not be covered by the query panel. */";
+const TREND_STATS_FINAL_MARKER =
+  "/* Trend series stats final no-clip guard: show every metric statistic in the right panel at 1280x720. */";
+const TREND_MOBILE_TITLE_MARKER =
+  "/* Trend mobile title-row guard: keep the page title intact above long freshness copy. */";
+const TREND_MOBILE_TITLE_ROW_SELECTOR =
+  "html body #root#root#root#root .content.is-subpage-compact .trend-analysis-page--effect .trend-title-row";
+const TREND_MOBILE_H1_SELECTOR =
+  "html body #root#root#root#root .content.is-subpage-compact .trend-analysis-page--effect .trend-title-row h1";
+const OPTIMIZE_RESULT_SPOTLIGHT_MARKER =
+  "/* Optimize advice result emphasis: make the generated outcome read as the primary result. */";
+const OPTIMIZE_RESULT_OVERLAP_MARKER =
+  "/* Optimize generated-result overlap guard: reserve real space for input scenario review after advice generation. */";
+const OPTIMIZE_RESULT_CARD_NO_CLIP_MARKER =
+  "/* Optimize result card no-clip guard: keep the five generated outcomes in one row at 1280px. */";
+const OPTIMIZE_COMPACT_METRIC_NO_CLIP_MARKER =
+  "/* Optimize compact metric no-clip guard: keep power and window values readable in the first viewport. */";
+const OPTIMIZE_PAGE_GRID_SELECTOR =
+  "html body #root .content.is-subpage-compact:has(> .optimize-page) > .optimize-page";
+const OPTIMIZE_INPUT_STATUS_GRID_SELECTOR =
+  "html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid";
+const OPTIMIZE_INPUT_FORM_SELECTOR =
+  "html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid > .section-card:first-child .optimize-form";
+const OPTIMIZE_INPUT_FORM_MAIN_SELECTOR =
+  "html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid > .section-card:first-child .optimize-form-main";
+const OPTIMIZE_INPUT_PREFILL_META_SELECTOR =
+  "html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid > .section-card:first-child .optimize-form-prefill-meta";
+const OPTIMIZE_INPUT_PREFILL_META_LAST_SELECTOR =
+  "html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid > .section-card:first-child .optimize-form-prefill-meta span:last-child";
+const ENERGY_CALENDAR_VALUE_FINAL_MARKER =
+  "/* Energy efficiency calendar value final guard: reserve enough width for daily kWh/cooling figures at 1280x720. */";
+const BOTTOM_SAFE_AREA_MARKER =
+  "/* 720p bottom safe-area guard: keep footer facts and scene controls clear of the viewport edge. */";
+const FINAL_FOOTER_CLEARANCE_MARKER =
+  "/* Rendered 720p final footer clearance guard: latest cascade wins over dense page overrides. */";
+const FINAL_FOOTER_ENERGY_ANALYSIS_PAGE_SELECTOR =
+  "html body #root .content.is-subpage-compact > .energy-analysis-compact-page-v2";
+const FINAL_FOOTER_ENERGY_ANALYSIS_BOUNDARY_SELECTOR =
+  "html body #root .content.is-subpage-compact .energy-analysis-compact-page-v2 .energy-analysis-compact-boundary";
+const ENERGY_ANALYSIS_NO_OVERLAP_GRID_MARKER =
+  "/* Energy analysis grid no-overlap guard: final tracks must match the rendered hero and KPI minimum heights. */";
+const ENERGY_ANALYSIS_NO_OVERLAP_GRID_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact > .energy-analysis-compact-page-v2";
+const FINAL_FOOTER_ENERGY_PARAMETER_PAGE_SELECTOR =
+  "html body #root .content.is-subpage-compact > .energy-parameter-compact-page-v2";
+const FINAL_FOOTER_ENERGY_PARAMETER_BOUNDARY_SELECTOR =
+  "html body #root .content.is-subpage-compact .energy-parameter-compact-page-v2 .energy-parameter-compact-boundary";
+const FINAL_FOOTER_SCENE_PAGE_SELECTOR =
+  "html body #root .content.is-scene-embed-content .scene-embed-page";
+const FINAL_FOOTER_SCENE_SWITCHBAR_SELECTOR =
+  "html body #root .content.is-scene-embed-content .scene-embed-switchbar";
+const FINAL_FOOTER_SCENE_CURRENT_STRONG_SELECTOR =
+  "html body #root .content.is-scene-embed-content .scene-embed-current strong";
+const SCENE_NATIVE_2D_VIEWPORT_RULE_MARKER =
+  "function createSceneNative2dViewport(input: SceneNativeViewportPresetInput): SceneNativeViewportPreset";
+const FINAL_FOOTER_METER_PAGE_SELECTOR =
+  "html body #root .content.is-subpage-compact > .meter-reading-compact-page-v2";
+const FINAL_FOOTER_METER_BOUNDARY_SELECTOR =
+  "html body #root .content.is-subpage-compact .meter-reading-compact-page-v2 .meter-reading-compact-boundary";
+const FINAL_FOOTER_ALARM_FOOTER_SELECTOR =
+  "html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-footer-grid";
+const FINAL_FOOTER_REPORT_FOOTER_SELECTOR =
+  "html body #root .content.is-subpage-compact.has-secondary-nav .report-record-table-footer";
+const ENERGY_STATION_ACCEPTANCE_MARKER =
+  "/* 3001 energy-station acceptance pass: keep the demo-critical pages inside 720p duty screens. */";
+const ENERGY_STATION_ACCEPTANCE_V2_MARKER =
+  "/* 3001 energy-station acceptance pass v2: keep air KPI badges and AI recommendation rows fully visible. */";
+const ENERGY_STATION_DASHBOARD_CONTENT_SELECTOR =
+  "html body #root#root#root .content.is-dashboard-content";
+const ENERGY_STATION_AIR_CONTENT_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .power-monitor-page)";
+const ENERGY_STATION_AI_CONTENT_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .ai-overview-page)";
+const ENERGY_STATION_DASHBOARD_PAGE_SELECTOR =
+  "html body #root#root#root .content.is-dashboard-content > .dashboard-cockpit-v2";
+const ENERGY_STATION_AIR_PAGE_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .power-monitor-page) > .power-monitor-page";
+const ENERGY_STATION_AIR_KPI_CARD_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .power-monitor-page) .power-kpi-grid .stat-card";
+const ENERGY_STATION_AI_PAGE_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .ai-overview-page) > .ai-overview-page";
+const ENERGY_STATION_AI_MAIN_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .ai-overview-page) .ai-overview-main";
+const ENERGY_STATION_AI_BOTTOM_GRID_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .ai-overview-page) .ai-bottom-grid";
+const ENERGY_STATION_AI_REC_ROW_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .ai-overview-page) .ai-rec-row";
+const ENERGY_STATION_AI_SUBSYSTEM_GRID_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .ai-overview-page) .ai-subsystem-advice-grid";
+const ENERGY_STATION_AI_SUBSYSTEM_CARD_SELECTOR =
+  "html body #root#root#root .content.is-subpage-compact:has(> .ai-overview-page) .ai-subsystem-advice-card";
+const ENERGY_PARAMETER_FINAL_GRID_SELECTOR =
+  "html body #root .content.is-subpage-compact > .energy-parameter-compact-page-v2";
+const METER_READING_FINAL_GRID_SELECTOR =
+  "html body #root .content.is-subpage-compact > .meter-reading-compact-page-v2";
+const PERFORMANCE_FINAL_SIDE_SELECTOR =
+  "html body #root .content.is-subpage-compact .performance-report-page--compact .performance-report-compact-side";
+const PERFORMANCE_FINAL_QUERY_SELECTOR =
+  "html body #root .content.is-subpage-compact .performance-report-page--compact .performance-report-compact-query";
+const PERFORMANCE_FINAL_SUMMARY_GRID_SELECTOR =
+  "html body #root .content.is-subpage-compact .performance-report-page--compact .performance-report-summary-grid";
+const PERFORMANCE_FINAL_SUMMARY_STRONG_SELECTOR =
+  "html body #root .content.is-subpage-compact .performance-report-page--compact .performance-report-summary-grid strong";
+const DASHBOARD_COCKPIT_CONTROL_SMALL_SELECTOR =
+  "html body #root .content.is-dashboard-content .dashboard-cockpit-control-row small";
+const SCENE_ACTIVE_SELECTOR =
+  "html body #root .content.is-subpage-compact .scene-embed-actions button.active";
+const SYSTEM_ACTION_SELECTOR =
+  "html body #root .content.is-subpage-compact .system-overview-one-screen .system-overview-actions a";
+const OPERATION_RECORD_PRIMARY_SELECTOR =
+  "html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-button.is-primary";
+const WORK_ORDER_FINAL_PAGE_SELECTOR =
+  "html body #root .content.is-subpage-compact .work-order-page";
+const WORK_ORDER_FINAL_COMMAND_COPY_SELECTOR =
+  "html body #root .content.is-subpage-compact .work-order-page .work-order-command-copy";
+const WORK_ORDER_FINAL_DESCRIPTION_SELECTOR =
+  "html body #root .content.is-subpage-compact .work-order-page .work-order-command-copy > p:not(.work-order-eyebrow)";
+const WORK_ORDER_FINAL_SUMMARY_GRID_SELECTOR =
+  "html body #root .content.is-subpage-compact .work-order-page .work-order-command-summary-grid";
+const WORK_ORDER_FINAL_SIDE_SELECTOR =
+  "html body #root .content.is-subpage-compact .work-order-page .work-order-command-side";
+const WORK_ORDER_FINAL_STAT_STRONG_SELECTOR =
+  "html body #root .content.is-subpage-compact .work-order-page .work-order-command-stat strong";
+const WORK_ORDER_FINAL_SIDE_STRONG_SELECTOR =
+  "html body #root .content.is-subpage-compact .work-order-page .work-order-command-side > strong";
+const WORK_ORDER_FINAL_SIDE_COPY_SELECTOR =
+  "html body #root .content.is-subpage-compact .work-order-page .work-order-command-side > p";
+const WORK_ORDER_FINAL_FILTER_COPY_SELECTOR =
+  "html body #root .content.is-subpage-compact .work-order-page .work-order-filter-panel > p";
+const TREND_FINAL_MAIN_GRID_SELECTOR =
+  "html body #root .content.is-subpage-compact.has-secondary-nav .trend-analysis-page--effect .trend-main-grid";
+const TREND_FINAL_STATS_HINT_SELECTOR =
+  "html body #root .content.is-subpage-compact.has-secondary-nav .trend-analysis-page--effect .trend-main-grid > .section-card:nth-child(2) .empty-hint";
+const TREND_FINAL_STATS_LIST_SELECTOR =
+  "html body #root .content.is-subpage-compact.has-secondary-nav .trend-analysis-page--effect .trend-stat-list--compact";
+const TREND_FINAL_STATS_ITEM_SELECTOR =
+  "html body #root .content.is-subpage-compact.has-secondary-nav .trend-analysis-page--effect .trend-stat-list--compact .trend-stat-item";
+const OPTIMIZE_RESULT_STAGE_SELECTOR =
+  "html body #root .content.is-subpage-compact .optimize-page .optimize-workspace-stage";
+const OPTIMIZE_RESULT_CARD_GRID_SELECTOR =
+  "html body #root .content.is-subpage-compact .optimize-page .optimize-result-card-grid";
+const OPTIMIZE_RESULT_CARD_STRONG_SELECTOR =
+  "html body #root .content.is-subpage-compact .optimize-page .optimize-result-card-grid strong";
+const OPTIMIZE_RESULT_PRIMARY_CARD_SELECTOR =
+  "html body #root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.is-primary";
+const OPTIMIZE_RESULT_PRIMARY_STRONG_SELECTOR =
+  "html body #root .content.is-subpage-compact .optimize-page .optimize-result-card-grid article.is-primary strong";
+const OPTIMIZE_RESULT_STAGE_COPY_SELECTOR =
+  "html body #root .content.is-subpage-compact .optimize-page .optimize-workspace-stage-copy";
+const OPTIMIZE_RESULT_STAGE_COPY_BODY_SELECTOR =
+  "html body #root .content.is-subpage-compact .optimize-page .optimize-workspace-stage-copy p";
+const OPTIMIZE_COMPACT_METRIC_CURRENT_GRID_SELECTOR =
+  "html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid > .section-card:nth-child(2) .optimize-compact-metric-grid";
+const OPTIMIZE_COMPACT_METRIC_BENEFIT_GRID_SELECTOR =
+  "html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid > .section-card:nth-child(3) .optimize-compact-metric-grid";
+const OPTIMIZE_COMPACT_METRIC_CARD_STRONG_SELECTOR =
+  "html body #root .content.is-subpage-compact .optimize-page .optimize-input-status-grid .optimize-compact-metric-grid .optimize-response-card :is(strong)";
+const ENERGY_CALENDAR_VALUE_DIV_SELECTOR =
+  "html body #root .content.is-subpage-compact .energy-efficiency-page.page-enter[data-tab=\"calendar\"] .energy-efficiency-overview-day-metrics div";
+const ENERGY_CALENDAR_VALUE_STRONG_SELECTOR =
+  "html body #root .content.is-subpage-compact .energy-efficiency-page.page-enter[data-tab=\"calendar\"] .energy-efficiency-overview-day-metrics strong";
+const BOTTOM_SAFE_AREA_ALARM_SELECTOR =
+  "html body #root .content.is-subpage-compact.has-secondary-nav .alarm-page-v2 .alarm-footer-grid";
+const BOTTOM_SAFE_AREA_SCENE_BUTTON_SELECTOR =
+  "html body #root .content.is-subpage-compact .scene-embed-toolbar button";
+const BOTTOM_SAFE_AREA_OPERATION_ARTICLE_SELECTOR =
+  "html body #root .content.is-subpage-compact .operation-record-page-v2 .operation-record-boundary-strip article";
+const BOTTOM_SAFE_AREA_REPORT_BUTTON_SELECTOR =
+  "html body #root .content.is-subpage-compact.has-secondary-nav .report-record-table-footer .report-record-pagination button";
+const BOTTOM_SAFE_AREA_SCENE_STATUS_SELECTOR =
+  "html body #root .content.is-subpage-compact .scene-embed-frame-status";
+const BOTTOM_SAFE_AREA_SCENE_EMBED_STATUS_SELECTOR =
+  "html body #root .content.is-scene-embed-content .scene-embed-frame-status";
+
+function findRuleBlock(source, selector, fromIndex = 0) {
+  const start = source.indexOf(selector, fromIndex);
+  if (start < 0) {
+    return null;
+  }
+  const braceStart = source.indexOf("{", start);
+  if (braceStart < 0) {
+    return null;
+  }
+  let depth = 0;
+  for (let index = braceStart; index < source.length; index += 1) {
+    const char = source[index];
+    if (char === "{") {
+      depth += 1;
+    } else if (char === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        return {
+          start,
+          end: index + 1,
+          text: source.slice(start, index + 1)
+        };
+      }
+    }
+  }
+  return null;
+}
+
+function findLastRuleBlock(source, selector) {
+  const selectorIndex = source.lastIndexOf(selector);
+  if (selectorIndex < 0) {
+    return null;
+  }
+  return findRuleBlock(source, selector, selectorIndex);
+}
+
+function findRuleBlockContaining(source, selector, needle) {
+  let fromIndex = 0;
+
+  while (fromIndex < source.length) {
+    const selectorIndex = source.indexOf(selector, fromIndex);
+    if (selectorIndex < 0) {
+      return null;
+    }
+
+    const block = findRuleBlock(source, selector, selectorIndex);
+    if (!block) {
+      return null;
+    }
+    if (block.text.includes(needle)) {
+      return block;
+    }
+
+    fromIndex = selectorIndex + selector.length;
+  }
+
+  return null;
+}
+
+function assertIncludes(source, needle, label, errors) {
+  if (!source.includes(needle)) {
+    errors.push(`${label}: missing \`${needle}\``);
+  }
+}
+
+function assertNotIncludes(source, needle, label, errors) {
+  if (source.includes(needle)) {
+    errors.push(`${label}: unexpected \`${needle}\``);
+  }
+}
+
+function assertOrder(source, before, after, label, errors) {
+  const beforeIndex = source.lastIndexOf(before);
+  const afterIndex = source.lastIndexOf(after);
+  if (beforeIndex < 0 || afterIndex < 0 || beforeIndex >= afterIndex) {
+    errors.push(`${label}: expected \`${after}\` after \`${before}\``);
+  }
+}
+
+function main() {
+  const styleSource = STYLE_FILES.map((file) => fs.readFileSync(file, "utf8")).join("\n");
+  const workOrderStyleSource = fs.readFileSync(STYLE_FILES[2], "utf8");
+  const optimizeStyleSource = fs.readFileSync(STYLE_FILES[5], "utf8");
+  const sceneStyleSource = fs.readFileSync(STYLE_FILES[6], "utf8");
+  const energyParameterStyleSource = fs.readFileSync(STYLE_FILES[9], "utf8");
+  const meterReadingStyleSource = fs.readFileSync(STYLE_FILES[10], "utf8");
+  const performanceReportStyleSource = fs.readFileSync(STYLE_FILES[11], "utf8");
+  const systemOverviewStyleSource = fs.readFileSync(STYLE_FILES[14], "utf8");
+  const projectSelectionStyleSource = fs.readFileSync(STYLE_FILES[16], "utf8");
+  const energyAnalysisStyleSource = fs.readFileSync(STYLE_FILES[21], "utf8");
+  const trendAnalysisStyleSource = fs.readFileSync(STYLE_FILES[22], "utf8");
+  const powerMonitorStyleSource = fs.readFileSync(STYLE_FILES[23], "utf8");
+  const dashboardSource = fs.readFileSync(DASHBOARD_PAGE_FILE, "utf8");
+  const appShellSource = fs.readFileSync(APP_SHELL_FILE, "utf8");
+  const alarmSource = fs.readFileSync(ALARM_PAGE_FILE, "utf8");
+  const systemOverviewSource = fs.readFileSync(SYSTEM_OVERVIEW_PAGE_FILE, "utf8");
+  const optimizeSource = fs.readFileSync(OPTIMIZE_PAGE_FILE, "utf8");
+  const sceneSource = fs.readFileSync(SCENE_PAGE_FILE, "utf8");
+  const compressedAirSource = fs.readFileSync(COMPRESSED_AIR_PAGE_FILE, "utf8");
+  const hvacTerminalSource = fs.readFileSync(HVAC_TERMINAL_PAGE_FILE, "utf8");
+  const aiOverviewSource = fs.readFileSync(AI_OVERVIEW_PAGE_FILE, "utf8");
+  const bffClientSource = fs.readFileSync(BFF_CLIENT_FILE, "utf8");
+  const subsystemStatusSource = fs.readFileSync(SUBSYSTEM_STATUS_FILE, "utf8");
+  const compactMobileSafetySource = fs.readFileSync(COMPACT_MOBILE_SAFETY_FILE, "utf8");
+  const errors = [];
+
+  if (fs.existsSync(QA_SEED_FILE)) {
+    errors.push("temporary QA auth seed file must not be committed: public/qa-auth-seed.html");
+  }
+
+  assertIncludes(compactMobileSafetySource, TREND_MOBILE_TITLE_MARKER, "trend mobile title-row guard", errors);
+  const trendMobileTitleBlock = findRuleBlock(compactMobileSafetySource, TREND_MOBILE_TITLE_ROW_SELECTOR);
+  if (!trendMobileTitleBlock) {
+    errors.push("trend mobile title-row guard: selector block missing");
+  } else {
+    assertIncludes(trendMobileTitleBlock.text, "display: grid !important;", "trend mobile title grid", errors);
+    assertIncludes(
+      trendMobileTitleBlock.text,
+      "grid-template-columns: minmax(0, 1fr) !important;",
+      "trend mobile title single-column flow",
+      errors
+    );
+  }
+  const trendMobileH1Block = findRuleBlock(compactMobileSafetySource, TREND_MOBILE_H1_SELECTOR);
+  if (!trendMobileH1Block) {
+    errors.push("trend mobile H1 guard: selector block missing");
+  } else {
+    assertIncludes(trendMobileH1Block.text, "white-space: nowrap !important;", "trend mobile H1 no-break", errors);
+    assertIncludes(trendMobileH1Block.text, "max-width: 100% !important;", "trend mobile H1 width guard", errors);
+  }
+
+  assertIncludes(styleSource, HVAC_OVERVIEW_NO_OVERLAP_MARKER, "HVAC overview no-overlap guard", errors);
+  assertIncludes(
+    styleSource,
+    "grid-template-rows: 148px 72px 42px minmax(120px, 1fr) 170px !important;",
+    "HVAC overview aligned desktop tracks",
+    errors
+  );
+  assertIncludes(styleSource, DEVICE_OVERVIEW_NO_OVERLAP_MARKER, "device overview no-overlap guard", errors);
+  assertIncludes(
+    styleSource,
+    "grid-template-rows: 66px 72px minmax(0, 1fr) !important;",
+    "device overview aligned desktop tracks",
+    errors
+  );
+
+  assertIncludes(styleSource, TREND_ACTIVE_MARKER, "trend active readability guard", errors);
+  const trendGenericButtonBlock = findRuleBlock(trendAnalysisStyleSource, TREND_GENERIC_BUTTON_SELECTOR);
+  if (!trendGenericButtonBlock) {
+    errors.push("trend generic button readability guard: selector block missing");
+  } else {
+    assertNotIncludes(trendGenericButtonBlock.text, "color:", "trend generic button must not override active text color", errors);
+    assertNotIncludes(trendGenericButtonBlock.text, "background:", "trend generic button must not override active background", errors);
+  }
+
+  const trendGuardStart = styleSource.indexOf(TREND_ACTIVE_MARKER);
+  const trendActiveBlock = findRuleBlock(styleSource, TREND_ACTIVE_SELECTOR, trendGuardStart);
+  if (!trendActiveBlock) {
+    errors.push("trend active readability guard: selector block missing");
+  } else {
+    assertIncludes(trendActiveBlock.text, "color: #f4fffb !important;", "trend active readable text color", errors);
+    assertIncludes(trendActiveBlock.text, "rgba(18, 138, 103, 0.98)", "trend active dark green background", errors);
+    assertIncludes(trendActiveBlock.text, "rgba(18, 93, 135, 0.98)", "trend active dark blue background", errors);
+    assertIncludes(trendActiveBlock.text, "text-shadow:", "trend active text-shadow", errors);
+    if (/color:\s*#061411\s*!important/.test(trendActiveBlock.text)) {
+      errors.push("trend active readable text color: dark-on-dark color returned");
+    }
+  }
+
+  const thermalBaseBlock = findRuleBlock(styleSource, `\n${THERMAL_BASE_SELECTOR}`);
+  const thermalFinalIndex = styleSource.indexOf(THERMAL_LABEL_SELECTOR);
+  if (!thermalBaseBlock || thermalFinalIndex < 0 || thermalBaseBlock.start >= thermalFinalIndex) {
+    errors.push("thermal threshold final cascade order: expected final override after base rule");
+  }
+  const thermalOverrideBlock = findRuleBlock(styleSource, THERMAL_LABEL_SELECTOR);
+  if (!thermalOverrideBlock) {
+    errors.push("thermal threshold readability guard: selector block missing");
+  } else {
+    assertIncludes(thermalOverrideBlock.text, "font-size: 10.8px !important;", "thermal threshold readable font size", errors);
+    assertIncludes(thermalOverrideBlock.text, "stroke-width: 0.42px !important;", "thermal threshold readable stroke", errors);
+  }
+
+  assertIncludes(styleSource, ALARM_QUEUE_GUARD_MARKER, "alarm queue readability guard", errors);
+  assertIncludes(alarmSource, '"仅保守观察"', "alarm compact gate action copy", errors);
+  const alarmGuardStart = styleSource.indexOf(ALARM_QUEUE_GUARD_MARKER);
+  const alarmGuardSource = alarmGuardStart >= 0 ? styleSource.slice(alarmGuardStart) : "";
+  assertIncludes(alarmGuardSource, ".alarm-page-v2 .alarm-queue-action span", "alarm queue action text guard", errors);
+  assertIncludes(alarmGuardSource, "-webkit-line-clamp: 2 !important;", "alarm queue two-line clamp", errors);
+  assertIncludes(alarmGuardSource, "line-height: 14px !important;", "alarm queue readable line-height", errors);
+
+  assertIncludes(styleSource, SYSTEM_VERDICT_MARKER, "system overview verdict badge readability guard", errors);
+  assertIncludes(dashboardSource, '"湿球/干球/接近未传回"', "dashboard outdoor boundary compact missing copy", errors);
+  assertIncludes(systemOverviewSource, '"负荷率待回传"', "system overview load node compact fallback", errors);
+  assertIncludes(systemOverviewSource, '"冷量待回传"', "system overview load node compact fallback", errors);
+  if (systemOverviewSource.includes("该项目缺少额定制冷量或负荷率字段无法计算")) {
+    errors.push("system overview load node compact fallback: long missing-load-rate text returned");
+  }
+
+  const systemVerdictStart = styleSource.indexOf(SYSTEM_VERDICT_MARKER);
+  const systemVerdictBlock = findRuleBlock(styleSource, SYSTEM_VERDICT_SELECTOR, systemVerdictStart);
+  if (!systemVerdictBlock) {
+    errors.push("system overview verdict badge readability guard: selector block missing");
+  } else {
+    assertIncludes(systemVerdictBlock.text, "color: #fff0bf !important;", "system overview verdict badge readable text color", errors);
+    assertIncludes(systemVerdictBlock.text, "rgba(94, 60, 18, 0.94)", "system overview verdict badge dark background", errors);
+    assertIncludes(systemVerdictBlock.text, "font-size: 10.8px !important;", "system overview verdict badge readable font size", errors);
+    assertIncludes(systemVerdictBlock.text, "text-shadow:", "system overview verdict badge text-shadow", errors);
+  }
+
+  assertIncludes(systemOverviewStyleSource, SYSTEM_OVERVIEW_768P_MARKER, "system overview 768p terminal guard", errors);
+  const systemOverview768pBlock = findRuleBlockContaining(
+    systemOverviewStyleSource,
+    SYSTEM_OVERVIEW_768P_PAGE_SELECTOR,
+    "grid-template-rows: 36px 64px minmax(0, 1fr) 78px !important;"
+  );
+  if (!systemOverview768pBlock) {
+    errors.push("system overview 768p terminal guard: page selector block missing");
+  } else {
+    assertIncludes(systemOverview768pBlock.text, "height: 100% !important;", "system overview 768p page height", errors);
+    assertIncludes(systemOverview768pBlock.text, "min-height: 0 !important;", "system overview 768p min-height reset", errors);
+    assertIncludes(systemOverview768pBlock.text, "overflow: hidden !important;", "system overview 768p overflow guard", errors);
+  }
+
+  assertIncludes(styleSource, PROJECT_RANK_MARKER, "project queue rank readability guard", errors);
+  const projectRankStart = styleSource.indexOf(PROJECT_RANK_MARKER);
+  const projectRankBlock = findRuleBlock(styleSource, PROJECT_RANK_SELECTOR, projectRankStart);
+  if (!projectRankBlock) {
+    errors.push("project queue rank readability guard: selector block missing");
+  } else {
+    assertIncludes(projectRankBlock.text, "color: #effff8 !important;", "project queue rank readable text color", errors);
+    assertIncludes(projectRankBlock.text, "rgba(18, 113, 84, 0.96)", "project queue rank dark green background", errors);
+    assertIncludes(projectRankBlock.text, "font-size: 10.8px !important;", "project queue rank readable font size", errors);
+    assertIncludes(projectRankBlock.text, "text-shadow:", "project queue rank text-shadow", errors);
+  }
+
+  assertIncludes(styleSource, DENSE_PAGE_GUARD_MARKER, "dense page final no-clip guard", errors);
+  const denseGuardStart = styleSource.indexOf(DENSE_PAGE_GUARD_MARKER);
+  const navCountBlock = findRuleBlock(styleSource, NAV_COUNT_SELECTOR, denseGuardStart);
+  if (!navCountBlock) {
+    errors.push("dense page final no-clip guard: nav count selector block missing");
+  } else {
+    assertIncludes(navCountBlock.text, "color: #f4fbff !important;", "nav module count readable text color", errors);
+    assertIncludes(navCountBlock.text, "rgba(27, 65, 91, 0.92)", "nav module count solid dark background", errors);
+    assertIncludes(navCountBlock.text, "text-shadow:", "nav module count text-shadow", errors);
+  }
+
+  const projectPageBlock = findRuleBlockContaining(
+    projectSelectionStyleSource,
+    PROJECT_PAGE_SELECTOR,
+    "grid-template-rows: 120px 86px minmax(0, 1fr) !important;"
+  );
+  if (!projectPageBlock) {
+    errors.push("dense page final no-clip guard: project page selector block missing");
+  } else {
+    assertIncludes(projectPageBlock.text, "grid-template-rows: 120px 86px minmax(0, 1fr) !important;", "project page compact grid rows", errors);
+  }
+
+  const performanceSideBlock = findRuleBlockContaining(
+    performanceReportStyleSource,
+    PERFORMANCE_SIDE_SELECTOR,
+    "grid-template-rows: 152px minmax(0, 1fr) 88px !important;"
+  );
+  if (!performanceSideBlock) {
+    errors.push("dense page final no-clip guard: performance side selector block missing");
+  } else {
+    assertIncludes(performanceSideBlock.text, "grid-template-rows: 152px minmax(0, 1fr) 88px !important;", "performance side compact grid rows", errors);
+  }
+
+  const performanceSummaryPanelBlock = findRuleBlock(styleSource, PERFORMANCE_SUMMARY_PANEL_SELECTOR, denseGuardStart);
+  if (!performanceSummaryPanelBlock) {
+    errors.push("dense page final no-clip guard: performance summary panel selector block missing");
+  } else {
+    assertIncludes(performanceSummaryPanelBlock.text, "min-height: 152px !important;", "performance summary readable panel height", errors);
+  }
+
+  assertIncludes(styleSource, HIGHEST_PRIORITY_GUARD_MARKER, "highest priority 720p no-clip correction", errors);
+  const highestGuardStart = styleSource.indexOf(HIGHEST_PRIORITY_GUARD_MARKER);
+  const workOrderPageBlock = findRuleBlock(styleSource, WORK_ORDER_PAGE_SELECTOR, highestGuardStart);
+  if (!workOrderPageBlock) {
+    errors.push("highest priority 720p no-clip correction: work-order page selector block missing");
+  } else {
+    assertIncludes(workOrderPageBlock.text, "grid-template-rows: 132px 156px minmax(0, 1fr) !important;", "work-order compact grid rows", errors);
+  }
+
+  const energyAnalysisMetricBlock = findRuleBlockContaining(
+    energyAnalysisStyleSource,
+    ENERGY_ANALYSIS_METRIC_SELECTOR,
+    "height: 64px !important;"
+  );
+  if (!energyAnalysisMetricBlock) {
+    errors.push("highest priority 720p no-clip correction: energy-analysis metric selector block missing");
+  } else {
+    assertIncludes(energyAnalysisMetricBlock.text, "height: 64px !important;", "energy-analysis metric readable height", errors);
+    assertIncludes(energyAnalysisMetricBlock.text, "min-height: 64px !important;", "energy-analysis metric readable min-height", errors);
+  }
+
+  assertIncludes(styleSource, STATUS_CHIP_CONTRAST_MARKER, "status chip contrast guard", errors);
+  const statusChipStart = styleSource.indexOf(STATUS_CHIP_CONTRAST_MARKER);
+  const energyTreeCountBlock = findRuleBlock(styleSource, ENERGY_TREE_COUNT_SELECTOR, statusChipStart);
+  if (!energyTreeCountBlock) {
+    errors.push("status chip contrast guard: energy tree count selector block missing");
+  } else {
+    assertIncludes(energyTreeCountBlock.text, "color: #eafff5 !important;", "status chip readable good text color", errors);
+    assertIncludes(energyTreeCountBlock.text, "rgba(15, 96, 72, 0.94)", "status chip solid good background", errors);
+    assertIncludes(energyTreeCountBlock.text, "text-shadow:", "status chip text-shadow", errors);
+  }
+
+  const statusWarnBlock = findRuleBlock(styleSource, STATUS_CHIP_WARN_SELECTOR, statusChipStart);
+  if (!statusWarnBlock) {
+    errors.push("status chip contrast guard: warning selector block missing");
+  } else {
+    assertIncludes(statusWarnBlock.text, "color: #fff1c7 !important;", "status chip readable warning text color", errors);
+    assertIncludes(statusWarnBlock.text, "rgba(100, 67, 21, 0.94)", "status chip solid warning background", errors);
+  }
+
+  assertIncludes(styleSource, RENDERED_720P_NO_CLIP_MARKER, "rendered 720p no-clip pass", errors);
+  assertOrder(
+    styleSource,
+    STATUS_CHIP_CONTRAST_MARKER,
+    RENDERED_720P_NO_CLIP_MARKER,
+    "rendered 720p final cascade order",
+    errors
+  );
+  const renderedGuardStart = styleSource.indexOf(RENDERED_720P_NO_CLIP_MARKER);
+  const energyParameterFinalGridBlock = findRuleBlockContaining(
+    energyParameterStyleSource,
+    ENERGY_PARAMETER_FINAL_GRID_SELECTOR,
+    "grid-template-rows: 68px 70px minmax(0, 1fr) 34px !important;"
+  );
+  if (!energyParameterFinalGridBlock) {
+    errors.push("rendered 720p no-clip pass: energy-parameter final grid selector block missing");
+  } else {
+    assertIncludes(
+      energyParameterFinalGridBlock.text,
+      "grid-template-rows: 68px 70px minmax(0, 1fr) 34px !important;",
+      "energy-parameter final grid rows",
+      errors
+    );
+  }
+
+  const meterReadingFinalGridBlock = findRuleBlockContaining(
+    meterReadingStyleSource,
+    METER_READING_FINAL_GRID_SELECTOR,
+    "grid-template-rows: 64px 70px minmax(0, 1fr) 34px !important;"
+  );
+  if (!meterReadingFinalGridBlock) {
+    errors.push("rendered 720p no-clip pass: meter-reading final grid selector block missing");
+  } else {
+    assertIncludes(
+      meterReadingFinalGridBlock.text,
+      "grid-template-rows: 64px 70px minmax(0, 1fr) 34px !important;",
+      "meter-reading final grid rows",
+      errors
+    );
+  }
+
+  const performanceFinalSideBlock = findRuleBlockContaining(
+    performanceReportStyleSource,
+    PERFORMANCE_FINAL_SIDE_SELECTOR,
+    "grid-template-rows: 148px minmax(0, 1fr) 112px !important;"
+  );
+  if (!performanceFinalSideBlock) {
+    errors.push("rendered 720p no-clip pass: performance final side selector block missing");
+  } else {
+    assertIncludes(
+      performanceFinalSideBlock.text,
+      "grid-template-rows: 148px minmax(0, 1fr) 112px !important;",
+      "performance final side grid rows",
+      errors
+    );
+  }
+
+  const performanceFinalQueryBlock = findRuleBlockContaining(
+    performanceReportStyleSource,
+    PERFORMANCE_FINAL_QUERY_SELECTOR,
+    "grid-template-columns: minmax(98px, 1fr) minmax(98px, 1fr) 176px !important;"
+  );
+  if (!performanceFinalQueryBlock) {
+    errors.push("rendered 720p no-clip pass: performance query selector block missing");
+  } else {
+    assertIncludes(
+      performanceFinalQueryBlock.text,
+      "grid-template-columns: minmax(98px, 1fr) minmax(98px, 1fr) 176px !important;",
+      "performance final query grid columns",
+      errors
+    );
+  }
+
+  assertIncludes(styleSource, PERFORMANCE_SUMMARY_FINAL_MARKER, "performance report summary final two-row guard", errors);
+  const performanceSummaryFinalStart = styleSource.indexOf(PERFORMANCE_SUMMARY_FINAL_MARKER);
+  const performanceFinalSummaryGridBlock = findRuleBlockContaining(
+    performanceReportStyleSource,
+    PERFORMANCE_FINAL_SUMMARY_GRID_SELECTOR,
+    "grid-template-columns: repeat(2, minmax(0, 1fr)) !important;"
+  );
+  if (!performanceFinalSummaryGridBlock) {
+    errors.push("rendered 720p no-clip pass: performance summary grid selector block missing");
+  } else {
+    assertIncludes(
+      performanceFinalSummaryGridBlock.text,
+      "grid-template-columns: repeat(2, minmax(0, 1fr)) !important;",
+      "performance final summary two-column grid",
+      errors
+    );
+    assertIncludes(
+      performanceFinalSummaryGridBlock.text,
+      "grid-template-rows: repeat(2, 42px) !important;",
+      "performance final summary two-row grid",
+      errors
+    );
+  }
+
+  const performanceFinalSummaryStrongBlock = findRuleBlock(
+    styleSource,
+    PERFORMANCE_FINAL_SUMMARY_STRONG_SELECTOR,
+    performanceSummaryFinalStart
+  );
+  if (!performanceFinalSummaryStrongBlock) {
+    errors.push("rendered 720p no-clip pass: performance summary strong selector block missing");
+  } else {
+    assertIncludes(
+      performanceFinalSummaryStrongBlock.text,
+      "min-height: 16px !important;",
+      "performance final summary value no-cut height",
+      errors
+    );
+    assertIncludes(
+      performanceFinalSummaryStrongBlock.text,
+      "line-height: 16px !important;",
+      "performance final summary value no-cut line-height",
+      errors
+    );
+  }
+
+  const sceneActiveBlock = findRuleBlock(styleSource, SCENE_ACTIVE_SELECTOR, renderedGuardStart);
+  if (!sceneActiveBlock) {
+    errors.push("rendered 720p no-clip pass: scene active selector block missing");
+  } else {
+    assertIncludes(sceneActiveBlock.text, "color: #f8fffc !important;", "scene active readable text color", errors);
+    assertIncludes(sceneActiveBlock.text, "rgba(18, 119, 88, 0.98)", "scene active dark green background", errors);
+    assertIncludes(sceneActiveBlock.text, "rgba(19, 84, 122, 0.98)", "scene active dark blue background", errors);
+    assertIncludes(sceneActiveBlock.text, "text-shadow:", "scene active text-shadow", errors);
+  }
+
+  const systemActionBlock = findRuleBlock(styleSource, SYSTEM_ACTION_SELECTOR, renderedGuardStart);
+  if (!systemActionBlock) {
+    errors.push("rendered 720p no-clip pass: system action selector block missing");
+  } else {
+    assertIncludes(systemActionBlock.text, "color: #f8fffc !important;", "system action readable text color", errors);
+    assertIncludes(systemActionBlock.text, "rgba(18, 119, 88, 0.98)", "system action dark green background", errors);
+    assertIncludes(systemActionBlock.text, "text-shadow:", "system action text-shadow", errors);
+  }
+
+  const operationRecordPrimaryBlock = findRuleBlock(styleSource, OPERATION_RECORD_PRIMARY_SELECTOR, renderedGuardStart);
+  if (!operationRecordPrimaryBlock) {
+    errors.push("rendered 720p no-clip pass: operation record primary selector block missing");
+  } else {
+    assertIncludes(operationRecordPrimaryBlock.text, "color: #f8fffc !important;", "operation record primary readable text color", errors);
+    assertIncludes(operationRecordPrimaryBlock.text, "rgba(18, 119, 88, 0.98)", "operation record primary dark green background", errors);
+    assertIncludes(operationRecordPrimaryBlock.text, "text-shadow:", "operation record primary text-shadow", errors);
+  }
+
+  assertIncludes(styleSource, DASHBOARD_COCKPIT_FINAL_MARKER, "dashboard cockpit final no-cut guard", errors);
+  const dashboardCockpitFinalStart = styleSource.indexOf(DASHBOARD_COCKPIT_FINAL_MARKER);
+  const dashboardControlSmallBlock = findRuleBlock(
+    styleSource,
+    DASHBOARD_COCKPIT_CONTROL_SMALL_SELECTOR,
+    dashboardCockpitFinalStart
+  );
+  if (!dashboardControlSmallBlock) {
+    errors.push("dashboard cockpit final no-cut guard: control row small selector block missing");
+  } else {
+    assertIncludes(dashboardControlSmallBlock.text, "min-height: 14px !important;", "dashboard control small no-cut height", errors);
+    assertIncludes(dashboardControlSmallBlock.text, "line-height: 14px !important;", "dashboard control small no-cut line-height", errors);
+  }
+
+  assertIncludes(styleSource, WORK_ORDER_HEADER_FINAL_MARKER, "work-order header final no-overlap guard", errors);
+  const workOrderHeaderFinalStart = styleSource.indexOf(WORK_ORDER_HEADER_FINAL_MARKER);
+  const workOrderFinalPageBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_PAGE_SELECTOR,
+    "gap: 6px !important;"
+  );
+  if (!workOrderFinalPageBlock) {
+    errors.push("work-order header final no-overlap guard: page grid selector block missing");
+  } else {
+    assertIncludes(
+      workOrderFinalPageBlock.text,
+      "grid-template-rows: 132px 156px minmax(0, 1fr) !important;",
+      "work-order final page grid rows",
+      errors
+    );
+    assertIncludes(workOrderFinalPageBlock.text, "gap: 6px !important;", "work-order final page gap", errors);
+  }
+
+  const workOrderCommandCopyBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_COMMAND_COPY_SELECTOR,
+    "grid-template-rows: 13px 25px 24px 50px !important;"
+  );
+  if (!workOrderCommandCopyBlock) {
+    errors.push("work-order header final no-overlap guard: command copy selector block missing");
+  } else {
+    assertIncludes(
+      workOrderCommandCopyBlock.text,
+      "grid-template-rows: 13px 25px 24px 50px !important;",
+      "work-order command copy fixed rows",
+      errors
+    );
+    assertIncludes(workOrderCommandCopyBlock.text, "overflow: hidden !important;", "work-order command copy bounded overflow", errors);
+  }
+
+  const workOrderDescriptionBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_DESCRIPTION_SELECTOR,
+    "display: none !important;"
+  );
+  if (!workOrderDescriptionBlock) {
+    errors.push("work-order header final no-overlap guard: redundant description hide selector missing");
+  } else {
+    assertIncludes(workOrderDescriptionBlock.text, "display: none !important;", "work-order redundant header copy hidden", errors);
+  }
+
+  const workOrderSummaryGridBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_SUMMARY_GRID_SELECTOR,
+    "height: 50px !important;"
+  );
+  if (!workOrderSummaryGridBlock) {
+    errors.push("work-order header final no-overlap guard: summary grid selector block missing");
+  } else {
+    assertIncludes(workOrderSummaryGridBlock.text, "height: 50px !important;", "work-order summary grid fixed height", errors);
+    assertIncludes(workOrderSummaryGridBlock.text, "overflow: hidden !important;", "work-order summary grid bounded overflow", errors);
+  }
+
+  const workOrderSideBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_SIDE_SELECTOR,
+    "grid-template-rows: 13px 28px minmax(0, 1fr) !important;"
+  );
+  if (!workOrderSideBlock) {
+    errors.push("work-order header final no-overlap guard: side selector block missing");
+  } else {
+    assertIncludes(
+      workOrderSideBlock.text,
+      "grid-template-rows: 13px 28px minmax(0, 1fr) !important;",
+      "work-order side fixed rows",
+      errors
+    );
+  }
+
+  const workOrderStatStrongBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_STAT_STRONG_SELECTOR,
+    "min-height: 21px !important;"
+  );
+  if (!workOrderStatStrongBlock) {
+    errors.push("work-order header final no-overlap guard: stat strong selector block missing");
+  } else {
+    assertIncludes(workOrderStatStrongBlock.text, "min-height: 21px !important;", "work-order stat value no-cut height", errors);
+    assertIncludes(workOrderStatStrongBlock.text, "line-height: 21px !important;", "work-order stat value no-cut line-height", errors);
+  }
+
+  const workOrderSideStrongBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_SIDE_STRONG_SELECTOR,
+    "min-height: 28px !important;"
+  );
+  if (!workOrderSideStrongBlock) {
+    errors.push("work-order header final no-overlap guard: side strong selector block missing");
+  } else {
+    assertIncludes(workOrderSideStrongBlock.text, "min-height: 28px !important;", "work-order side status no-cut height", errors);
+    assertIncludes(workOrderSideStrongBlock.text, "line-height: 28px !important;", "work-order side status no-cut line-height", errors);
+  }
+
+  const workOrderSideCopyBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_SIDE_COPY_SELECTOR,
+    "display: none !important;"
+  );
+  if (!workOrderSideCopyBlock) {
+    errors.push("work-order header final no-overlap guard: side copy hide selector missing");
+  } else {
+    assertIncludes(workOrderSideCopyBlock.text, "display: none !important;", "work-order redundant side copy hidden", errors);
+  }
+
+  const workOrderFilterCopyBlock = findRuleBlockContaining(
+    workOrderStyleSource,
+    WORK_ORDER_FINAL_FILTER_COPY_SELECTOR,
+    "display: none !important;"
+  );
+  if (!workOrderFilterCopyBlock) {
+    errors.push("work-order header final no-overlap guard: filter copy hide selector missing");
+  } else {
+    assertIncludes(workOrderFilterCopyBlock.text, "display: none !important;", "work-order redundant filter copy hidden", errors);
+  }
+
+  assertIncludes(styleSource, TREND_STATS_FINAL_MARKER, "trend series stats final no-clip guard", errors);
+  const trendStatsFinalStart = styleSource.indexOf(TREND_STATS_FINAL_MARKER);
+  const trendFinalMainGridBlock = findRuleBlock(styleSource, TREND_FINAL_MAIN_GRID_SELECTOR, trendStatsFinalStart);
+  if (!trendFinalMainGridBlock) {
+    errors.push("trend series stats final no-clip guard: main grid selector block missing");
+  } else {
+    assertIncludes(
+      trendFinalMainGridBlock.text,
+      "grid-template-columns: minmax(0, 1fr) minmax(340px, 360px) !important;",
+      "trend stats final right panel width",
+      errors
+    );
+  }
+
+  const trendFinalStatsHintBlock = findRuleBlock(styleSource, TREND_FINAL_STATS_HINT_SELECTOR, trendStatsFinalStart);
+  if (!trendFinalStatsHintBlock) {
+    errors.push("trend series stats final no-clip guard: redundant hint hide selector missing");
+  } else {
+    assertIncludes(trendFinalStatsHintBlock.text, "display: none !important;", "trend stats redundant hint hidden", errors);
+  }
+
+  const trendFinalStatsListBlock = findRuleBlock(styleSource, TREND_FINAL_STATS_LIST_SELECTOR, trendStatsFinalStart);
+  if (!trendFinalStatsListBlock) {
+    errors.push("trend series stats final no-clip guard: stats list selector block missing");
+  } else {
+    assertIncludes(
+      trendFinalStatsListBlock.text,
+      "grid-template-columns: repeat(2, minmax(0, 1fr)) !important;",
+      "trend stats final two-column list",
+      errors
+    );
+  }
+
+  const trendFinalStatsItemBlock = findRuleBlock(styleSource, TREND_FINAL_STATS_ITEM_SELECTOR, trendStatsFinalStart);
+  if (!trendFinalStatsItemBlock) {
+    errors.push("trend series stats final no-clip guard: stats item selector block missing");
+  } else {
+    assertIncludes(trendFinalStatsItemBlock.text, "height: 56px !important;", "trend stats final item height", errors);
+    assertIncludes(
+      trendFinalStatsItemBlock.text,
+      "grid-template-rows: 13px repeat(3, 12px) !important;",
+      "trend stats final item rows",
+      errors
+    );
+  }
+
+  assertIncludes(styleSource, OPTIMIZE_RESULT_SPOTLIGHT_MARKER, "optimize result spotlight final guard", errors);
+  const optimizeResultSpotlightStart = styleSource.indexOf(OPTIMIZE_RESULT_SPOTLIGHT_MARKER);
+  const optimizeResultStageBlock = findRuleBlockContaining(
+    optimizeStyleSource,
+    OPTIMIZE_RESULT_STAGE_SELECTOR,
+    "height: 124px !important;"
+  );
+  if (!optimizeResultStageBlock) {
+    errors.push("optimize result spotlight final guard: result stage selector block missing");
+  } else {
+    assertIncludes(optimizeResultStageBlock.text, "height: 124px !important;", "optimize result stage prominent height", errors);
+    assertIncludes(
+      optimizeResultStageBlock.text,
+      "grid-template-columns: minmax(166px, 0.42fr) minmax(0, 3.2fr) !important;",
+      "optimize result stage two-part grid",
+      errors
+    );
+  }
+
+  assertIncludes(optimizeSource, 'label: "本次优化结论"', "optimize result primary label", errors);
+  assertIncludes(optimizeSource, "const benefitPowerDeltaLabel =", "optimize result benefit label", errors);
+  assertIncludes(optimizeSource, "? \"对标节电空间\"", "optimize result benchmark saving label", errors);
+  assertIncludes(optimizeSource, "? \"对标增耗风险\"", "optimize result benchmark increase label", errors);
+  assertIncludes(
+    optimizeSource,
+    "Math.abs(benefitPowerDeltaKw)",
+    "optimize result benchmark saving value shown as positive magnitude",
+    errors
+  );
+  assertIncludes(optimizeSource, "`对标节电率 ${benefitRateMagnitudeSummary}", "optimize result benchmark saving rate wording", errors);
+  assertIncludes(optimizeSource, "`对标增耗率 ${benefitRateSummary}", "optimize result benchmark increase rate wording", errors);
+  assertIncludes(optimizeSource, 'title="历史对标依据"', "optimize compact benchmark basis section avoids duplicate savings", errors);
+  assertIncludes(optimizeSource, "<span>匹配口径</span>", "optimize compact benchmark basis shows matching tier", errors);
+  assertIncludes(optimizeSource, "<span>置信度</span>", "optimize compact benchmark basis shows confidence", errors);
+  assertIncludes(optimizeSource, "localizeHistoryBenchmarkMatchingTier", "optimize compact benchmark basis localizes matching tier", errors);
+  assertNotIncludes(optimizeSource, "<span>对标功率差</span>", "optimize compact basis must not repeat benchmark power delta", errors);
+  assertNotIncludes(optimizeSource, "<span>对标变化率</span>", "optimize compact basis must not repeat benchmark rate", errors);
+  assertNotIncludes(optimizeSource, "<span>节能率</span>", "optimize compact benefit must not label signed delta as saving rate", errors);
+  assertIncludes(optimizeSource, "function getShadowVerificationMetricConsistencyIssue", "shadow verification record metric consistency guard", errors);
+  assertIncludes(optimizeSource, "normalizeShadowVerificationRecordForDisplay", "shadow verification display normalizes impossible records", errors);
+  assertIncludes(optimizeSource, "指标待复核", "shadow verification inconsistent metrics must be visibly flagged", errors);
+  assertIncludes(optimizeSource, 'emphasis: "primary" as const', "optimize result primary card flag", errors);
+  assertIncludes(optimizeSource, 'emphasis: "benefit" as const', "optimize result benefit card flag", errors);
+  assertIncludes(
+    optimizeSource,
+    'const chillerTargetResultSummary = responseReady ? chillerTargetSummary.replace(/\\s*\\+\\s*/g, "+")',
+    "optimize result compact chiller combination",
+    errors
+  );
+  assertIncludes(
+    optimizeSource,
+    '? `${formatTrimHzCompactValue(pumpDeltaTAdvisor?.outputTargets?.chilledPumpFreqTrimHz)}/${formatTrimHzCompactValue(',
+    "optimize result compact pump trim value",
+    errors
+  );
+  assertIncludes(
+    optimizeSource,
+    'typeof benefitEstimate?.expectedPowerDeltaKw === "number"',
+    "optimize result benefit unit only with numeric value",
+    errors
+  );
+  assertIncludes(
+    optimizeSource,
+    'const benefitResultConfidenceLabel = benefitEstimateConfidenceLabel.replace(/[：:].*$/, "")',
+    "optimize result compact benefit confidence label",
+    errors
+  );
+  assertIncludes(
+    optimizeSource,
+    "note: benefitResultNote",
+    "optimize result compact benefit note",
+    errors
+  );
+  assertIncludes(
+    bffClientSource,
+    '.replace(/[^\\x20-\\x7E]+/g, "")',
+    "bff headers strip non-ASCII project labels",
+    errors
+  );
+
+  const optimizeResultCardGridBlock = findRuleBlockContaining(
+    optimizeStyleSource,
+    OPTIMIZE_RESULT_CARD_GRID_SELECTOR,
+    "grid-template-columns: minmax(242px, 1.36fr) minmax(172px, 1fr) repeat(3, minmax(0, 0.76fr)) !important;"
+  );
+  if (!optimizeResultCardGridBlock) {
+    errors.push("optimize result spotlight final guard: result card grid selector block missing");
+  } else {
+    assertIncludes(
+      optimizeResultCardGridBlock.text,
+      "grid-template-columns: minmax(242px, 1.36fr) minmax(172px, 1fr) repeat(3, minmax(0, 0.76fr)) !important;",
+      "optimize result primary-plus-four grid",
+      errors
+    );
+  }
+
+  const optimizeResultCardStrongBlock = findRuleBlockContaining(
+    optimizeStyleSource,
+    OPTIMIZE_RESULT_CARD_STRONG_SELECTOR,
+    "font-size: 18px !important;"
+  );
+  if (!optimizeResultCardStrongBlock) {
+    errors.push("optimize result spotlight final guard: result card strong selector block missing");
+  } else {
+    assertIncludes(optimizeResultCardStrongBlock.text, "font-size: 18px !important;", "optimize result value readable font", errors);
+    assertIncludes(optimizeResultCardStrongBlock.text, "line-height: 34px !important;", "optimize result value no-cut line-height", errors);
+  }
+
+  const optimizeResultPrimaryCardBlock = findRuleBlockContaining(
+    optimizeStyleSource,
+    OPTIMIZE_RESULT_PRIMARY_CARD_SELECTOR,
+    "grid-template-rows: 17px 43px 21px !important;"
+  );
+  if (!optimizeResultPrimaryCardBlock) {
+    errors.push("optimize result spotlight final guard: primary result card selector block missing");
+  } else {
+    assertIncludes(optimizeResultPrimaryCardBlock.text, "grid-template-rows: 17px 43px 21px !important;", "optimize result primary card rows", errors);
+    assertIncludes(optimizeResultPrimaryCardBlock.text, "border-width: 2px !important;", "optimize result primary card emphasis", errors);
+  }
+
+  const optimizeResultPrimaryStrongBlock = findRuleBlockContaining(
+    optimizeStyleSource,
+    OPTIMIZE_RESULT_PRIMARY_STRONG_SELECTOR,
+    "font-size: 28px !important;"
+  );
+  if (!optimizeResultPrimaryStrongBlock) {
+    errors.push("optimize result spotlight final guard: primary result value selector block missing");
+  } else {
+    assertIncludes(optimizeResultPrimaryStrongBlock.text, "font-size: 28px !important;", "optimize result primary value font", errors);
+    assertIncludes(optimizeResultPrimaryStrongBlock.text, "line-height: 43px !important;", "optimize result primary value no-cut line-height", errors);
+  }
+
+  assertIncludes(styleSource, OPTIMIZE_RESULT_OVERLAP_MARKER, "optimize generated-result overlap guard", errors);
+  const optimizeResultOverlapStart = styleSource.indexOf(OPTIMIZE_RESULT_OVERLAP_MARKER);
+  const optimizePageGridBlock = findRuleBlockContaining(
+    optimizeStyleSource,
+    OPTIMIZE_PAGE_GRID_SELECTOR,
+    "grid-template-rows: 66px 124px 164px auto auto !important;"
+  );
+  if (!optimizePageGridBlock) {
+    errors.push("optimize generated-result overlap guard: page grid selector block missing");
+  } else {
+    assertIncludes(
+      optimizePageGridBlock.text,
+      "grid-template-rows: 66px 124px 164px auto auto !important;",
+      "optimize input row keeps real height after generated result",
+      errors
+    );
+  }
+
+  const optimizeInputStatusGridBlock = findRuleBlock(styleSource, OPTIMIZE_INPUT_STATUS_GRID_SELECTOR, optimizeResultOverlapStart);
+  if (!optimizeInputStatusGridBlock) {
+    errors.push("optimize generated-result overlap guard: input status grid selector block missing");
+  } else {
+    assertIncludes(optimizeInputStatusGridBlock.text, "height: 164px !important;", "optimize input grid reserved height", errors);
+    assertIncludes(optimizeInputStatusGridBlock.text, "grid-template-rows: minmax(0, 1fr) !important;", "optimize input grid no zero row", errors);
+  }
+
+  const optimizeInputFormBlock = findRuleBlock(styleSource, OPTIMIZE_INPUT_FORM_SELECTOR, optimizeResultOverlapStart);
+  if (!optimizeInputFormBlock) {
+    errors.push("optimize generated-result overlap guard: input form selector block missing");
+  } else {
+    assertIncludes(optimizeInputFormBlock.text, "grid-template-rows: 78px 34px !important;", "optimize input form keeps fields separate from prefill", errors);
+  }
+
+  const optimizeInputFormMainBlock = findRuleBlock(styleSource, OPTIMIZE_INPUT_FORM_MAIN_SELECTOR, optimizeResultOverlapStart);
+  if (!optimizeInputFormMainBlock) {
+    errors.push("optimize generated-result overlap guard: input form main selector block missing");
+  } else {
+    assertIncludes(optimizeInputFormMainBlock.text, "grid-template-rows: 44px 28px !important;", "optimize input form button stays below fields", errors);
+  }
+
+  const optimizeInputPrefillMetaBlock = findRuleBlock(
+    styleSource,
+    OPTIMIZE_INPUT_PREFILL_META_SELECTOR,
+    optimizeResultOverlapStart
+  );
+  if (!optimizeInputPrefillMetaBlock) {
+    errors.push("optimize generated-result overlap guard: input prefill meta selector block missing");
+  } else {
+    assertIncludes(optimizeInputPrefillMetaBlock.text, "height: 10px !important;", "optimize input prefill source row stays visible", errors);
+    assertIncludes(optimizeInputPrefillMetaBlock.text, "grid-template-columns: minmax(0, 1fr) auto !important;", "optimize input prefill source and time share one compact row", errors);
+  }
+
+  const optimizeInputPrefillMetaLastBlock = findRuleBlock(
+    styleSource,
+    OPTIMIZE_INPUT_PREFILL_META_LAST_SELECTOR,
+    optimizeResultOverlapStart
+  );
+  if (!optimizeInputPrefillMetaLastBlock) {
+    errors.push("optimize generated-result overlap guard: input prefill meta last-child selector block missing");
+  } else {
+    assertIncludes(optimizeInputPrefillMetaLastBlock.text, "grid-column: auto !important;", "optimize input updated time must not wrap to a hidden second row", errors);
+  }
+
+  assertIncludes(optimizeSource, 'prefillReady: "已带入当前冷量与湿球"', "optimize input prefill compact ready copy", errors);
+  assertIncludes(optimizeSource, "prefillSourceCompactText", "optimize input prefill source uses compact visible copy", errors);
+  assertIncludes(optimizeSource, "prefillUpdatedCompactText", "optimize input prefill timestamp uses compact visible copy", errors);
+  assertIncludes(
+    optimizeSource,
+    "function formatPumpRollbackLockout",
+    "optimize pump approval lockout detail helper",
+    errors
+  );
+  assertIncludes(
+    optimizeSource,
+    "闭锁{formatPumpRollbackLockout(pumpDeltaTAdvisor)} · 周期5min · 单步1Hz",
+    "optimize pump approval safety detail stays readable",
+    errors
+  );
+  assertIncludes(
+    optimizeSource,
+    'const OPTIMIZE_COMPACT_PENDING_VALUE = "待补值";',
+    "optimize compact missing-value copy is short enough for 720p",
+    errors
+  );
+  assertIncludes(
+    optimizeSource,
+    "formatCompactPowerKw(baseline.totalPowerKw, 0)",
+    "optimize compact total power missing value avoids clipping",
+    errors
+  );
+  assertIncludes(
+    optimizeSource,
+    "benefitMatchingTierSummary",
+    "optimize compact benchmark basis missing value avoids clipping",
+    errors
+  );
+
+  assertIncludes(styleSource, OPTIMIZE_RESULT_CARD_NO_CLIP_MARKER, "optimize result card no-clip guard", errors);
+  const optimizeResultCardNoClipStart = styleSource.indexOf(OPTIMIZE_RESULT_CARD_NO_CLIP_MARKER);
+  const optimizeResultCardNoClipStageBlock = findRuleBlockContaining(
+    optimizeStyleSource,
+    OPTIMIZE_RESULT_STAGE_SELECTOR,
+    "grid-template-columns: 138px minmax(0, 1fr) !important;"
+  );
+  if (!optimizeResultCardNoClipStageBlock) {
+    errors.push("optimize result card no-clip guard: result stage selector block missing");
+  } else {
+    assertIncludes(
+      optimizeResultCardNoClipStageBlock.text,
+      "grid-template-columns: 138px minmax(0, 1fr) !important;",
+      "optimize result stage gives enough width to result cards",
+      errors
+    );
+  }
+
+  const optimizeResultStageCopyBlock = findRuleBlockContaining(
+    optimizeStyleSource,
+    OPTIMIZE_RESULT_STAGE_COPY_SELECTOR,
+    "grid-template-rows: 18px 44px !important;"
+  );
+  if (!optimizeResultStageCopyBlock) {
+    errors.push("optimize result card no-clip guard: stage copy selector block missing");
+  } else {
+    assertIncludes(
+      optimizeResultStageCopyBlock.text,
+      "grid-template-rows: 18px 44px !important;",
+      "optimize result stage copy keeps only label and verdict",
+      errors
+    );
+  }
+
+  const optimizeResultStageCopyBodyBlock = findRuleBlockContaining(
+    optimizeStyleSource,
+    OPTIMIZE_RESULT_STAGE_COPY_BODY_SELECTOR,
+    "display: none !important;"
+  );
+  if (!optimizeResultStageCopyBodyBlock) {
+    errors.push("optimize result card no-clip guard: stage copy body selector block missing");
+  } else {
+    assertIncludes(optimizeResultStageCopyBodyBlock.text, "display: none !important;", "optimize result stage copy removes clipped explanation", errors);
+  }
+
+  const optimizeResultCardNoClipGridBlock = findRuleBlockContaining(
+    optimizeStyleSource,
+    OPTIMIZE_RESULT_CARD_GRID_SELECTOR,
+    "minmax(204px, 1.15fr)"
+  );
+  if (!optimizeResultCardNoClipGridBlock) {
+    errors.push("optimize result card no-clip guard: result card grid selector block missing");
+  } else {
+    assertIncludes(
+      optimizeResultCardNoClipGridBlock.text,
+      "grid-template-rows: minmax(0, 1fr) !important;",
+      "optimize result cards stay in one row",
+      errors
+    );
+    assertIncludes(
+      optimizeResultCardNoClipGridBlock.text,
+      "minmax(204px, 1.15fr)",
+      "optimize result primary card keeps readable width",
+      errors
+    );
+    assertIncludes(
+      optimizeResultCardNoClipGridBlock.text,
+      "minmax(150px, 0.86fr)",
+      "optimize result chiller combination keeps readable width",
+      errors
+    );
+    assertIncludes(
+      optimizeResultCardNoClipGridBlock.text,
+      "minmax(150px, 0.86fr)",
+      "optimize result benefit note keeps readable width",
+      errors
+    );
+  }
+
+  assertIncludes(styleSource, OPTIMIZE_COMPACT_METRIC_NO_CLIP_MARKER, "optimize compact metric no-clip guard", errors);
+  const optimizeCompactMetricNoClipStart = styleSource.indexOf(OPTIMIZE_COMPACT_METRIC_NO_CLIP_MARKER);
+  const optimizeCompactMetricCurrentBlock = findRuleBlock(
+    styleSource,
+    OPTIMIZE_COMPACT_METRIC_CURRENT_GRID_SELECTOR,
+    optimizeCompactMetricNoClipStart
+  );
+  if (!optimizeCompactMetricCurrentBlock) {
+    errors.push("optimize compact metric no-clip guard: current metric grid selector block missing");
+  } else {
+    assertIncludes(
+      optimizeCompactMetricCurrentBlock.text,
+      "grid-template-columns: minmax(54px, 0.72fr) minmax(88px, 1.18fr)",
+      "optimize current total power gets wider metric column",
+      errors
+    );
+  }
+
+  const optimizeCompactMetricBenefitBlock = findRuleBlock(
+    styleSource,
+    OPTIMIZE_COMPACT_METRIC_BENEFIT_GRID_SELECTOR,
+    optimizeCompactMetricNoClipStart
+  );
+  if (!optimizeCompactMetricBenefitBlock) {
+    errors.push("optimize compact metric no-clip guard: benefit metric grid selector block missing");
+  } else {
+    assertIncludes(
+      optimizeCompactMetricBenefitBlock.text,
+      "grid-template-columns: minmax(92px, 1.34fr) minmax(68px, 0.98fr)",
+      "optimize benefit power delta gets wider metric column",
+      errors
+    );
+  }
+
+  const optimizeCompactMetricStrongBlock = findRuleBlock(
+    styleSource,
+    OPTIMIZE_COMPACT_METRIC_CARD_STRONG_SELECTOR,
+    optimizeCompactMetricNoClipStart
+  );
+  if (!optimizeCompactMetricStrongBlock) {
+    errors.push("optimize compact metric no-clip guard: metric value selector block missing");
+  } else {
+    assertIncludes(optimizeCompactMetricStrongBlock.text, "white-space: nowrap !important;", "optimize metric values stay on one line", errors);
+    assertIncludes(optimizeCompactMetricStrongBlock.text, "font-size: 13.5px !important;", "optimize metric values keep readable compact size", errors);
+  }
+
+  assertIncludes(styleSource, ENERGY_CALENDAR_VALUE_FINAL_MARKER, "energy calendar value final guard", errors);
+  const energyCalendarValueFinalStart = styleSource.indexOf(ENERGY_CALENDAR_VALUE_FINAL_MARKER);
+  const energyCalendarValueDivBlock = findRuleBlockContaining(
+    styleSource,
+    ENERGY_CALENDAR_VALUE_DIV_SELECTOR,
+    "grid-template-columns: 20px minmax(0, 1fr) !important;"
+  );
+  if (!energyCalendarValueDivBlock) {
+    errors.push("energy calendar value final guard: metrics row selector block missing");
+  } else {
+    assertIncludes(
+      energyCalendarValueDivBlock.text,
+      "grid-template-columns: 20px minmax(0, 1fr) !important;",
+      "energy calendar value column width",
+      errors
+    );
+    assertIncludes(energyCalendarValueDivBlock.text, "height: 12px !important;", "energy calendar value row height", errors);
+  }
+
+  const energyCalendarValueStrongBlock = findRuleBlockContaining(
+    styleSource,
+    ENERGY_CALENDAR_VALUE_STRONG_SELECTOR,
+    "font-variant-numeric: tabular-nums !important;"
+  );
+  if (!energyCalendarValueStrongBlock) {
+    errors.push("energy calendar value final guard: numeric value selector block missing");
+  } else {
+    assertIncludes(energyCalendarValueStrongBlock.text, "font-size: 10px !important;", "energy calendar numeric value readable font", errors);
+    assertIncludes(energyCalendarValueStrongBlock.text, "font-variant-numeric: tabular-nums !important;", "energy calendar numeric alignment", errors);
+    assertIncludes(energyCalendarValueStrongBlock.text, "text-align: right !important;", "energy calendar numeric right align", errors);
+  }
+
+  assertIncludes(styleSource, BOTTOM_SAFE_AREA_MARKER, "720p bottom safe-area guard", errors);
+  const bottomSafeAreaStart = styleSource.indexOf(BOTTOM_SAFE_AREA_MARKER);
+  const bottomSafeAreaAlarmBlock = findRuleBlock(styleSource, BOTTOM_SAFE_AREA_ALARM_SELECTOR, bottomSafeAreaStart);
+  if (!bottomSafeAreaAlarmBlock) {
+    errors.push("720p bottom safe-area guard: footer selector block missing");
+  } else {
+    assertIncludes(bottomSafeAreaAlarmBlock.text, "transform: translateY(-5px) !important;", "bottom safe-area footer lift", errors);
+  }
+
+  const bottomSafeAreaSceneButtonBlock = findRuleBlock(styleSource, BOTTOM_SAFE_AREA_SCENE_BUTTON_SELECTOR, bottomSafeAreaStart);
+  if (!bottomSafeAreaSceneButtonBlock) {
+    errors.push("720p bottom safe-area guard: scene button selector block missing");
+  } else {
+    assertIncludes(bottomSafeAreaSceneButtonBlock.text, "height: 32px !important;", "bottom safe-area scene button height", errors);
+  }
+
+  const operationArticleHeightStart = styleSource.indexOf(
+    `${BOTTOM_SAFE_AREA_OPERATION_ARTICLE_SELECTOR} {\n  height: 40px !important;`,
+    bottomSafeAreaStart
+  );
+  const bottomSafeAreaOperationArticleBlock =
+    operationArticleHeightStart >= 0 ? findRuleBlock(styleSource, BOTTOM_SAFE_AREA_OPERATION_ARTICLE_SELECTOR, operationArticleHeightStart) : null;
+  if (!bottomSafeAreaOperationArticleBlock) {
+    errors.push("720p bottom safe-area guard: operation boundary article selector block missing");
+  } else {
+    assertIncludes(bottomSafeAreaOperationArticleBlock.text, "height: 40px !important;", "bottom safe-area operation article height", errors);
+  }
+
+  const bottomSafeAreaReportButtonBlock = findRuleBlock(styleSource, BOTTOM_SAFE_AREA_REPORT_BUTTON_SELECTOR, bottomSafeAreaStart);
+  if (!bottomSafeAreaReportButtonBlock) {
+    errors.push("720p bottom safe-area guard: report pagination button selector block missing");
+  } else {
+    assertIncludes(bottomSafeAreaReportButtonBlock.text, "height: 18px !important;", "bottom safe-area report button height", errors);
+  }
+
+  const bottomSafeAreaSceneStatusBlock = findRuleBlock(styleSource, BOTTOM_SAFE_AREA_SCENE_STATUS_SELECTOR, bottomSafeAreaStart);
+  if (!bottomSafeAreaSceneStatusBlock) {
+    errors.push("720p bottom safe-area guard: scene status selector block missing");
+  } else {
+    assertIncludes(bottomSafeAreaSceneStatusBlock.text, "transform: translateY(-6px) !important;", "bottom safe-area scene status lift", errors);
+  }
+
+  const bottomSafeAreaSceneEmbedStatusBlock = findRuleBlock(
+    styleSource,
+    BOTTOM_SAFE_AREA_SCENE_EMBED_STATUS_SELECTOR,
+    bottomSafeAreaStart
+  );
+  if (!bottomSafeAreaSceneEmbedStatusBlock) {
+    errors.push("720p bottom safe-area guard: scene embed status selector block missing");
+  } else {
+    assertIncludes(bottomSafeAreaSceneEmbedStatusBlock.text, "transform: translateY(-8px) !important;", "bottom safe-area scene embed status lift", errors);
+  }
+
+  assertIncludes(styleSource, FINAL_FOOTER_CLEARANCE_MARKER, "rendered 720p final footer clearance guard", errors);
+  assertIncludes(sceneSource, SCENE_NATIVE_2D_VIEWPORT_RULE_MARKER, "scene native 2D viewport rule", errors);
+  assertIncludes(sceneSource, "const SCENE_NATIVE_2D_TOP_SAFE_OFFSET_PX = 2;", "scene native 2D top safe offset", errors);
+  assertIncludes(sceneSource, "const SCENE_NATIVE_2D_BOTTOM_SAFE_OFFSET_PX = 2;", "scene native 2D bottom safe offset", errors);
+  assertIncludes(sceneSource, "const SCENE_NATIVE_2D_EFFECTIVE_TOP_Y = 120;", "scene native 2D effective top", errors);
+  assertIncludes(sceneSource, "const SCENE_NATIVE_2D_EFFECTIVE_HEIGHT = 730;", "scene native 2D effective height", errors);
+  assertIncludes(sceneSource, "preset: SCENE_NATIVE_COMPACT_2D_VIEWPORT", "scene native generic 2D viewport fallback", errors);
+  const finalFooterClearanceStart = styleSource.indexOf(FINAL_FOOTER_CLEARANCE_MARKER);
+  const finalFooterEnergyAnalysisPageBlock = findRuleBlockContaining(
+    energyAnalysisStyleSource,
+    FINAL_FOOTER_ENERGY_ANALYSIS_PAGE_SELECTOR,
+    "grid-template-rows: 82px 58px minmax(0, 1fr) 68px 28px !important;"
+  );
+  if (!finalFooterEnergyAnalysisPageBlock) {
+    errors.push("rendered 720p final footer clearance guard: energy-analysis page selector block missing");
+  } else {
+    assertIncludes(
+      finalFooterEnergyAnalysisPageBlock.text,
+      "height: calc(100% - 12px) !important;",
+      "energy-analysis final page bottom clearance",
+      errors
+    );
+    assertIncludes(
+      finalFooterEnergyAnalysisPageBlock.text,
+      "grid-template-rows: 82px 58px minmax(0, 1fr) 68px 28px !important;",
+      "energy-analysis final compact rows",
+      errors
+    );
+  }
+
+  const finalFooterEnergyAnalysisBoundaryBlock = findRuleBlockContaining(
+    energyAnalysisStyleSource,
+    FINAL_FOOTER_ENERGY_ANALYSIS_BOUNDARY_SELECTOR,
+    "transform: translateY(-6px) !important;"
+  );
+  if (!finalFooterEnergyAnalysisBoundaryBlock) {
+    errors.push("rendered 720p final footer clearance guard: energy-analysis boundary selector block missing");
+  } else {
+    assertIncludes(finalFooterEnergyAnalysisBoundaryBlock.text, "height: 28px !important;", "energy-analysis boundary compact height", errors);
+    assertIncludes(finalFooterEnergyAnalysisBoundaryBlock.text, "transform: translateY(-6px) !important;", "energy-analysis boundary lift", errors);
+  }
+
+  assertIncludes(
+    energyAnalysisStyleSource,
+    ENERGY_ANALYSIS_NO_OVERLAP_GRID_MARKER,
+    "energy-analysis no-overlap grid guard",
+    errors
+  );
+  const energyAnalysisNoOverlapGridBlock = findRuleBlockContaining(
+    energyAnalysisStyleSource,
+    ENERGY_ANALYSIS_NO_OVERLAP_GRID_SELECTOR,
+    "grid-template-rows: 88px 70px minmax(0, 1fr) 104px 28px !important;"
+  );
+  if (!energyAnalysisNoOverlapGridBlock) {
+    errors.push("energy-analysis no-overlap grid guard: final page selector block missing");
+  } else {
+    assertIncludes(
+      energyAnalysisNoOverlapGridBlock.text,
+      "grid-template-rows: 88px 70px minmax(0, 1fr) 104px 28px !important;",
+      "energy-analysis no-overlap final tracks",
+      errors
+    );
+  }
+
+  const finalFooterEnergyParameterPageBlock = findRuleBlockContaining(
+    energyParameterStyleSource,
+    FINAL_FOOTER_ENERGY_PARAMETER_PAGE_SELECTOR,
+    "height: calc(100% - 12px) !important;"
+  );
+  if (!finalFooterEnergyParameterPageBlock) {
+    errors.push("rendered 720p final footer clearance guard: energy-parameter page selector block missing");
+  } else {
+    assertIncludes(
+      finalFooterEnergyParameterPageBlock.text,
+      "height: calc(100% - 12px) !important;",
+      "energy-parameter final page bottom clearance",
+      errors
+    );
+    assertIncludes(
+      finalFooterEnergyParameterPageBlock.text,
+      "grid-template-rows: 66px 66px minmax(0, 1fr) 30px !important;",
+      "energy-parameter final compact rows",
+      errors
+    );
+  }
+
+  const finalFooterEnergyParameterBoundaryBlock = findRuleBlockContaining(
+    energyParameterStyleSource,
+    FINAL_FOOTER_ENERGY_PARAMETER_BOUNDARY_SELECTOR,
+    "transform: translateY(-8px) !important;"
+  );
+  if (!finalFooterEnergyParameterBoundaryBlock) {
+    errors.push("rendered 720p final footer clearance guard: energy-parameter boundary selector block missing");
+  } else {
+    assertIncludes(finalFooterEnergyParameterBoundaryBlock.text, "height: 30px !important;", "energy-parameter boundary compact height", errors);
+    assertIncludes(finalFooterEnergyParameterBoundaryBlock.text, "transform: translateY(-8px) !important;", "energy-parameter boundary lift", errors);
+  }
+
+  const finalFooterScenePageBlock = findRuleBlockContaining(
+    sceneStyleSource,
+    FINAL_FOOTER_SCENE_PAGE_SELECTOR,
+    "height: calc(100% - 16px) !important;"
+  );
+  if (!finalFooterScenePageBlock) {
+    errors.push("rendered 720p final footer clearance guard: scene page selector block missing");
+  } else {
+    assertIncludes(finalFooterScenePageBlock.text, "height: calc(100% - 16px) !important;", "scene page final bottom clearance", errors);
+  }
+
+  const finalFooterSceneSwitchbarBlock = findRuleBlockContaining(
+    sceneStyleSource,
+    FINAL_FOOTER_SCENE_SWITCHBAR_SELECTOR,
+    "transform: translateY(-12px) !important;"
+  );
+  if (!finalFooterSceneSwitchbarBlock) {
+    errors.push("rendered 720p final footer clearance guard: scene switchbar selector block missing");
+  } else {
+    assertIncludes(finalFooterSceneSwitchbarBlock.text, "height: 46px !important;", "scene switchbar compact height", errors);
+    assertIncludes(finalFooterSceneSwitchbarBlock.text, "transform: translateY(-12px) !important;", "scene switchbar lift", errors);
+  }
+
+  const finalFooterSceneCurrentStrongBlock = findRuleBlock(
+    styleSource,
+    FINAL_FOOTER_SCENE_CURRENT_STRONG_SELECTOR,
+    finalFooterClearanceStart
+  );
+  if (!finalFooterSceneCurrentStrongBlock) {
+    errors.push("rendered 720p final footer clearance guard: scene current strong selector block missing");
+  } else {
+    assertIncludes(finalFooterSceneCurrentStrongBlock.text, "line-height: 16px !important;", "scene current title readable line-height", errors);
+  }
+
+  const finalFooterMeterPageBlock = findRuleBlockContaining(
+    meterReadingStyleSource,
+    FINAL_FOOTER_METER_PAGE_SELECTOR,
+    "grid-template-rows: 74px 56px minmax(0, 1fr) 30px !important;"
+  );
+  if (!finalFooterMeterPageBlock) {
+    errors.push("rendered 720p final footer clearance guard: meter-reading page selector block missing");
+  } else {
+    assertIncludes(
+      finalFooterMeterPageBlock.text,
+      "grid-template-rows: 74px 56px minmax(0, 1fr) 30px !important;",
+      "meter-reading final compact rows",
+      errors
+    );
+  }
+
+  const finalFooterMeterBoundaryBlock = findRuleBlockContaining(
+    meterReadingStyleSource,
+    FINAL_FOOTER_METER_BOUNDARY_SELECTOR,
+    "transform: translateY(-8px) !important;"
+  );
+  if (!finalFooterMeterBoundaryBlock) {
+    errors.push("rendered 720p final footer clearance guard: meter-reading boundary selector block missing");
+  } else {
+    assertIncludes(finalFooterMeterBoundaryBlock.text, "height: 30px !important;", "meter-reading boundary compact height", errors);
+    assertIncludes(finalFooterMeterBoundaryBlock.text, "transform: translateY(-8px) !important;", "meter-reading boundary lift", errors);
+  }
+
+  const finalFooterAlarmFooterBlock = findRuleBlock(styleSource, FINAL_FOOTER_ALARM_FOOTER_SELECTOR, finalFooterClearanceStart);
+  if (!finalFooterAlarmFooterBlock) {
+    errors.push("rendered 720p final footer clearance guard: alarm footer selector block missing");
+  } else {
+    assertIncludes(finalFooterAlarmFooterBlock.text, "transform: translateY(-12px) !important;", "alarm footer final lift", errors);
+  }
+
+  const finalFooterReportFooterBlock = findRuleBlock(styleSource, FINAL_FOOTER_REPORT_FOOTER_SELECTOR, finalFooterClearanceStart);
+  if (!finalFooterReportFooterBlock) {
+    errors.push("rendered 720p final footer clearance guard: report footer selector block missing");
+  } else {
+    assertIncludes(finalFooterReportFooterBlock.text, "transform: translateY(-12px) !important;", "report footer final lift", errors);
+  }
+
+  assertIncludes(styleSource, ENERGY_STATION_ACCEPTANCE_MARKER, "3001 energy station 720p acceptance guard", errors);
+  assertIncludes(styleSource, ENERGY_STATION_ACCEPTANCE_V2_MARKER, "3001 energy station 720p acceptance guard v2", errors);
+  assertOrder(
+    styleSource,
+    FINAL_FOOTER_CLEARANCE_MARKER,
+    ENERGY_STATION_ACCEPTANCE_MARKER,
+    "3001 energy station guard cascade order",
+    errors
+  );
+  assertOrder(
+    styleSource,
+    ENERGY_STATION_ACCEPTANCE_MARKER,
+    ENERGY_STATION_ACCEPTANCE_V2_MARKER,
+    "3001 energy station v2 cascade order",
+    errors
+  );
+
+  const energyStationGuardStart = styleSource.indexOf(ENERGY_STATION_ACCEPTANCE_MARKER);
+  const energyStationGuardV2Start = styleSource.indexOf(ENERGY_STATION_ACCEPTANCE_V2_MARKER);
+  const energyStationDashboardContentBlock =
+    energyStationGuardStart >= 0 ? findRuleBlock(styleSource, ENERGY_STATION_DASHBOARD_CONTENT_SELECTOR, energyStationGuardStart) : null;
+  if (!energyStationDashboardContentBlock) {
+    errors.push("3001 energy station 720p acceptance guard: dashboard content selector block missing");
+  } else {
+    assertIncludes(
+      energyStationDashboardContentBlock.text,
+      "height: calc(100dvh - 100px) !important;",
+      "dashboard content uses 720p duty-screen height",
+      errors
+    );
+    assertIncludes(energyStationDashboardContentBlock.text, "overflow: hidden !important;", "dashboard content prevents page spill", errors);
+  }
+
+  const energyStationAirContentBlock =
+    energyStationGuardStart >= 0 ? findRuleBlock(styleSource, ENERGY_STATION_AIR_CONTENT_SELECTOR, energyStationGuardStart) : null;
+  if (!energyStationAirContentBlock) {
+    errors.push("3001 energy station 720p acceptance guard: air content selector block missing");
+  } else {
+    assertIncludes(
+      energyStationAirContentBlock.text,
+      "height: calc(100dvh - 100px) !important;",
+      "air page content uses 720p duty-screen height",
+      errors
+    );
+    assertIncludes(energyStationAirContentBlock.text, "overflow: hidden !important;", "air page content prevents page spill", errors);
+  }
+
+  const energyStationAiContentBlock =
+    energyStationGuardStart >= 0 ? findRuleBlock(styleSource, ENERGY_STATION_AI_CONTENT_SELECTOR, energyStationGuardStart) : null;
+  if (!energyStationAiContentBlock) {
+    errors.push("3001 energy station 720p acceptance guard: AI content selector block missing");
+  } else {
+    assertIncludes(
+      energyStationAiContentBlock.text,
+      "height: calc(100dvh - 100px) !important;",
+      "AI page content uses 720p duty-screen height",
+      errors
+    );
+    assertIncludes(energyStationAiContentBlock.text, "overflow: hidden !important;", "AI page content prevents page spill", errors);
+  }
+
+  const energyStationDashboardPageBlock =
+    energyStationGuardStart >= 0
+      ? findRuleBlockContaining(
+          styleSource,
+          ENERGY_STATION_DASHBOARD_PAGE_SELECTOR,
+          "grid-template-rows: 29px 50px 64px 72px minmax(0, 1fr) 74px !important;"
+        )
+      : null;
+  if (!energyStationDashboardPageBlock) {
+    errors.push("3001 energy station 720p acceptance guard: dashboard page selector block missing");
+  } else {
+    assertIncludes(
+      energyStationDashboardPageBlock.text,
+      "grid-template-rows: 29px 50px 64px 72px minmax(0, 1fr) 74px !important;",
+      "dashboard cockpit final compact row plan",
+      errors
+    );
+  }
+
+  const energyStationAirPageBlock =
+    energyStationGuardV2Start >= 0
+      ? findRuleBlockContaining(
+          styleSource,
+          ENERGY_STATION_AIR_PAGE_SELECTOR,
+          "grid-template-rows: 116px 80px minmax(0, 1fr) !important;"
+        )
+      : null;
+  if (!energyStationAirPageBlock) {
+    errors.push("3001 energy station 720p acceptance guard v2: air page selector block missing");
+  } else {
+    assertIncludes(
+      energyStationAirPageBlock.text,
+      "grid-template-rows: 116px 80px minmax(0, 1fr) !important;",
+      "air page final compact row plan",
+      errors
+    );
+  }
+
+  const energyStationAirKpiBlock =
+    energyStationGuardV2Start >= 0
+      ? findRuleBlockContaining(
+          styleSource,
+          ENERGY_STATION_AIR_KPI_CARD_SELECTOR,
+          "grid-template-rows: 15px 25px 20px !important;"
+        )
+      : null;
+  if (!energyStationAirKpiBlock) {
+    errors.push("3001 energy station 720p acceptance guard v2: air KPI card selector block missing");
+  } else {
+    assertIncludes(energyStationAirKpiBlock.text, "height: 80px !important;", "air KPI card readable height", errors);
+    assertIncludes(
+      energyStationAirKpiBlock.text,
+      "grid-template-rows: 15px 25px 20px !important;",
+      "air KPI card title-value-status rows",
+      errors
+    );
+  }
+
+  const energyStationAiPageBlock =
+    energyStationGuardStart >= 0 ? findRuleBlock(styleSource, ENERGY_STATION_AI_PAGE_SELECTOR, energyStationGuardStart) : null;
+  if (!energyStationAiPageBlock) {
+    errors.push("3001 energy station 720p acceptance guard: AI page selector block missing");
+  } else {
+    assertIncludes(energyStationAiPageBlock.text, "min-height: 0 !important;", "AI page can shrink inside 720p frame", errors);
+    assertIncludes(
+      energyStationAiPageBlock.text,
+      "grid-template-columns: minmax(0, 1fr) minmax(clamp(600px, 42vw, 700px), 0.54fr) !important;",
+      "AI page gives recommendation rail enough readable width",
+      errors
+    );
+    assertIncludes(
+      energyStationAiPageBlock.text,
+      "grid-template-rows: 52px 74px minmax(0, 0.72fr) minmax(112px, 0.28fr) !important;",
+      "AI page final compact row plan",
+      errors
+    );
+  }
+
+  assertIncludes(styleSource, ENERGY_STATION_AI_MAIN_SELECTOR, "AI main layout selector", errors);
+  assertIncludes(
+    styleSource,
+    "display: contents !important;",
+    "AI main layout allows right review rail to span lower row",
+    errors
+  );
+  assertIncludes(styleSource, ENERGY_STATION_AI_BOTTOM_GRID_SELECTOR, "AI bottom grid selector", errors);
+  assertIncludes(
+    styleSource,
+    "grid-template-columns: minmax(0, 0.96fr) minmax(0, 0.9fr) minmax(clamp(600px, 42vw, 700px), 0.54fr) !important;",
+    "AI bottom grid spans under both plant overview and right rail",
+    errors
+  );
+  assertIncludes(aiOverviewSource, 'layoutRole: "chiller"', "AI simplified topology keeps chiller semantic node", errors);
+  assertIncludes(aiOverviewSource, 'layoutRole: "chilled-pump"', "AI simplified topology keeps chilled pump semantic node", errors);
+  assertIncludes(aiOverviewSource, 'layoutRole: "cooling-pump"', "AI simplified topology keeps cooling pump semantic node", errors);
+  assertIncludes(aiOverviewSource, 'layoutRole: "cooling-tower"', "AI simplified topology keeps cooling tower semantic node", errors);
+  assertIncludes(aiOverviewSource, "equipment-${item.layoutRole}", "AI simplified topology uses semantic layout classes", errors);
+  assertIncludes(styleSource, ".equipment-chiller", "AI simplified topology chiller boundary card", errors);
+  assertIncludes(styleSource, ".equipment-chilled-pump", "AI simplified topology chilled side pump card", errors);
+  assertIncludes(styleSource, ".equipment-cooling-pump", "AI simplified topology cooling side pump card", errors);
+  assertIncludes(styleSource, ".equipment-cooling-tower", "AI simplified topology cooling tower card", errors);
+  assertIncludes(styleSource, ".equipment-telemetry", "AI simplified topology telemetry side node", errors);
+  assertIncludes(styleSource, ".ai-plant-network::before", "AI simplified topology chiller heat-exchange boundary line", errors);
+  assertIncludes(styleSource, "border-right: 8px solid rgba(255, 202, 107, 0.76);", "AI simplified topology cooling loop points back to chiller", errors);
+  assertIncludes(styleSource, "height: 82px;", "AI simplified topology uses compact process nodes", errors);
+  assertIncludes(styleSource, "height: 104px;", "AI simplified topology keeps chiller as primary boundary node", errors);
+  assertIncludes(styleSource, "height: 26px;", "AI simplified topology uses compact loop badges", errors);
+  assertNotIncludes(aiOverviewSource, "equipment-${index}", "AI simplified topology must not use index-positioned equipment cards", errors);
+
+  const energyStationAiRecBlock =
+    energyStationGuardV2Start >= 0 ? findRuleBlock(styleSource, ENERGY_STATION_AI_REC_ROW_SELECTOR, energyStationGuardV2Start) : null;
+  if (!energyStationAiRecBlock) {
+    errors.push("3001 energy station 720p acceptance guard v2: AI recommendation row selector block missing");
+  } else {
+    assertIncludes(energyStationAiRecBlock.text, "max-height: 78px !important;", "AI recommendation row readable bounded height", errors);
+    assertIncludes(energyStationAiRecBlock.text, "overflow: hidden !important;", "AI recommendation row no text spill", errors);
+  }
+
+  const energyStationAiSubsystemGridBlock =
+    energyStationGuardV2Start >= 0
+      ? findRuleBlock(styleSource, ENERGY_STATION_AI_SUBSYSTEM_GRID_SELECTOR, energyStationGuardV2Start)
+      : null;
+  if (!energyStationAiSubsystemGridBlock) {
+    errors.push("3001 energy station 720p acceptance guard v2: AI subsystem advice grid selector block missing");
+  } else {
+    assertIncludes(
+      energyStationAiSubsystemGridBlock.text,
+      "overflow-x: auto !important;",
+      "AI subsystem advice grid keeps horizontal overflow local",
+      errors
+    );
+    assertIncludes(
+      energyStationAiSubsystemGridBlock.text,
+      "scroll-snap-type: x mandatory !important;",
+      "AI subsystem advice grid snaps visible cards",
+      errors
+    );
+  }
+
+  const energyStationAiSubsystemCardBlock =
+    energyStationGuardV2Start >= 0
+      ? findRuleBlock(styleSource, ENERGY_STATION_AI_SUBSYSTEM_CARD_SELECTOR, energyStationGuardV2Start)
+      : null;
+  if (!energyStationAiSubsystemCardBlock) {
+    errors.push("3001 energy station 720p acceptance guard v2: AI subsystem advice card selector block missing");
+  } else {
+    assertIncludes(
+      energyStationAiSubsystemCardBlock.text,
+      "flex: 0 0 calc((100% - 12px) / 3) !important;",
+      "AI subsystem advice cards fit three-up inside right panel",
+      errors
+    );
+    assertIncludes(
+      energyStationAiSubsystemCardBlock.text,
+      "max-width: calc((100% - 12px) / 3) !important;",
+      "AI subsystem advice cards avoid right-edge clipping",
+      errors
+    );
+  }
+
+  assertIncludes(dashboardSource, "data-dashboard-lifecycle-mode", "dashboard lifecycle mode hook", errors);
+  assertIncludes(dashboardSource, "项目接入总览", "dashboard onboarding title", errors);
+  assertIncludes(dashboardSource, "项目联调总览", "dashboard commissioning title", errors);
+  assertIncludes(dashboardSource, "综合运行总览", "dashboard operation title", errors);
+  assertIncludes(appShellSource, "shellMainRef.current.scrollTop = 0", "route change resets shell scroll position", errors);
+  assertIncludes(
+    dashboardSource,
+    "配置已发布但实时待接的子系统不显示假 KPI、不参与统计",
+    "dashboard unavailable subsystem no-fake-KPI copy",
+    errors
+  );
+  assertIncludes(subsystemStatusSource, "待接实时", "shared waiting-for-real-data subsystem status copy", errors);
+  assertIncludes(compressedAirSource, "未接入实时数据不显示假 KPI", "compressed-air no-fake-KPI copy", errors);
+  assertIncludes(
+    compressedAirSource,
+    "当前未接入真实空压实时数据",
+    "compressed-air real-data-not-connected warning copy",
+    errors
+  );
+  assertIncludes(compressedAirSource, "不写 PLC", "compressed-air read-only PLC boundary copy", errors);
+  assertIncludes(
+    compressedAirSource,
+    "第一版只做只读诊断和影子建议",
+    "compressed-air read-only shadow scope copy",
+    errors
+  );
+  assertIncludes(
+    compressedAirSource,
+    "不下发加载卸载命令",
+    "compressed-air no compressor load-unload command copy",
+    errors
+  );
+  assertIncludes(hvacTerminalSource, "未接入实时数据不显示假 KPI", "hvac-terminal no-fake-KPI copy", errors);
+  assertIncludes(
+    hvacTerminalSource,
+    "当前未接入真实空调末端实时数据",
+    "hvac-terminal real-data-not-connected warning copy",
+    errors
+  );
+  assertIncludes(hvacTerminalSource, "不直接写 BA/PLC", "hvac-terminal frontend no-direct-write boundary copy", errors);
+  assertIncludes(
+    hvacTerminalSource,
+    "白名单、适配器、后端只读总闸和审计回退保护",
+    "hvac-terminal protected FCU closed-loop boundary copy",
+    errors
+  );
+  assertIncludes(
+    hvacTerminalSource,
+    "阀门只作为反馈，不直接写阀门开度",
+    "hvac-terminal no direct valve control copy",
+    errors
+  );
+  assertIncludes(aiOverviewSource, "影子建议模式", "AI overview shadow mode copy", errors);
+  assertIncludes(aiOverviewSource, "安全边界待站点确认", "AI overview unconfirmed safety boundary copy", errors);
+  assertIncludes(aiOverviewSource, "人工确认仅形成评审记录", "AI overview shadow review boundary copy", errors);
+  assertIncludes(aiOverviewSource, "暂无可评审的 AI 优化建议", "AI overview missing-data recommendation guard", errors);
+  assertIncludes(aiOverviewSource, "趋势数据待接入", "AI overview missing trend evidence guard", errors);
+  assertIncludes(aiOverviewSource, "跨系统 AI 建议中心", "AI overview cross-system advice center copy", errors);
+  assertIncludes(
+    aiOverviewSource,
+    "getSubsystemStatusPresentation",
+    "AI overview shared subsystem status model",
+    errors
+  );
+  assertIncludes(aiOverviewSource, "真实空压/子系统实时数据未接入", "AI overview real-data-not-connected copy", errors);
+  assertIncludes(aiOverviewSource, "不生成假 KPI、不推送节能建议", "AI overview unavailable subsystem no-fake-advice copy", errors);
+
+  if (errors.length > 0) {
+    console.error("Visual readability contract check failed:");
+    errors.forEach((error) => console.error(`- ${error}`));
+    process.exit(1);
+  }
+
+  console.log("Visual readability contract check passed.");
+  console.log("- checked trend active-state contrast guard");
+  console.log("- checked energy-efficiency threshold label size guard");
+  console.log("- checked alarm queue row readability guard");
+  console.log("- checked system overview verdict badge readability guard");
+  console.log("- checked system overview load node compact fallback copy");
+  console.log("- checked project queue rank badge readability guard");
+  console.log("- checked dense page no-clip guards for project, performance, work-order, and energy-analysis pages");
+  console.log("- checked source/status chip contrast guard");
+  console.log("- checked rendered 720p no-clip pass for energy-parameter, meter-reading, performance, scene controls, and key action buttons");
+  console.log("- checked dashboard cockpit status line no-cut guard");
+  console.log("- checked performance report summary two-row guard");
+  console.log("- checked work-order header no-overlap guard");
+  console.log("- checked trend series stats no-clip guard");
+  console.log("- checked trend mobile page-title no-break guard");
+  console.log("- checked optimize result spotlight guard");
+  console.log("- checked energy efficiency calendar value width guard");
+  console.log("- checked 720p bottom safe-area guard");
+  console.log("- checked scene native 2D viewport rule");
+  console.log("- checked rendered 720p final footer clearance guard");
+  console.log("- checked 3001 energy-station 720p demo acceptance guards");
+  console.log("- checked temporary QA seed is absent");
+}
+
+main();

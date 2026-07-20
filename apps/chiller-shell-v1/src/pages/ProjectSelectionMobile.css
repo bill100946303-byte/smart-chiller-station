@@ -1,0 +1,195 @@
+@media (max-width: 720px) {
+  html body #root#root#root .content.is-subpage-compact:has(> .project-switch-page) {
+    height: auto !important;
+    min-height: calc(100dvh - 100px) !important;
+    padding: 8px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  html body #root#root#root .content.is-subpage-compact > .project-switch-page {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    display: grid !important;
+    grid-template-rows: auto auto !important;
+    gap: 10px !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-header.subpage-command-board {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+    padding: 14px !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-command-copy {
+    display: grid !important;
+    grid-template-rows: auto !important;
+    gap: 8px !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-command-copy :is(h1, h2) {
+    min-height: 0 !important;
+    font-size: 24px !important;
+    line-height: 1.2 !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-command-tags {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-command-tags > span,
+  html body #root#root#root .project-switch-page .project-switch-search {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 44px !important;
+    height: 44px !important;
+    padding: 0 12px !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-search input {
+    height: 44px !important;
+    font-size: 14px !important;
+    line-height: 42px !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-search button {
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-command-side {
+    min-width: 0 !important;
+    display: grid !important;
+    gap: 6px !important;
+    padding: 12px !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-command-note strong {
+    font-size: 17px !important;
+    line-height: 1.3 !important;
+    white-space: normal !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-queue-shell {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    display: grid !important;
+    grid-template-rows: auto auto !important;
+    gap: 10px !important;
+    padding: 12px !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-queue-head {
+    height: auto !important;
+    min-height: 44px !important;
+    display: grid !important;
+    align-content: center !important;
+    gap: 4px !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-queue-head span,
+  html body #root#root#root .project-switch-page .project-switch-queue-head strong {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-grid {
+    width: 100% !important;
+    height: auto !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-auto-rows: auto !important;
+    gap: 10px !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-card {
+    width: 100% !important;
+    min-height: 0 !important;
+    display: grid !important;
+    gap: 10px !important;
+    padding: 14px !important;
+    border-radius: 14px !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-card-top,
+  html body #root#root#root .project-switch-page .project-switch-card-head {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: start !important;
+    gap: 8px !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-card-head strong {
+    max-height: none !important;
+    font-size: 18px !important;
+    line-height: 1.35 !important;
+    white-space: normal !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-rank,
+  html body #root#root#root .project-switch-page .project-switch-state-pill {
+    min-height: 28px !important;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+    line-height: 28px !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-card-pills {
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-card-band,
+  html body #root#root#root .project-switch-page .project-switch-card-meta {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-card-band article {
+    min-height: 72px !important;
+    padding: 10px !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-card-band span,
+  html body #root#root#root .project-switch-page .project-switch-card-meta span {
+    min-height: 36px !important;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+    white-space: normal !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-card-band strong {
+    font-size: 17px !important;
+    line-height: 1.3 !important;
+  }
+
+  html body #root#root#root .project-switch-page .project-switch-cta {
+    min-height: 44px !important;
+    flex-basis: 44px !important;
+    padding: 0 14px !important;
+    border-radius: 10px !important;
+    font-size: 14px !important;
+    line-height: 44px !important;
+  }
+}

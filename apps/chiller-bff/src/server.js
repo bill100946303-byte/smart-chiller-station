@@ -1,4 +1,4 @@
-import path from "node:path";
+﻿import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import cors from "cors";
@@ -16,6 +16,24 @@ const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 function createRequestId() {
   return `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export function isAllowedReadOnlyV1Write(req) {
+  return (
+    req.method === "POST" &&
+    (req.path.endsWith("/optimize") ||
+      req.path.endsWith("/optimize/tower-approach/advice") ||
+      req.path.endsWith("/hvac-terminal/fan-coils/control-cycle") ||
+      req.path.endsWith("/hvac-terminal/fan-coils/control-command") ||
+      req.path.endsWith("/hvac-terminal/fan-coils/canary-window") ||
+      req.path.endsWith("/hvac-terminal/fan-coils/field-arm-package") ||
+      req.path.endsWith("/hvac-terminal/fan-coils/canary-dispatch") ||
+      req.path.endsWith("/hvac-terminal/fan-coils/final-control-status/refresh") ||
+      req.path.endsWith("/hvac-terminal/fan-coils/final-control-rollout") ||
+      req.path.endsWith("/power-monitoring/byx/history/snapshots") ||
+      req.path.includes("/optimize/executions") ||
+      req.path.endsWith("/assistant/query"))
+  );
 }
 
 export function createReadOnlyMiddleware(options = {}) {
@@ -71,7 +89,10 @@ export function createApp(appConfig = config, dependencies = {}) {
       appModeLabel: appConfig.appModeLabel,
       readOnlyMode: appConfig.readOnlyMode,
       legacyBaseUrl: appConfig.legacyBaseUrl,
-      adminDbFile: appConfig.adminDbFile
+      realtimeParamsBaseUrl: appConfig.realtimeParamsBaseUrl,
+      realtimeParamsTimeoutMs: appConfig.realtimeParamsTimeoutMs,
+      adminDbFile: appConfig.adminDbFile,
+      adminDevAuth: appConfig.adminDevAuth === true
     });
   });
 
@@ -79,12 +100,7 @@ export function createApp(appConfig = config, dependencies = {}) {
     "/bff/v1",
     createReadOnlyMiddleware({
       appConfig,
-      allowWrite(req) {
-        return (
-          req.method === "POST" &&
-          (req.path.endsWith("/optimize") || req.path.endsWith("/assistant/query"))
-        );
-      }
+      allowWrite: isAllowedReadOnlyV1Write
     })
   );
   app.use("/bff/v1", buildV1Router(appConfig, { adminStore }));
@@ -119,9 +135,10 @@ export function createApp(appConfig = config, dependencies = {}) {
 
 export function startServer(appConfig = config, dependencies = {}) {
   const { app, adminStore, adminAuthService } = createApp(appConfig, dependencies);
-  const server = app.listen(appConfig.port, "127.0.0.1", () => {
+  const host = process.env.BFF_HOST || "0.0.0.0";
+  const server = app.listen(appConfig.port, host, () => {
     // eslint-disable-next-line no-console
-    console.log(`[chiller-bff] listening on http://127.0.0.1:${appConfig.port}`);
+    console.log(`[chiller-bff] listening on http://${host}:${appConfig.port}`);
   });
   return {
     app,

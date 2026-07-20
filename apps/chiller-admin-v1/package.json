@@ -1,0 +1,32 @@
+{
+  "name": "chiller-admin-v1",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "check": "npm run check:fcu-authorization-ui && npm run check:config-version-ui && npm run check:station-registry-ui && npm run check:station-runtime-binding-ui && npm run check:admin-shell-responsive-ui && npm run check:table-region-accessibility",
+    "check:fcu-authorization-ui": "node scripts/check-fcu-authorization-ui-contract.js",
+    "check:config-version-ui": "node scripts/check-config-version-ui-contract.js",
+    "check:station-registry-ui": "node scripts/check-station-registry-ui-contract.js",
+    "check:station-runtime-binding-ui": "node scripts/check-station-runtime-binding-ui-contract.js",
+    "check:admin-shell-responsive-ui": "node scripts/check-admin-shell-responsive-contract.js",
+    "check:table-region-accessibility": "node scripts/check-table-region-accessibility.js",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "lucide-react": "^0.542.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.8.2"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.11",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^5.0.2",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.3"
+  }
+}

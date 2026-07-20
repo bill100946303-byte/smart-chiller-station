@@ -1,0 +1,298 @@
+{
+  "generatedAt": "2026-04-08T21:03:58.821Z",
+  "baseUrl": "http://127.0.0.1:8098",
+  "siteIds": [
+    "140",
+    "140btwentyfive",
+    "126lnoffice"
+  ],
+  "runtimeDiagnostics": {
+    "baseUrl": "http://127.0.0.1:8098",
+    "hostname": "127.0.0.1",
+    "loopbackHost": true,
+    "nodeFetchLoopback": "blocked",
+    "nodeFetchError": "fetch failed",
+    "nodeFetchCauseCode": "EPERM",
+    "caveat": "Current Node runtime cannot access loopback URLs. Transport-failed probe results may be sandbox false negatives."
+  },
+  "probes": [
+    {
+      "siteId": "140",
+      "key": "subsystemSummary",
+      "path": "/140/getAllSubsystemInfo",
+      "url": "http://127.0.0.1:8098/140/getAllSubsystemInfo",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/140/getAllSubsystemInfo\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "140",
+      "key": "drinfo",
+      "path": "/zsqy/drinfo/140/findObject?pageCurrent=1&pageSize=1",
+      "url": "http://127.0.0.1:8098/zsqy/drinfo/140/findObject?pageCurrent=1&pageSize=1",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/zsqy/drinfo/140/findObject?pageCurrent=1&pageSize=1\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "140",
+      "key": "energyCurve",
+      "path": "/zsqy/homepage/140/getEnergyStatisticsCurve",
+      "url": "http://127.0.0.1:8098/zsqy/homepage/140/getEnergyStatisticsCurve",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/zsqy/homepage/140/getEnergyStatisticsCurve\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "140",
+      "key": "runParamsCurve",
+      "path": "/zsqy/homepage/140/getRunParamsCurve",
+      "url": "http://127.0.0.1:8098/zsqy/homepage/140/getRunParamsCurve",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/zsqy/homepage/140/getRunParamsCurve\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "140",
+      "key": "equipmentEnergyCurve",
+      "path": "/zsqy/homepage/140/getEquipmentEnergyStatisticsCurve",
+      "url": "http://127.0.0.1:8098/zsqy/homepage/140/getEquipmentEnergyStatisticsCurve",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/zsqy/homepage/140/getEquipmentEnergyStatisticsCurve\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "140",
+      "key": "alarmLog",
+      "path": "/zsqy/qsAlarmlog/140/findNewAlarmLog",
+      "url": "http://127.0.0.1:8098/zsqy/qsAlarmlog/140/findNewAlarmLog",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/zsqy/qsAlarmlog/140/findNewAlarmLog\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "140btwentyfive",
+      "key": "subsystemSummary",
+      "path": "/140btwentyfive/getAllSubsystemInfo",
+      "url": "http://127.0.0.1:8098/140btwentyfive/getAllSubsystemInfo",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/140btwentyfive/getAllSubsystemInfo\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "140btwentyfive",
+      "key": "drinfo",
+      "path": "/zsqy/drinfo/140btwentyfive/findObject?pageCurrent=1&pageSize=1",
+      "url": "http://127.0.0.1:8098/zsqy/drinfo/140btwentyfive/findObject?pageCurrent=1&pageSize=1",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/zsqy/drinfo/140btwentyfive/findObject?pageCurrent=1&pageSize=1\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "140btwentyfive",
+      "key": "energyCurve",
+      "path": "/zsqy/homepage/140btwentyfive/getEnergyStatisticsCurve",
+      "url": "http://127.0.0.1:8098/zsqy/homepage/140btwentyfive/getEnergyStatisticsCurve",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/zsqy/homepage/140btwentyfive/getEnergyStatisticsCurve\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "140btwentyfive",
+      "key": "runParamsCurve",
+      "path": "/zsqy/homepage/140btwentyfive/getRunParamsCurve",
+      "url": "http://127.0.0.1:8098/zsqy/homepage/140btwentyfive/getRunParamsCurve",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/zsqy/homepage/140btwentyfive/getRunParamsCurve\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "140btwentyfive",
+      "key": "equipmentEnergyCurve",
+      "path": "/zsqy/homepage/140btwentyfive/getEquipmentEnergyStatisticsCurve",
+      "url": "http://127.0.0.1:8098/zsqy/homepage/140btwentyfive/getEquipmentEnergyStatisticsCurve",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/zsqy/homepage/140btwentyfive/getEquipmentEnergyStatisticsCurve\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "140btwentyfive",
+      "key": "alarmLog",
+      "path": "/zsqy/qsAlarmlog/140btwentyfive/findNewAlarmLog",
+      "url": "http://127.0.0.1:8098/zsqy/qsAlarmlog/140btwentyfive/findNewAlarmLog",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/zsqy/qsAlarmlog/140btwentyfive/findNewAlarmLog\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "126lnoffice",
+      "key": "subsystemSummary",
+      "path": "/126lnoffice/getAllSubsystemInfo",
+      "url": "http://127.0.0.1:8098/126lnoffice/getAllSubsystemInfo",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/126lnoffice/getAllSubsystemInfo\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "126lnoffice",
+      "key": "drinfo",
+      "path": "/zsqy/drinfo/126lnoffice/findObject?pageCurrent=1&pageSize=1",
+      "url": "http://127.0.0.1:8098/zsqy/drinfo/126lnoffice/findObject?pageCurrent=1&pageSize=1",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/zsqy/drinfo/126lnoffice/findObject?pageCurrent=1&pageSize=1\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "126lnoffice",
+      "key": "energyCurve",
+      "path": "/zsqy/homepage/126lnoffice/getEnergyStatisticsCurve",
+      "url": "http://127.0.0.1:8098/zsqy/homepage/126lnoffice/getEnergyStatisticsCurve",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/zsqy/homepage/126lnoffice/getEnergyStatisticsCurve\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "126lnoffice",
+      "key": "runParamsCurve",
+      "path": "/zsqy/homepage/126lnoffice/getRunParamsCurve",
+      "url": "http://127.0.0.1:8098/zsqy/homepage/126lnoffice/getRunParamsCurve",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/zsqy/homepage/126lnoffice/getRunParamsCurve\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "126lnoffice",
+      "key": "equipmentEnergyCurve",
+      "path": "/zsqy/homepage/126lnoffice/getEquipmentEnergyStatisticsCurve",
+      "url": "http://127.0.0.1:8098/zsqy/homepage/126lnoffice/getEquipmentEnergyStatisticsCurve",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/zsqy/homepage/126lnoffice/getEquipmentEnergyStatisticsCurve\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    },
+    {
+      "siteId": "126lnoffice",
+      "key": "alarmLog",
+      "path": "/zsqy/qsAlarmlog/126lnoffice/findNewAlarmLog",
+      "url": "http://127.0.0.1:8098/zsqy/qsAlarmlog/126lnoffice/findNewAlarmLog",
+      "attempts": 3,
+      "transportOk": false,
+      "httpStatus": null,
+      "businessStatus": null,
+      "outcome": "transport_failed",
+      "bodyPreview": null,
+      "transportError": "Command failed: curl -sS -m 5 -w \n__HTTP_STATUS__:%{http_code} http://127.0.0.1:8098/zsqy/qsAlarmlog/126lnoffice/findNewAlarmLog\ncurl: (7) Failed to connect to 127.0.0.1 port 8098 after 0 ms: Couldn't connect to server\n"
+    }
+  ],
+  "summary": {
+    "identifiers": {
+      "140": {
+        "readyCount": 0,
+        "failedCount": 0,
+        "transportFailures": 6,
+        "probeKeys": {
+          "subsystemSummary": "transport_failed",
+          "drinfo": "transport_failed",
+          "energyCurve": "transport_failed",
+          "runParamsCurve": "transport_failed",
+          "equipmentEnergyCurve": "transport_failed",
+          "alarmLog": "transport_failed"
+        }
+      },
+      "140btwentyfive": {
+        "readyCount": 0,
+        "failedCount": 0,
+        "transportFailures": 6,
+        "probeKeys": {
+          "subsystemSummary": "transport_failed",
+          "drinfo": "transport_failed",
+          "energyCurve": "transport_failed",
+          "runParamsCurve": "transport_failed",
+          "equipmentEnergyCurve": "transport_failed",
+          "alarmLog": "transport_failed"
+        }
+      },
+      "126lnoffice": {
+        "readyCount": 0,
+        "failedCount": 0,
+        "transportFailures": 6,
+        "probeKeys": {
+          "subsystemSummary": "transport_failed",
+          "drinfo": "transport_failed",
+          "energyCurve": "transport_failed",
+          "runParamsCurve": "transport_failed",
+          "equipmentEnergyCurve": "transport_failed",
+          "alarmLog": "transport_failed"
+        }
+      }
+    },
+    "caveat": "Current Node runtime cannot access loopback URLs. Transport-failed probe results may be sandbox false negatives."
+  }
+}

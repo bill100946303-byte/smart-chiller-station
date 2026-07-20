@@ -1,0 +1,2 @@
+workOrderId,priority,deviceCode,deviceName,owner,status,currentZoneTemperatureC,currentSetpointC,currentCommunicationAlarm,reasons,plannedAction,releaseCriteria,handledBy,handledAt,communicationAlarmAfter,zoneTemperatureAfterC,setpointFeedbackAfterC,writePointMappingChecked,twoSampleNormal,localManualLockout,releaseDecision,reviewedBy,reviewedAt,notes
+FCU-P0-CWS,,CWS,财务室,,,,,,,,,,,,,,,,,,,,

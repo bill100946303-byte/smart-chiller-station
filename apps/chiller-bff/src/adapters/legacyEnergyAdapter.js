@@ -48,6 +48,35 @@ function text(value) {
   return String(value || "").trim();
 }
 
+function formatDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeDateText(value) {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value.trim())) {
+    return value.trim();
+  }
+  return formatDate(new Date());
+}
+
+function addDays(dateText, days) {
+  const base = new Date(`${dateText}T00:00:00`);
+  if (Number.isNaN(base.getTime())) {
+    return dateText;
+  }
+  base.setDate(base.getDate() + days);
+  return formatDate(base);
+}
+
+function buildTrendRangeDates(range, endDateText) {
+  const days = range === "30d" ? 30 : range === "7d" ? 7 : 2;
+  const endDate = normalizeDateText(endDateText);
+  return Array.from({ length: days }, (_item, index) => addDays(endDate, index - (days - 1)));
+}
+
 function compactKey(value) {
   return text(value).toLowerCase().replace(/\s+/g, "");
 }
@@ -154,6 +183,51 @@ function includesAny(target, patterns) {
   return patterns.some((pattern) => target.includes(pattern));
 }
 
+function buildSeriesSearchKey(series) {
+  return compactKey(`${series?.key || ""} ${series?.label || ""}`);
+}
+
+function isTotalPowerSeries(series) {
+  return includesAny(buildSeriesSearchKey(series), ["totalpower", "总功率"]);
+}
+
+function isComponentTotalPowerSeries(series) {
+  const key = buildSeriesSearchKey(series);
+  if (!includesAny(key, ["totalpower", "总功率"])) {
+    return false;
+  }
+
+  return (
+    includesAny(key, [
+      "chillertotalpower",
+      "chillerpower",
+      "hosttotalpower",
+      "hostpower",
+      "mainunittotalpower",
+      "chilledwaterpumptotalpower",
+      "chilledpumptotalpower",
+      "refrigerationpumptotalpower",
+      "condenserwaterpumptotalpower",
+      "coolingwaterpumptotalpower",
+      "coolingpumptotalpower",
+      "coolingtowertotalpower",
+      "towertotalpower",
+      "冷机总功率",
+      "主机总功率",
+      "冰机总功率",
+      "冷水机组总功率",
+      "冷冻泵总功率",
+      "冷却泵总功率",
+      "冷却塔总功率"
+    ]) ||
+    /^(ch|chp|cwp|ct)\d*totalpower/.test(key)
+  );
+}
+
+function isStationTotalPowerSeries(series) {
+  return isTotalPowerSeries(series) && !isComponentTotalPowerSeries(series);
+}
+
 const RUN_PARAM_BY_TAG_SPECS = {
   chilledDeltaT: {
     sourceKey: "runParamsByTag.chilledDeltaT",
@@ -183,6 +257,45 @@ const TOTAL_POWER_FALLBACK_QUERIES = [
   { title: "实时总功率", tagname: "TotalPower" }
 ];
 
+const TREND_RANGE_BY_TAG_GROUPS = [
+  {
+    metric: "totalPowerKw",
+    sourceKey: "runParamsByTagRange.totalPower",
+    label: "总功率",
+    key: "totalpower",
+    specs: TOTAL_POWER_FALLBACK_QUERIES.map((query) => ({
+      sourceKey: "runParamsByTagRange.totalPower",
+      label: "总功率",
+      ...query
+    }))
+  },
+  {
+    metric: "currentCop",
+    sourceKey: "runParamsByTagRange.currentCop",
+    label: "冷站COP",
+    key: "currentcop",
+    specs: COP_FALLBACK_QUERIES.map((query) => ({
+      sourceKey: "runParamsByTagRange.currentCop",
+      label: "冷站COP",
+      ...query
+    }))
+  },
+  {
+    metric: "chilledDeltaT",
+    sourceKey: "runParamsByTagRange.chilledDeltaT",
+    label: RUN_PARAM_BY_TAG_SPECS.chilledDeltaT.label,
+    key: "chilledwatertemperaturedifference",
+    specs: [RUN_PARAM_BY_TAG_SPECS.chilledDeltaT]
+  },
+  {
+    metric: "coolingDeltaT",
+    sourceKey: "runParamsByTagRange.coolingDeltaT",
+    label: RUN_PARAM_BY_TAG_SPECS.coolingDeltaT.label,
+    key: "chilledoutwatertemperaturedifference",
+    specs: [RUN_PARAM_BY_TAG_SPECS.coolingDeltaT]
+  }
+];
+
 function buildRunParamByTagEndpoint(siteId, query) {
   const params = new URLSearchParams();
   if (query?.title) {
@@ -198,14 +311,115 @@ function buildRunParamByTagEndpoint(siteId, query) {
   return `/zsqy/homepage/${siteId}/getRunParamsCurveByTagName${suffix ? `?${suffix}` : ""}`;
 }
 
-function buildIdentifierCandidates(siteId, projectKey) {
+function buildIdentifierCandidates(
+  siteId,
+  projectKey,
+  projectKeyCandidates = [],
+  databaseKey = "",
+  databaseKeyCandidates = []
+) {
+  const dbCandidates = Array.isArray(databaseKeyCandidates) ? databaseKeyCandidates : [];
+  const extraCandidates = Array.isArray(projectKeyCandidates) ? projectKeyCandidates : [];
   return Array.from(
     new Set(
-      [projectKey, siteId]
+      [...dbCandidates, databaseKey, ...extraCandidates, projectKey, siteId]
         .map((value) => text(value))
         .filter(Boolean)
-    )
+      )
   );
+}
+
+function buildIdentifierProbeSummary(attempts = []) {
+  return attempts
+    .map((attempt) => {
+      if (attempt?.result?.ok) {
+        return `${attempt.identifier}:rows=${attempt.rows ?? 0}`;
+      }
+      return `${attempt?.identifier || "unknown"}:failed`;
+    })
+    .join(",");
+}
+
+async function fetchLegacyJsonAcrossIdentifiers(baseUrl, identifiers, endpointBuilder) {
+  const orderedIdentifiers = Array.isArray(identifiers) ? identifiers.filter(Boolean) : [];
+  if (orderedIdentifiers.length === 0) {
+    return {
+      attempts: [],
+      selected: null
+    };
+  }
+
+  const attempts = [];
+  const probeIdentifier = async (identifier) => {
+    const endpoint = endpointBuilder(identifier);
+    const result = await fetchLegacyJson(baseUrl, endpoint);
+    const rows = result.ok ? deepArrayProbe(result.payload).length : null;
+    return {
+      identifier,
+      endpoint,
+      result,
+      rows
+    };
+  };
+
+  const firstAttempt = await probeIdentifier(orderedIdentifiers[0]);
+  attempts.push(firstAttempt);
+  if (firstAttempt?.result?.ok && typeof firstAttempt.rows === "number" && firstAttempt.rows > 0) {
+    return {
+      attempts,
+      selected: firstAttempt
+    };
+  }
+
+  if (orderedIdentifiers.length > 1) {
+    const remainingAttempts = await Promise.all(
+      orderedIdentifiers.slice(1).map((identifier) => probeIdentifier(identifier))
+    );
+    attempts.push(...remainingAttempts);
+  }
+
+  const firstOkWithRows = attempts.find(
+    (attempt) => attempt?.result?.ok && typeof attempt.rows === "number" && attempt.rows > 0
+  );
+  const firstOk = attempts.find((attempt) => attempt?.result?.ok);
+
+  return {
+    attempts,
+    selected: firstOkWithRows || firstOk || null
+  };
+}
+
+function toProbeSourceStatus(key, lookup, fallbackEndpoint) {
+  const attempts = Array.isArray(lookup?.attempts) ? lookup.attempts : [];
+  const selected = lookup?.selected;
+  const probeSummary = buildIdentifierProbeSummary(attempts);
+  const fallbackSuffix =
+    attempts.length > 1 && probeSummary
+      ? `; identifierProbe=${probeSummary}; selected=${selected?.identifier || "none"}`
+      : "";
+
+  if (selected?.result?.ok) {
+    return {
+      key,
+      endpoint: selected.endpoint,
+      ok: true,
+      status: selected.result.status ?? null,
+      message: `${extractMessage(selected.result.payload, "OK")}${fallbackSuffix}`,
+      error: null,
+      rows: typeof selected.rows === "number" ? selected.rows : null
+    };
+  }
+
+  const failedAttempt = attempts.at(-1);
+  return {
+    key,
+    endpoint: failedAttempt?.endpoint || fallbackEndpoint || null,
+    ok: false,
+    status: failedAttempt?.result?.status ?? null,
+    message: fallbackSuffix ? `probe-failed${fallbackSuffix}` : null,
+    error: failedAttempt?.result?.error || "Legacy request failed",
+    rows: null
+  };
 }
 
 function parseFlatPointRows(rows) {
@@ -405,17 +619,9 @@ async function loadHomeEnergySnapshot(baseUrl, siteId) {
 }
 
 async function loadHomeEnergySnapshotFallback(baseUrl, identifiers) {
-  const attempts = [];
-  for (const identifier of identifiers) {
-    const result = await loadHomeEnergySnapshot(baseUrl, identifier);
-    attempts.push(result);
-    if (result.sourceStatus?.ok) {
-      return {
-        selected: result,
-        attempts
-      };
-    }
-  }
+  const attempts = await Promise.all(
+    identifiers.map((identifier) => loadHomeEnergySnapshot(baseUrl, identifier))
+  );
 
   return {
     selected: attempts.find((item) => item.sourceStatus?.ok) || attempts.at(-1) || null,
@@ -475,15 +681,18 @@ async function loadRunParamByTag(baseUrl, siteId, spec) {
 async function loadRunParamByTagFallback(baseUrl, identifiers, specs) {
   const attempts = [];
   for (const spec of specs) {
-    for (const identifier of identifiers) {
-      const result = await loadRunParamByTag(baseUrl, identifier, spec);
-      attempts.push(result);
-      if (Array.isArray(result.series?.points) && result.series.points.length > 0) {
-        return {
-          selected: result,
-          attempts
-        };
-      }
+    const specAttempts = await Promise.all(
+      identifiers.map((identifier) => loadRunParamByTag(baseUrl, identifier, spec))
+    );
+    attempts.push(...specAttempts);
+    const selectedForSpec = specAttempts.find(
+      (result) => Array.isArray(result.series?.points) && result.series.points.length > 0
+    );
+    if (selectedForSpec) {
+      return {
+        selected: selectedForSpec,
+        attempts
+      };
     }
   }
 
@@ -493,6 +702,66 @@ async function loadRunParamByTagFallback(baseUrl, identifiers, specs) {
       attempts.find((item) => item.sourceStatus?.ok) ||
       attempts.at(-1) ||
       null,
+    attempts
+  };
+}
+
+function dedupeAndSortPoints(points = []) {
+  const pointMap = new Map();
+  for (const point of points) {
+    if (!point?.ts || typeof point.value !== "number" || !Number.isFinite(point.value)) {
+      continue;
+    }
+    pointMap.set(point.ts, {
+      ts: point.ts,
+      value: point.value
+    });
+  }
+  return Array.from(pointMap.values()).sort((left, right) => Date.parse(left.ts) - Date.parse(right.ts));
+}
+
+async function loadRunParamByTagRangeFallback(baseUrl, identifiers, group, dates) {
+  const lookups = await Promise.all(
+    dates.map((date) =>
+      loadRunParamByTagFallback(
+        baseUrl,
+        identifiers,
+        group.specs.map((spec) => ({
+          ...spec,
+          date
+        }))
+      )
+    )
+  );
+  const selectedResults = lookups.map((lookup) => lookup.selected).filter(Boolean);
+  const attempts = lookups.flatMap((lookup) => lookup.attempts);
+  const points = dedupeAndSortPoints(
+    selectedResults.flatMap((result) => result?.series?.points || [])
+  );
+  const okAttempts = selectedResults.filter((result) => Array.isArray(result?.series?.points) && result.series.points.length > 0);
+  const sampleEndpoint = okAttempts.find((result) => result?.sourceStatus?.endpoint)?.sourceStatus?.endpoint;
+
+  return {
+    selected:
+      points.length > 0
+        ? {
+            sourceStatus: {
+              key: group.sourceKey,
+              endpoint: sampleEndpoint || `/zsqy/homepage/${identifiers[0] || ""}/getRunParamsCurveByTagName`,
+              ok: true,
+              status: 200,
+              message: `rangeDays=${dates.length}; daysOk=${okAttempts.length}/${dates.length}; points=${points.length}`,
+              error: null,
+              rows: points.length
+            },
+            series: {
+              label: group.label,
+              key: group.key,
+              unit: null,
+              points
+            }
+          }
+        : null,
     attempts
   };
 }
@@ -721,7 +990,13 @@ function pickChilledPumpFreqSeries(seriesList) {
 }
 
 export async function loadEnergyOverview(baseUrl, siteId, requestContext = {}) {
-  const identifierCandidates = buildIdentifierCandidates(siteId, requestContext?.projectKey);
+  const identifierCandidates = buildIdentifierCandidates(
+    siteId,
+    requestContext?.projectKey,
+    requestContext?.projectKeyCandidates,
+    requestContext?.databaseKey,
+    requestContext?.databaseKeyCandidates
+  );
   const overviewAttempts = [];
   let overview = null;
 
@@ -743,7 +1018,10 @@ export async function loadEnergyOverview(baseUrl, siteId, requestContext = {}) {
         endpoint: failedAttempt?.endpoint || `/zsqy/homepage/${siteId}/getEquipmentEnergyStatisticsCurve`,
         ok: false,
         status: failedAttempt?.result?.status ?? null,
-        message: null,
+        message:
+          overviewAttempts.length > 1
+            ? `identifierProbe=${buildIdentifierProbeSummary(overviewAttempts)}`
+            : null,
         error: failedAttempt?.result?.error || "Legacy request failed"
       },
       metrics: null,
@@ -855,10 +1133,15 @@ export async function loadEnergyOverview(baseUrl, siteId, requestContext = {}) {
   const latestTimestamp =
     parsedLatestTimestamp ||
     homeSnapshot?.latestTimestamp ||
-    (rows.length > 0 ? new Date().toISOString() : null);
+    null;
+  const timestampMissing = rows.length > 0 && !latestTimestamp;
   const fallbackSummary = fallbackStatuses
     .map((status) => `${status.key}:${status.ok ? `rows=${status.rows ?? 0}` : "failed"}`)
     .join(",");
+  const identifierProbeSuffix =
+    overviewAttempts.length > 1
+      ? `; identifierProbe=${buildIdentifierProbeSummary(overviewAttempts)}; selected=${overview.identifier}`
+      : "";
 
   return {
     sourceStatus: {
@@ -867,8 +1150,8 @@ export async function loadEnergyOverview(baseUrl, siteId, requestContext = {}) {
       status: result.status ?? null,
       message:
         missingCoreMetrics.length > 0
-          ? `${extractMessage(result.payload, "OK")}; coreMetricsMissing=${missingCoreMetrics.join(",")}${fallbackSummary ? `; fallback=${fallbackSummary}` : ""}`
-          : `${extractMessage(result.payload, "OK")}; coreMetricsReady=3/3${fallbackSummary ? `; fallback=${fallbackSummary}` : ""}`,
+          ? `${extractMessage(result.payload, "OK")}; coreMetricsMissing=${missingCoreMetrics.join(",")}${timestampMissing ? "; timestampMissing=true" : ""}${fallbackSummary ? `; fallback=${fallbackSummary}` : ""}${identifierProbeSuffix}`
+          : `${extractMessage(result.payload, "OK")}; coreMetricsReady=3/3${timestampMissing ? "; timestampMissing=true" : ""}${fallbackSummary ? `; fallback=${fallbackSummary}` : ""}${identifierProbeSuffix}`,
       rows: rows.length
     },
     metrics,
@@ -877,40 +1160,43 @@ export async function loadEnergyOverview(baseUrl, siteId, requestContext = {}) {
 }
 
 export async function loadTrendSeries(baseUrl, siteId, requestContext = {}) {
-  const identifierCandidates = buildIdentifierCandidates(siteId, requestContext?.projectKey);
-  const endpoints = {
-    energyCurve: `/zsqy/homepage/${siteId}/getEnergyStatisticsCurve`,
-    runParams: `/zsqy/homepage/${siteId}/getRunParamsCurve`
-  };
-
-  const [energyCurveRes, runParamsRes] = await Promise.all([
-    fetchLegacyJson(baseUrl, endpoints.energyCurve),
-    fetchLegacyJson(baseUrl, endpoints.runParams)
+  const identifierCandidates = buildIdentifierCandidates(
+    siteId,
+    requestContext?.projectKey,
+    requestContext?.projectKeyCandidates,
+    requestContext?.databaseKey,
+    requestContext?.databaseKeyCandidates
+  );
+  const fallbackPathIdentifier = identifierCandidates[0] || siteId;
+  const [energyCurveLookup, runParamsLookup] = await Promise.all([
+    fetchLegacyJsonAcrossIdentifiers(
+      baseUrl,
+      identifierCandidates,
+      (identifier) => `/zsqy/homepage/${identifier}/getEnergyStatisticsCurve`
+    ),
+    fetchLegacyJsonAcrossIdentifiers(
+      baseUrl,
+      identifierCandidates,
+      (identifier) => `/zsqy/homepage/${identifier}/getRunParamsCurve`
+    )
   ]);
-
+  const energyCurveRes = energyCurveLookup.selected?.result ?? null;
+  const runParamsRes = runParamsLookup.selected?.result ?? null;
   const baseSourceStatus = [
-    {
-      key: "energyCurve",
-      endpoint: endpoints.energyCurve,
-      ok: energyCurveRes.ok,
-      status: energyCurveRes.status ?? null,
-      message: energyCurveRes.ok ? extractMessage(energyCurveRes.payload, "OK") : null,
-      error: energyCurveRes.ok ? null : energyCurveRes.error,
-      rows: energyCurveRes.ok ? deepArrayProbe(energyCurveRes.payload).length : null
-    },
-    {
-      key: "runParams",
-      endpoint: endpoints.runParams,
-      ok: runParamsRes.ok,
-      status: runParamsRes.status ?? null,
-      message: runParamsRes.ok ? extractMessage(runParamsRes.payload, "OK") : null,
-      error: runParamsRes.ok ? null : runParamsRes.error,
-      rows: runParamsRes.ok ? deepArrayProbe(runParamsRes.payload).length : null
-    }
+    toProbeSourceStatus(
+      "energyCurve",
+      energyCurveLookup,
+      `/zsqy/homepage/${fallbackPathIdentifier}/getEnergyStatisticsCurve`
+    ),
+    toProbeSourceStatus(
+      "runParams",
+      runParamsLookup,
+      `/zsqy/homepage/${fallbackPathIdentifier}/getRunParamsCurve`
+    )
   ];
 
   const parsedSeries = [energyCurveRes, runParamsRes]
-    .filter((res) => res.ok)
+    .filter((res) => res?.ok)
     .flatMap((res) => parseSeriesFromPayload(res.payload));
 
   const hasUsableSeries = (patterns) =>
@@ -969,7 +1255,7 @@ export async function loadTrendSeries(baseUrl, siteId, requestContext = {}) {
   let totalPowerFallbackResults = [];
   let totalPowerFallbackSourceStatus = null;
   let totalPowerFallbackSeries = null;
-  if (!parsedSeries.some((series) => includesAny(series.key, ["totalpower", "总功率"]))) {
+  if (!parsedSeries.some(isStationTotalPowerSeries)) {
     const fallback = await loadRunParamByTagFallback(
       baseUrl,
       identifierCandidates,
@@ -998,16 +1284,36 @@ export async function loadTrendSeries(baseUrl, siteId, requestContext = {}) {
   if (totalPowerFallbackSeries) {
     fallbackSeries.push(totalPowerFallbackSeries);
   }
+  const range = requestContext?.range;
+  const rangeDates = range === "7d" || range === "30d"
+    ? buildTrendRangeDates(range, requestContext?.trendEndDate || requestContext?.date)
+    : [];
+  const rangeLookups = rangeDates.length > 0
+    ? await Promise.all(
+        TREND_RANGE_BY_TAG_GROUPS.map((group) =>
+          loadRunParamByTagRangeFallback(baseUrl, identifierCandidates, group, rangeDates)
+        )
+      )
+    : [];
+  const rangeResults = rangeLookups.map((item) => item.selected).filter(Boolean);
+  const rangeSeries = rangeResults
+    .map((item) => item.series)
+    .filter((series) => Array.isArray(series.points) && series.points.length > 0);
+  for (const seriesItem of rangeSeries) {
+    fallbackSeries.push(seriesItem);
+  }
   const sourceStatus = [...baseSourceStatus];
   const selectedFallbackSourceStatuses = [
     ...fallbackResults.map((item) => item?.sourceStatus).filter(Boolean),
     ...(copFallbackSourceStatus ? [copFallbackSourceStatus] : []),
-    ...(totalPowerFallbackSourceStatus ? [totalPowerFallbackSourceStatus] : [])
+    ...(totalPowerFallbackSourceStatus ? [totalPowerFallbackSourceStatus] : []),
+    ...rangeResults.map((item) => item?.sourceStatus).filter(Boolean)
   ];
   const allFallbackResults = [
     ...fallbackAttemptResults,
     ...copFallbackResults,
-    ...totalPowerFallbackResults
+    ...totalPowerFallbackResults,
+    ...rangeLookups.flatMap((item) => item.attempts)
   ];
   const fallbackAttempted = allFallbackResults.length;
   const fallbackOk = allFallbackResults.filter((item) => item.sourceStatus.ok).length;
@@ -1035,7 +1341,8 @@ export async function loadTrendSeries(baseUrl, siteId, requestContext = {}) {
   let homeSnapshot = null;
   const ensureHomeSnapshot = async () => {
     if (homeSnapshot === null) {
-      homeSnapshot = await loadHomeEnergySnapshot(baseUrl, siteId);
+      const fallback = await loadHomeEnergySnapshotFallback(baseUrl, identifierCandidates);
+      homeSnapshot = fallback.selected;
     }
     return homeSnapshot;
   };
@@ -1097,9 +1404,7 @@ export async function loadTrendSeries(baseUrl, siteId, requestContext = {}) {
       v: point.value
     }));
 
-  const totalPowerSeries = findSeries((series) =>
-    includesAny(series.key, ["totalpower", "总功率"])
-  );
+  const totalPowerSeries = findSeries(isStationTotalPowerSeries);
   const copSeries = findSeries((series) => includesAny(series.key, ["cop"]));
   const chilledDeltaSeries = findSeries((series) =>
     includesAny(series.key, ["冷冻水温差", "chilleddeltat", "chilledwatertemperaturedifference"])
@@ -1137,7 +1442,7 @@ export async function loadTrendSeries(baseUrl, siteId, requestContext = {}) {
         .filter((series) => Array.isArray(series.points) && series.points.length > 0)
         .map((series) => {
           const key = series.key || "";
-          if (includesAny(key, ["totalpower", "总功率"])) return "power";
+          if (isStationTotalPowerSeries(series)) return "power";
           if (includesAny(key, ["cop"])) return "cop";
           if (includesAny(key, ["冷冻水温差", "chilleddeltat", "chilledwatertemperaturedifference"])) return "chilled";
           if (includesAny(key, ["冷却水温差", "coolingdeltat", "chilledoutwatertemperaturedifference"])) return "cooling";
@@ -1173,11 +1478,25 @@ export async function loadTrendSeries(baseUrl, siteId, requestContext = {}) {
   };
 }
 
-export async function loadRuleMetrics(baseUrl, siteId) {
+function resolveRuleMetricPathIdentifier(siteId, requestContext = {}) {
+  const candidates = [
+    requestContext?.databaseKey,
+    ...(Array.isArray(requestContext?.databaseKeyCandidates) ? requestContext.databaseKeyCandidates : []),
+    requestContext?.projectKey,
+    ...(Array.isArray(requestContext?.projectKeyCandidates) ? requestContext.projectKeyCandidates : []),
+    siteId
+  ]
+    .map((value) => text(value))
+    .filter(Boolean);
+  return candidates[0] || text(siteId);
+}
+
+export async function loadRuleMetrics(baseUrl, siteId, requestContext = {}) {
+  const pathIdentifier = resolveRuleMetricPathIdentifier(siteId, requestContext);
   const endpoints = [
-    `/zsqy/homepage/${siteId}/getEquipmentEnergyStatisticsCurve`,
-    `/zsqy/homepage/${siteId}/getEnergyStatisticsCurve`,
-    `/zsqy/homepage/${siteId}/getRunParamsCurve`
+    `/zsqy/homepage/${pathIdentifier}/getEquipmentEnergyStatisticsCurve`,
+    `/zsqy/homepage/${pathIdentifier}/getEnergyStatisticsCurve`,
+    `/zsqy/homepage/${pathIdentifier}/getRunParamsCurve`
   ];
 
   const responses = await Promise.all(endpoints.map((endpoint) => fetchLegacyJson(baseUrl, endpoint)));

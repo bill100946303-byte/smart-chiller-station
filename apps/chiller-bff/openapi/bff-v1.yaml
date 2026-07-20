@@ -17,7 +17,10 @@ tags:
   - name: Anomalies
   - name: Devices
   - name: System
+  - name: Configuration
   - name: Recommendations
+  - name: Optimize
+  - name: Admin Configuration
 paths:
   /healthz:
     get:
@@ -33,6 +36,220 @@ paths:
                 $ref: "#/components/schemas/HealthzResponse"
         "500":
           $ref: "#/components/responses/InternalError"
+
+  /admin/v1/sites/{siteId}/stations:
+    get:
+      tags: [Admin Configuration]
+      summary: List physical station identities registered for a project
+      operationId: listAdminStationInstances
+      security:
+        - AdminBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/AdminUserIdHeader"
+        - name: publishedOnly
+          in: query
+          required: false
+          description: Return only station identities visible to the runtime shell.
+          schema:
+            type: boolean
+            default: false
+        - name: parentSubsystemType
+          in: query
+          required: false
+          description: Optional owning energy-object type filter.
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Physical station identity list. An empty list is valid and must not be replaced by mock stations.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStationInstanceListResponse"
+              examples:
+                default:
+                  summary: Valid empty physical station registry
+                  externalValue: ./examples/admin-station-instances.json
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+    put:
+      tags: [Admin Configuration]
+      summary: Create or update physical station identities for a project
+      description: |
+        Transactional partial upsert. Records omitted from the request are not deleted.
+        A published record is immediately visible to the runtime shell; publication does not imply runtime data filtering by stationId.
+      operationId: upsertAdminStationInstances
+      security:
+        - AdminBearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/AdminUserIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminStationInstanceUpsertRequest"
+      responses:
+        "200":
+          description: Updated server-side physical station identity list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStationInstanceListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+
+  /admin/v1/sites/{siteId}/stations/{stationId}/runtime-binding:
+    get:
+      tags: [Admin Configuration]
+      summary: Read draft and currently published runtime binding heads
+      operationId: getAdminStationRuntimeBinding
+      security: [{ AdminBearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/StationIdPathParam"
+        - $ref: "#/components/parameters/AdminUserIdHeader"
+      responses:
+        "200":
+          description: Draft and published versions are returned independently.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminStationRuntimeBindingResponse" }
+        "403": { $ref: "#/components/responses/ForbiddenError" }
+        "404": { $ref: "#/components/responses/NotFoundError" }
+    put:
+      tags: [Admin Configuration]
+      summary: Save a new immutable runtime-binding draft version
+      operationId: saveAdminStationRuntimeBindingDraft
+      security: [{ AdminBearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/StationIdPathParam"
+        - $ref: "#/components/parameters/AdminUserIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminStationRuntimeBindingDraftRequest" }
+      responses:
+        "200":
+          description: New draft; an existing published head remains active.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminStationRuntimeBindingResponse" }
+        "400": { $ref: "#/components/responses/BadRequestError" }
+        "403": { $ref: "#/components/responses/ForbiddenError" }
+        "409": { $ref: "#/components/responses/ConflictError" }
+
+  /admin/v1/sites/{siteId}/stations/{stationId}/runtime-binding/validate:
+    post:
+      tags: [Admin Configuration]
+      summary: Validate the current draft against the real read-only source
+      operationId: validateAdminStationRuntimeBinding
+      security: [{ AdminBearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/StationIdPathParam"
+        - $ref: "#/components/parameters/AdminUserIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminStationRuntimeBindingVersionRequest" }
+      responses:
+        "200":
+          description: Real-source validation passed and evidence was persisted.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminStationRuntimeBindingResponse" }
+        "422":
+          description: Validation failed closed; response ok is false.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+        "403": { $ref: "#/components/responses/ForbiddenError" }
+        "409": { $ref: "#/components/responses/ConflictError" }
+
+  /admin/v1/sites/{siteId}/stations/{stationId}/runtime-binding/publish:
+    post:
+      tags: [Admin Configuration]
+      summary: Atomically publish a validated draft binding
+      description: Platform-admin only. The publisher must differ from the draft creator/editor.
+      operationId: publishAdminStationRuntimeBinding
+      security: [{ AdminBearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/StationIdPathParam"
+        - $ref: "#/components/parameters/AdminUserIdHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminStationRuntimeBindingVersionRequest" }
+      responses:
+        "200":
+          description: Head was atomically switched to the published version.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminStationRuntimeBindingResponse" }
+        "403": { $ref: "#/components/responses/ForbiddenError" }
+        "409": { $ref: "#/components/responses/ConflictError" }
+
+  /bff/v1/sites/{siteId}/capabilities:
+    get:
+      tags: [Configuration]
+      summary: Published subsystem capability registry for the current project
+      operationId: getSiteCapabilities
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+      responses:
+        "200":
+          description: Project-wide energy-object capability registry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimeSubsystemCapabilityListResponse"
+              examples:
+                default:
+                  summary: Multi-energy capability registry example
+                  externalValue: ./examples/site-capabilities.json
+        "503":
+          $ref: "#/components/responses/ConfigurationCenterUnavailableError"
+
+  /bff/v1/sites/{siteId}/subsystems:
+    get:
+      tags: [Configuration]
+      summary: Published subsystem registry for the current project
+      operationId: getSiteSubsystems
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+      responses:
+        "200":
+          description: Project-wide energy-object subsystem registry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimeSubsystemCapabilityListResponse"
+              examples:
+                default:
+                  summary: Multi-energy subsystem registry example
+                  externalValue: ./examples/site-subsystems.json
+        "503":
+          $ref: "#/components/responses/ConfigurationCenterUnavailableError"
 
   /bff/v1/sites/{siteId}/dashboard/overview:
     get:
@@ -330,6 +547,42 @@ paths:
         "502":
           $ref: "#/components/responses/UpstreamError"
 
+  /bff/v1/sites/{siteId}/runtime/summary:
+    get:
+      tags: [Devices]
+      summary: Read-only runtime point summary with optional physical-station isolation
+      description: |
+        When stationId is supplied, the BFF requires a published, hash-matched runtime binding,
+        applies the exact device and point allowlists, and returns station_binding scope evidence.
+        Compressed-air and boiler bindings also return stationProcess metrics derived only from
+        explicitly configured point-role mappings. Missing or invalid bindings fail closed.
+      operationId: getRuntimePointSummary
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - name: stationId
+          in: query
+          required: false
+          description: Stable physical station identifier. Required by station-instance UI routes.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 64
+      responses:
+        "200":
+          description: Runtime summary. A station request includes verified station_binding dataScope.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RuntimePointSummaryResponse"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
   /bff/v1/sites/{siteId}/devices/{deviceId}:
     get:
       tags: [Devices]
@@ -407,13 +660,303 @@ paths:
         "502":
           $ref: "#/components/responses/UpstreamError"
 
+  /bff/v1/sites/{siteId}/optimize:
+    post:
+      tags: [Optimize]
+      summary: Build tower approach and pump delta-T AI advisor result
+      operationId: postOptimizeDraft
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OptimizeDraftRequest"
+      responses:
+        "200":
+          description: Tower approach and pump delta-T AI advisor result generated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimizeAdvisorResponse"
+              examples:
+                default:
+                  summary: Tower approach and pump delta-T AI advisor result example
+                  externalValue: ./examples/optimize-advisor-result.json
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /bff/v1/sites/{siteId}/optimize/tower-approach/advice:
+    post:
+      tags: [Optimize]
+      summary: Build tower approach AI target advice
+      operationId: postTowerApproachAdvice
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OptimizeDraftRequest"
+      responses:
+        "200":
+          description: Tower approach AI target advice generated.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok, code, requestId, advisorResult, towerApproachAdvisor, details]
+                properties:
+                  ok:
+                    type: boolean
+                    enum: [true]
+                  code:
+                    type: string
+                    enum: [OK]
+                  requestId:
+                    type: string
+                  advisorResult:
+                    type: object
+                    nullable: true
+                  towerApproachAdvisor:
+                    type: object
+                    nullable: true
+                  details:
+                    $ref: "#/components/schemas/OptimizeDraftDetails"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /bff/v1/sites/{siteId}/optimize/chiller-staging/samples:
+    get:
+      tags: [Optimize]
+      summary: List append-only chiller staging samples
+      operationId: listChillerStagingSamples
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - name: combinationKey
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional normalized combination key, such as CH4+CH5+CH7.
+        - name: combination
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Optional raw combination text used when combinationKey is omitted.
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 2000
+            default: 100
+      responses:
+        "200":
+          description: Append-only chiller staging sample list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChillerStagingSampleListResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /bff/v1/sites/{siteId}/optimize/executions:
+    get:
+      tags: [Optimize]
+      summary: List governance optimize executions
+      operationId: listOptimizeExecutions
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/OptimizeExecutionStatusQueryParam"
+        - $ref: "#/components/parameters/OptimizeExecutionLimitQueryParam"
+      responses:
+        "200":
+          description: Governance optimize execution list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimizeExecutionListResponse"
+              examples:
+                default:
+                  summary: Optimize execution list example
+                  externalValue: ./examples/optimize-executions-list.json
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      tags: [Optimize]
+      summary: Create governance optimize execution draft
+      operationId: createOptimizeExecution
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOptimizeExecutionRequest"
+      responses:
+        "201":
+          description: Governance optimize execution created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimizeExecutionMutationResponse"
+              examples:
+                default:
+                  summary: Optimize execution create example
+                  externalValue: ./examples/optimize-executions-create.json
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /bff/v1/sites/{siteId}/optimize/executions/{executionId}/dispatch:
+    post:
+      tags: [Optimize]
+      summary: Dispatch approved tower approach or pump delta-T execution by configured mode
+      operationId: dispatchOptimizeExecution
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/ExecutionIdPathParam"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Optimize execution dispatch receipt persisted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimizeExecutionMutationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+        "502":
+          $ref: "#/components/responses/UpstreamError"
+
+  /bff/v1/sites/{siteId}/optimize/executions/{executionId}/approve:
+    post:
+      tags: [Optimize]
+      summary: Approve governance optimize execution
+      operationId: approveOptimizeExecution
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/ExecutionIdPathParam"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApproveOptimizeExecutionRequest"
+      responses:
+        "200":
+          description: Governance optimize execution approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimizeExecutionMutationResponse"
+              examples:
+                default:
+                  summary: Optimize execution approve example
+                  externalValue: ./examples/optimize-executions-approve.json
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /bff/v1/sites/{siteId}/optimize/executions/{executionId}/rollback:
+    post:
+      tags: [Optimize]
+      summary: Roll back governance optimize execution
+      operationId: rollbackOptimizeExecution
+      parameters:
+        - $ref: "#/components/parameters/SiteIdPathParam"
+        - $ref: "#/components/parameters/ExecutionIdPathParam"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RollbackOptimizeExecutionRequest"
+      responses:
+        "200":
+          description: Governance optimize execution rolled back
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OptimizeExecutionMutationResponse"
+              examples:
+                default:
+                  summary: Optimize execution rollback example
+                  externalValue: ./examples/optimize-executions-rollback.json
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
 components:
+  securitySchemes:
+    AdminBearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque-token
   parameters:
     SiteIdPathParam:
       name: siteId
       in: path
       required: true
       description: Site identifier, same as legacy dbName, e.g. 126lnoffice.
+      schema:
+        type: string
+        minLength: 1
+    StationIdPathParam:
+      name: stationId
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 64
+        pattern: "^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,62}[A-Za-z0-9])?$"
+    AdminUserIdHeader:
+      name: x-chiller-user-id
+      in: header
+      required: false
+      description: Explicit admin identity hint used by local and integration authentication modes.
       schema:
         type: string
         minLength: 1
@@ -444,8 +987,45 @@ components:
         type: string
         enum: [main_loop, full]
         default: full
+    OptimizeExecutionStatusQueryParam:
+      name: status
+      in: query
+      required: false
+      description: Optional governance execution status filter.
+      schema:
+        type: string
+        enum: [pending_approval, approved, rolled_back]
+    OptimizeExecutionLimitQueryParam:
+      name: limit
+      in: query
+      required: false
+      description: Maximum number of execution rows to return.
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    ExecutionIdPathParam:
+      name: executionId
+      in: path
+      required: true
+      description: Governance optimize execution identifier.
+      schema:
+        type: string
+        minLength: 1
 
   responses:
+    UnauthorizedError:
+      description: Missing, invalid, or expired admin authentication.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            code: ADMIN_UNAUTHORIZED
+            error: "Missing admin user context"
+            requestId: "req-20260719-0001"
     BadRequestError:
       description: Invalid request parameter or malformed query.
       content:
@@ -470,6 +1050,42 @@ components:
             code: NOT_FOUND
             error: "Site not found: missing-site"
             requestId: "req-20260311-0002"
+    ForbiddenError:
+      description: Caller does not have permission to approve or roll back the execution.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            code: ADMIN_FORBIDDEN
+            error: "仅平台/站点管理员可审批或回退"
+            requestId: "req-20260408-0001"
+            details:
+              requiredRoles: [platform_admin, site_admin]
+              siteId: "btwentyfive"
+    ConflictError:
+      description: Execution state-machine conflict.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            code: CONFLICT
+            error: "Execution must be approved before rollback"
+            requestId: "req-20260408-0002"
+    NotImplementedDraft:
+      description: Optimize draft endpoint returns governance draft details in a 501 envelope.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/OptimizeDraftNotImplementedResponse"
+          example:
+            ok: false
+            code: NOT_IMPLEMENTED
+            error: "Optimize engine is not implemented yet; returning a context-backed draft"
+            requestId: "req-20260408-0003"
     UpstreamError:
       description: Upstream legacy endpoint failure.
       content:
@@ -502,6 +1118,17 @@ components:
             code: INTERNAL_ERROR
             error: "Unhandled error"
             requestId: "req-20260311-0004"
+    ConfigurationCenterUnavailableError:
+      description: Published energy-object configuration is unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            ok: false
+            code: CONFIG_CENTER_UNAVAILABLE
+            error: "Configuration center store is unavailable"
+            requestId: "req-20260719-0001"
 
   schemas:
     HealthzResponse:
@@ -585,6 +1212,524 @@ components:
           items:
             $ref: "#/components/schemas/SourceEndpointStatus"
 
+    RuntimeDataScope:
+      type: object
+      description: Scope actually enforced by the endpoint. Navigation query context alone never sets applied=true.
+      required:
+        - siteId
+        - requestedSubsystemType
+        - effectiveSubsystemType
+        - stationId
+        - filterMode
+        - applied
+        - reason
+      properties:
+        siteId:
+          type: string
+        requestedSubsystemType:
+          type: string
+          nullable: true
+        effectiveSubsystemType:
+          type: string
+          nullable: true
+        stationId:
+          type: string
+          nullable: true
+        filterMode:
+          type: string
+          enum: [fixed_subsystem, site_aggregate, project_unfiltered, device_selected, station_binding]
+        applied:
+          type: boolean
+        reason:
+          type: string
+          enum: [ENDPOINT_FIXED_SCOPE, SUBSYSTEM_FILTER_NOT_IMPLEMENTED, DEVICE_SELECTOR_APPLIED, STATION_RUNTIME_BINDING_APPLIED, SITE_AGGREGATE, MIXED_SCOPE_PAYLOAD]
+        bindingVersion:
+          type: integer
+          minimum: 1
+          nullable: true
+
+    StationProcessRoleMeasurement:
+      type: object
+      required: [role, label, required, value, matched, authoritativeTimestamp]
+      properties:
+        mappingId: { type: string, nullable: true }
+        role: { type: string }
+        label: { type: string }
+        pointCode: { type: string, nullable: true }
+        required: { type: boolean }
+        value:
+          nullable: true
+          oneOf:
+            - { type: number }
+            - { type: string }
+            - { type: boolean }
+        unit: { type: string, nullable: true }
+        qualityCode: { type: string }
+        observedAt: { type: string, format: date-time, nullable: true }
+        authoritativeTimestamp: { type: boolean }
+        deviceId: { type: string, nullable: true }
+        deviceCode: { type: string, nullable: true }
+        sourcePointKey: { type: string, nullable: true }
+        matched: { type: boolean }
+
+    StationProcessSummary:
+      type: object
+      required: [contractVersion, station, readiness, timestampStatus, coverage, missingRequiredRoles, roleMeasurements, operatingState, metrics]
+      properties:
+        contractVersion:
+          type: string
+          enum: [station-process-summary-v1]
+        station:
+          type: object
+          required: [siteId, stationId, stationName, subsystemType, bindingVersion]
+          properties:
+            siteId: { type: string }
+            stationId: { type: string }
+            stationName: { type: string }
+            subsystemType: { type: string, enum: [compressed_air, boiler_room] }
+            bindingVersion: { type: integer, minimum: 1 }
+        readiness:
+          type: string
+          enum: [ready, partial, blocked]
+        timestampStatus:
+          type: string
+          enum: [authoritative, partial, unverified, unavailable]
+        coverage:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+        missingRequiredRoles:
+          type: array
+          items: { type: string }
+        roleMeasurements:
+          type: array
+          items:
+            $ref: "#/components/schemas/StationProcessRoleMeasurement"
+        operatingState:
+          type: object
+          additionalProperties:
+            type: integer
+            minimum: 0
+        metrics:
+          type: object
+          description: Normalized read-only metrics for compressedAir or boilerRoom; unavailable values are null.
+          additionalProperties: true
+
+    RuntimePointSummaryResponse:
+      type: object
+      required: [site, generatedAt, status, counts, pointEvidence, sourceStatus]
+      properties:
+        site:
+          $ref: "#/components/schemas/SiteRef"
+        generatedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        basis:
+          type: string
+        counts:
+          type: object
+          additionalProperties: true
+        keySignals:
+          type: object
+          additionalProperties: true
+        pointEvidence:
+          type: object
+          additionalProperties: true
+        stationProcess:
+          $ref: "#/components/schemas/StationProcessSummary"
+        sourceStatus:
+          $ref: "#/components/schemas/SourceStatus"
+        dataScope:
+          $ref: "#/components/schemas/RuntimeDataScope"
+
+    RuntimeFieldScope:
+      type: object
+      required: [fieldPaths, exclusions, dataScope]
+      properties:
+        fieldPaths:
+          type: array
+          items:
+            type: string
+        exclusions:
+          type: array
+          items:
+            type: string
+        dataScope:
+          $ref: "#/components/schemas/RuntimeDataScope"
+
+    DashboardOverviewFieldScopes:
+      type: object
+      required: [chilledPlantMetrics, projectAggregate]
+      properties:
+        chilledPlantMetrics:
+          $ref: "#/components/schemas/RuntimeFieldScope"
+        projectAggregate:
+          $ref: "#/components/schemas/RuntimeFieldScope"
+
+    RuntimeControlBoundary:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum: [read_only, shadow, assisted, enforced]
+        approvalRequired:
+          type: boolean
+        plcProtectionRequired:
+          type: boolean
+        rollbackRequired:
+          type: boolean
+        writeEnabled:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+
+    RuntimeSubsystemRegistryPointRole:
+      type: object
+      required: [role, label]
+      properties:
+        role:
+          type: string
+        label:
+          type: string
+        required:
+          type: boolean
+        unit:
+          type: string
+          nullable: true
+
+    RuntimeAdvisorBinding:
+      type: object
+      properties:
+        pluginKey:
+          type: string
+        status:
+          type: string
+        mode:
+          type: string
+
+    RuntimeStationInstance:
+      type: object
+      description: Physical station identity. Runtime health stays unknown until actual response evidence exists; published binding is not itself live evidence.
+      required:
+        [siteId, stationId, stationName, parentSubsystemType, status, enabled, sourceStatus, freshnessStatus, alarmCount, bindingState, bindingVersion, draftBindingVersion, publishedBindingVersion, sortOrder, published]
+      properties:
+        siteId:
+          type: string
+        stationId:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: "^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,62}[A-Za-z0-9])?$"
+          description: Stable identifier within the project; must not be derived from a mutable display name.
+        stationName:
+          type: string
+          minLength: 1
+        parentSubsystemType:
+          type: string
+          minLength: 1
+          description: Energy-object type that owns this physical station instance.
+        status:
+          type: string
+          enum: [enabled, not_configured, not_applicable]
+        enabled:
+          type: boolean
+        sourceStatus:
+          type: string
+          nullable: true
+        freshnessStatus:
+          type: string
+          nullable: true
+        alarmCount:
+          type: integer
+          nullable: true
+        bindingState:
+          type: string
+          enum: [unconfigured, draft, validated, published, superseded]
+          description: Published head takes precedence while a newer draft coexists.
+        bindingVersion:
+          type: integer
+          nullable: true
+        draftBindingVersion:
+          type: integer
+          nullable: true
+        publishedBindingVersion:
+          type: integer
+          nullable: true
+        sortOrder:
+          type: integer
+          minimum: 0
+        published:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+
+    AdminStationInstanceUpsertItem:
+      type: object
+      additionalProperties: false
+      required: [stationId, stationName, parentSubsystemType]
+      properties:
+        stationId:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: "^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,62}[A-Za-z0-9])?$"
+          description: Stable identifier; immutable in the management UI after first save.
+        stationName:
+          type: string
+          minLength: 1
+        parentSubsystemType:
+          type: string
+          minLength: 1
+        status:
+          type: string
+          enum: [enabled, not_configured, not_applicable]
+          default: not_configured
+        sortOrder:
+          type: integer
+          minimum: 0
+          default: 999
+        published:
+          type: boolean
+          default: false
+        notes:
+          type: string
+          nullable: true
+
+    AdminStationInstanceUpsertRequest:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/AdminStationInstanceUpsertItem"
+
+    AdminStationInstanceListResponse:
+      type: object
+      required: [ok, requestId, siteId, generatedAt, items, total]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        requestId:
+          type: string
+        siteId:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuntimeStationInstance"
+        total:
+          type: integer
+          minimum: 0
+
+    AdminStationRuntimeBindingSource:
+      type: object
+      additionalProperties: false
+      properties:
+        databaseKey: { type: string, nullable: true }
+        projectKey: { type: string, nullable: true }
+        template: { type: string, nullable: true }
+
+    AdminStationRuntimeBindingSelectors:
+      type: object
+      additionalProperties: false
+      required: [deviceIds]
+      properties:
+        deviceIds:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { type: string, minLength: 1 }
+        deviceCodes:
+          type: array
+          uniqueItems: true
+          items: { type: string, minLength: 1 }
+        pointCodes:
+          type: array
+          uniqueItems: true
+          items: { type: string, minLength: 1 }
+
+    AdminStationRuntimeBinding:
+      type: object
+      required: [siteId, stationId, status, bindingVersion, source, selectors, payloadHash]
+      properties:
+        siteId: { type: string }
+        stationId: { type: string }
+        stationName: { type: string, nullable: true }
+        parentSubsystemType: { type: string, nullable: true }
+        status:
+          type: string
+          enum: [draft, validated, published, superseded, disabled]
+        bindingVersion: { type: integer, minimum: 1 }
+        source: { $ref: "#/components/schemas/AdminStationRuntimeBindingSource" }
+        selectors: { $ref: "#/components/schemas/AdminStationRuntimeBindingSelectors" }
+        payloadHash: { type: string }
+        validatedHash: { type: string, nullable: true }
+        validation:
+          type: object
+          nullable: true
+          additionalProperties: true
+        checkedAt: { type: string, format: date-time, nullable: true }
+        publishedAt: { type: string, format: date-time, nullable: true }
+        publishedBy: { type: string, nullable: true }
+        notes: { type: string, nullable: true }
+
+    AdminStationRuntimeBindingDraftRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion, source, selectors]
+      properties:
+        expectedVersion: { type: integer, minimum: 0 }
+        source: { $ref: "#/components/schemas/AdminStationRuntimeBindingSource" }
+        selectors: { $ref: "#/components/schemas/AdminStationRuntimeBindingSelectors" }
+        notes: { type: string, nullable: true }
+
+    AdminStationRuntimeBindingVersionRequest:
+      type: object
+      additionalProperties: false
+      required: [expectedVersion]
+      properties:
+        expectedVersion: { type: integer, minimum: 1 }
+
+    AdminStationRuntimeBindingResponse:
+      type: object
+      required: [ok, requestId, siteId, stationId, draftVersion, publishedVersion]
+      properties:
+        ok: { type: boolean, enum: [true] }
+        requestId: { type: string }
+        siteId: { type: string }
+        stationId: { type: string }
+        binding:
+          allOf: [{ $ref: "#/components/schemas/AdminStationRuntimeBinding" }]
+          nullable: true
+        draftBinding:
+          allOf: [{ $ref: "#/components/schemas/AdminStationRuntimeBinding" }]
+          nullable: true
+        publishedBinding:
+          allOf: [{ $ref: "#/components/schemas/AdminStationRuntimeBinding" }]
+          nullable: true
+        draftVersion: { type: integer, nullable: true }
+        publishedVersion: { type: integer, nullable: true }
+        configured: { type: boolean }
+        validation:
+          type: object
+          nullable: true
+          additionalProperties: true
+
+    RuntimeSubsystemCapability:
+      type: object
+      required: [subsystemType, displayName, status]
+      properties:
+        siteId:
+          type: string
+        subsystemType:
+          type: string
+          example: chilled_plant
+        displayName:
+          type: string
+          example: 冷冻站
+        category:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [enabled, not_configured, not_applicable]
+        mode:
+          type: string
+          nullable: true
+        reserved:
+          type: boolean
+        enabled:
+          type: boolean
+        kpis:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        alarmCount:
+          type: integer
+          nullable: true
+        freshnessStatus:
+          type: string
+          nullable: true
+        sourceStatus:
+          type: string
+          nullable: true
+        pointMappingProgress:
+          type: number
+          format: double
+          nullable: true
+        advisorPluginStatus:
+          type: string
+          nullable: true
+        pageTemplateStatus:
+          type: string
+          nullable: true
+        published:
+          type: boolean
+        notes:
+          type: string
+          nullable: true
+        requiredPointRoles:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuntimeSubsystemRegistryPointRole"
+        advisorBindings:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuntimeAdvisorBinding"
+        controlBoundary:
+          $ref: "#/components/schemas/RuntimeControlBoundary"
+
+    RuntimeSubsystemCapabilityListResponse:
+      type: object
+      description: Published project-wide energy-object registry. dataScope is site_aggregate and never implies a physical station instance filter.
+      required: [site, generatedAt, kind, items, total, stationInstances, stationTotal, dataScope, freshness, sourceStatus]
+      properties:
+        site:
+          $ref: "#/components/schemas/SiteRef"
+        generatedAt:
+          type: string
+          format: date-time
+        kind:
+          type: string
+          enum: [capabilities, subsystems]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RuntimeSubsystemCapability"
+        total:
+          type: integer
+          minimum: 0
+        stationInstances:
+          type: array
+          description: Physical station identities grouped by parentSubsystemType. This list is registry data, not runtime filter evidence.
+          items:
+            $ref: "#/components/schemas/RuntimeStationInstance"
+        stationTotal:
+          type: integer
+          minimum: 0
+        dataScope:
+          $ref: "#/components/schemas/RuntimeDataScope"
+        freshness:
+          $ref: "#/components/schemas/Freshness"
+        sourceStatus:
+          $ref: "#/components/schemas/SourceStatus"
+
     ErrorResponse:
       type: object
       required: [ok, code, error]
@@ -594,7 +1739,7 @@ components:
           enum: [false]
         code:
           type: string
-          enum: [BAD_REQUEST, NOT_FOUND, UPSTREAM_ERROR, INTERNAL_ERROR]
+          enum: [BAD_REQUEST, NOT_FOUND, UPSTREAM_ERROR, INTERNAL_ERROR, ADMIN_FORBIDDEN, CONFLICT, NOT_IMPLEMENTED, CONFIG_CENTER_UNAVAILABLE]
         error:
           type: string
         requestId:
@@ -621,9 +1766,25 @@ components:
         - currentLoadRate
         - totalElectricityKwh
         - savingPotentialPct
+        - totalCoolingCapacity
         - activeAnomalyCount
         - chilledDeltaT
         - coolingDeltaT
+        - chillerPowerKw
+        - chilledPumpPowerKw
+        - coolingPumpPowerKw
+        - coolingTowerPowerKw
+        - chillerCop
+        - chilledPumpConveyingCoefficient
+        - coolingTowerConveyingCoefficient
+        - coolingPumpConveyingCoefficient
+        - thermalUnbalanceRate
+        - chilledSupplyTemp
+        - coolingReturnTemp
+        - outdoorTempC
+        - outdoorHumidityPct
+        - outdoorWetBulbC
+        - dewPointC
       properties:
         currentCop:
           type: number
@@ -645,6 +1806,10 @@ components:
           type: number
           format: double
           nullable: true
+        totalCoolingCapacity:
+          type: number
+          format: double
+          nullable: true
         activeAnomalyCount:
           type: integer
           nullable: true
@@ -653,6 +1818,66 @@ components:
           format: double
           nullable: true
         coolingDeltaT:
+          type: number
+          format: double
+          nullable: true
+        chillerPowerKw:
+          type: number
+          format: double
+          nullable: true
+        chilledPumpPowerKw:
+          type: number
+          format: double
+          nullable: true
+        coolingPumpPowerKw:
+          type: number
+          format: double
+          nullable: true
+        coolingTowerPowerKw:
+          type: number
+          format: double
+          nullable: true
+        chillerCop:
+          type: number
+          format: double
+          nullable: true
+        chilledPumpConveyingCoefficient:
+          type: number
+          format: double
+          nullable: true
+        coolingTowerConveyingCoefficient:
+          type: number
+          format: double
+          nullable: true
+        coolingPumpConveyingCoefficient:
+          type: number
+          format: double
+          nullable: true
+        thermalUnbalanceRate:
+          type: number
+          format: double
+          nullable: true
+        chilledSupplyTemp:
+          type: number
+          format: double
+          nullable: true
+        coolingReturnTemp:
+          type: number
+          format: double
+          nullable: true
+        outdoorTempC:
+          type: number
+          format: double
+          nullable: true
+        outdoorHumidityPct:
+          type: number
+          format: double
+          nullable: true
+        outdoorWetBulbC:
+          type: number
+          format: double
+          nullable: true
+        dewPointC:
           type: number
           format: double
           nullable: true
@@ -707,7 +1932,7 @@ components:
 
     DashboardOverviewResponse:
       type: object
-      required: [site, generatedAt, energyCards, deviceSummary, alarmSummary, freshness, sourceStatus]
+      required: [site, generatedAt, energyCards, deviceSummary, alarmSummary, freshness, sourceStatus, dataScope, fieldScopes]
       properties:
         site:
           $ref: "#/components/schemas/SiteRef"
@@ -726,6 +1951,10 @@ components:
           $ref: "#/components/schemas/Freshness"
         sourceStatus:
           $ref: "#/components/schemas/SourceStatus"
+        dataScope:
+          $ref: "#/components/schemas/RuntimeDataScope"
+        fieldScopes:
+          $ref: "#/components/schemas/DashboardOverviewFieldScopes"
 
     TrendPoint:
       type: object
@@ -773,7 +2002,7 @@ components:
 
     DashboardTrendsResponse:
       type: object
-      required: [site, generatedAt, range, series, stats, freshness, sourceStatus]
+      required: [site, generatedAt, range, series, stats, freshness, sourceStatus, dataScope]
       properties:
         site:
           $ref: "#/components/schemas/SiteRef"
@@ -795,6 +2024,8 @@ components:
           $ref: "#/components/schemas/Freshness"
         sourceStatus:
           $ref: "#/components/schemas/SourceStatus"
+        dataScope:
+          $ref: "#/components/schemas/RuntimeDataScope"
 
     AnomalyEvent:
       type: object
@@ -1506,3 +2737,1351 @@ components:
           $ref: "#/components/schemas/Freshness"
         sourceStatus:
           $ref: "#/components/schemas/SourceStatus"
+
+    OptimizeExecutionSiteRef:
+      type: object
+      required: [siteId]
+      properties:
+        siteId:
+          type: string
+
+    OptimizeExecutionTimelineEntry:
+      type: object
+      required: [at, actorUserId, action, note]
+      properties:
+        at:
+          type: string
+          format: date-time
+        actorUserId:
+          type: string
+        action:
+          type: string
+          enum: [created, approved, rolled_back]
+        note:
+          type: string
+          nullable: true
+
+    OptimizeExecutionDraft:
+      type: object
+      required: [generatedAt, gateLevel]
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        gateLevel:
+          type: string
+          nullable: true
+
+    OptimizeExecutionPlan:
+      type: object
+      required: [type, schemeKey, title, targetCop, targetPowerKw, targetApproachC, targetTcwsC, reason, actions]
+      properties:
+        type:
+          type: string
+          enum: [scheme, tower-approach, pump-delta-t]
+        schemeKey:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        targetCop:
+          type: number
+          format: double
+          nullable: true
+        targetPowerKw:
+          type: number
+          format: double
+          nullable: true
+        targetApproachC:
+          type: number
+          format: double
+          nullable: true
+        targetTcwsC:
+          type: number
+          format: double
+          nullable: true
+        targetChwpFreqTrimHz:
+          type: number
+          format: double
+          nullable: true
+          description: AI_ChwpFreqTrim_Hz value for pump-delta-t executions. Range -5 to +3 Hz.
+        targetCwpFreqTrimHz:
+          type: number
+          format: double
+          nullable: true
+          description: AI_CwpFreqTrim_Hz value for pump-delta-t executions. Range -5 to +3 Hz.
+        ttlSeconds:
+          type: integer
+          nullable: true
+        holdMinutes:
+          type: integer
+          nullable: true
+        rollbackLockoutMinutes:
+          type: integer
+          nullable: true
+        targetPoints:
+          type: object
+          nullable: true
+          additionalProperties: true
+        reason:
+          type: string
+          nullable: true
+        actions:
+          type: array
+          items:
+            type: string
+
+    OptimizeExecutionApprovalState:
+      type: object
+      required: [required, status, requestedAt, approvedAt, approverUserId, note]
+      properties:
+        required:
+          type: boolean
+        status:
+          type: string
+          enum: [pending, approved]
+        requestedAt:
+          type: string
+          format: date-time
+          nullable: true
+        approvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        approverUserId:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
+
+    OptimizeExecutionRollbackState:
+      type: object
+      required: [status, reason, requestedBy, requestedAt, completedAt]
+      properties:
+        status:
+          type: string
+          enum: [none, completed]
+        reason:
+          type: string
+          nullable: true
+        requestedBy:
+          type: string
+          nullable: true
+        requestedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    OptimizeExecutionRecord:
+      type: object
+      required:
+        - executionId
+        - siteId
+        - createdAt
+        - updatedAt
+        - approvedAt
+        - approvedBy
+        - rolledBackAt
+        - rolledBackBy
+        - status
+        - draft
+        - execution
+        - approval
+        - rollback
+        - timeline
+      properties:
+        executionId:
+          type: string
+        siteId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        approvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        approvedBy:
+          type: string
+          nullable: true
+        rolledBackAt:
+          type: string
+          format: date-time
+          nullable: true
+        rolledBackBy:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending_approval, approved, rolled_back]
+        draft:
+          $ref: "#/components/schemas/OptimizeExecutionDraft"
+        execution:
+          $ref: "#/components/schemas/OptimizeExecutionPlan"
+        approval:
+          $ref: "#/components/schemas/OptimizeExecutionApprovalState"
+        rollback:
+          $ref: "#/components/schemas/OptimizeExecutionRollbackState"
+        timeline:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptimizeExecutionTimelineEntry"
+
+    OptimizeExecutionListResponse:
+      type: object
+      required: [site, generatedAt, total, items]
+      properties:
+        site:
+          $ref: "#/components/schemas/OptimizeExecutionSiteRef"
+        generatedAt:
+          type: string
+          format: date-time
+        total:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptimizeExecutionRecord"
+
+    OptimizeExecutionMutationResponse:
+      type: object
+      required: [ok, requestId, execution]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        requestId:
+          type: string
+        execution:
+          $ref: "#/components/schemas/OptimizeExecutionRecord"
+
+    CreateOptimizeExecutionRequest:
+      type: object
+      required: [execution]
+      properties:
+        draft:
+          type: object
+          properties:
+            generatedAt:
+              type: string
+              format: date-time
+              nullable: true
+            gateLevel:
+              type: string
+              nullable: true
+        execution:
+          type: object
+          description: |
+            When type is `scheme`, provide either `schemeKey` or `title`.
+            Missing `type` defaults to `scheme`.
+            When type is `pump-delta-t`, provide `targetChwpFreqTrimHz` or `targetCwpFreqTrimHz`.
+          properties:
+            type:
+              type: string
+              enum: [scheme, tower-approach, pump-delta-t]
+              default: scheme
+            schemeKey:
+              type: string
+              nullable: true
+            title:
+              type: string
+              nullable: true
+            targetCop:
+              type: number
+              format: double
+              nullable: true
+            targetPowerKw:
+              type: number
+              format: double
+              nullable: true
+            targetApproachC:
+              type: number
+              format: double
+              nullable: true
+            targetTcwsC:
+              type: number
+              format: double
+              nullable: true
+            targetChwpFreqTrimHz:
+              type: number
+              format: double
+              nullable: true
+              minimum: -5
+              maximum: 3
+            targetCwpFreqTrimHz:
+              type: number
+              format: double
+              nullable: true
+              minimum: -5
+              maximum: 3
+            ttlSeconds:
+              type: integer
+              nullable: true
+            holdMinutes:
+              type: integer
+              nullable: true
+            rollbackLockoutMinutes:
+              type: integer
+              nullable: true
+            targetPoints:
+              type: object
+              nullable: true
+              additionalProperties: true
+            reason:
+              type: string
+              nullable: true
+            actions:
+              type: array
+              items:
+                type: string
+        approval:
+          type: object
+          properties:
+            required:
+              type: boolean
+              default: true
+            note:
+              type: string
+              nullable: true
+
+    ApproveOptimizeExecutionRequest:
+      type: object
+      properties:
+        note:
+          type: string
+          nullable: true
+        approverUserId:
+          type: string
+          nullable: true
+
+    RollbackOptimizeExecutionRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          nullable: true
+
+    OptimizeDraftRequest:
+      type: object
+      properties:
+        context:
+          type: object
+          properties:
+            siteId:
+              type: string
+              nullable: true
+        inputs:
+          type: object
+          properties:
+            loadKw:
+              type: number
+              format: double
+            outdoorTempC:
+              type: number
+              format: double
+            mode:
+              type: string
+              enum: [cooling]
+              default: cooling
+            equipmentContext:
+              type: object
+              properties:
+                activeChillerIds:
+                  type: array
+                  items:
+                    type: string
+                activeChillerModels:
+                  type: array
+                  items:
+                    type: string
+
+    OptimizeDraftDecision:
+      type: object
+      properties:
+        summary:
+          type: string
+        confidence:
+          type: string
+
+    OptimizeDraftScenario:
+      type: object
+      properties:
+        loadKw:
+          type: number
+          format: double
+        outdoorTempC:
+          type: number
+          format: double
+        mode:
+          type: string
+
+    OptimizeDraftRecommendation:
+      type: object
+      properties:
+        systemCop:
+          type: number
+          format: double
+          nullable: true
+        totalPowerKw:
+          type: number
+          format: double
+          nullable: true
+        steps:
+          type: array
+          items:
+            type: string
+
+    OptimizeDraftGate:
+      type: object
+      properties:
+        level:
+          type: string
+          enum: [ready, caution, blocked]
+        title:
+          type: string
+        reason:
+          type: string
+
+    OptimizeDraftBaseline:
+      type: object
+      properties:
+        systemCop:
+          type: number
+          format: double
+          nullable: true
+        totalPowerKw:
+          type: number
+          format: double
+          nullable: true
+        chilledDeltaT:
+          type: number
+          format: double
+          nullable: true
+        coolingDeltaT:
+          type: number
+          format: double
+          nullable: true
+        chillerPowerKw:
+          type: number
+          format: double
+          nullable: true
+        chilledPumpPowerKw:
+          type: number
+          format: double
+          nullable: true
+        coolingPumpPowerKw:
+          type: number
+          format: double
+          nullable: true
+        coolingTowerPowerKw:
+          type: number
+          format: double
+          nullable: true
+        chilledSupplyTemp:
+          type: number
+          format: double
+          nullable: true
+        coolingReturnTemp:
+          type: number
+          format: double
+          nullable: true
+        thermalUnbalanceRate:
+          type: number
+          format: double
+          nullable: true
+        activeAlarmCount:
+          type: integer
+          nullable: true
+
+    OptimizeDraftActionLink:
+      type: object
+      properties:
+        href:
+          type: string
+        enabled:
+          type: boolean
+        label:
+          type: string
+
+    OptimizeDraftHistoryBenchmarkWindow:
+      type: object
+      properties:
+        defaultMonths:
+          type: array
+          items:
+            type: string
+        months:
+          type: array
+          items:
+            type: string
+        maxMonths:
+          type: integer
+          nullable: true
+
+    OptimizeDraftReferenceCop:
+      type: object
+      properties:
+        low:
+          type: number
+          format: double
+          nullable: true
+        median:
+          type: number
+          format: double
+          nullable: true
+        high:
+          type: number
+          format: double
+          nullable: true
+
+    OptimizeDraftCurrentGap:
+      type: object
+      properties:
+        copDeltaToMedian:
+          type: number
+          format: double
+          nullable: true
+        powerDeltaKwToMedian:
+          type: number
+          format: double
+          nullable: true
+
+    OptimizeDraftHistoryBenchmarkLinks:
+      type: object
+      properties:
+        proportionHref:
+          $ref: "#/components/schemas/OptimizeDraftActionLink"
+        compareHref:
+          $ref: "#/components/schemas/OptimizeDraftActionLink"
+
+    OptimizeDraftHistoryBenchmark:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ready, partial, unavailable]
+        mode:
+          type: string
+        ratedCoolingCapacityKw:
+          type: number
+          format: double
+          nullable: true
+        requestedLoadRatePct:
+          type: number
+          format: double
+          nullable: true
+        matchedBucketLabel:
+          type: string
+          nullable: true
+        matchingTier:
+          type: string
+          enum: [load-wetbulb-strict, load-wetbulb-relaxed, load-only-fallback, unavailable]
+        fallbackLevel:
+          type: integer
+          nullable: true
+        requestedWetBulbC:
+          type: number
+          format: double
+          nullable: true
+        matchedWetBulbBand:
+          type: string
+          nullable: true
+        matchedWetBulbBands:
+          type: array
+          items:
+            type: string
+        wetBulbToleranceC:
+          type: number
+          format: double
+          nullable: true
+        confidence:
+          type: string
+          enum: [high, medium, low]
+        sampleWindow:
+          $ref: "#/components/schemas/OptimizeDraftHistoryBenchmarkWindow"
+        sampleCount:
+          type: integer
+          nullable: true
+        matchedMonthCount:
+          type: integer
+          nullable: true
+        referenceCop:
+          $ref: "#/components/schemas/OptimizeDraftReferenceCop"
+        currentGap:
+          $ref: "#/components/schemas/OptimizeDraftCurrentGap"
+        note:
+          type: string
+          nullable: true
+        availabilityReasonCode:
+          type: string
+          nullable: true
+        links:
+          $ref: "#/components/schemas/OptimizeDraftHistoryBenchmarkLinks"
+
+    OptimizeDraftBenefitBasis:
+      type: object
+      properties:
+        matchingTier:
+          type: string
+        fallbackLevel:
+          type: integer
+          nullable: true
+        sampleCount:
+          type: integer
+          nullable: true
+        monthCount:
+          type: integer
+          nullable: true
+        matchedMonthCount:
+          type: integer
+          nullable: true
+        matchedWetBulbBand:
+          type: string
+          nullable: true
+        matchedWetBulbBands:
+          type: array
+          items:
+            type: string
+        requestedWetBulbC:
+          type: number
+          format: double
+          nullable: true
+        wetBulbToleranceC:
+          type: number
+          format: double
+          nullable: true
+
+    OptimizeDraftBenefitEstimate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ready, partial, unavailable]
+        opportunityLevel:
+          type: string
+          enum: [low, medium, high]
+        confidence:
+          type: string
+          enum: [high, medium, low]
+        expectedTargetCop:
+          type: number
+          format: double
+          nullable: true
+        expectedTargetPowerKw:
+          type: number
+          format: double
+          nullable: true
+        expectedPowerDeltaKw:
+          type: number
+          format: double
+          nullable: true
+        expectedPowerDeltaPct:
+          type: number
+          format: double
+          nullable: true
+        expectedCopDelta:
+          type: number
+          format: double
+          nullable: true
+        basis:
+          $ref: "#/components/schemas/OptimizeDraftBenefitBasis"
+        disclaimer:
+          type: string
+          nullable: true
+
+    OptimizeDraftTowerTargetBand:
+      type: object
+      properties:
+        low:
+          type: number
+          format: double
+          nullable: true
+        high:
+          type: number
+          format: double
+          nullable: true
+        label:
+          type: string
+          nullable: true
+
+    OptimizeDraftTowerGuardrail:
+      type: object
+      properties:
+        key:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [ready, missing, blocked, locked]
+        value:
+          nullable: true
+          oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+        message:
+          type: string
+          nullable: true
+        resolvedBy:
+          type: string
+          nullable: true
+        matchedKeys:
+          type: array
+          items:
+            type: string
+
+    OptimizeDraftInputSignal:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        value:
+          nullable: true
+          oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+        unit:
+          type: string
+          nullable: true
+        required:
+          type: boolean
+        ok:
+          type: boolean
+        reason:
+          type: string
+          nullable: true
+
+    OptimizeDraftTowerApproachAdvisor:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ready, partial, unavailable]
+        currentApproachC:
+          type: number
+          format: double
+          nullable: true
+        currentTcwsC:
+          type: number
+          format: double
+          nullable: true
+        requestedWetBulbC:
+          type: number
+          format: double
+          nullable: true
+        targetApproachC:
+          type: number
+          format: double
+          nullable: true
+        targetTcwsC:
+          type: number
+          format: double
+          nullable: true
+        targetBandC:
+          $ref: "#/components/schemas/OptimizeDraftTowerTargetBand"
+        executionReady:
+          type: boolean
+        controlMode:
+          type: string
+        reason:
+          type: string
+          nullable: true
+        disclaimer:
+          type: string
+          nullable: true
+        guardrails:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptimizeDraftTowerGuardrail"
+
+    OptimizeDraftPumpDeltaTAdvisor:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ready, partial, unavailable]
+        executionReady:
+          type: boolean
+        dispatchReady:
+          type: boolean
+        executionMode:
+          type: string
+          enum: [read_only, shadow, assisted]
+        dispatchMode:
+          type: string
+          enum: [off, shadow, assisted]
+        controlMode:
+          type: string
+        current:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+            nullable: true
+        targetPoints:
+          type: object
+          properties:
+            chilledPump:
+              type: string
+              example: AI_ChwpFreqTrim_Hz
+            coolingPump:
+              type: string
+              example: AI_CwpFreqTrim_Hz
+            unit:
+              type: string
+              example: Hz
+            ttlSeconds:
+              type: integer
+              example: 300
+            trimRangeHz:
+              type: object
+              properties:
+                min:
+                  type: number
+                  example: -5
+                max:
+                  type: number
+                  example: 3
+        targetBandsC:
+          type: object
+          additionalProperties: true
+        outputTargets:
+          type: object
+          properties:
+            chilledPumpFreqTrimHz:
+              type: number
+              format: double
+              nullable: true
+            coolingPumpFreqTrimHz:
+              type: number
+              format: double
+              nullable: true
+            rollbackTrimHz:
+              type: number
+              format: double
+              nullable: true
+            maxStepHz:
+              type: number
+              format: double
+              nullable: true
+            ttlSeconds:
+              type: integer
+              nullable: true
+            holdMinutes:
+              type: integer
+              nullable: true
+            rollbackLockoutMinutes:
+              type: integer
+              nullable: true
+            trimRangeHz:
+              type: object
+              additionalProperties: true
+        reason:
+          type: string
+          nullable: true
+        disclaimer:
+          type: string
+          nullable: true
+        blockers:
+          type: array
+          items:
+            type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        inputSignals:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptimizeDraftInputSignal"
+        guardrails:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptimizeDraftTowerGuardrail"
+        objective:
+          type: object
+          additionalProperties: true
+        constraints:
+          type: object
+          additionalProperties: true
+        advisorResult:
+          type: object
+          additionalProperties: true
+
+    OptimizeDraftChillerStagingAdvisor:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ready, partial, unavailable]
+        executionReady:
+          type: boolean
+        dispatchReady:
+          type: boolean
+        executionMode:
+          type: string
+          enum: [read_only, shadow]
+        dispatchMode:
+          type: string
+          enum: [off, shadow]
+        basis:
+          type: string
+          example: combination_empirical_performance
+        confidence:
+          type: string
+          enum: [high, medium, low]
+        current:
+          type: object
+          additionalProperties: true
+        recommendation:
+          type: object
+          additionalProperties: true
+        evidence:
+          type: object
+          additionalProperties: true
+          description: Combination sample summary, learning boundary, and shadow verification plan.
+        sampleEvidence:
+          type: object
+          additionalProperties: true
+          description: Alias of evidence for UI clients that present sample evidence explicitly.
+        sampleCapture:
+          type: object
+          additionalProperties: true
+          description: Append-only current live sample capture status. Sample capture never triggers PLC or chiller dispatch.
+        candidates:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        savingsVerification:
+          type: object
+          additionalProperties: true
+        blockers:
+          type: array
+          items:
+            type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        reason:
+          type: string
+          nullable: true
+        disclaimer:
+          type: string
+          nullable: true
+        advisorResult:
+          type: object
+          additionalProperties: true
+
+    OptimizeDraftReviewReadiness:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ready, partial, unavailable]
+        score:
+          type: integer
+          nullable: true
+        reason:
+          type: string
+          nullable: true
+        missingSignals:
+          type: array
+          items:
+            type: string
+        hints:
+          type: array
+          items:
+            type: string
+
+    ChillerStagingSample:
+      type: object
+      properties:
+        sampleId:
+          type: string
+        siteId:
+          type: string
+        combinationKey:
+          type: string
+          example: CH4+CH5+CH7
+        combination:
+          type: array
+          items:
+            type: string
+        capturedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+        loadKw:
+          type: number
+          nullable: true
+        loadRatePct:
+          type: number
+          nullable: true
+        wetBulbC:
+          type: number
+          nullable: true
+        stationPowerKw:
+          type: number
+          nullable: true
+        chillerPowerKw:
+          type: number
+          nullable: true
+        stationCop:
+          type: number
+          nullable: true
+        comboCop:
+          type: number
+          nullable: true
+        kwPerRt:
+          type: number
+          nullable: true
+        sampleMinutes:
+          type: number
+          nullable: true
+        alarmCount:
+          type: integer
+          nullable: true
+        sample:
+          type: object
+          additionalProperties: true
+
+    ChillerStagingSampleListResponse:
+      type: object
+      required: [site, generatedAt, basis, total, items]
+      properties:
+        site:
+          type: object
+          properties:
+            siteId:
+              type: string
+        generatedAt:
+          type: string
+          format: date-time
+        basis:
+          type: string
+          enum: [append_only_chiller_staging_samples]
+        total:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChillerStagingSample"
+
+    OptimizeDraftDeviceAction:
+      type: object
+      properties:
+        system:
+          type: string
+        action:
+          type: string
+        target:
+          type: string
+          nullable: true
+        reason:
+          type: string
+          nullable: true
+        risk:
+          type: string
+          enum: [low, medium, high]
+        priority:
+          type: string
+          enum: [high, medium, low]
+        preconditions:
+          type: array
+          items:
+            type: string
+
+    OptimizeDraftSchemeReadiness:
+      type: object
+      properties:
+        score:
+          type: integer
+          nullable: true
+        level:
+          type: string
+          enum: [ready, caution, blocked]
+        reason:
+          type: string
+          nullable: true
+        blockers:
+          type: array
+          items:
+            type: string
+        checkpoints:
+          type: array
+          items:
+            type: string
+
+    OptimizeDraftSchemeLinks:
+      type: object
+      properties:
+        devices:
+          $ref: "#/components/schemas/OptimizeDraftActionLink"
+        trends:
+          $ref: "#/components/schemas/OptimizeDraftActionLink"
+        scene:
+          $ref: "#/components/schemas/OptimizeDraftActionLink"
+
+    OptimizeDraftScheme:
+      type: object
+      properties:
+        key:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+          enum: [ready, caution, blocked]
+        riskLevel:
+          type: string
+          enum: [low, medium, high]
+        focus:
+          type: string
+          nullable: true
+        label:
+          type: string
+          nullable: true
+        targetPowerKw:
+          type: number
+          format: double
+          nullable: true
+        targetCop:
+          type: number
+          format: double
+          nullable: true
+        powerDeltaPct:
+          type: number
+          format: double
+          nullable: true
+        copDelta:
+          type: number
+          format: double
+          nullable: true
+        deviceActions:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptimizeDraftDeviceAction"
+        readiness:
+          $ref: "#/components/schemas/OptimizeDraftSchemeReadiness"
+        actions:
+          type: array
+          items:
+            type: string
+        links:
+          $ref: "#/components/schemas/OptimizeDraftSchemeLinks"
+
+    OptimizeDraftMissingMetric:
+      type: object
+      properties:
+        metric:
+          type: string
+        category:
+          type: string
+          enum: [upstream_unreachable, field_missing_or_invalid, unknown]
+        message:
+          type: string
+          nullable: true
+
+    OptimizeDraftSkippedRule:
+      type: object
+      properties:
+        ruleId:
+          type: string
+        reason:
+          type: string
+        missingMetrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptimizeDraftMissingMetric"
+
+    OptimizeDraftPrimaryCard:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        priority:
+          type: string
+          enum: [high, medium, low]
+        category:
+          type: string
+          nullable: true
+        reason:
+          type: string
+          nullable: true
+        actions:
+          type: array
+          items:
+            type: string
+        evidence:
+          type: array
+          items:
+            type: string
+        severity:
+          type: string
+          nullable: true
+        risk:
+          type: string
+          nullable: true
+        relatedDevices:
+          type: array
+          items:
+            type: string
+        ruleId:
+          type: string
+          nullable: true
+
+    OptimizeDraftRuleEvidence:
+      type: object
+      properties:
+        matchedCount:
+          type: integer
+        skippedCount:
+          type: integer
+        matchedRuleIds:
+          type: array
+          items:
+            type: string
+        skippedRules:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptimizeDraftSkippedRule"
+        primaryCards:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptimizeDraftPrimaryCard"
+
+    OptimizeDraftExecutionHub:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [idle, pending]
+        approvalRequired:
+          type: boolean
+        endpoint:
+          type: string
+        pendingApprovalCount:
+          type: integer
+          nullable: true
+        approvedCount:
+          type: integer
+          nullable: true
+        rolledBackCount:
+          type: integer
+          nullable: true
+        latestExecutionId:
+          type: string
+          nullable: true
+        latestExecutionStatus:
+          type: string
+          nullable: true
+        latestExecutionAt:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
+
+    OptimizeDraftDetails:
+      type: object
+      properties:
+        site:
+          $ref: "#/components/schemas/OptimizeExecutionSiteRef"
+        decision:
+          $ref: "#/components/schemas/OptimizeDraftDecision"
+        request:
+          $ref: "#/components/schemas/OptimizeDraftScenario"
+        recommendation:
+          $ref: "#/components/schemas/OptimizeDraftRecommendation"
+        gate:
+          $ref: "#/components/schemas/OptimizeDraftGate"
+        baseline:
+          $ref: "#/components/schemas/OptimizeDraftBaseline"
+        historyBenchmark:
+          $ref: "#/components/schemas/OptimizeDraftHistoryBenchmark"
+        benefitEstimate:
+          $ref: "#/components/schemas/OptimizeDraftBenefitEstimate"
+        towerApproachAdvisor:
+          $ref: "#/components/schemas/OptimizeDraftTowerApproachAdvisor"
+        pumpDeltaTAdvisor:
+          $ref: "#/components/schemas/OptimizeDraftPumpDeltaTAdvisor"
+        chillerStagingAdvisor:
+          $ref: "#/components/schemas/OptimizeDraftChillerStagingAdvisor"
+        reviewReadiness:
+          $ref: "#/components/schemas/OptimizeDraftReviewReadiness"
+        executionHub:
+          $ref: "#/components/schemas/OptimizeDraftExecutionHub"
+        schemes:
+          type: array
+          items:
+            $ref: "#/components/schemas/OptimizeDraftScheme"
+        ruleEvidence:
+          $ref: "#/components/schemas/OptimizeDraftRuleEvidence"
+        draftLabel:
+          type: string
+        freshness:
+          $ref: "#/components/schemas/Freshness"
+        sourceStatus:
+          $ref: "#/components/schemas/SourceStatus"
+        diagnostics:
+          type: array
+          items:
+            type: string
+        generatedAt:
+          type: string
+          format: date-time
+
+    OptimizeDraftNotImplementedResponse:
+      type: object
+      required: [ok, code, error, requestId, details]
+      properties:
+        ok:
+          type: boolean
+          enum: [false]
+        code:
+          type: string
+          enum: [NOT_IMPLEMENTED]
+        error:
+          type: string
+        requestId:
+          type: string
+        details:
+          $ref: "#/components/schemas/OptimizeDraftDetails"
+
+    OptimizeAdvisorResponse:
+      type: object
+      required: [ok, code, requestId, details]
+      properties:
+        ok:
+          type: boolean
+          enum: [true]
+        code:
+          type: string
+          enum: [OK]
+        message:
+          type: string
+        requestId:
+          type: string
+        details:
+          $ref: "#/components/schemas/OptimizeDraftDetails"

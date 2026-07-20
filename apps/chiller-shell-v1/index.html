@@ -2,8 +2,85 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chiller Shell V1</title>
+    <title>高效能源站智慧平台</title>
+    <script>
+      window.__vite_plugin_react_preamble_installed__ = true;
+      window.$RefreshReg$ = window.$RefreshReg$ || function () {};
+      window.$RefreshSig$ =
+        window.$RefreshSig$ ||
+        function () {
+          return function (type) {
+            return type;
+          };
+        };
+      (function ensureScopedSiteId() {
+        try {
+          var pathname = window.location.pathname || "";
+          if (pathname === "/" || pathname === "/login" || pathname === "/projects") {
+            return;
+          }
+          var search = new URLSearchParams(window.location.search || "");
+          if (search.get("siteId")) {
+            return;
+          }
+          var storedProject = window.localStorage.getItem("chiller-shell-project-v1");
+          if (!storedProject) {
+            return;
+          }
+          var parsed = JSON.parse(storedProject);
+          var siteId = parsed && typeof parsed.siteId === "string" ? parsed.siteId.trim() : "";
+          if (!siteId) {
+            return;
+          }
+          search.set("siteId", siteId);
+          var nextUrl = pathname + "?" + search.toString() + (window.location.hash || "");
+          window.location.replace(nextUrl);
+        } catch (_error) {
+          // Ignore bootstrap URL normalization failures and let the app continue.
+        }
+      })();
+      window.__chillerBootErrors = [];
+      function recordBootError(kind, message) {
+        window.__chillerBootErrors.push({ kind: kind, message: String(message || "") });
+      }
+      window.addEventListener("error", function (event) {
+        if (String(event.message || "").includes("ResizeObserver loop completed with undelivered notifications")) {
+          return;
+        }
+        recordBootError("error", event.message || event.error);
+      });
+      window.addEventListener("unhandledrejection", function (event) {
+        var reason = event.reason;
+        recordBootError("rejection", reason && (reason.stack || reason.message || reason));
+      });
+      window.setTimeout(function () {
+        var root = document.getElementById("root");
+        if (!root || root.childElementCount > 0 || window.__chillerBootErrors.length === 0) {
+          return;
+        }
+        var latest = window.__chillerBootErrors[window.__chillerBootErrors.length - 1];
+        var panel = document.createElement("pre");
+        panel.setAttribute("data-boot-error", "true");
+        panel.textContent = "启动失败\\n" + latest.kind + "\\n" + latest.message;
+        panel.style.position = "fixed";
+        panel.style.left = "24px";
+        panel.style.right = "24px";
+        panel.style.bottom = "24px";
+        panel.style.zIndex = "99999";
+        panel.style.margin = "0";
+        panel.style.padding = "14px 16px";
+        panel.style.borderRadius = "14px";
+        panel.style.border = "1px solid rgba(255,255,255,0.16)";
+        panel.style.background = "rgba(19,25,38,0.94)";
+        panel.style.color = "#f7fbff";
+        panel.style.font = "12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace";
+        panel.style.whiteSpace = "pre-wrap";
+        panel.style.boxShadow = "0 18px 40px rgba(0,0,0,0.35)";
+        document.body.appendChild(panel);
+      }, 1600);
+    </script>
   </head>
   <body>
     <div id="root"></div>

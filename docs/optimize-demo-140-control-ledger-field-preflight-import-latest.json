@@ -1,0 +1,76 @@
+{
+  "ok": false,
+  "status": "CONTROL_LEDGER_IMPORT_BLOCKED",
+  "siteId": "140",
+  "generatedAt": "2026-06-16T05:24:25.222Z",
+  "scope": "optimize_demo_140_control_oscillation_field_ledgers",
+  "executionMode": "read_only",
+  "controlBoundary": "导入器只做现场台账回填、字段规范化和证据校验，不自动改 PID，不自动启停设备，不写真实 PLC。",
+  "summary": {
+    "tableCount": 3,
+    "totalRows": 0,
+    "acceptedRows": 0,
+    "blockersCount": 3,
+    "warningsCount": 0
+  },
+  "outputs": {
+    "json": "docs/optimize-demo-140-control-ledger-field-preflight-import-latest.json",
+    "markdown": "docs/optimize-demo-140-control-ledger-field-preflight-import-latest.md",
+    "controlTrendCsv": "docs/optimize-demo-140-control-command-feedback-field-preflight-normalized-latest.csv",
+    "startStopCsv": "docs/optimize-demo-140-start-stop-event-field-preflight-normalized-latest.csv",
+    "controlParameterCsv": "docs/optimize-demo-140-control-parameter-field-preflight-normalized-latest.csv"
+  },
+  "tables": [
+    {
+      "key": "control_command_feedback_trend",
+      "title": "控制命令/反馈高频趋势",
+      "inputMode": "missing",
+      "inputPath": "docs/field-data/optimize-demo-140/control-command-feedback.csv",
+      "outputPath": "docs/optimize-demo-140-control-command-feedback-field-preflight-normalized-latest.csv",
+      "rowCount": 0,
+      "acceptedRowCount": 0,
+      "sourceHeaders": [],
+      "headerMap": {},
+      "blockers": [
+        "缺少输入文件：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-command-feedback.csv"
+      ],
+      "warnings": []
+    },
+    {
+      "key": "start_stop_event_ledger",
+      "title": "设备启停事件台账",
+      "inputMode": "missing",
+      "inputPath": "docs/field-data/optimize-demo-140/start-stop-event.csv",
+      "outputPath": "docs/optimize-demo-140-start-stop-event-field-preflight-normalized-latest.csv",
+      "rowCount": 0,
+      "acceptedRowCount": 0,
+      "sourceHeaders": [],
+      "headerMap": {},
+      "blockers": [
+        "缺少输入文件：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv"
+      ],
+      "warnings": []
+    },
+    {
+      "key": "control_parameter_ledger",
+      "title": "PID/死区/延时参数台账",
+      "inputMode": "missing",
+      "inputPath": "docs/field-data/optimize-demo-140/control-parameter.csv",
+      "outputPath": "docs/optimize-demo-140-control-parameter-field-preflight-normalized-latest.csv",
+      "rowCount": 0,
+      "acceptedRowCount": 0,
+      "sourceHeaders": [],
+      "headerMap": {},
+      "blockers": [
+        "缺少输入文件：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv"
+      ],
+      "warnings": []
+    }
+  ],
+  "blockers": [
+    "控制命令/反馈高频趋势: 缺少输入文件：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-command-feedback.csv",
+    "设备启停事件台账: 缺少输入文件：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/start-stop-event.csv",
+    "PID/死区/延时参数台账: 缺少输入文件：/Users/billchow/Documents/智慧冷冻站/docs/field-data/optimize-demo-140/control-parameter.csv"
+  ],
+  "warnings": []
+}

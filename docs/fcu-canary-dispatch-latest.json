@@ -1,0 +1,100 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-17T20:18:08.710Z",
+  "siteId": "126lnoffice",
+  "build": "1",
+  "floor": "1",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "mode": "blocked_before_canary_dispatch",
+  "commandKind": "setpoint",
+  "controlMutation": false,
+  "planFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-small-batch-dispatch-plan-latest.json",
+  "preflightFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-go-live-preflight-latest.json",
+  "fieldArmFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-arm-check-latest.json",
+  "canary": {
+    "deviceCode": "BGS01",
+    "deviceName": "办公室01",
+    "zoneTemperatureC": 26,
+    "setpointC": 24
+  },
+  "blockingItems": [
+    {
+      "key": "preflight_not_go",
+      "message": "上线前预检未通过：go_live_blocked"
+    },
+    {
+      "key": "field_arm_not_ready",
+      "message": "现场 arm-check 未通过：field_arm_blocked"
+    },
+    {
+      "key": "confirm_phrase_missing",
+      "message": "必须设置 FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE 才允许真实 BA 写入。"
+    }
+  ],
+  "evidence": {
+    "health": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/healthz",
+      "readOnlyMode": true
+    },
+    "preflight": {
+      "ok": false,
+      "verdict": "go_live_blocked",
+      "blockingItems": [
+        {
+          "key": "execution_gate_open",
+          "label": "全局真实下发闸门打开",
+          "ok": false,
+          "severity": "P0",
+          "message": "全局投运闸门未打开：backend_not_readonly"
+        },
+        {
+          "key": "confirm_phrase_present",
+          "label": "真实写入确认短语",
+          "ok": false,
+          "severity": "P0",
+          "message": "必须设置 FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE。"
+        }
+      ]
+    },
+    "fieldArm": {
+      "ok": false,
+      "verdict": "field_arm_blocked",
+      "blockingItems": [
+        {
+          "key": "backend_write_gate",
+          "label": "后端写入总闸",
+          "ok": false,
+          "severity": "P0",
+          "message": "当前 /healthz 显示 readOnlyMode=true。"
+        },
+        {
+          "key": "execution_gate_open",
+          "label": "全局投运闸门",
+          "ok": false,
+          "severity": "P0",
+          "message": "未打开：backend_not_readonly"
+        },
+        {
+          "key": "confirm_phrase_present",
+          "label": "真实写入确认短语",
+          "ok": false,
+          "severity": "P0",
+          "message": "必须设置 FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE。"
+        }
+      ]
+    },
+    "planSummary": {
+      "total": 29,
+      "ready": 0,
+      "environmentBlocked": 21,
+      "deviceBlocked": 8,
+      "notFound": 0,
+      "deviceReady": 21,
+      "canDispatch": 0,
+      "plannedDevices": 9,
+      "previewReadyDevices": 9
+    }
+  }
+}

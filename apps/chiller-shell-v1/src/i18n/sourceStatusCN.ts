@@ -101,12 +101,12 @@ const SOURCE_KEY_LABEL_MAP: Record<string, Record<LocaleCode, LocaleLabel>> = {
     "vi-VN": { short: "Tỷ trọng tải", full: "Nguồn tỷ trọng phụ tải" }
   },
   energyEfficiencyImbalanceCurve: {
-    "zh-CN": { short: "热平衡曲线", full: "热不平衡率曲线来源" },
+    "zh-CN": { short: "热平衡曲线", full: "热平衡偏差曲线来源" },
     "en-US": { short: "Imb Curve", full: "Thermal Imbalance Curve Source" },
     "vi-VN": { short: "Duong mat can", full: "Nguon duong mat can bang nhiet" }
   },
   energyEfficiencyImbalanceTable: {
-    "zh-CN": { short: "热平衡统计", full: "热不平衡率统计来源" },
+    "zh-CN": { short: "热平衡统计", full: "热平衡偏差统计来源" },
     "en-US": { short: "Imb Table", full: "Thermal Imbalance Statistics Source" },
     "vi-VN": { short: "Thong ke mat can", full: "Nguon thong ke mat can bang nhiet" }
   },
@@ -225,6 +225,11 @@ const SOURCE_KEY_LABEL_MAP: Record<string, Record<LocaleCode, LocaleLabel>> = {
     "en-US": { short: "Recs", full: "Recommendations Internal Source" },
     "vi-VN": { short: "Khuyến nghị", full: "Nguồn nội bộ tổng hợp khuyến nghị" }
   },
+  historyBenchmark: {
+    "zh-CN": { short: "历史对标", full: "历史对标来源" },
+    "en-US": { short: "History", full: "Historical Benchmark Source" },
+    "vi-VN": { short: "Đối chiếu LS", full: "Nguồn đối chiếu lịch sử" }
+  },
   optimizeDraft: {
     "zh-CN": { short: "优化草案", full: "优化草案来源" },
     "en-US": { short: "Draft", full: "Optimize Draft Source" },
@@ -282,16 +287,16 @@ const METRIC_KEY_LABEL_MAP: Record<string, Record<LocaleCode, LocaleLabel>> = {
 
 const UNKNOWN_SOURCE_LABEL: Record<LocaleCode, LocaleLabel> = {
   "zh-CN": {
-    short: "未收录",
-    full: "未收录来源"
+    short: "数据来源",
+    full: "数据来源"
   },
   "en-US": {
-    short: "Unmapped",
-    full: "Unmapped Source"
+    short: "Data Source",
+    full: "Data Source"
   },
   "vi-VN": {
-    short: "Chưa ghi nhận",
-    full: "Nguồn chưa ghi nhận"
+    short: "Nguồn dữ liệu",
+    full: "Nguồn dữ liệu"
   }
 };
 
@@ -342,13 +347,16 @@ function getUnknownSourceLabel(key: string, mode: LabelMode, locale: LocaleCode)
   if (mode === "short") {
     return UNKNOWN_SOURCE_LABEL[locale].short;
   }
+  if (locale === "zh-CN") {
+    return UNKNOWN_SOURCE_LABEL[locale].full;
+  }
   if (locale === "en-US") {
     return `${UNKNOWN_SOURCE_LABEL[locale].full} (${key})`;
   }
   if (locale === "vi-VN") {
     return `${UNKNOWN_SOURCE_LABEL[locale].full} (${key})`;
   }
-  return `${UNKNOWN_SOURCE_LABEL[locale].full}（${key}）`;
+  return UNKNOWN_SOURCE_LABEL["zh-CN"].full;
 }
 
 function getSourceLabel(key: string | undefined, endpoint: string | undefined, mode: LabelMode): string {
@@ -375,6 +383,7 @@ function getSourceLabel(key: string | undefined, endpoint: string | undefined, m
 
 function getSourceStateText(source: SourceEndpointStatusDto): string {
   const locale = getCurrentLocale();
+  const reasonCode = normalizeText(source.reasonCode);
   if (source.fallback === true) {
     if (locale === "en-US") {
       return "Fallback Active";
@@ -395,6 +404,47 @@ function getSourceStateText(source: SourceEndpointStatusDto): string {
     return "数据正常";
   }
   if (state === "warn") {
+    if (reasonCode === "draft_not_implemented") {
+      if (locale === "en-US") {
+        return "Context Draft Only";
+      }
+      if (locale === "vi-VN") {
+        return "Chỉ có bản nháp ngữ cảnh";
+      }
+      return "仅提供治理态草案";
+    }
+    if (reasonCode === "history_samples_unavailable") {
+      if (locale === "en-US") {
+        return "Historical Samples Unavailable";
+      }
+      if (locale === "vi-VN") {
+        return "Thiếu mẫu lịch sử";
+      }
+      return "历史样本不足";
+    }
+    if (
+      reasonCode === "baseline_snapshot_missing" ||
+      reasonCode === "alarm_snapshot_missing" ||
+      reasonCode === "recommendation_cards_missing" ||
+      reasonCode === "field_missing_or_invalid"
+    ) {
+      if (locale === "en-US") {
+        return "Field Missing/Invalid";
+      }
+      if (locale === "vi-VN") {
+        return "Thiếu hoặc sai trường dữ liệu";
+      }
+      return "字段缺失或无效";
+    }
+    if (reasonCode === "partial_fallback") {
+      if (locale === "en-US") {
+        return "Partial Fallback";
+      }
+      if (locale === "vi-VN") {
+        return "Đang dùng một phần dự phòng";
+      }
+      return "部分兼容回退";
+    }
     if (locale === "en-US") {
       return "Field Missing/Invalid";
     }
@@ -407,6 +457,26 @@ function getSourceStateText(source: SourceEndpointStatusDto): string {
   const message = normalizeText(source.message);
   const error = normalizeText(source.error);
   const detail = `${message} ${error}`;
+
+  if (reasonCode === "upstream_5xx") {
+    if (locale === "en-US") {
+      return "Upstream 5xx";
+    }
+    if (locale === "vi-VN") {
+      return "Upstream trả về 5xx";
+    }
+    return "上游接口 5xx";
+  }
+
+  if (reasonCode === "upstream_4xx") {
+    if (locale === "en-US") {
+      return "Upstream 4xx";
+    }
+    if (locale === "vi-VN") {
+      return "Upstream trả về 4xx";
+    }
+    return "上游接口 4xx";
+  }
 
   if (typeof source.status === "number" && source.status >= 500) {
     if (locale === "en-US") {
@@ -455,7 +525,157 @@ function getLabelStateSeparator(): string {
   return ": ";
 }
 
+function normalizeBaseUrl(value: string | null | undefined): string {
+  return String(value || "").trim().replace(/\/+$/, "");
+}
+
+function resolveBaseHost(baseUrl: string): string {
+  if (!baseUrl) {
+    return "";
+  }
+  try {
+    return new URL(baseUrl).host;
+  } catch (_error) {
+    return "";
+  }
+}
+
+function getOriginLabel(
+  locale: LocaleCode,
+  kind:
+    | "cloudDocument"
+    | "localDocument"
+    | "documentInterface"
+    | "cloudDevice"
+    | "localDevice"
+    | "deviceInterface"
+    | "cloudRealtime"
+    | "localRealtime"
+    | "realtimeInterface"
+    | "localCompat"
+): string {
+  switch (kind) {
+    case "cloudDocument":
+      return locale === "en-US"
+        ? "Cloud Document API"
+        : locale === "vi-VN"
+          ? "API tai lieu tren cloud"
+          : "云端文档接口";
+    case "localDocument":
+      return locale === "en-US"
+        ? "Local Document API"
+        : locale === "vi-VN"
+          ? "API tai lieu local"
+          : "本地文档接口";
+    case "documentInterface":
+      return locale === "en-US"
+        ? "Document API"
+        : locale === "vi-VN"
+          ? "API tai lieu"
+          : "文档接口";
+    case "cloudDevice":
+      return locale === "en-US"
+        ? "Cloud Device API"
+        : locale === "vi-VN"
+          ? "API thiet bi tren cloud"
+          : "云端设备接口";
+    case "localDevice":
+      return locale === "en-US"
+        ? "Local Device API"
+        : locale === "vi-VN"
+          ? "API thiet bi local"
+          : "本地设备接口";
+    case "deviceInterface":
+      return locale === "en-US"
+        ? "Device API"
+        : locale === "vi-VN"
+          ? "API thiet bi"
+          : "设备实时接口";
+    case "cloudRealtime":
+      return locale === "en-US"
+        ? "Cloud Realtime"
+        : locale === "vi-VN"
+          ? "Realtime tren cloud"
+          : "云端实时";
+    case "localRealtime":
+      return locale === "en-US"
+        ? "Local Realtime"
+        : locale === "vi-VN"
+          ? "Realtime local"
+          : "本地实时";
+    case "realtimeInterface":
+      return locale === "en-US"
+        ? "Realtime API"
+        : locale === "vi-VN"
+          ? "API realtime"
+          : "实时接口";
+    case "localCompat":
+      return locale === "en-US"
+        ? "Local Compatibility"
+        : locale === "vi-VN"
+          ? "Tuong thich local"
+          : "本地兼容";
+    default:
+      return "";
+  }
+}
+
+function resolveSourceOriginText(source: SourceEndpointStatusDto, mode: LabelMode): string {
+  const locale = getCurrentLocale();
+  const explicit = String(source.originLabel || "").trim();
+  if (explicit && !/legacy/i.test(explicit)) {
+    return explicit;
+  }
+
+  const endpoint = String(source.endpoint || "");
+  const interfaceKind = normalizeText(source.interfaceKind);
+  const baseUrl = normalizeBaseUrl(source.baseUrl);
+  const host = resolveBaseHost(baseUrl);
+  const lowerHost = host.toLowerCase();
+  const isCloud = lowerHost.includes("ssge.com.cn");
+  const isLocal = lowerHost.includes("127.0.0.1") || lowerHost.includes("localhost");
+
+  let label = "";
+  if (interfaceKind === "legacy-reg-findallbydrtypeid" || endpoint.includes("/findAllByDrTypeId")) {
+    label = getOriginLabel(locale, isCloud ? "cloudDocument" : isLocal ? "localDocument" : "documentInterface");
+  } else if (interfaceKind === "api-device-data" || endpoint.includes("/api/device/")) {
+    label = getOriginLabel(locale, isCloud ? "cloudDevice" : isLocal ? "localDevice" : "deviceInterface");
+  } else if (
+    interfaceKind === "homepage-realtime" ||
+    interfaceKind.startsWith("legacy-homepage-") ||
+    endpoint.includes("/zsqy/homepage/") ||
+    endpoint.startsWith("/ws/")
+  ) {
+    label = getOriginLabel(locale, isCloud ? "cloudRealtime" : isLocal ? "localRealtime" : "realtimeInterface");
+  } else if (isLocal) {
+    label = getOriginLabel(locale, "localCompat");
+  } else if (isCloud) {
+    label = getOriginLabel(locale, "cloudRealtime");
+  } else if (host) {
+    label = host;
+  }
+
+  if (!label) {
+    return "";
+  }
+  if (mode === "short" || !host || explicit) {
+    return label;
+  }
+  if (locale === "zh-CN") {
+    return `${label}（${host}）`;
+  }
+  return `${label} (${host})`;
+}
+
+function formatStateWithOrigin(state: string, origin: string): string {
+  if (!origin) {
+    return state;
+  }
+  return `${state} · ${origin}`;
+}
+
 function classifySourceState(source: SourceEndpointStatusDto): SourceStateKind {
+  const reasonCode = normalizeText(source.reasonCode);
   if (source.fallback === true) {
     return "warn";
   }
@@ -469,6 +689,27 @@ function classifySourceState(source: SourceEndpointStatusDto): SourceStateKind {
 
   if (detail.includes("field_missing_or_invalid") || detail.includes("field missing") || detail.includes("invalid")) {
     return "warn";
+  }
+
+  if (
+    reasonCode === "draft_not_implemented" ||
+    reasonCode === "history_samples_unavailable" ||
+    reasonCode === "baseline_snapshot_missing" ||
+    reasonCode === "alarm_snapshot_missing" ||
+    reasonCode === "recommendation_cards_missing" ||
+    reasonCode === "field_missing_or_invalid" ||
+    reasonCode === "partial_fallback"
+  ) {
+    return "warn";
+  }
+
+  if (
+    reasonCode === "upstream_5xx" ||
+    reasonCode === "upstream_4xx" ||
+    reasonCode === "upstream_unreachable" ||
+    reasonCode === "upstream_unavailable"
+  ) {
+    return "error";
   }
 
   if (typeof source.status === "number" && source.status >= 500) {
@@ -492,14 +733,40 @@ function classifySourceState(source: SourceEndpointStatusDto): SourceStateKind {
 
 export function formatSourceStatusLine(source: SourceEndpointStatusDto): string {
   const label = getSourceLabel(source.key, source.endpoint, "full");
-  const state = getSourceStateText(source);
+  const state = formatStateWithOrigin(getSourceStateText(source), resolveSourceOriginText(source, "full"));
   return `${label}${getLabelStateSeparator()}${state}`;
 }
 
 export function formatSourceStatusLineCompact(source: SourceEndpointStatusDto): string {
   const label = getSourceLabel(source.key, source.endpoint, "short");
-  const state = getSourceStateText(source);
+  const state = formatStateWithOrigin(getSourceStateText(source), resolveSourceOriginText(source, "short"));
   return `${label}${getLabelStateSeparator()}${state}`;
+}
+
+function mergeSourceEntries(sourceStatuses: Array<SourceStatusDto | null | undefined>): SourceEndpointStatusDto[] {
+  const merged = new Map<string, SourceEndpointStatusDto>();
+
+  sourceStatuses.forEach((sourceStatus) => {
+    (sourceStatus?.sources || []).forEach((source, index) => {
+      const canonicalKey = resolveSourceKeyAlias(source.key);
+      const mergeKey = canonicalKey || source.endpoint || `unknown-${index}`;
+      const current = merged.get(mergeKey);
+      if (!current) {
+        merged.set(mergeKey, source);
+        return;
+      }
+
+      merged.set(mergeKey, {
+        ...current,
+        ...source,
+        baseUrl: current.baseUrl || source.baseUrl,
+        interfaceKind: current.interfaceKind || source.interfaceKind,
+        originLabel: current.originLabel || source.originLabel
+      });
+    });
+  });
+
+  return Array.from(merged.values());
 }
 
 export function buildSourceStatusLines(
@@ -511,19 +778,7 @@ export function buildSourceStatusLines(
 ): string[] {
   const limit = options?.limit;
   const labelMode = options?.labelMode || "full";
-  const merged = new Map<string, SourceEndpointStatusDto>();
-
-  sourceStatuses.forEach((sourceStatus) => {
-    (sourceStatus?.sources || []).forEach((source, index) => {
-      const canonicalKey = resolveSourceKeyAlias(source.key);
-      const mergeKey = canonicalKey || source.endpoint || `unknown-${index}`;
-      if (!merged.has(mergeKey)) {
-        merged.set(mergeKey, source);
-      }
-    });
-  });
-
-  const sortedSources = Array.from(merged.values()).sort((a, b) => {
+  const sortedSources = mergeSourceEntries(sourceStatuses).sort((a, b) => {
     const rank = (source: SourceEndpointStatusDto) => {
       const state = classifySourceState(source);
       if (state === "error") {
@@ -551,23 +806,38 @@ export function buildSourceStatusLines(
   ];
 }
 
+export function summarizeSourceOrigins(
+  sourceStatuses: Array<SourceStatusDto | null | undefined>,
+  options?: {
+    limit?: number;
+    labelMode?: LabelMode;
+  }
+): string {
+  const limit = options?.limit;
+  const labelMode = options?.labelMode || "short";
+  const origins = [];
+  const seen = new Set<string>();
+
+  for (const source of mergeSourceEntries(sourceStatuses)) {
+    const origin = resolveSourceOriginText(source, labelMode);
+    if (!origin || seen.has(origin)) {
+      continue;
+    }
+    seen.add(origin);
+    origins.push(origin);
+    if (typeof limit === "number" && limit > 0 && origins.length >= limit) {
+      break;
+    }
+  }
+
+  return origins.join(" / ");
+}
+
 export function summarizeSourceStatus(sourceStatuses: Array<SourceStatusDto | null | undefined>): {
   text: string;
   warn: boolean;
 } {
-  const merged = new Map<string, SourceEndpointStatusDto>();
-
-  sourceStatuses.forEach((sourceStatus) => {
-    (sourceStatus?.sources || []).forEach((source, index) => {
-      const canonicalKey = resolveSourceKeyAlias(source.key);
-      const mergeKey = canonicalKey || source.endpoint || `unknown-${index}`;
-      if (!merged.has(mergeKey)) {
-        merged.set(mergeKey, source);
-      }
-    });
-  });
-
-  const sources = Array.from(merged.values());
+  const sources = mergeSourceEntries(sourceStatuses);
   if (sources.length === 0) {
     return { text: zhCN.sourceBanner.noSource, warn: false };
   }

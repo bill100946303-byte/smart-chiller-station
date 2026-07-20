@@ -1,5 +1,7 @@
 # OPTIMIZE_READINESS_CURRENT
 
+> 2026-06-12 更新：本文保留为 `/optimize-demo` 开工前阶段的历史 readiness 记录。当前仓库已经具备 `/optimize-demo` Advisor 页面和 `optimizeService.js`，并在 140/B25 上通过端到端 smoke。当前能力边界以 `docs/OPTIMIZE_DEMO_ADVISOR_STATUS_CURRENT.md` 为准。
+
 ## 1. 目标
 
 本文用于判断当前仓库是否适合进入 `/optimize` 的开工前阶段。

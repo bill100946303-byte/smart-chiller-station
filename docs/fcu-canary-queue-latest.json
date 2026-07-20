@@ -1,0 +1,118 @@
+{
+  "ok": true,
+  "generatedAt": "2026-06-20T04:31:49.871Z",
+  "siteId": "126lnoffice",
+  "mode": "sequential_canary_queue",
+  "controlMutation": false,
+  "planFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-small-batch-dispatch-plan-latest.json",
+  "preflightFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-go-live-preflight-latest.json",
+  "preflightVerdict": "go_live_blocked",
+  "preflightOk": false,
+  "blockingItems": [
+    {
+      "key": "execution_gate_open",
+      "label": "全局真实下发闸门打开",
+      "ok": false,
+      "severity": "P0",
+      "message": "全局投运闸门未打开：site_authorization_window_active / backend_not_readonly"
+    },
+    {
+      "key": "confirm_phrase_present",
+      "label": "真实写入确认短语",
+      "ok": false,
+      "severity": "P0",
+      "message": "必须设置 FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE。"
+    }
+  ],
+  "warningItems": [],
+  "summary": {
+    "plannedDevices": 2,
+    "readyPrimaryCommands": 2,
+    "readySecondaryCommands": 2,
+    "firstCanary": "WSJ01",
+    "requiresPreflightGo": true,
+    "requiresFeedbackBeforeNext": true
+  },
+  "queue": [
+    {
+      "order": 1,
+      "deviceCode": "WSJ01",
+      "deviceName": "卫生间01",
+      "zoneTemperatureC": 27,
+      "setpointC": 26,
+      "running": false,
+      "primaryCommand": {
+        "kind": "setpoint",
+        "commandType": "setpoint",
+        "pointKey": "setpoint",
+        "pointName": "设置温度",
+        "tagName": "WSJ01-508-40357",
+        "value": 25.5,
+        "unit": "°C"
+      },
+      "secondaryCommand": {
+        "kind": "fan_speed",
+        "commandType": "fan_speed",
+        "pointKey": "fanSpeedMode",
+        "pointName": "风速模式",
+        "tagName": "WSJ01-508-40355",
+        "value": "auto",
+        "unit": null
+      },
+      "commandCount": 2,
+      "canaryCommandEnv": "FCU_CANARY_COMMAND_KIND=setpoint",
+      "command": "FCU_CANARY_DEVICE_CODE=WSJ01 FCU_CANARY_COMMAND_KIND=setpoint FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE npm --prefix apps/chiller-bff run execute:fcu-canary-dispatch"
+    },
+    {
+      "order": 2,
+      "deviceCode": "BGS01",
+      "deviceName": "办公室01",
+      "zoneTemperatureC": 28,
+      "setpointC": 24,
+      "running": false,
+      "primaryCommand": {
+        "kind": "setpoint",
+        "commandType": "setpoint",
+        "pointKey": "setpoint",
+        "pointName": "设置温度",
+        "tagName": "BGS01-508-40133",
+        "value": 25.5,
+        "unit": "°C"
+      },
+      "secondaryCommand": {
+        "kind": "fan_speed",
+        "commandType": "fan_speed",
+        "pointKey": "fanSpeedMode",
+        "pointName": "风速模式",
+        "tagName": "BGS01-508-40131",
+        "value": "auto",
+        "unit": null
+      },
+      "commandCount": 2,
+      "canaryCommandEnv": "FCU_CANARY_COMMAND_KIND=setpoint",
+      "command": "FCU_CANARY_DEVICE_CODE=BGS01 FCU_CANARY_COMMAND_KIND=setpoint FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE npm --prefix apps/chiller-bff run execute:fcu-canary-dispatch"
+    }
+  ],
+  "evidence": {
+    "plan": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-small-batch-dispatch-plan-latest.json",
+      "summary": {
+        "total": 29,
+        "ready": 0,
+        "environmentBlocked": 9,
+        "deviceBlocked": 20,
+        "notFound": 0,
+        "deviceReady": 9,
+        "canDispatch": 0,
+        "plannedDevices": 2,
+        "previewReadyDevices": 2
+      }
+    },
+    "preflight": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-go-live-preflight-latest.json",
+      "verdict": "go_live_blocked"
+    }
+  }
+}

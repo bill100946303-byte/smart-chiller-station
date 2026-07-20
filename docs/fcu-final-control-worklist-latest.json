@@ -1,0 +1,3200 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-20T04:31:52.377Z",
+  "siteId": "126lnoffice",
+  "scope": "fcu_final_control_worklist",
+  "verdict": "worklist_open",
+  "controlMutation": false,
+  "firstCanary": "WSJ01",
+  "targetDevices": 29,
+  "confirmedDevices": 0,
+  "summary": {
+    "openActions": 12,
+    "p0OpenActions": 11,
+    "qualityP0Devices": 8,
+    "stagedSetpointDevices": 12,
+    "fieldCloseoutReady": false,
+    "plannedDeviceCount": 21,
+    "blockedDeviceCount": 8
+  },
+  "phases": [
+    {
+      "key": "authorization",
+      "label": "现场授权",
+      "status": "blocked",
+      "evidence": "finalRollout.confirm/env"
+    },
+    {
+      "key": "environment",
+      "label": "写入环境",
+      "status": "blocked",
+      "evidence": "health.readOnlyMode"
+    },
+    {
+      "key": "preflight",
+      "label": "上线前预检",
+      "status": "blocked",
+      "evidence": "goLivePreflight"
+    },
+    {
+      "key": "field_arm",
+      "label": "现场 Arm-Check",
+      "status": "blocked",
+      "evidence": "fieldArm"
+    },
+    {
+      "key": "canary_readiness",
+      "label": "Canary 总门禁",
+      "status": "blocked",
+      "evidence": "canary_blocked"
+    },
+    {
+      "key": "canary",
+      "label": "首台 Canary",
+      "status": "blocked",
+      "evidence": "WSJ01"
+    },
+    {
+      "key": "small_batch",
+      "label": "小批量",
+      "status": "pending",
+      "evidence": "0 台"
+    },
+    {
+      "key": "quality",
+      "label": "质量整改",
+      "status": "blocked",
+      "evidence": "8 台 P0"
+    },
+    {
+      "key": "setpoint_normalization",
+      "label": "设定分步拉回",
+      "status": "blocked",
+      "evidence": "12 台"
+    },
+    {
+      "key": "field_closeout",
+      "label": "现场消缺关闭",
+      "status": "blocked",
+      "evidence": "field_remediation_open"
+    },
+    {
+      "key": "signoff_input",
+      "label": "签字输入",
+      "status": "blocked",
+      "evidence": "1 行旧工单"
+    },
+    {
+      "key": "field_signoff",
+      "label": "现场签字",
+      "status": "blocked",
+      "evidence": "0/8"
+    },
+    {
+      "key": "all_device",
+      "label": "全量反馈",
+      "status": "blocked",
+      "evidence": "0/29"
+    }
+  ],
+  "actions": [
+    {
+      "key": "set-final-rollout-confirm",
+      "priority": "P0",
+      "phase": "authorization",
+      "action": "设置最终控制总确认短语",
+      "target": "FCU_FINAL_CONTROL_ROLLOUT_CONFIRM",
+      "command": "export FCU_FINAL_CONTROL_ROLLOUT_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE",
+      "reason": "没有总确认时编排器不会调用 Canary/小批量/全量真实执行脚本。",
+      "acceptance": "最终编排报告 confirm.finalRolloutConfirmPresent=true",
+      "source": "finalRollout"
+    },
+    {
+      "key": "set-ba-write-confirm",
+      "priority": "P0",
+      "phase": "authorization",
+      "action": "设置 BA 写入确认短语",
+      "target": "FCU_SMALL_BATCH_CONFIRM",
+      "command": "export FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE",
+      "reason": "真实 BA 写入需要二次确认，防止误触发。",
+      "acceptance": "最终编排报告 confirm.smallBatchConfirmPresent=true",
+      "source": "finalRollout"
+    },
+    {
+      "key": "open-backend-write-gate",
+      "priority": "P0",
+      "phase": "environment",
+      "action": "关闭 BFF 只读总闸并重启",
+      "target": "READ_ONLY_MODE / CHILLER_READ_ONLY_MODE",
+      "command": "READ_ONLY_MODE=false CHILLER_READ_ONLY_MODE=false npm --prefix apps/chiller-bff run dev",
+      "reason": "当前 readOnlyMode=true，后端禁止真实 BA 写入。",
+      "acceptance": "/healthz readOnlyMode=false，且 Arm-Check backend_write_gate 通过",
+      "source": "finalCompletion"
+    },
+    {
+      "key": "rerun-go-live-preflight",
+      "priority": "P0",
+      "phase": "preflight",
+      "action": "重跑上线前预检",
+      "target": "FCU go-live preflight",
+      "command": "npm --prefix apps/chiller-bff run check:fcu-go-live-preflight",
+      "reason": "预检必须为 go_live_ready 才允许真实下发。",
+      "acceptance": "docs/fcu-go-live-preflight-latest.json verdict=go_live_ready",
+      "source": "goLivePreflight"
+    },
+    {
+      "key": "rerun-field-arm",
+      "priority": "P0",
+      "phase": "field_arm",
+      "action": "重跑现场 Arm-Check",
+      "target": "WSJ01",
+      "command": "npm --prefix apps/chiller-bff run check:fcu-field-arm",
+      "reason": "现场 Arm-Check 必须 ready，才能执行首台 Canary。",
+      "acceptance": "docs/fcu-field-arm-check-latest.json verdict=field_arm_ready",
+      "source": "fieldArm"
+    },
+    {
+      "key": "execute-canary",
+      "priority": "P0",
+      "phase": "canary",
+      "action": "执行首台 Canary 并确认反馈",
+      "target": "WSJ01",
+      "command": "FCU_CANARY_DEVICE_CODE=WSJ01 FCU_CANARY_COMMAND_KIND=setpoint FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE npm --prefix apps/chiller-bff run execute:fcu-canary-dispatch",
+      "reason": "最终控制必须先完成首台真实下发和反馈确认。",
+      "acceptance": "canary mode=confirmed_canary_dispatch 且 verification.recordStatus=feedback_confirmed",
+      "source": "finalCompletion"
+    },
+    {
+      "key": "remediate-p0-quality-devices",
+      "priority": "P0",
+      "phase": "quality",
+      "action": "整改通讯报警、0°C/无效温度和写点缺失设备",
+      "target": "8 台 P0 FCU",
+      "command": "npm --prefix apps/chiller-bff run check:fcu-quality-remediation",
+      "reason": "P0 质量设备不能进入全量闭环。",
+      "acceptance": "communicationAlarm=0，zoneTemperatureC 在 5-45°C，启停/设定/风速写点映射通过，quality.status=ok，连续两次采样正常",
+      "source": "qualityRemediation"
+    },
+    {
+      "key": "normalize-staged-setpoint-devices",
+      "priority": "P1",
+      "phase": "setpoint_normalization",
+      "action": "分步拉回设定反馈越界 FCU",
+      "target": "12 台 FCU",
+      "command": "npm --prefix apps/chiller-bff run plan:fcu-all-device-dispatch",
+      "reason": "设定反馈越界设备不能一次性拉到目标值；需按 0.5-2.0°C 分步恢复后再进入全量闭环。",
+      "acceptance": "全量分批计划 stagedSetpoint=0，或每台设备形成已审批的分步执行记录和反馈确认。",
+      "source": "allDevicePlan"
+    },
+    {
+      "key": "close-field-remediation-before-canary",
+      "priority": "P0",
+      "phase": "field_closeout",
+      "action": "关闭 FCU 现场 P0 消缺后再进入 Canary",
+      "target": "8 台未关闭",
+      "command": "npm --prefix apps/chiller-bff run check:fcu-field-remediation-closeout",
+      "reason": "只有质量整改清零、全量分批计划无设备阻断后，才允许进入首台真实写入 Canary。",
+      "acceptance": "docs/fcu-field-remediation-closeout-latest.json verdict=field_remediation_ready_for_canary",
+      "source": "fieldRemediationCloseout"
+    },
+    {
+      "key": "promote-current-signoff-input",
+      "priority": "P0",
+      "phase": "signoff_input",
+      "action": "确认提升 current-only 现场签字输入并归档旧行",
+      "target": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-input-latest.csv",
+      "command": "FCU_SIGNOFF_INPUT_PROMOTE_CONFIRM=I_APPROVE_REPLACE_FCU_SIGNOFF_INPUT npm --prefix apps/chiller-bff run promote:fcu-field-remediation-signoff-input",
+      "reason": "现场签字主输入仍包含 1 行旧工单，容易造成签字验收和 Canary 门禁反复跳变。",
+      "acceptance": "fcu-field-remediation-signoff-promote-latest.json fileMutation=true，confirmMatched=true；随后重跑 check:fcu-field-remediation-signoff",
+      "source": "fieldRemediationSignoffPromote"
+    },
+    {
+      "key": "complete-field-remediation-signoff",
+      "priority": "P0",
+      "phase": "field_signoff",
+      "action": "补齐 FCU 现场消缺签字和复核字段",
+      "target": "0/8 行已完成",
+      "command": "npm --prefix apps/chiller-bff run check:fcu-field-remediation-signoff",
+      "reason": "现场签字未完成时，Canary 总门禁必须阻断，不能进入真实 BA 写入。",
+      "acceptance": "fcu-field-remediation-signoff-latest.json summary.signoffComplete=true；随后重跑 closeout 和 Canary readiness",
+      "source": "fieldRemediationSignoff"
+    },
+    {
+      "key": "pass-canary-readiness",
+      "priority": "P0",
+      "phase": "canary_readiness",
+      "action": "通过 FCU Canary 总门禁后再执行首台下发",
+      "target": "WSJ01",
+      "command": "npm --prefix apps/chiller-bff run check:fcu-canary-readiness",
+      "reason": "首台 Canary 必须同时满足现场签字、实时 closeout、Arm-Check、BA 写适配器和执行包门禁，不能只看单个执行命令。",
+      "acceptance": "docs/fcu-canary-readiness-latest.json verdict=canary_ready 且 summary.canaryReady=true",
+      "source": "canaryReadiness"
+    }
+  ],
+  "remediationDevices": [
+    {
+      "deviceCode": "BGS02",
+      "deviceName": "办公室02",
+      "severity": "P1",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "fieldActions": [
+        "复核设定反馈点 BGS02-506-40207，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "BGS03",
+      "deviceName": "办公室03",
+      "severity": "P0",
+      "reasons": [
+        "communication_alarm",
+        "zero_temperature",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 BGS03-502-40078 是否仍为 1。",
+        "核对内置温度点 BGS03-506-40219，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 BGS03-506-40219，缺温度时禁止进入闭环。",
+        "复核设定反馈点 BGS03-506-40223，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ]
+    },
+    {
+      "deviceCode": "BGS04",
+      "deviceName": "办公室04",
+      "severity": "P0",
+      "reasons": [
+        "communication_alarm",
+        "zero_temperature",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 BGS04-502-40158 是否仍为 1。",
+        "核对内置温度点 BGS04-506-40539，0°C 不允许进入闭环。",
+        "补齐或修复区域温度点 BGS04-506-40539，缺温度时禁止进入闭环。",
+        "复核设定反馈点 BGS04-506-40543，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定",
+        "0°C 原始点恢复为有效温度"
+      ]
+    },
+    {
+      "deviceCode": "BGS06",
+      "deviceName": "办公室06",
+      "severity": "P0",
+      "reasons": [
+        "communication_alarm"
+      ],
+      "fieldActions": [
+        "现场确认 FCU 控制器供电、通讯线、地址、网关轮询和 BA 通讯报警复位。",
+        "核对通讯报警点 BGS06-502-40166 是否仍为 1。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "CWS",
+      "deviceName": "财务室",
+      "severity": "P1",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "fieldActions": [
+        "复核设定反馈点 CWS-506-40255，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "DHYS",
+      "deviceName": "大会议室",
+      "severity": "P1",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "fieldActions": [
+        "复核设定反馈点 DHYS-506-40607，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "GCBGQ01",
+      "deviceName": "工程办公区01",
+      "severity": "P1",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "fieldActions": [
+        "复核设定反馈点 GCBGQ01-506-40479，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    },
+    {
+      "deviceCode": "GCBGQ02",
+      "deviceName": "工程办公区02",
+      "severity": "P1",
+      "reasons": [
+        "setpoint_feedback_out_of_bounds"
+      ],
+      "fieldActions": [
+        "复核设定反馈点 GCBGQ02-506-40495，超出策略边界时禁止自动闭环，需人工确认后分步拉回。"
+      ],
+      "releaseCriteria": [
+        "communicationAlarm=0",
+        "zoneTemperatureC 在 5-45°C",
+        "setpointFeedbackC 在策略允许范围内",
+        "启停、设定、风速写点均已映射且 writable=true",
+        "quality.status=ok",
+        "连续两次采样保持正常",
+        "未处于本地手动/禁控/回退锁定"
+      ]
+    }
+  ],
+  "fieldRemediationPlaybook": {
+    "fieldReady": false,
+    "firstCanary": "WSJ01",
+    "canaryBlockedByField": true,
+    "deviceCount": 8,
+    "reasonGroups": [
+      {
+        "reason": "communication_alarm",
+        "devices": [
+          "BGS03",
+          "BGS04",
+          "BGS06",
+          "GCBGQ03",
+          "QT02",
+          "WSJ02",
+          "ZHYS",
+          "ZZBGS"
+        ]
+      },
+      {
+        "reason": "zero_temperature",
+        "devices": [
+          "BGS03",
+          "BGS04",
+          "WSJ02",
+          "ZHYS"
+        ]
+      },
+      {
+        "reason": "invalid_temperature",
+        "devices": [
+          "BGS03",
+          "BGS04",
+          "WSJ02",
+          "ZHYS"
+        ]
+      },
+      {
+        "reason": "temperature_quality_guard",
+        "devices": [
+          "BGS03",
+          "BGS04",
+          "WSJ02",
+          "ZHYS"
+        ]
+      },
+      {
+        "reason": "setpoint_feedback_out_of_bounds",
+        "devices": [
+          "BGS03",
+          "BGS04",
+          "GCBGQ03",
+          "WSJ02",
+          "ZHYS",
+          "ZZBGS"
+        ]
+      }
+    ],
+    "missingFieldCounts": {
+      "handledBy": 8,
+      "handledAt": 8,
+      "reviewedBy": 8,
+      "reviewedAt": 8,
+      "releaseDecision": 8,
+      "communicationAlarmAfter": 8,
+      "zoneTemperatureAfterC": 8,
+      "writePointMappingChecked": 8,
+      "twoSampleNormal": 8,
+      "localManualLockout": 8
+    },
+    "recommendedOrder": [
+      "先处理 communication_alarm：恢复控制器供电、通讯线、地址、网关轮询和 BA 报警复位。",
+      "再处理 zero_temperature / invalid_temperature：确认温度点不是 0°C、断线值或量程错误。",
+      "再处理 setpoint_feedback_out_of_bounds：将设定反馈分步拉回 10-32°C 策略边界内。",
+      "最后核对启停、设定、风速写点 writable=true，并连续两次采样正常。"
+    ],
+    "devices": [
+      {
+        "workOrderId": "FCU-P0-BGS03",
+        "deviceCode": "BGS03",
+        "deviceName": "办公室03",
+        "reasons": [
+          "communication_alarm",
+          "zero_temperature",
+          "invalid_temperature",
+          "temperature_quality_guard",
+          "setpoint_feedback_out_of_bounds"
+        ],
+        "reasonLabels": [
+          "通讯报警未恢复",
+          "温度点为0°C",
+          "温度无效",
+          "温度质量门槛未通过",
+          "设定反馈越界"
+        ],
+        "missingFields": [
+          "handledBy",
+          "handledAt",
+          "reviewedBy",
+          "reviewedAt",
+          "releaseDecision",
+          "communicationAlarmAfter",
+          "zoneTemperatureAfterC",
+          "writePointMappingChecked",
+          "twoSampleNormal",
+          "localManualLockout"
+        ],
+        "fieldPriority": [
+          "通讯恢复",
+          "温度点复核",
+          "设定反馈拉回",
+          "写点映射复核",
+          "连续两次采样",
+          "现场双人签核"
+        ],
+        "releaseCriteria": [
+          "communicationAlarm=0",
+          "zoneTemperatureC 在 5-45°C",
+          "setpointFeedbackC 在策略允许范围内",
+          "启停、设定、风速写点均已映射且 writable=true",
+          "quality.status=ok",
+          "连续两次采样保持正常",
+          "未处于本地手动/禁控/回退锁定",
+          "0°C 原始点恢复为有效温度"
+        ]
+      },
+      {
+        "workOrderId": "FCU-P0-BGS04",
+        "deviceCode": "BGS04",
+        "deviceName": "办公室04",
+        "reasons": [
+          "communication_alarm",
+          "zero_temperature",
+          "invalid_temperature",
+          "temperature_quality_guard",
+          "setpoint_feedback_out_of_bounds"
+        ],
+        "reasonLabels": [
+          "通讯报警未恢复",
+          "温度点为0°C",
+          "温度无效",
+          "温度质量门槛未通过",
+          "设定反馈越界"
+        ],
+        "missingFields": [
+          "handledBy",
+          "handledAt",
+          "reviewedBy",
+          "reviewedAt",
+          "releaseDecision",
+          "communicationAlarmAfter",
+          "zoneTemperatureAfterC",
+          "writePointMappingChecked",
+          "twoSampleNormal",
+          "localManualLockout"
+        ],
+        "fieldPriority": [
+          "通讯恢复",
+          "温度点复核",
+          "设定反馈拉回",
+          "写点映射复核",
+          "连续两次采样",
+          "现场双人签核"
+        ],
+        "releaseCriteria": [
+          "communicationAlarm=0",
+          "zoneTemperatureC 在 5-45°C",
+          "setpointFeedbackC 在策略允许范围内",
+          "启停、设定、风速写点均已映射且 writable=true",
+          "quality.status=ok",
+          "连续两次采样保持正常",
+          "未处于本地手动/禁控/回退锁定",
+          "0°C 原始点恢复为有效温度"
+        ]
+      },
+      {
+        "workOrderId": "FCU-P0-BGS06",
+        "deviceCode": "BGS06",
+        "deviceName": "办公室06",
+        "reasons": [
+          "communication_alarm"
+        ],
+        "reasonLabels": [
+          "通讯报警未恢复"
+        ],
+        "missingFields": [
+          "handledBy",
+          "handledAt",
+          "reviewedBy",
+          "reviewedAt",
+          "releaseDecision",
+          "communicationAlarmAfter",
+          "zoneTemperatureAfterC",
+          "writePointMappingChecked",
+          "twoSampleNormal",
+          "localManualLockout"
+        ],
+        "fieldPriority": [
+          "通讯恢复",
+          "写点映射复核",
+          "连续两次采样",
+          "现场双人签核"
+        ],
+        "releaseCriteria": [
+          "communicationAlarm=0",
+          "zoneTemperatureC 在 5-45°C",
+          "setpointFeedbackC 在策略允许范围内",
+          "启停、设定、风速写点均已映射且 writable=true",
+          "quality.status=ok",
+          "连续两次采样保持正常",
+          "未处于本地手动/禁控/回退锁定"
+        ]
+      },
+      {
+        "workOrderId": "FCU-P0-GCBGQ03",
+        "deviceCode": "GCBGQ03",
+        "deviceName": "工程办公区03",
+        "reasons": [
+          "communication_alarm",
+          "setpoint_feedback_out_of_bounds"
+        ],
+        "reasonLabels": [
+          "通讯报警未恢复",
+          "设定反馈越界"
+        ],
+        "missingFields": [
+          "handledBy",
+          "handledAt",
+          "reviewedBy",
+          "reviewedAt",
+          "releaseDecision",
+          "communicationAlarmAfter",
+          "zoneTemperatureAfterC",
+          "writePointMappingChecked",
+          "twoSampleNormal",
+          "localManualLockout"
+        ],
+        "fieldPriority": [
+          "通讯恢复",
+          "设定反馈拉回",
+          "写点映射复核",
+          "连续两次采样",
+          "现场双人签核"
+        ],
+        "releaseCriteria": [
+          "communicationAlarm=0",
+          "zoneTemperatureC 在 5-45°C",
+          "setpointFeedbackC 在策略允许范围内",
+          "启停、设定、风速写点均已映射且 writable=true",
+          "quality.status=ok",
+          "连续两次采样保持正常",
+          "未处于本地手动/禁控/回退锁定"
+        ]
+      },
+      {
+        "workOrderId": "FCU-P0-QT02",
+        "deviceCode": "QT02",
+        "deviceName": "前厅02",
+        "reasons": [
+          "communication_alarm"
+        ],
+        "reasonLabels": [
+          "通讯报警未恢复"
+        ],
+        "missingFields": [
+          "handledBy",
+          "handledAt",
+          "reviewedBy",
+          "reviewedAt",
+          "releaseDecision",
+          "communicationAlarmAfter",
+          "zoneTemperatureAfterC",
+          "writePointMappingChecked",
+          "twoSampleNormal",
+          "localManualLockout"
+        ],
+        "fieldPriority": [
+          "通讯恢复",
+          "写点映射复核",
+          "连续两次采样",
+          "现场双人签核"
+        ],
+        "releaseCriteria": [
+          "communicationAlarm=0",
+          "zoneTemperatureC 在 5-45°C",
+          "setpointFeedbackC 在策略允许范围内",
+          "启停、设定、风速写点均已映射且 writable=true",
+          "quality.status=ok",
+          "连续两次采样保持正常",
+          "未处于本地手动/禁控/回退锁定"
+        ]
+      },
+      {
+        "workOrderId": "FCU-P0-WSJ02",
+        "deviceCode": "WSJ02",
+        "deviceName": "卫生间02",
+        "reasons": [
+          "communication_alarm",
+          "zero_temperature",
+          "invalid_temperature",
+          "temperature_quality_guard",
+          "setpoint_feedback_out_of_bounds"
+        ],
+        "reasonLabels": [
+          "通讯报警未恢复",
+          "温度点为0°C",
+          "温度无效",
+          "温度质量门槛未通过",
+          "设定反馈越界"
+        ],
+        "missingFields": [
+          "handledBy",
+          "handledAt",
+          "reviewedBy",
+          "reviewedAt",
+          "releaseDecision",
+          "communicationAlarmAfter",
+          "zoneTemperatureAfterC",
+          "writePointMappingChecked",
+          "twoSampleNormal",
+          "localManualLockout"
+        ],
+        "fieldPriority": [
+          "通讯恢复",
+          "温度点复核",
+          "设定反馈拉回",
+          "写点映射复核",
+          "连续两次采样",
+          "现场双人签核"
+        ],
+        "releaseCriteria": [
+          "communicationAlarm=0",
+          "zoneTemperatureC 在 5-45°C",
+          "setpointFeedbackC 在策略允许范围内",
+          "启停、设定、风速写点均已映射且 writable=true",
+          "quality.status=ok",
+          "连续两次采样保持正常",
+          "未处于本地手动/禁控/回退锁定",
+          "0°C 原始点恢复为有效温度"
+        ]
+      },
+      {
+        "workOrderId": "FCU-P0-ZHYS",
+        "deviceCode": "ZHYS",
+        "deviceName": "中会议室",
+        "reasons": [
+          "communication_alarm",
+          "zero_temperature",
+          "invalid_temperature",
+          "temperature_quality_guard",
+          "setpoint_feedback_out_of_bounds"
+        ],
+        "reasonLabels": [
+          "通讯报警未恢复",
+          "温度点为0°C",
+          "温度无效",
+          "温度质量门槛未通过",
+          "设定反馈越界"
+        ],
+        "missingFields": [
+          "handledBy",
+          "handledAt",
+          "reviewedBy",
+          "reviewedAt",
+          "releaseDecision",
+          "communicationAlarmAfter",
+          "zoneTemperatureAfterC",
+          "writePointMappingChecked",
+          "twoSampleNormal",
+          "localManualLockout"
+        ],
+        "fieldPriority": [
+          "通讯恢复",
+          "温度点复核",
+          "设定反馈拉回",
+          "写点映射复核",
+          "连续两次采样",
+          "现场双人签核"
+        ],
+        "releaseCriteria": [
+          "communicationAlarm=0",
+          "zoneTemperatureC 在 5-45°C",
+          "setpointFeedbackC 在策略允许范围内",
+          "启停、设定、风速写点均已映射且 writable=true",
+          "quality.status=ok",
+          "连续两次采样保持正常",
+          "未处于本地手动/禁控/回退锁定",
+          "0°C 原始点恢复为有效温度"
+        ]
+      },
+      {
+        "workOrderId": "FCU-P0-ZZBGS",
+        "deviceCode": "ZZBGS",
+        "deviceName": "周总",
+        "reasons": [
+          "communication_alarm",
+          "setpoint_feedback_out_of_bounds"
+        ],
+        "reasonLabels": [
+          "通讯报警未恢复",
+          "设定反馈越界"
+        ],
+        "missingFields": [
+          "handledBy",
+          "handledAt",
+          "reviewedBy",
+          "reviewedAt",
+          "releaseDecision",
+          "communicationAlarmAfter",
+          "zoneTemperatureAfterC",
+          "writePointMappingChecked",
+          "twoSampleNormal",
+          "localManualLockout"
+        ],
+        "fieldPriority": [
+          "通讯恢复",
+          "设定反馈拉回",
+          "写点映射复核",
+          "连续两次采样",
+          "现场双人签核"
+        ],
+        "releaseCriteria": [
+          "communicationAlarm=0",
+          "zoneTemperatureC 在 5-45°C",
+          "setpointFeedbackC 在策略允许范围内",
+          "启停、设定、风速写点均已映射且 writable=true",
+          "quality.status=ok",
+          "连续两次采样保持正常",
+          "未处于本地手动/禁控/回退锁定"
+        ]
+      }
+    ],
+    "acceptance": [
+      "每台 releaseDecision=release",
+      "communicationAlarmAfter=0",
+      "zoneTemperatureAfterC 在 5-45°C",
+      "writePointMappingChecked=yes",
+      "twoSampleNormal=yes",
+      "localManualLockout=none",
+      "handledBy/handledAt/reviewedBy/reviewedAt 完整"
+    ]
+  },
+  "fieldPackages": {
+    "qualityRemediation": {
+      "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-quality-remediation-latest.csv",
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-quality-remediation-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-quality-remediation-latest.json"
+    },
+    "allDevicePlan": {
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-all-device-dispatch-plan-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-all-device-dispatch-plan-latest.json",
+      "firstCanary": "BGS01",
+      "total": 29,
+      "immediateReady": 9,
+      "stagedSetpoint": 12,
+      "blocked": 8,
+      "plannedDeviceCount": 21,
+      "canCompleteAllNow": false,
+      "stagedSetpointDevices": [
+        {
+          "deviceCode": "BGS02",
+          "deviceName": "办公室02",
+          "setpointC": 16,
+          "zoneTemperatureC": 28,
+          "blockedReasons": [
+            "setpoint_feedback_out_of_bounds",
+            "setpoint_feedback_valid"
+          ]
+        },
+        {
+          "deviceCode": "CWS",
+          "deviceName": "财务室",
+          "setpointC": 16,
+          "zoneTemperatureC": 28,
+          "blockedReasons": [
+            "setpoint_feedback_out_of_bounds",
+            "setpoint_feedback_valid"
+          ]
+        },
+        {
+          "deviceCode": "DHYS",
+          "deviceName": "大会议室",
+          "setpointC": 19,
+          "zoneTemperatureC": 29,
+          "blockedReasons": [
+            "setpoint_feedback_out_of_bounds",
+            "setpoint_feedback_valid"
+          ]
+        },
+        {
+          "deviceCode": "GCBGQ01",
+          "deviceName": "工程办公区01",
+          "setpointC": 10,
+          "zoneTemperatureC": 28,
+          "blockedReasons": [
+            "setpoint_feedback_out_of_bounds",
+            "setpoint_feedback_valid"
+          ]
+        },
+        {
+          "deviceCode": "GCBGQ02",
+          "deviceName": "工程办公区02",
+          "setpointC": 10,
+          "zoneTemperatureC": 28,
+          "blockedReasons": [
+            "setpoint_feedback_out_of_bounds",
+            "setpoint_feedback_valid"
+          ]
+        },
+        {
+          "deviceCode": "JDS",
+          "deviceName": "接待室",
+          "setpointC": 15,
+          "zoneTemperatureC": 28,
+          "blockedReasons": [
+            "setpoint_feedback_out_of_bounds",
+            "setpoint_feedback_valid"
+          ]
+        },
+        {
+          "deviceCode": "QT01",
+          "deviceName": "前厅01",
+          "setpointC": 16,
+          "zoneTemperatureC": 28,
+          "blockedReasons": [
+            "setpoint_feedback_out_of_bounds",
+            "setpoint_feedback_valid"
+          ]
+        },
+        {
+          "deviceCode": "QTS",
+          "deviceName": "洽谈室",
+          "setpointC": 21,
+          "zoneTemperatureC": 27,
+          "blockedReasons": [
+            "setpoint_feedback_out_of_bounds",
+            "setpoint_feedback_valid"
+          ]
+        },
+        {
+          "deviceCode": "SYS",
+          "deviceName": "实验室",
+          "setpointC": 19,
+          "zoneTemperatureC": 28,
+          "blockedReasons": [
+            "setpoint_feedback_out_of_bounds",
+            "setpoint_feedback_valid"
+          ]
+        },
+        {
+          "deviceCode": "TNFBQ01",
+          "deviceName": "头脑风暴区01",
+          "setpointC": 21,
+          "zoneTemperatureC": 29,
+          "blockedReasons": [
+            "setpoint_feedback_out_of_bounds",
+            "setpoint_feedback_valid"
+          ]
+        },
+        {
+          "deviceCode": "TNFBQ02",
+          "deviceName": "头脑风暴区02",
+          "setpointC": 10,
+          "zoneTemperatureC": 29,
+          "blockedReasons": [
+            "setpoint_feedback_out_of_bounds",
+            "setpoint_feedback_valid"
+          ]
+        },
+        {
+          "deviceCode": "XZBGS",
+          "deviceName": "行政办公室",
+          "setpointC": 18,
+          "zoneTemperatureC": 27,
+          "blockedReasons": [
+            "setpoint_feedback_out_of_bounds",
+            "setpoint_feedback_valid"
+          ]
+        }
+      ],
+      "blockedDevices": [
+        {
+          "deviceCode": "BGS03",
+          "deviceName": "办公室03",
+          "setpointC": 0,
+          "zoneTemperatureC": 0,
+          "blockedReasons": [
+            "communication_alarm",
+            "invalid_temperature",
+            "temperature_quality_guard",
+            "setpoint_feedback_out_of_bounds",
+            "setpoint_feedback_valid"
+          ]
+        },
+        {
+          "deviceCode": "BGS04",
+          "deviceName": "办公室04",
+          "setpointC": 0,
+          "zoneTemperatureC": 0,
+          "blockedReasons": [
+            "communication_alarm",
+            "invalid_temperature",
+            "temperature_quality_guard",
+            "setpoint_feedback_out_of_bounds",
+            "setpoint_feedback_valid"
+          ]
+        },
+        {
+          "deviceCode": "BGS06",
+          "deviceName": "办公室06",
+          "setpointC": 24,
+          "zoneTemperatureC": 22,
+          "blockedReasons": [
+            "communication_alarm",
+            "invalid_temperature",
+            "temperature_quality_guard"
+          ]
+        },
+        {
+          "deviceCode": "GCBGQ03",
+          "deviceName": "工程办公区03",
+          "setpointC": 19,
+          "zoneTemperatureC": 31,
+          "blockedReasons": [
+            "communication_alarm",
+            "invalid_temperature",
+            "setpoint_feedback_out_of_bounds",
+            "temperature_quality_guard",
+            "setpoint_feedback_valid"
+          ]
+        },
+        {
+          "deviceCode": "QT02",
+          "deviceName": "前厅02",
+          "setpointC": 26,
+          "zoneTemperatureC": 26,
+          "blockedReasons": [
+            "communication_alarm",
+            "invalid_temperature",
+            "temperature_quality_guard"
+          ]
+        },
+        {
+          "deviceCode": "WSJ02",
+          "deviceName": "卫生间02",
+          "setpointC": 0,
+          "zoneTemperatureC": 0,
+          "blockedReasons": [
+            "communication_alarm",
+            "invalid_temperature",
+            "temperature_quality_guard",
+            "setpoint_feedback_out_of_bounds",
+            "setpoint_feedback_valid"
+          ]
+        },
+        {
+          "deviceCode": "ZHYS",
+          "deviceName": "中会议室",
+          "setpointC": 0,
+          "zoneTemperatureC": 0,
+          "blockedReasons": [
+            "communication_alarm",
+            "invalid_temperature",
+            "temperature_quality_guard",
+            "setpoint_feedback_out_of_bounds",
+            "setpoint_feedback_valid"
+          ]
+        },
+        {
+          "deviceCode": "ZZBGS",
+          "deviceName": "周总",
+          "setpointC": 35,
+          "zoneTemperatureC": 24,
+          "blockedReasons": [
+            "communication_alarm",
+            "invalid_temperature",
+            "setpoint_feedback_out_of_bounds",
+            "temperature_quality_guard",
+            "setpoint_feedback_valid"
+          ]
+        }
+      ]
+    },
+    "fieldRemediationCloseout": {
+      "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-closeout-latest.csv",
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-closeout-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-closeout-latest.json",
+      "verdict": "field_remediation_open",
+      "readyForCanary": false,
+      "remainingDeviceCount": 8
+    },
+    "fieldRemediationWorkOrders": {
+      "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-work-orders-latest.csv",
+      "signoffInputCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-input-latest.csv",
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-work-orders-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-work-orders-latest.json",
+      "totalWorkOrders": 8,
+      "openCount": 8,
+      "requiresFieldSignoff": true
+    },
+    "fieldRemediationExecutionPack": {
+      "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-execution-pack-latest.csv",
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-execution-pack-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-execution-pack-latest.json",
+      "totalDevices": 8,
+      "openP0Devices": 8,
+      "reasonCounts": {
+        "communication_alarm": 8,
+        "zero_temperature": 4,
+        "invalid_temperature": 4,
+        "temperature_quality_guard": 4,
+        "setpoint_feedback_out_of_bounds": 6
+      },
+      "executionOrder": [
+        {
+          "phase": "restore_communication",
+          "deviceCount": 8,
+          "deviceCodes": [
+            "BGS03",
+            "BGS04",
+            "BGS06",
+            "GCBGQ03",
+            "QT02",
+            "WSJ02",
+            "ZHYS",
+            "ZZBGS"
+          ],
+          "owners": [
+            "BA/自控工程师",
+            "平台工程师 + BA工程师",
+            "现场值班",
+            "平台工程师"
+          ],
+          "acceptance": "通讯报警为 0，连续两次采样正常。"
+        },
+        {
+          "phase": "restore_temperature",
+          "deviceCount": 4,
+          "deviceCodes": [
+            "BGS03",
+            "BGS04",
+            "WSJ02",
+            "ZHYS"
+          ],
+          "owners": [
+            "BA/自控工程师",
+            "平台工程师 + BA工程师",
+            "现场值班",
+            "平台工程师"
+          ],
+          "acceptance": "温度在 5-45°C，0°C/越界温度消失。"
+        },
+        {
+          "phase": "normalize_setpoint_feedback",
+          "deviceCount": 6,
+          "deviceCodes": [
+            "BGS03",
+            "BGS04",
+            "GCBGQ03",
+            "WSJ02",
+            "ZHYS",
+            "ZZBGS"
+          ],
+          "owners": [
+            "BA/自控工程师",
+            "平台工程师 + BA工程师",
+            "现场值班",
+            "平台工程师"
+          ],
+          "acceptance": "设定反馈留空或在 10-32°C，并与现场面板一致。"
+        },
+        {
+          "phase": "verify_write_mapping",
+          "deviceCount": 8,
+          "deviceCodes": [
+            "BGS03",
+            "BGS04",
+            "BGS06",
+            "GCBGQ03",
+            "QT02",
+            "WSJ02",
+            "ZHYS",
+            "ZZBGS"
+          ],
+          "owners": [
+            "BA/自控工程师",
+            "平台工程师 + BA工程师",
+            "现场值班",
+            "平台工程师"
+          ],
+          "acceptance": "写点映射核对完成，本包不产生写入。"
+        },
+        {
+          "phase": "two_sample_validation",
+          "deviceCount": 8,
+          "deviceCodes": [
+            "BGS03",
+            "BGS04",
+            "BGS06",
+            "GCBGQ03",
+            "QT02",
+            "WSJ02",
+            "ZHYS",
+            "ZZBGS"
+          ],
+          "owners": [
+            "BA/自控工程师",
+            "平台工程师 + BA工程师",
+            "现场值班",
+            "平台工程师"
+          ],
+          "acceptance": "连续两次 BA 采样均正常。"
+        },
+        {
+          "phase": "onsite_signoff",
+          "deviceCount": 8,
+          "deviceCodes": [
+            "BGS03",
+            "BGS04",
+            "BGS06",
+            "GCBGQ03",
+            "QT02",
+            "WSJ02",
+            "ZHYS",
+            "ZZBGS"
+          ],
+          "owners": [
+            "BA/自控工程师",
+            "平台工程师 + BA工程师",
+            "现场值班",
+            "平台工程师"
+          ],
+          "acceptance": "处理和复核签字完整，releaseDecision=release。"
+        },
+        {
+          "phase": "rerun_closeout",
+          "deviceCount": 8,
+          "deviceCodes": [
+            "BGS03",
+            "BGS04",
+            "BGS06",
+            "GCBGQ03",
+            "QT02",
+            "WSJ02",
+            "ZHYS",
+            "ZZBGS"
+          ],
+          "owners": [
+            "BA/自控工程师",
+            "平台工程师 + BA工程师",
+            "现场值班",
+            "平台工程师"
+          ],
+          "acceptance": "重跑证据链后 closeout/canary readiness 不再被现场 P0 卡住。"
+        }
+      ]
+    },
+    "fieldHandoff": {
+      "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-handoff-pack-latest.csv",
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-handoff-pack-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-handoff-pack-latest.json",
+      "openP0Devices": 8,
+      "staleSignoffRows": 1,
+      "signoffCompleteRows": 0,
+      "signoffExpectedRows": 8,
+      "nextAllowedStep": "先清理过期签核行，生成 current-only 输入表。",
+      "currentOnlyCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-current-only-latest.csv",
+      "staleCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-stale-rows-latest.csv",
+      "signoffInputCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-input-latest.csv",
+      "devices": [
+        {
+          "workOrderId": "FCU-P0-BGS03",
+          "deviceCode": "BGS03",
+          "deviceName": "办公室03",
+          "owner": "BA/自控工程师",
+          "reasonLabels": [
+            "通讯报警",
+            "0°C异常",
+            "温度无效",
+            "温度质量门槛",
+            "设定反馈越界"
+          ],
+          "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。"
+        },
+        {
+          "workOrderId": "FCU-P0-BGS04",
+          "deviceCode": "BGS04",
+          "deviceName": "办公室04",
+          "owner": "BA/自控工程师",
+          "reasonLabels": [
+            "通讯报警",
+            "0°C异常",
+            "温度无效",
+            "温度质量门槛",
+            "设定反馈越界"
+          ],
+          "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。"
+        },
+        {
+          "workOrderId": "FCU-P0-BGS06",
+          "deviceCode": "BGS06",
+          "deviceName": "办公室06",
+          "owner": "BA/自控工程师",
+          "reasonLabels": [
+            "通讯报警"
+          ],
+          "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。"
+        },
+        {
+          "workOrderId": "FCU-P0-GCBGQ03",
+          "deviceCode": "GCBGQ03",
+          "deviceName": "工程办公区03",
+          "owner": "BA/自控工程师",
+          "reasonLabels": [
+            "通讯报警",
+            "设定反馈越界"
+          ],
+          "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。"
+        },
+        {
+          "workOrderId": "FCU-P0-QT02",
+          "deviceCode": "QT02",
+          "deviceName": "前厅02",
+          "owner": "BA/自控工程师",
+          "reasonLabels": [
+            "通讯报警"
+          ],
+          "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。"
+        },
+        {
+          "workOrderId": "FCU-P0-WSJ02",
+          "deviceCode": "WSJ02",
+          "deviceName": "卫生间02",
+          "owner": "BA/自控工程师",
+          "reasonLabels": [
+            "通讯报警",
+            "0°C异常",
+            "温度无效",
+            "温度质量门槛",
+            "设定反馈越界"
+          ],
+          "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。"
+        },
+        {
+          "workOrderId": "FCU-P0-ZHYS",
+          "deviceCode": "ZHYS",
+          "deviceName": "中会议室",
+          "owner": "BA/自控工程师",
+          "reasonLabels": [
+            "通讯报警",
+            "0°C异常",
+            "温度无效",
+            "温度质量门槛",
+            "设定反馈越界"
+          ],
+          "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。"
+        },
+        {
+          "workOrderId": "FCU-P0-ZZBGS",
+          "deviceCode": "ZZBGS",
+          "deviceName": "周总",
+          "owner": "BA/自控工程师",
+          "reasonLabels": [
+            "通讯报警",
+            "设定反馈越界"
+          ],
+          "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。"
+        }
+      ]
+    },
+    "fieldReturnTemplate": {
+      "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-return-template-latest.csv",
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-return-template-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-return-template-latest.json",
+      "deviceCount": 8,
+      "communicationBlocked": 8,
+      "temperatureBlocked": 4,
+      "setpointBlocked": 6,
+      "draftSuggestibleDevices": 4,
+      "draftTemperatureSuggestions": 4,
+      "draftSetpointSuggestions": 3,
+      "signoffCompleteRows": 0,
+      "signoffExpectedRows": 8,
+      "requiredColumns": [
+        "workOrderId",
+        "deviceCode",
+        "deviceName",
+        "handledBy",
+        "handledAt",
+        "communicationAlarmAfter",
+        "zoneTemperatureAfterC",
+        "setpointFeedbackAfterC",
+        "writePointMappingChecked",
+        "twoSampleNormal",
+        "localManualLockout",
+        "releaseDecision",
+        "reviewedBy",
+        "reviewedAt",
+        "notes"
+      ],
+      "devices": [
+        {
+          "workOrderId": "FCU-P0-BGS03",
+          "deviceCode": "BGS03",
+          "deviceName": "办公室03",
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked",
+            "twoSampleNormal",
+            "localManualLockout"
+          ],
+          "reviewDraft": {
+            "releaseDecisionDefault": "recheck",
+            "suggestedValues": {},
+            "blockedAutoFillFields": [
+              "communicationAlarmAfter",
+              "zoneTemperatureAfterC",
+              "setpointFeedbackAfterC"
+            ],
+            "manualOnlyFields": [
+              "handledBy",
+              "handledAt",
+              "reviewedBy",
+              "reviewedAt",
+              "writePointMappingChecked",
+              "twoSampleNormal",
+              "localManualLockout",
+              "releaseDecision"
+            ]
+          },
+          "releaseCriteria": [
+            "communicationAlarm=0",
+            "zoneTemperatureC 在 5-45°C",
+            "setpointFeedbackC 在策略允许范围内",
+            "启停、设定、风速写点均已映射且 writable=true",
+            "quality.status=ok",
+            "连续两次采样保持正常",
+            "未处于本地手动/禁控/回退锁定",
+            "0°C 原始点恢复为有效温度"
+          ]
+        },
+        {
+          "workOrderId": "FCU-P0-BGS04",
+          "deviceCode": "BGS04",
+          "deviceName": "办公室04",
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked",
+            "twoSampleNormal",
+            "localManualLockout"
+          ],
+          "reviewDraft": {
+            "releaseDecisionDefault": "recheck",
+            "suggestedValues": {},
+            "blockedAutoFillFields": [
+              "communicationAlarmAfter",
+              "zoneTemperatureAfterC",
+              "setpointFeedbackAfterC"
+            ],
+            "manualOnlyFields": [
+              "handledBy",
+              "handledAt",
+              "reviewedBy",
+              "reviewedAt",
+              "writePointMappingChecked",
+              "twoSampleNormal",
+              "localManualLockout",
+              "releaseDecision"
+            ]
+          },
+          "releaseCriteria": [
+            "communicationAlarm=0",
+            "zoneTemperatureC 在 5-45°C",
+            "setpointFeedbackC 在策略允许范围内",
+            "启停、设定、风速写点均已映射且 writable=true",
+            "quality.status=ok",
+            "连续两次采样保持正常",
+            "未处于本地手动/禁控/回退锁定",
+            "0°C 原始点恢复为有效温度"
+          ]
+        },
+        {
+          "workOrderId": "FCU-P0-BGS06",
+          "deviceCode": "BGS06",
+          "deviceName": "办公室06",
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked",
+            "twoSampleNormal",
+            "localManualLockout"
+          ],
+          "reviewDraft": {
+            "releaseDecisionDefault": "recheck",
+            "suggestedValues": {
+              "zoneTemperatureAfterC": "22",
+              "setpointFeedbackAfterC": "24"
+            },
+            "blockedAutoFillFields": [
+              "communicationAlarmAfter"
+            ],
+            "manualOnlyFields": [
+              "handledBy",
+              "handledAt",
+              "reviewedBy",
+              "reviewedAt",
+              "writePointMappingChecked",
+              "twoSampleNormal",
+              "localManualLockout",
+              "releaseDecision"
+            ]
+          },
+          "releaseCriteria": [
+            "communicationAlarm=0",
+            "zoneTemperatureC 在 5-45°C",
+            "setpointFeedbackC 在策略允许范围内",
+            "启停、设定、风速写点均已映射且 writable=true",
+            "quality.status=ok",
+            "连续两次采样保持正常",
+            "未处于本地手动/禁控/回退锁定"
+          ]
+        },
+        {
+          "workOrderId": "FCU-P0-GCBGQ03",
+          "deviceCode": "GCBGQ03",
+          "deviceName": "工程办公区03",
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked",
+            "twoSampleNormal",
+            "localManualLockout"
+          ],
+          "reviewDraft": {
+            "releaseDecisionDefault": "recheck",
+            "suggestedValues": {
+              "zoneTemperatureAfterC": "31",
+              "setpointFeedbackAfterC": "19"
+            },
+            "blockedAutoFillFields": [
+              "communicationAlarmAfter"
+            ],
+            "manualOnlyFields": [
+              "handledBy",
+              "handledAt",
+              "reviewedBy",
+              "reviewedAt",
+              "writePointMappingChecked",
+              "twoSampleNormal",
+              "localManualLockout",
+              "releaseDecision"
+            ]
+          },
+          "releaseCriteria": [
+            "communicationAlarm=0",
+            "zoneTemperatureC 在 5-45°C",
+            "setpointFeedbackC 在策略允许范围内",
+            "启停、设定、风速写点均已映射且 writable=true",
+            "quality.status=ok",
+            "连续两次采样保持正常",
+            "未处于本地手动/禁控/回退锁定"
+          ]
+        },
+        {
+          "workOrderId": "FCU-P0-QT02",
+          "deviceCode": "QT02",
+          "deviceName": "前厅02",
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked",
+            "twoSampleNormal",
+            "localManualLockout"
+          ],
+          "reviewDraft": {
+            "releaseDecisionDefault": "recheck",
+            "suggestedValues": {
+              "zoneTemperatureAfterC": "26",
+              "setpointFeedbackAfterC": "26"
+            },
+            "blockedAutoFillFields": [
+              "communicationAlarmAfter"
+            ],
+            "manualOnlyFields": [
+              "handledBy",
+              "handledAt",
+              "reviewedBy",
+              "reviewedAt",
+              "writePointMappingChecked",
+              "twoSampleNormal",
+              "localManualLockout",
+              "releaseDecision"
+            ]
+          },
+          "releaseCriteria": [
+            "communicationAlarm=0",
+            "zoneTemperatureC 在 5-45°C",
+            "setpointFeedbackC 在策略允许范围内",
+            "启停、设定、风速写点均已映射且 writable=true",
+            "quality.status=ok",
+            "连续两次采样保持正常",
+            "未处于本地手动/禁控/回退锁定"
+          ]
+        },
+        {
+          "workOrderId": "FCU-P0-WSJ02",
+          "deviceCode": "WSJ02",
+          "deviceName": "卫生间02",
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked",
+            "twoSampleNormal",
+            "localManualLockout"
+          ],
+          "reviewDraft": {
+            "releaseDecisionDefault": "recheck",
+            "suggestedValues": {},
+            "blockedAutoFillFields": [
+              "communicationAlarmAfter",
+              "zoneTemperatureAfterC",
+              "setpointFeedbackAfterC"
+            ],
+            "manualOnlyFields": [
+              "handledBy",
+              "handledAt",
+              "reviewedBy",
+              "reviewedAt",
+              "writePointMappingChecked",
+              "twoSampleNormal",
+              "localManualLockout",
+              "releaseDecision"
+            ]
+          },
+          "releaseCriteria": [
+            "communicationAlarm=0",
+            "zoneTemperatureC 在 5-45°C",
+            "setpointFeedbackC 在策略允许范围内",
+            "启停、设定、风速写点均已映射且 writable=true",
+            "quality.status=ok",
+            "连续两次采样保持正常",
+            "未处于本地手动/禁控/回退锁定",
+            "0°C 原始点恢复为有效温度"
+          ]
+        },
+        {
+          "workOrderId": "FCU-P0-ZHYS",
+          "deviceCode": "ZHYS",
+          "deviceName": "中会议室",
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked",
+            "twoSampleNormal",
+            "localManualLockout"
+          ],
+          "reviewDraft": {
+            "releaseDecisionDefault": "recheck",
+            "suggestedValues": {},
+            "blockedAutoFillFields": [
+              "communicationAlarmAfter",
+              "zoneTemperatureAfterC",
+              "setpointFeedbackAfterC"
+            ],
+            "manualOnlyFields": [
+              "handledBy",
+              "handledAt",
+              "reviewedBy",
+              "reviewedAt",
+              "writePointMappingChecked",
+              "twoSampleNormal",
+              "localManualLockout",
+              "releaseDecision"
+            ]
+          },
+          "releaseCriteria": [
+            "communicationAlarm=0",
+            "zoneTemperatureC 在 5-45°C",
+            "setpointFeedbackC 在策略允许范围内",
+            "启停、设定、风速写点均已映射且 writable=true",
+            "quality.status=ok",
+            "连续两次采样保持正常",
+            "未处于本地手动/禁控/回退锁定",
+            "0°C 原始点恢复为有效温度"
+          ]
+        },
+        {
+          "workOrderId": "FCU-P0-ZZBGS",
+          "deviceCode": "ZZBGS",
+          "deviceName": "周总",
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked",
+            "twoSampleNormal",
+            "localManualLockout"
+          ],
+          "reviewDraft": {
+            "releaseDecisionDefault": "recheck",
+            "suggestedValues": {
+              "zoneTemperatureAfterC": "24"
+            },
+            "blockedAutoFillFields": [
+              "communicationAlarmAfter",
+              "setpointFeedbackAfterC"
+            ],
+            "manualOnlyFields": [
+              "handledBy",
+              "handledAt",
+              "reviewedBy",
+              "reviewedAt",
+              "writePointMappingChecked",
+              "twoSampleNormal",
+              "localManualLockout",
+              "releaseDecision"
+            ]
+          },
+          "releaseCriteria": [
+            "communicationAlarm=0",
+            "zoneTemperatureC 在 5-45°C",
+            "setpointFeedbackC 在策略允许范围内",
+            "启停、设定、风速写点均已映射且 writable=true",
+            "quality.status=ok",
+            "连续两次采样保持正常",
+            "未处于本地手动/禁控/回退锁定"
+          ]
+        }
+      ]
+    },
+    "fieldRemediationSignoff": {
+      "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-latest.csv",
+      "releaseMatrixCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-latest-release-matrix.csv",
+      "inputCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-input-latest.csv",
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-latest.json",
+      "signoffComplete": false,
+      "completeRows": 0,
+      "expectedWorkOrders": 8,
+      "stillRequiresRealtimeCloseout": true,
+      "onsiteReleasePrecheck": {
+        "ok": false,
+        "onsiteReleaseReadyCount": 0,
+        "onsiteReleaseBlockedCount": 8,
+        "canaryCandidateCount": 0,
+        "canaryStillBlockedCount": 8,
+        "blockFieldCounts": {
+          "handledBy": 8,
+          "handledAt": 8,
+          "reviewedBy": 8,
+          "reviewedAt": 8,
+          "releaseDecision": 8,
+          "communicationAlarmAfter": 8,
+          "zoneTemperatureAfterC": 8,
+          "writePointMappingChecked": 8,
+          "twoSampleNormal": 8,
+          "localManualLockout": 8
+        },
+        "nextGlobalActions": [
+          "补齐所有 onsiteReleaseReady=false 的现场签字字段",
+          "重跑 check:fcu-field-remediation-signoff",
+          "重跑 check:fcu-field-remediation-closeout",
+          "重跑 check:fcu-canary-readiness",
+          "重跑 check:fcu-final-control-gates"
+        ],
+        "devices": [
+          {
+            "workOrderId": "FCU-P0-BGS03",
+            "deviceCode": "BGS03",
+            "deviceName": "办公室03",
+            "onsiteReleaseReady": false,
+            "canEnterCanary": false,
+            "canaryBlockReason": "signoff_incomplete",
+            "nextBlockingFields": [
+              "handledBy",
+              "handledAt",
+              "reviewedBy",
+              "reviewedAt",
+              "releaseDecision",
+              "communicationAlarmAfter",
+              "zoneTemperatureAfterC",
+              "writePointMappingChecked"
+            ],
+            "nextAction": "填写实际处理人，不能用空值或系统默认值。"
+          },
+          {
+            "workOrderId": "FCU-P0-BGS04",
+            "deviceCode": "BGS04",
+            "deviceName": "办公室04",
+            "onsiteReleaseReady": false,
+            "canEnterCanary": false,
+            "canaryBlockReason": "signoff_incomplete",
+            "nextBlockingFields": [
+              "handledBy",
+              "handledAt",
+              "reviewedBy",
+              "reviewedAt",
+              "releaseDecision",
+              "communicationAlarmAfter",
+              "zoneTemperatureAfterC",
+              "writePointMappingChecked"
+            ],
+            "nextAction": "填写实际处理人，不能用空值或系统默认值。"
+          },
+          {
+            "workOrderId": "FCU-P0-BGS06",
+            "deviceCode": "BGS06",
+            "deviceName": "办公室06",
+            "onsiteReleaseReady": false,
+            "canEnterCanary": false,
+            "canaryBlockReason": "signoff_incomplete",
+            "nextBlockingFields": [
+              "handledBy",
+              "handledAt",
+              "reviewedBy",
+              "reviewedAt",
+              "releaseDecision",
+              "communicationAlarmAfter",
+              "zoneTemperatureAfterC",
+              "writePointMappingChecked"
+            ],
+            "nextAction": "填写实际处理人，不能用空值或系统默认值。"
+          },
+          {
+            "workOrderId": "FCU-P0-GCBGQ03",
+            "deviceCode": "GCBGQ03",
+            "deviceName": "工程办公区03",
+            "onsiteReleaseReady": false,
+            "canEnterCanary": false,
+            "canaryBlockReason": "signoff_incomplete",
+            "nextBlockingFields": [
+              "handledBy",
+              "handledAt",
+              "reviewedBy",
+              "reviewedAt",
+              "releaseDecision",
+              "communicationAlarmAfter",
+              "zoneTemperatureAfterC",
+              "writePointMappingChecked"
+            ],
+            "nextAction": "填写实际处理人，不能用空值或系统默认值。"
+          },
+          {
+            "workOrderId": "FCU-P0-QT02",
+            "deviceCode": "QT02",
+            "deviceName": "前厅02",
+            "onsiteReleaseReady": false,
+            "canEnterCanary": false,
+            "canaryBlockReason": "signoff_incomplete",
+            "nextBlockingFields": [
+              "handledBy",
+              "handledAt",
+              "reviewedBy",
+              "reviewedAt",
+              "releaseDecision",
+              "communicationAlarmAfter",
+              "zoneTemperatureAfterC",
+              "writePointMappingChecked"
+            ],
+            "nextAction": "填写实际处理人，不能用空值或系统默认值。"
+          },
+          {
+            "workOrderId": "FCU-P0-WSJ02",
+            "deviceCode": "WSJ02",
+            "deviceName": "卫生间02",
+            "onsiteReleaseReady": false,
+            "canEnterCanary": false,
+            "canaryBlockReason": "signoff_incomplete",
+            "nextBlockingFields": [
+              "handledBy",
+              "handledAt",
+              "reviewedBy",
+              "reviewedAt",
+              "releaseDecision",
+              "communicationAlarmAfter",
+              "zoneTemperatureAfterC",
+              "writePointMappingChecked"
+            ],
+            "nextAction": "填写实际处理人，不能用空值或系统默认值。"
+          },
+          {
+            "workOrderId": "FCU-P0-ZHYS",
+            "deviceCode": "ZHYS",
+            "deviceName": "中会议室",
+            "onsiteReleaseReady": false,
+            "canEnterCanary": false,
+            "canaryBlockReason": "signoff_incomplete",
+            "nextBlockingFields": [
+              "handledBy",
+              "handledAt",
+              "reviewedBy",
+              "reviewedAt",
+              "releaseDecision",
+              "communicationAlarmAfter",
+              "zoneTemperatureAfterC",
+              "writePointMappingChecked"
+            ],
+            "nextAction": "填写实际处理人，不能用空值或系统默认值。"
+          },
+          {
+            "workOrderId": "FCU-P0-ZZBGS",
+            "deviceCode": "ZZBGS",
+            "deviceName": "周总",
+            "onsiteReleaseReady": false,
+            "canEnterCanary": false,
+            "canaryBlockReason": "signoff_incomplete",
+            "nextBlockingFields": [
+              "handledBy",
+              "handledAt",
+              "reviewedBy",
+              "reviewedAt",
+              "releaseDecision",
+              "communicationAlarmAfter",
+              "zoneTemperatureAfterC",
+              "writePointMappingChecked"
+            ],
+            "nextAction": "填写实际处理人，不能用空值或系统默认值。"
+          }
+        ]
+      },
+      "openRecords": [
+        {
+          "workOrderId": "FCU-P0-BGS03",
+          "deviceCode": "BGS03",
+          "deviceName": "办公室03",
+          "issues": [
+            "handledBy_missing",
+            "handledAt_missing",
+            "reviewedBy_missing",
+            "reviewedAt_missing",
+            "releaseDecision_not_release",
+            "communicationAlarmAfter_not_0",
+            "zoneTemperatureAfterC_out_of_range",
+            "writePointMappingChecked_not_yes",
+            "twoSampleNormal_not_yes",
+            "localManualLockout_not_none"
+          ],
+          "missingChecklist": [
+            {
+              "field": "handledBy",
+              "requiredValue": "现场处理人姓名",
+              "action": "填写实际处理人，不能用空值或系统默认值。"
+            },
+            {
+              "field": "handledAt",
+              "requiredValue": "现场处理完成时间，建议 ISO 时间",
+              "action": "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。"
+            },
+            {
+              "field": "reviewedBy",
+              "requiredValue": "复核人姓名",
+              "action": "填写复核人，建议由非处理人或现场负责人复核。"
+            },
+            {
+              "field": "reviewedAt",
+              "requiredValue": "复核完成时间，建议 ISO 时间",
+              "action": "填写复核完成时间。"
+            },
+            {
+              "field": "releaseDecision",
+              "requiredValue": "release",
+              "action": "只有现场确认可放行时填写 release；仍需观察则填写 hold/recheck 并保持阻断。"
+            },
+            {
+              "field": "communicationAlarmAfter",
+              "requiredValue": "0",
+              "action": "复检 BA 通讯报警点，确认报警复位后填写 0。"
+            }
+          ]
+        },
+        {
+          "workOrderId": "FCU-P0-BGS04",
+          "deviceCode": "BGS04",
+          "deviceName": "办公室04",
+          "issues": [
+            "handledBy_missing",
+            "handledAt_missing",
+            "reviewedBy_missing",
+            "reviewedAt_missing",
+            "releaseDecision_not_release",
+            "communicationAlarmAfter_not_0",
+            "zoneTemperatureAfterC_out_of_range",
+            "writePointMappingChecked_not_yes",
+            "twoSampleNormal_not_yes",
+            "localManualLockout_not_none"
+          ],
+          "missingChecklist": [
+            {
+              "field": "handledBy",
+              "requiredValue": "现场处理人姓名",
+              "action": "填写实际处理人，不能用空值或系统默认值。"
+            },
+            {
+              "field": "handledAt",
+              "requiredValue": "现场处理完成时间，建议 ISO 时间",
+              "action": "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。"
+            },
+            {
+              "field": "reviewedBy",
+              "requiredValue": "复核人姓名",
+              "action": "填写复核人，建议由非处理人或现场负责人复核。"
+            },
+            {
+              "field": "reviewedAt",
+              "requiredValue": "复核完成时间，建议 ISO 时间",
+              "action": "填写复核完成时间。"
+            },
+            {
+              "field": "releaseDecision",
+              "requiredValue": "release",
+              "action": "只有现场确认可放行时填写 release；仍需观察则填写 hold/recheck 并保持阻断。"
+            },
+            {
+              "field": "communicationAlarmAfter",
+              "requiredValue": "0",
+              "action": "复检 BA 通讯报警点，确认报警复位后填写 0。"
+            }
+          ]
+        },
+        {
+          "workOrderId": "FCU-P0-BGS06",
+          "deviceCode": "BGS06",
+          "deviceName": "办公室06",
+          "issues": [
+            "handledBy_missing",
+            "handledAt_missing",
+            "reviewedBy_missing",
+            "reviewedAt_missing",
+            "releaseDecision_not_release",
+            "communicationAlarmAfter_not_0",
+            "zoneTemperatureAfterC_out_of_range",
+            "writePointMappingChecked_not_yes",
+            "twoSampleNormal_not_yes",
+            "localManualLockout_not_none"
+          ],
+          "missingChecklist": [
+            {
+              "field": "handledBy",
+              "requiredValue": "现场处理人姓名",
+              "action": "填写实际处理人，不能用空值或系统默认值。"
+            },
+            {
+              "field": "handledAt",
+              "requiredValue": "现场处理完成时间，建议 ISO 时间",
+              "action": "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。"
+            },
+            {
+              "field": "reviewedBy",
+              "requiredValue": "复核人姓名",
+              "action": "填写复核人，建议由非处理人或现场负责人复核。"
+            },
+            {
+              "field": "reviewedAt",
+              "requiredValue": "复核完成时间，建议 ISO 时间",
+              "action": "填写复核完成时间。"
+            },
+            {
+              "field": "releaseDecision",
+              "requiredValue": "release",
+              "action": "只有现场确认可放行时填写 release；仍需观察则填写 hold/recheck 并保持阻断。"
+            },
+            {
+              "field": "communicationAlarmAfter",
+              "requiredValue": "0",
+              "action": "复检 BA 通讯报警点，确认报警复位后填写 0。"
+            }
+          ]
+        },
+        {
+          "workOrderId": "FCU-P0-GCBGQ03",
+          "deviceCode": "GCBGQ03",
+          "deviceName": "工程办公区03",
+          "issues": [
+            "handledBy_missing",
+            "handledAt_missing",
+            "reviewedBy_missing",
+            "reviewedAt_missing",
+            "releaseDecision_not_release",
+            "communicationAlarmAfter_not_0",
+            "zoneTemperatureAfterC_out_of_range",
+            "writePointMappingChecked_not_yes",
+            "twoSampleNormal_not_yes",
+            "localManualLockout_not_none"
+          ],
+          "missingChecklist": [
+            {
+              "field": "handledBy",
+              "requiredValue": "现场处理人姓名",
+              "action": "填写实际处理人，不能用空值或系统默认值。"
+            },
+            {
+              "field": "handledAt",
+              "requiredValue": "现场处理完成时间，建议 ISO 时间",
+              "action": "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。"
+            },
+            {
+              "field": "reviewedBy",
+              "requiredValue": "复核人姓名",
+              "action": "填写复核人，建议由非处理人或现场负责人复核。"
+            },
+            {
+              "field": "reviewedAt",
+              "requiredValue": "复核完成时间，建议 ISO 时间",
+              "action": "填写复核完成时间。"
+            },
+            {
+              "field": "releaseDecision",
+              "requiredValue": "release",
+              "action": "只有现场确认可放行时填写 release；仍需观察则填写 hold/recheck 并保持阻断。"
+            },
+            {
+              "field": "communicationAlarmAfter",
+              "requiredValue": "0",
+              "action": "复检 BA 通讯报警点，确认报警复位后填写 0。"
+            }
+          ]
+        },
+        {
+          "workOrderId": "FCU-P0-QT02",
+          "deviceCode": "QT02",
+          "deviceName": "前厅02",
+          "issues": [
+            "handledBy_missing",
+            "handledAt_missing",
+            "reviewedBy_missing",
+            "reviewedAt_missing",
+            "releaseDecision_not_release",
+            "communicationAlarmAfter_not_0",
+            "zoneTemperatureAfterC_out_of_range",
+            "writePointMappingChecked_not_yes",
+            "twoSampleNormal_not_yes",
+            "localManualLockout_not_none"
+          ],
+          "missingChecklist": [
+            {
+              "field": "handledBy",
+              "requiredValue": "现场处理人姓名",
+              "action": "填写实际处理人，不能用空值或系统默认值。"
+            },
+            {
+              "field": "handledAt",
+              "requiredValue": "现场处理完成时间，建议 ISO 时间",
+              "action": "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。"
+            },
+            {
+              "field": "reviewedBy",
+              "requiredValue": "复核人姓名",
+              "action": "填写复核人，建议由非处理人或现场负责人复核。"
+            },
+            {
+              "field": "reviewedAt",
+              "requiredValue": "复核完成时间，建议 ISO 时间",
+              "action": "填写复核完成时间。"
+            },
+            {
+              "field": "releaseDecision",
+              "requiredValue": "release",
+              "action": "只有现场确认可放行时填写 release；仍需观察则填写 hold/recheck 并保持阻断。"
+            },
+            {
+              "field": "communicationAlarmAfter",
+              "requiredValue": "0",
+              "action": "复检 BA 通讯报警点，确认报警复位后填写 0。"
+            }
+          ]
+        },
+        {
+          "workOrderId": "FCU-P0-WSJ02",
+          "deviceCode": "WSJ02",
+          "deviceName": "卫生间02",
+          "issues": [
+            "handledBy_missing",
+            "handledAt_missing",
+            "reviewedBy_missing",
+            "reviewedAt_missing",
+            "releaseDecision_not_release",
+            "communicationAlarmAfter_not_0",
+            "zoneTemperatureAfterC_out_of_range",
+            "writePointMappingChecked_not_yes",
+            "twoSampleNormal_not_yes",
+            "localManualLockout_not_none"
+          ],
+          "missingChecklist": [
+            {
+              "field": "handledBy",
+              "requiredValue": "现场处理人姓名",
+              "action": "填写实际处理人，不能用空值或系统默认值。"
+            },
+            {
+              "field": "handledAt",
+              "requiredValue": "现场处理完成时间，建议 ISO 时间",
+              "action": "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。"
+            },
+            {
+              "field": "reviewedBy",
+              "requiredValue": "复核人姓名",
+              "action": "填写复核人，建议由非处理人或现场负责人复核。"
+            },
+            {
+              "field": "reviewedAt",
+              "requiredValue": "复核完成时间，建议 ISO 时间",
+              "action": "填写复核完成时间。"
+            },
+            {
+              "field": "releaseDecision",
+              "requiredValue": "release",
+              "action": "只有现场确认可放行时填写 release；仍需观察则填写 hold/recheck 并保持阻断。"
+            },
+            {
+              "field": "communicationAlarmAfter",
+              "requiredValue": "0",
+              "action": "复检 BA 通讯报警点，确认报警复位后填写 0。"
+            }
+          ]
+        }
+      ],
+      "releaseMatrix": [
+        {
+          "workOrderId": "FCU-P0-BGS03",
+          "deviceCode": "BGS03",
+          "deviceName": "办公室03",
+          "owner": "BA/自控工程师",
+          "signoffComplete": false,
+          "canEnterCanary": false,
+          "canaryBlockReason": "signoff_incomplete",
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked"
+          ],
+          "requiredValues": [
+            "handledBy=现场处理人姓名",
+            "handledAt=现场处理完成时间，建议 ISO 时间",
+            "reviewedBy=复核人姓名",
+            "reviewedAt=复核完成时间，建议 ISO 时间",
+            "releaseDecision=release",
+            "communicationAlarmAfter=0",
+            "zoneTemperatureAfterC=5-45",
+            "writePointMappingChecked=yes"
+          ],
+          "nextActions": [
+            "填写实际处理人，不能用空值或系统默认值。",
+            "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。",
+            "填写复核人，建议由非处理人或现场负责人复核。",
+            "填写复核完成时间。"
+          ],
+          "releaseCriteria": [
+            "communicationAlarm=0",
+            "zoneTemperatureC 在 5-45°C",
+            "setpointFeedbackC 在策略允许范围内",
+            "启停、设定、风速写点均已映射且 writable=true"
+          ],
+          "verificationTarget": "通讯=必填：0；温度=必填：5-45；设定反馈=必填：10-32；写点=必填：yes/no；连续采样=必填：yes/no；手动锁定=必填：none/manual/lockout；放行=必填：hold/recheck/release",
+          "rerunCommand": "npm --prefix apps/chiller-bff run check:fcu-field-remediation-signoff && npm --prefix apps/chiller-bff run build:fcu-final-control-worklist"
+        },
+        {
+          "workOrderId": "FCU-P0-BGS04",
+          "deviceCode": "BGS04",
+          "deviceName": "办公室04",
+          "owner": "BA/自控工程师",
+          "signoffComplete": false,
+          "canEnterCanary": false,
+          "canaryBlockReason": "signoff_incomplete",
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked"
+          ],
+          "requiredValues": [
+            "handledBy=现场处理人姓名",
+            "handledAt=现场处理完成时间，建议 ISO 时间",
+            "reviewedBy=复核人姓名",
+            "reviewedAt=复核完成时间，建议 ISO 时间",
+            "releaseDecision=release",
+            "communicationAlarmAfter=0",
+            "zoneTemperatureAfterC=5-45",
+            "writePointMappingChecked=yes"
+          ],
+          "nextActions": [
+            "填写实际处理人，不能用空值或系统默认值。",
+            "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。",
+            "填写复核人，建议由非处理人或现场负责人复核。",
+            "填写复核完成时间。"
+          ],
+          "releaseCriteria": [
+            "communicationAlarm=0",
+            "zoneTemperatureC 在 5-45°C",
+            "setpointFeedbackC 在策略允许范围内",
+            "启停、设定、风速写点均已映射且 writable=true"
+          ],
+          "verificationTarget": "通讯=必填：0；温度=必填：5-45；设定反馈=必填：10-32；写点=必填：yes/no；连续采样=必填：yes/no；手动锁定=必填：none/manual/lockout；放行=必填：hold/recheck/release",
+          "rerunCommand": "npm --prefix apps/chiller-bff run check:fcu-field-remediation-signoff && npm --prefix apps/chiller-bff run build:fcu-final-control-worklist"
+        },
+        {
+          "workOrderId": "FCU-P0-BGS06",
+          "deviceCode": "BGS06",
+          "deviceName": "办公室06",
+          "owner": "BA/自控工程师",
+          "signoffComplete": false,
+          "canEnterCanary": false,
+          "canaryBlockReason": "signoff_incomplete",
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked"
+          ],
+          "requiredValues": [
+            "handledBy=现场处理人姓名",
+            "handledAt=现场处理完成时间，建议 ISO 时间",
+            "reviewedBy=复核人姓名",
+            "reviewedAt=复核完成时间，建议 ISO 时间",
+            "releaseDecision=release",
+            "communicationAlarmAfter=0",
+            "zoneTemperatureAfterC=5-45",
+            "writePointMappingChecked=yes"
+          ],
+          "nextActions": [
+            "填写实际处理人，不能用空值或系统默认值。",
+            "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。",
+            "填写复核人，建议由非处理人或现场负责人复核。",
+            "填写复核完成时间。"
+          ],
+          "releaseCriteria": [
+            "communicationAlarm=0",
+            "zoneTemperatureC 在 5-45°C",
+            "setpointFeedbackC 在策略允许范围内",
+            "启停、设定、风速写点均已映射且 writable=true"
+          ],
+          "verificationTarget": "通讯=必填：0；温度=可选；设定反馈=可选；写点=必填：yes/no；连续采样=必填：yes/no；手动锁定=必填：none/manual/lockout；放行=必填：hold/recheck/release",
+          "rerunCommand": "npm --prefix apps/chiller-bff run check:fcu-field-remediation-signoff && npm --prefix apps/chiller-bff run build:fcu-final-control-worklist"
+        },
+        {
+          "workOrderId": "FCU-P0-GCBGQ03",
+          "deviceCode": "GCBGQ03",
+          "deviceName": "工程办公区03",
+          "owner": "BA/自控工程师",
+          "signoffComplete": false,
+          "canEnterCanary": false,
+          "canaryBlockReason": "signoff_incomplete",
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked"
+          ],
+          "requiredValues": [
+            "handledBy=现场处理人姓名",
+            "handledAt=现场处理完成时间，建议 ISO 时间",
+            "reviewedBy=复核人姓名",
+            "reviewedAt=复核完成时间，建议 ISO 时间",
+            "releaseDecision=release",
+            "communicationAlarmAfter=0",
+            "zoneTemperatureAfterC=5-45",
+            "writePointMappingChecked=yes"
+          ],
+          "nextActions": [
+            "填写实际处理人，不能用空值或系统默认值。",
+            "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。",
+            "填写复核人，建议由非处理人或现场负责人复核。",
+            "填写复核完成时间。"
+          ],
+          "releaseCriteria": [
+            "communicationAlarm=0",
+            "zoneTemperatureC 在 5-45°C",
+            "setpointFeedbackC 在策略允许范围内",
+            "启停、设定、风速写点均已映射且 writable=true"
+          ],
+          "verificationTarget": "通讯=必填：0；温度=可选；设定反馈=可选；写点=必填：yes/no；连续采样=必填：yes/no；手动锁定=必填：none/manual/lockout；放行=必填：hold/recheck/release",
+          "rerunCommand": "npm --prefix apps/chiller-bff run check:fcu-field-remediation-signoff && npm --prefix apps/chiller-bff run build:fcu-final-control-worklist"
+        },
+        {
+          "workOrderId": "FCU-P0-QT02",
+          "deviceCode": "QT02",
+          "deviceName": "前厅02",
+          "owner": "BA/自控工程师",
+          "signoffComplete": false,
+          "canEnterCanary": false,
+          "canaryBlockReason": "signoff_incomplete",
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked"
+          ],
+          "requiredValues": [
+            "handledBy=现场处理人姓名",
+            "handledAt=现场处理完成时间，建议 ISO 时间",
+            "reviewedBy=复核人姓名",
+            "reviewedAt=复核完成时间，建议 ISO 时间",
+            "releaseDecision=release",
+            "communicationAlarmAfter=0",
+            "zoneTemperatureAfterC=5-45",
+            "writePointMappingChecked=yes"
+          ],
+          "nextActions": [
+            "填写实际处理人，不能用空值或系统默认值。",
+            "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。",
+            "填写复核人，建议由非处理人或现场负责人复核。",
+            "填写复核完成时间。"
+          ],
+          "releaseCriteria": [
+            "communicationAlarm=0",
+            "zoneTemperatureC 在 5-45°C",
+            "setpointFeedbackC 在策略允许范围内",
+            "启停、设定、风速写点均已映射且 writable=true"
+          ],
+          "verificationTarget": "通讯=必填：0；温度=可选；设定反馈=可选；写点=必填：yes/no；连续采样=必填：yes/no；手动锁定=必填：none/manual/lockout；放行=必填：hold/recheck/release",
+          "rerunCommand": "npm --prefix apps/chiller-bff run check:fcu-field-remediation-signoff && npm --prefix apps/chiller-bff run build:fcu-final-control-worklist"
+        },
+        {
+          "workOrderId": "FCU-P0-WSJ02",
+          "deviceCode": "WSJ02",
+          "deviceName": "卫生间02",
+          "owner": "BA/自控工程师",
+          "signoffComplete": false,
+          "canEnterCanary": false,
+          "canaryBlockReason": "signoff_incomplete",
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked"
+          ],
+          "requiredValues": [
+            "handledBy=现场处理人姓名",
+            "handledAt=现场处理完成时间，建议 ISO 时间",
+            "reviewedBy=复核人姓名",
+            "reviewedAt=复核完成时间，建议 ISO 时间",
+            "releaseDecision=release",
+            "communicationAlarmAfter=0",
+            "zoneTemperatureAfterC=5-45",
+            "writePointMappingChecked=yes"
+          ],
+          "nextActions": [
+            "填写实际处理人，不能用空值或系统默认值。",
+            "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。",
+            "填写复核人，建议由非处理人或现场负责人复核。",
+            "填写复核完成时间。"
+          ],
+          "releaseCriteria": [
+            "communicationAlarm=0",
+            "zoneTemperatureC 在 5-45°C",
+            "setpointFeedbackC 在策略允许范围内",
+            "启停、设定、风速写点均已映射且 writable=true"
+          ],
+          "verificationTarget": "通讯=必填：0；温度=必填：5-45；设定反馈=必填：10-32；写点=必填：yes/no；连续采样=必填：yes/no；手动锁定=必填：none/manual/lockout；放行=必填：hold/recheck/release",
+          "rerunCommand": "npm --prefix apps/chiller-bff run check:fcu-field-remediation-signoff && npm --prefix apps/chiller-bff run build:fcu-final-control-worklist"
+        },
+        {
+          "workOrderId": "FCU-P0-ZHYS",
+          "deviceCode": "ZHYS",
+          "deviceName": "中会议室",
+          "owner": "BA/自控工程师",
+          "signoffComplete": false,
+          "canEnterCanary": false,
+          "canaryBlockReason": "signoff_incomplete",
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked"
+          ],
+          "requiredValues": [
+            "handledBy=现场处理人姓名",
+            "handledAt=现场处理完成时间，建议 ISO 时间",
+            "reviewedBy=复核人姓名",
+            "reviewedAt=复核完成时间，建议 ISO 时间",
+            "releaseDecision=release",
+            "communicationAlarmAfter=0",
+            "zoneTemperatureAfterC=5-45",
+            "writePointMappingChecked=yes"
+          ],
+          "nextActions": [
+            "填写实际处理人，不能用空值或系统默认值。",
+            "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。",
+            "填写复核人，建议由非处理人或现场负责人复核。",
+            "填写复核完成时间。"
+          ],
+          "releaseCriteria": [
+            "communicationAlarm=0",
+            "zoneTemperatureC 在 5-45°C",
+            "setpointFeedbackC 在策略允许范围内",
+            "启停、设定、风速写点均已映射且 writable=true"
+          ],
+          "verificationTarget": "通讯=必填：0；温度=必填：5-45；设定反馈=必填：10-32；写点=必填：yes/no；连续采样=必填：yes/no；手动锁定=必填：none/manual/lockout；放行=必填：hold/recheck/release",
+          "rerunCommand": "npm --prefix apps/chiller-bff run check:fcu-field-remediation-signoff && npm --prefix apps/chiller-bff run build:fcu-final-control-worklist"
+        },
+        {
+          "workOrderId": "FCU-P0-ZZBGS",
+          "deviceCode": "ZZBGS",
+          "deviceName": "周总",
+          "owner": "BA/自控工程师",
+          "signoffComplete": false,
+          "canEnterCanary": false,
+          "canaryBlockReason": "signoff_incomplete",
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked"
+          ],
+          "requiredValues": [
+            "handledBy=现场处理人姓名",
+            "handledAt=现场处理完成时间，建议 ISO 时间",
+            "reviewedBy=复核人姓名",
+            "reviewedAt=复核完成时间，建议 ISO 时间",
+            "releaseDecision=release",
+            "communicationAlarmAfter=0",
+            "zoneTemperatureAfterC=5-45",
+            "writePointMappingChecked=yes"
+          ],
+          "nextActions": [
+            "填写实际处理人，不能用空值或系统默认值。",
+            "填写处理完成时间，例如 2026-06-18T10:00:00+08:00。",
+            "填写复核人，建议由非处理人或现场负责人复核。",
+            "填写复核完成时间。"
+          ],
+          "releaseCriteria": [
+            "communicationAlarm=0",
+            "zoneTemperatureC 在 5-45°C",
+            "setpointFeedbackC 在策略允许范围内",
+            "启停、设定、风速写点均已映射且 writable=true"
+          ],
+          "verificationTarget": "通讯=必填：0；温度=可选；设定反馈=必填：10-32；写点=必填：yes/no；连续采样=必填：yes/no；手动锁定=必填：none/manual/lockout；放行=必填：hold/recheck/release",
+          "rerunCommand": "npm --prefix apps/chiller-bff run check:fcu-field-remediation-signoff && npm --prefix apps/chiller-bff run build:fcu-final-control-worklist"
+        }
+      ]
+    },
+    "fieldRemediationSignoffCleanInput": {
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-clean-input-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-clean-input-latest.json",
+      "currentCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-current-only-latest.csv",
+      "staleCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-stale-rows-latest.csv",
+      "currentRows": 8,
+      "staleRows": 1,
+      "generatedMissingRows": 0
+    },
+    "fieldRemediationSignoffPromote": {
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-promote-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-promote-latest.json",
+      "mode": "dry_run",
+      "fileMutation": false,
+      "confirmMatched": false,
+      "currentRows": 8,
+      "staleRows": 1,
+      "signoffInputCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-input-latest.csv",
+      "backupCsv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-input-latest-backup-20260618110625.csv"
+    },
+    "canaryExecution": {
+      "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-latest.csv",
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-latest.json",
+      "deviceCode": "WSJ01",
+      "verdict": "canary_package_ready_with_open_gates"
+    },
+    "canaryReadiness": {
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-readiness-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-readiness-latest.json",
+      "verdict": "canary_blocked",
+      "canaryReady": false,
+      "blockedCount": 5,
+      "firstCanary": "WSJ01",
+      "readinessPlaybook": {
+        "canExecuteCanary": false,
+        "readyGateCount": 1,
+        "blockedGateCount": 5,
+        "firstBlockedPhase": "现场签字",
+        "firstBlockedOwner": "现场/运维",
+        "firstBlockedAction": "填写并复核 fcu-field-remediation-signoff-input-latest.csv 后重跑 check:fcu-field-remediation-signoff",
+        "fieldBlocked": true,
+        "baBlocked": true,
+        "canaryPackageBlocked": true,
+        "phasePlan": [
+          {
+            "key": "field_signoff_complete",
+            "phase": "现场签字",
+            "owner": "现场/运维",
+            "ready": false,
+            "blocking": true,
+            "evidence": "0/8 complete",
+            "sourceFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-latest.json",
+            "nextAction": "填写并复核 fcu-field-remediation-signoff-input-latest.csv 后重跑 check:fcu-field-remediation-signoff"
+          },
+          {
+            "key": "realtime_closeout_ready",
+            "phase": "实时消缺",
+            "owner": "现场/平台",
+            "ready": false,
+            "blocking": true,
+            "evidence": "field_remediation_open remaining=8",
+            "sourceFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-closeout-latest.json",
+            "nextAction": "重跑 check:fcu-field-remediation-closeout，必须 field_remediation_ready_for_canary"
+          },
+          {
+            "key": "field_arm_ready",
+            "phase": "现场授权",
+            "owner": "现场/BA",
+            "ready": false,
+            "blocking": true,
+            "evidence": "field_arm_blocked first=WSJ01",
+            "sourceFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-arm-check-latest.json",
+            "nextAction": "重跑 check:fcu-field-arm，现场授权、窗口、确认短语和 readOnly 必须通过"
+          },
+          {
+            "key": "ba_adapter_ready",
+            "phase": "BA写适配器",
+            "owner": "BA/自控",
+            "ready": false,
+            "blocking": true,
+            "evidence": "ba_write_adapter_blocked blockers=3",
+            "sourceFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-latest.json",
+            "nextAction": "重跑 check:fcu-ba-write-adapter-readiness，写点映射、确认短语和执行闸门必须通过"
+          },
+          {
+            "key": "canary_package_ready",
+            "phase": "Canary执行包",
+            "owner": "平台",
+            "ready": false,
+            "blocking": true,
+            "evidence": "canary_package_ready_with_open_gates device=WSJ01",
+            "sourceFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-latest.json",
+            "nextAction": "重跑 build:fcu-canary-execution-package，确保 blockers 为空"
+          },
+          {
+            "key": "no_control_mutation",
+            "phase": "安全边界",
+            "owner": "平台",
+            "ready": true,
+            "blocking": false,
+            "evidence": "all referenced reports controlMutation=false",
+            "sourceFile": "",
+            "nextAction": "保持当前证据，继续下一门禁。"
+          }
+        ]
+      }
+    },
+    "finalControlFieldExecutionPack": {
+      "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-field-execution-pack-latest.csv",
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-field-execution-pack-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-field-execution-pack-latest.json",
+      "ok": false,
+      "totalDevices": 8,
+      "openDevices": 8,
+      "canaryReadyDevices": 0,
+      "signoffCompleteRows": 0,
+      "signoffExpectedRows": 8,
+      "finalGatePassed": false,
+      "canaryReady": false,
+      "finalReleaseChecklistReady": 0,
+      "finalReleaseChecklistTotal": 4,
+      "firstBlocker": "现场签核",
+      "nextAction": "全部当前工单 release 后重跑 signoff。",
+      "controlMutation": false,
+      "dispatch": false,
+      "finalReleaseChecklist": [
+        {
+          "key": "signoff",
+          "label": "现场签核",
+          "ok": false,
+          "detail": "0/8",
+          "action": "全部当前工单 release 后重跑 signoff。"
+        },
+        {
+          "key": "closeout",
+          "label": "实时 closeout",
+          "ok": false,
+          "detail": "P0 8 台",
+          "action": "关闭 P0 消缺并重跑 closeout。"
+        },
+        {
+          "key": "canary-readiness",
+          "label": "Canary readiness",
+          "ok": false,
+          "detail": "canary_blocked",
+          "action": "填写并复核 fcu-field-remediation-signoff-input-latest.csv 后重跑 check:fcu-field-remediation-signoff"
+        },
+        {
+          "key": "final-gate",
+          "label": "最终总门禁",
+          "ok": false,
+          "detail": "0/8",
+          "action": "最终总门禁未全绿前禁止真实 BA 写入。"
+        }
+      ],
+      "deviceQueue": [
+        {
+          "sequence": 1,
+          "workOrderId": "FCU-P0-BGS03",
+          "deviceCode": "BGS03",
+          "deviceName": "办公室03",
+          "owner": "BA/自控工程师",
+          "canEnterCanary": false,
+          "signoffComplete": false,
+          "reasons": [
+            "通讯报警",
+            "0°C异常",
+            "温度无效",
+            "温度质量门槛",
+            "设定反馈越界"
+          ],
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked",
+            "twoSampleNormal",
+            "localManualLockout"
+          ],
+          "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+          "canaryBlockReason": "signoff_incomplete"
+        },
+        {
+          "sequence": 2,
+          "workOrderId": "FCU-P0-BGS04",
+          "deviceCode": "BGS04",
+          "deviceName": "办公室04",
+          "owner": "BA/自控工程师",
+          "canEnterCanary": false,
+          "signoffComplete": false,
+          "reasons": [
+            "通讯报警",
+            "0°C异常",
+            "温度无效",
+            "温度质量门槛",
+            "设定反馈越界"
+          ],
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked",
+            "twoSampleNormal",
+            "localManualLockout"
+          ],
+          "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+          "canaryBlockReason": "signoff_incomplete"
+        },
+        {
+          "sequence": 3,
+          "workOrderId": "FCU-P0-BGS06",
+          "deviceCode": "BGS06",
+          "deviceName": "办公室06",
+          "owner": "BA/自控工程师",
+          "canEnterCanary": false,
+          "signoffComplete": false,
+          "reasons": [
+            "通讯报警"
+          ],
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked",
+            "twoSampleNormal",
+            "localManualLockout"
+          ],
+          "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+          "canaryBlockReason": "signoff_incomplete"
+        },
+        {
+          "sequence": 4,
+          "workOrderId": "FCU-P0-GCBGQ03",
+          "deviceCode": "GCBGQ03",
+          "deviceName": "工程办公区03",
+          "owner": "BA/自控工程师",
+          "canEnterCanary": false,
+          "signoffComplete": false,
+          "reasons": [
+            "通讯报警",
+            "设定反馈越界"
+          ],
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked",
+            "twoSampleNormal",
+            "localManualLockout"
+          ],
+          "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+          "canaryBlockReason": "signoff_incomplete"
+        },
+        {
+          "sequence": 5,
+          "workOrderId": "FCU-P0-QT02",
+          "deviceCode": "QT02",
+          "deviceName": "前厅02",
+          "owner": "BA/自控工程师",
+          "canEnterCanary": false,
+          "signoffComplete": false,
+          "reasons": [
+            "通讯报警"
+          ],
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked",
+            "twoSampleNormal",
+            "localManualLockout"
+          ],
+          "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+          "canaryBlockReason": "signoff_incomplete"
+        },
+        {
+          "sequence": 6,
+          "workOrderId": "FCU-P0-WSJ02",
+          "deviceCode": "WSJ02",
+          "deviceName": "卫生间02",
+          "owner": "BA/自控工程师",
+          "canEnterCanary": false,
+          "signoffComplete": false,
+          "reasons": [
+            "通讯报警",
+            "0°C异常",
+            "温度无效",
+            "温度质量门槛",
+            "设定反馈越界"
+          ],
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked",
+            "twoSampleNormal",
+            "localManualLockout"
+          ],
+          "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+          "canaryBlockReason": "signoff_incomplete"
+        },
+        {
+          "sequence": 7,
+          "workOrderId": "FCU-P0-ZHYS",
+          "deviceCode": "ZHYS",
+          "deviceName": "中会议室",
+          "owner": "BA/自控工程师",
+          "canEnterCanary": false,
+          "signoffComplete": false,
+          "reasons": [
+            "通讯报警",
+            "0°C异常",
+            "温度无效",
+            "温度质量门槛",
+            "设定反馈越界"
+          ],
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked",
+            "twoSampleNormal",
+            "localManualLockout"
+          ],
+          "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+          "canaryBlockReason": "signoff_incomplete"
+        },
+        {
+          "sequence": 8,
+          "workOrderId": "FCU-P0-ZZBGS",
+          "deviceCode": "ZZBGS",
+          "deviceName": "周总",
+          "owner": "BA/自控工程师",
+          "canEnterCanary": false,
+          "signoffComplete": false,
+          "reasons": [
+            "通讯报警",
+            "设定反馈越界"
+          ],
+          "missingFields": [
+            "handledBy",
+            "handledAt",
+            "reviewedBy",
+            "reviewedAt",
+            "releaseDecision",
+            "communicationAlarmAfter",
+            "zoneTemperatureAfterC",
+            "writePointMappingChecked",
+            "twoSampleNormal",
+            "localManualLockout"
+          ],
+          "todayAction": "先恢复通讯报警，再做温度和设定反馈复核。",
+          "canaryBlockReason": "signoff_incomplete"
+        }
+      ],
+      "safetyBoundary": [
+        "本现场执行包只用于最终控制投运前的现场签核和证据核对。",
+        "本脚本不调用 control-cycle、control-command、Canary dispatch 或任何 BA/PLC 写入接口。",
+        "deviceQueue 中 canEnterCanary=true 也不等于允许真实下发。",
+        "必须由 3001 单台确认、后端总闸、审计和反馈回退共同放行。"
+      ]
+    },
+    "baWriteAdapterReadiness": {
+      "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-latest.csv",
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-latest.json",
+      "deviceCode": "WSJ01",
+      "verdict": "ba_write_adapter_blocked"
+    },
+    "canaryFeedbackMonitor": {
+      "csv": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-feedback-monitor-latest.csv",
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-feedback-monitor-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-feedback-monitor-latest.json",
+      "deviceCode": "BGS01",
+      "verdict": "waiting_for_canary_dispatch",
+      "feedbackStatus": null
+    },
+    "canaryWindow": {
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-window-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-window-latest.json",
+      "deviceCode": "BGS01",
+      "verdict": "canary_window_blocked",
+      "mode": "blocked_before_dispatch",
+      "controlMutation": false
+    },
+    "siteAuthorization": {
+      "markdown": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-site-authorization-latest.md",
+      "json": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-site-authorization-latest.json",
+      "ok": true,
+      "persisted": true,
+      "dryRun": false,
+      "controlMutation": false,
+      "windowActive": false,
+      "windowStatus": "authorization_window_expired",
+      "confirmMatched": true
+    }
+  },
+  "reportStatuses": {
+    "preflight": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-go-live-preflight-latest.json",
+      "error": null
+    },
+    "fieldArm": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-arm-check-latest.json",
+      "error": null
+    },
+    "finalCompletion": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-completion-latest.json",
+      "error": null
+    },
+    "quality": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-quality-remediation-latest.json",
+      "error": null
+    },
+    "canaryPackage": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-latest.json",
+      "error": null
+    },
+    "canaryReadiness": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-readiness-latest.json",
+      "error": null
+    },
+    "adapterReadiness": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-latest.json",
+      "error": null
+    },
+    "canaryFeedback": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-feedback-monitor-latest.json",
+      "error": null
+    },
+    "canaryWindow": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-window-latest.json",
+      "error": null
+    },
+    "plan": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-all-device-dispatch-plan-latest.json",
+      "error": null
+    },
+    "fieldCloseout": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-closeout-latest.json",
+      "error": null
+    },
+    "fieldWorkOrders": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-work-orders-latest.json",
+      "error": null
+    },
+    "fieldExecutionPack": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-execution-pack-latest.json",
+      "error": null
+    },
+    "fieldHandoff": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-handoff-pack-latest.json",
+      "error": null
+    },
+    "fieldReturnTemplate": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-return-template-latest.json",
+      "error": null
+    },
+    "fieldSignoff": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-latest.json",
+      "error": null
+    },
+    "fieldSignoffClean": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-clean-input-latest.json",
+      "error": null
+    },
+    "fieldSignoffPromote": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-promote-latest.json",
+      "error": null
+    },
+    "finalControlFieldExecutionPack": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-field-execution-pack-latest.json",
+      "error": null
+    },
+    "rollout": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-rollout-latest.json",
+      "error": null
+    },
+    "siteAuthorization": {
+      "ok": true,
+      "path": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-site-authorization-latest.json",
+      "error": null
+    }
+  },
+  "qualityRefresh": {
+    "skipped": true,
+    "reason": "custom_quality_report_or_refresh_disabled"
+  },
+  "allDevicePlanRefresh": {
+    "skipped": true,
+    "reason": "custom_all_device_plan_or_refresh_disabled"
+  },
+  "fieldRemediationCloseoutRefresh": {
+    "skipped": true,
+    "reason": "custom_closeout_report_or_refresh_disabled"
+  },
+  "fieldRemediationWorkOrdersRefresh": {
+    "skipped": true,
+    "reason": "custom_work_orders_report_or_refresh_disabled"
+  },
+  "fieldRemediationExecutionPackRefresh": {
+    "skipped": true,
+    "reason": "custom_execution_pack_or_refresh_disabled"
+  },
+  "fieldRemediationSignoffRefresh": {
+    "skipped": true,
+    "reason": "custom_signoff_report_or_refresh_disabled"
+  },
+  "fieldRemediationSignoffCleanRefresh": {
+    "skipped": true,
+    "reason": "custom_signoff_clean_report_or_refresh_disabled"
+  },
+  "fieldRemediationSignoffPromoteRefresh": {
+    "skipped": true,
+    "reason": "custom_signoff_promote_report_or_refresh_disabled"
+  },
+  "fieldHandoffRefresh": {
+    "skipped": true,
+    "reason": "custom_handoff_pack_or_refresh_disabled"
+  },
+  "fieldRemediationReturnTemplateRefresh": {
+    "skipped": true,
+    "reason": "custom_return_template_or_refresh_disabled"
+  },
+  "canaryReadinessRefresh": {
+    "skipped": true,
+    "reason": "custom_canary_readiness_report_or_refresh_disabled"
+  },
+  "finalControlFieldExecutionPackRefresh": {
+    "skipped": true,
+    "reason": "custom_final_field_execution_pack_or_refresh_disabled"
+  }
+}

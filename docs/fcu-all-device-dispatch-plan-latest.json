@@ -1,0 +1,611 @@
+{
+  "ok": true,
+  "generatedAt": "2026-06-20T04:31:47.458Z",
+  "siteId": "126lnoffice",
+  "build": "1",
+  "floor": "1",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "controlMutation": false,
+  "dispatch": false,
+  "targetSetpointC": 25.5,
+  "maxSetpointShiftC": 2,
+  "waveSize": 9,
+  "summary": {
+    "total": 29,
+    "deviceReady": 9,
+    "immediateReady": 9,
+    "stagedSetpoint": 12,
+    "blocked": 8,
+    "plannedDeviceCount": 21,
+    "canCompleteAllNow": false,
+    "dispatchAllowed": false
+  },
+  "firstCanary": "BGS01",
+  "waves": [
+    {
+      "key": "canary",
+      "label": "首台 Canary",
+      "size": 1,
+      "devices": [
+        "BGS01"
+      ],
+      "purpose": "先验证真实写入、反馈校验和回退链路。"
+    },
+    {
+      "key": "immediate_wave_1",
+      "label": "可立即小批量 1",
+      "size": 8,
+      "devices": [
+        "BGS05",
+        "DTT",
+        "LZBGS",
+        "WSJ01",
+        "YFBGQ01",
+        "YFBGQ02",
+        "YFBGQ03",
+        "YFBGQ04"
+      ],
+      "purpose": "设定偏移在保护范围内，可在 Canary 反馈确认后分批执行。"
+    },
+    {
+      "key": "staged_setpoint_wave_1",
+      "label": "分步调设定 1",
+      "size": 9,
+      "devices": [
+        "BGS02",
+        "CWS",
+        "DHYS",
+        "GCBGQ01",
+        "GCBGQ02",
+        "JDS",
+        "QT01",
+        "QTS",
+        "SYS"
+      ],
+      "purpose": "当前设定与目标偏差超过单次保护限，需要先按 0.5-2.0°C 分步拉回。"
+    },
+    {
+      "key": "staged_setpoint_wave_2",
+      "label": "分步调设定 2",
+      "size": 3,
+      "devices": [
+        "TNFBQ01",
+        "TNFBQ02",
+        "XZBGS"
+      ],
+      "purpose": "当前设定与目标偏差超过单次保护限，需要先按 0.5-2.0°C 分步拉回。"
+    }
+  ],
+  "blockedDevices": [
+    {
+      "deviceCode": "BGS03",
+      "deviceName": "办公室03",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 0,
+      "setpointC": 0,
+      "setpointShiftC": 25.5,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "blockedReasons": [
+        "communication_alarm",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds",
+        "setpoint_feedback_valid"
+      ]
+    },
+    {
+      "deviceCode": "BGS04",
+      "deviceName": "办公室04",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 0,
+      "setpointC": 0,
+      "setpointShiftC": 25.5,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "blockedReasons": [
+        "communication_alarm",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds",
+        "setpoint_feedback_valid"
+      ]
+    },
+    {
+      "deviceCode": "BGS06",
+      "deviceName": "办公室06",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 22,
+      "setpointC": 24,
+      "setpointShiftC": 1.5,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "blockedReasons": [
+        "communication_alarm",
+        "invalid_temperature",
+        "temperature_quality_guard"
+      ]
+    },
+    {
+      "deviceCode": "GCBGQ03",
+      "deviceName": "工程办公区03",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 31,
+      "setpointC": 19,
+      "setpointShiftC": 6.5,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "blockedReasons": [
+        "communication_alarm",
+        "invalid_temperature",
+        "setpoint_feedback_out_of_bounds",
+        "temperature_quality_guard",
+        "setpoint_feedback_valid"
+      ]
+    },
+    {
+      "deviceCode": "QT02",
+      "deviceName": "前厅02",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 26,
+      "setpointC": 26,
+      "setpointShiftC": 0.5,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "blockedReasons": [
+        "communication_alarm",
+        "invalid_temperature",
+        "temperature_quality_guard"
+      ]
+    },
+    {
+      "deviceCode": "WSJ02",
+      "deviceName": "卫生间02",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 0,
+      "setpointC": 0,
+      "setpointShiftC": 25.5,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "blockedReasons": [
+        "communication_alarm",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds",
+        "setpoint_feedback_valid"
+      ]
+    },
+    {
+      "deviceCode": "ZHYS",
+      "deviceName": "中会议室",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 0,
+      "setpointC": 0,
+      "setpointShiftC": 25.5,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "blockedReasons": [
+        "communication_alarm",
+        "invalid_temperature",
+        "temperature_quality_guard",
+        "setpoint_feedback_out_of_bounds",
+        "setpoint_feedback_valid"
+      ]
+    },
+    {
+      "deviceCode": "ZZBGS",
+      "deviceName": "周总",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": true,
+      "zoneTemperatureC": 24,
+      "setpointC": 35,
+      "setpointShiftC": 9.5,
+      "communicationAlarm": true,
+      "qualityStatus": "invalid",
+      "blockedReasons": [
+        "communication_alarm",
+        "invalid_temperature",
+        "setpoint_feedback_out_of_bounds",
+        "temperature_quality_guard",
+        "setpoint_feedback_valid"
+      ]
+    }
+  ],
+  "stagedSetpointDevices": [
+    {
+      "deviceCode": "BGS02",
+      "deviceName": "办公室02",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 28,
+      "setpointC": 16,
+      "setpointShiftC": 9.5,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "blockedReasons": [
+        "setpoint_feedback_out_of_bounds",
+        "setpoint_feedback_valid"
+      ],
+      "setpointNormalizationRequired": true
+    },
+    {
+      "deviceCode": "CWS",
+      "deviceName": "财务室",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 28,
+      "setpointC": 16,
+      "setpointShiftC": 9.5,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "blockedReasons": [
+        "setpoint_feedback_out_of_bounds",
+        "setpoint_feedback_valid"
+      ],
+      "setpointNormalizationRequired": true
+    },
+    {
+      "deviceCode": "DHYS",
+      "deviceName": "大会议室",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 29,
+      "setpointC": 19,
+      "setpointShiftC": 6.5,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "blockedReasons": [
+        "setpoint_feedback_out_of_bounds",
+        "setpoint_feedback_valid"
+      ],
+      "setpointNormalizationRequired": true
+    },
+    {
+      "deviceCode": "GCBGQ01",
+      "deviceName": "工程办公区01",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 28,
+      "setpointC": 10,
+      "setpointShiftC": 15.5,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "blockedReasons": [
+        "setpoint_feedback_out_of_bounds",
+        "setpoint_feedback_valid"
+      ],
+      "setpointNormalizationRequired": true
+    },
+    {
+      "deviceCode": "GCBGQ02",
+      "deviceName": "工程办公区02",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 28,
+      "setpointC": 10,
+      "setpointShiftC": 15.5,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "blockedReasons": [
+        "setpoint_feedback_out_of_bounds",
+        "setpoint_feedback_valid"
+      ],
+      "setpointNormalizationRequired": true
+    },
+    {
+      "deviceCode": "JDS",
+      "deviceName": "接待室",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 28,
+      "setpointC": 15,
+      "setpointShiftC": 10.5,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "blockedReasons": [
+        "setpoint_feedback_out_of_bounds",
+        "setpoint_feedback_valid"
+      ],
+      "setpointNormalizationRequired": true
+    },
+    {
+      "deviceCode": "QT01",
+      "deviceName": "前厅01",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 28,
+      "setpointC": 16,
+      "setpointShiftC": 9.5,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "blockedReasons": [
+        "setpoint_feedback_out_of_bounds",
+        "setpoint_feedback_valid"
+      ],
+      "setpointNormalizationRequired": true
+    },
+    {
+      "deviceCode": "QTS",
+      "deviceName": "洽谈室",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 27,
+      "setpointC": 21,
+      "setpointShiftC": 4.5,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "blockedReasons": [
+        "setpoint_feedback_out_of_bounds",
+        "setpoint_feedback_valid"
+      ],
+      "setpointNormalizationRequired": true
+    },
+    {
+      "deviceCode": "SYS",
+      "deviceName": "实验室",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 28,
+      "setpointC": 19,
+      "setpointShiftC": 6.5,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "blockedReasons": [
+        "setpoint_feedback_out_of_bounds",
+        "setpoint_feedback_valid"
+      ],
+      "setpointNormalizationRequired": true
+    },
+    {
+      "deviceCode": "TNFBQ01",
+      "deviceName": "头脑风暴区01",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": false,
+      "zoneTemperatureC": 29,
+      "setpointC": 21,
+      "setpointShiftC": 4.5,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "blockedReasons": [
+        "setpoint_feedback_out_of_bounds",
+        "setpoint_feedback_valid"
+      ],
+      "setpointNormalizationRequired": true
+    },
+    {
+      "deviceCode": "TNFBQ02",
+      "deviceName": "头脑风暴区02",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": true,
+      "zoneTemperatureC": 29,
+      "setpointC": 10,
+      "setpointShiftC": 15.5,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "blockedReasons": [
+        "setpoint_feedback_out_of_bounds",
+        "setpoint_feedback_valid"
+      ],
+      "setpointNormalizationRequired": true
+    },
+    {
+      "deviceCode": "XZBGS",
+      "deviceName": "行政办公室",
+      "status": "blocked",
+      "deviceReady": false,
+      "canDispatch": false,
+      "running": true,
+      "zoneTemperatureC": 27,
+      "setpointC": 18,
+      "setpointShiftC": 7.5,
+      "communicationAlarm": false,
+      "qualityStatus": "ok",
+      "blockedReasons": [
+        "setpoint_feedback_out_of_bounds",
+        "setpoint_feedback_valid"
+      ],
+      "setpointNormalizationRequired": true
+    }
+  ],
+  "blockingByReason": [
+    {
+      "reason": "communication_alarm",
+      "count": 8
+    },
+    {
+      "reason": "invalid_temperature",
+      "count": 8
+    },
+    {
+      "reason": "temperature_quality_guard",
+      "count": 8
+    },
+    {
+      "reason": "setpoint_feedback_out_of_bounds",
+      "count": 6
+    },
+    {
+      "reason": "setpoint_feedback_valid",
+      "count": 6
+    }
+  ],
+  "nextActions": [
+    {
+      "priority": "P0",
+      "action": "打开后端只读/全局投运闸门后重跑 Arm-Check",
+      "target": "backend_not_readonly / executionGate",
+      "reason": "当前阻断：site_authorization_window_active / backend_not_readonly"
+    },
+    {
+      "priority": "P0",
+      "action": "先执行首台 Canary",
+      "target": "BGS01",
+      "reason": "首台反馈确认后再进入小批量。"
+    },
+    {
+      "priority": "P0",
+      "action": "整改通讯/温度质量阻断设备",
+      "target": "8 台",
+      "reason": "通讯报警、0°C、越界温度设备不能进入自动闭环。"
+    },
+    {
+      "priority": "P1",
+      "action": "对大偏差设定值设备执行分步拉回",
+      "target": "12 台",
+      "reason": "避免一次性把 10-19°C 等异常设定拉到目标值。"
+    }
+  ],
+  "evidence": {
+    "health": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/healthz",
+      "readOnlyMode": true
+    },
+    "commissioning": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/hvac-terminal/fan-coils/commissioning-status?build=1&floor=1",
+      "summary": {
+        "total": 29,
+        "ready": 0,
+        "environmentBlocked": 9,
+        "deviceBlocked": 20,
+        "notFound": 0,
+        "deviceReady": 9,
+        "canDispatch": 0
+      },
+      "executionGate": {
+        "ready": false,
+        "dispatchAllowed": false,
+        "readOnlyMode": true,
+        "subsystemWriteEnabled": true,
+        "boundaryMode": "enforced",
+        "policyMode": "enforced",
+        "adapterConfigured": true,
+        "whitelistCount": 29,
+        "authorizationStatus": "approved",
+        "authorizationOwnerReady": true,
+        "authorizationWindowConfigured": true,
+        "authorizationWindowActive": false,
+        "authorizationWindowStart": "2026-06-18T04:00:15.498Z",
+        "authorizationWindowEnd": "2026-06-18T05:00:15.498Z",
+        "authorizationWindowNow": "2026-06-20T04:31:47.271Z",
+        "baWriteConfirmArmed": true,
+        "finalRolloutConfirmArmed": true,
+        "sourceStatus": "demo_data",
+        "conditions": [
+          {
+            "key": "policy_enabled",
+            "label": "FCU策略启用",
+            "ok": true
+          },
+          {
+            "key": "mode_enforced",
+            "label": "控制模式为自动闭环",
+            "ok": true
+          },
+          {
+            "key": "subsystem_write_enabled",
+            "label": "空调末端子系统写总闸",
+            "ok": true
+          },
+          {
+            "key": "dispatch_adapter_configured",
+            "label": "BA写适配器已配置",
+            "ok": true
+          },
+          {
+            "key": "whitelist_not_empty",
+            "label": "单台白名单非空",
+            "ok": true
+          },
+          {
+            "key": "site_authorization_approved",
+            "label": "现场授权已批准",
+            "ok": true
+          },
+          {
+            "key": "site_authorization_owner_recorded",
+            "label": "现场授权责任人已记录",
+            "ok": true
+          },
+          {
+            "key": "site_authorization_window_configured",
+            "label": "现场授权窗口已配置",
+            "ok": true
+          },
+          {
+            "key": "site_authorization_window_active",
+            "label": "现场授权窗口当前有效",
+            "ok": false
+          },
+          {
+            "key": "ba_write_confirm_armed",
+            "label": "BA写入确认已装载",
+            "ok": true
+          },
+          {
+            "key": "final_rollout_confirm_armed",
+            "label": "最终控制总确认已装载",
+            "ok": true
+          },
+          {
+            "key": "backend_not_readonly",
+            "label": "后端环境允许真实写入",
+            "ok": false
+          }
+        ],
+        "blockedReasons": [
+          "site_authorization_window_active",
+          "backend_not_readonly"
+        ]
+      }
+    }
+  }
+}

@@ -102,7 +102,7 @@ export const MAIN_LOOP_SYSTEM_DIAGRAM: SystemDiagramTopology = {
       id: "edge-pump-chilled-to-load",
       from: "pump-chilled-01",
       to: "load-01",
-      kind: "chilled-return",
+      kind: "chilled-supply",
       via: [[-3.6, 0.9, 5.2], [-1.7, 0.9, 5.8]]
     },
     {
@@ -113,32 +113,32 @@ export const MAIN_LOOP_SYSTEM_DIAGRAM: SystemDiagramTopology = {
       via: [[-0.2, 0.9, 3.8], [0.6, 0.9, 2.2]]
     },
     {
-      id: "edge-chiller-to-valve-cooling",
-      from: "chiller-01",
-      to: "valve-cooling-01",
-      kind: "cooling-return",
+      id: "edge-valve-cooling-to-chiller",
+      from: "valve-cooling-01",
+      to: "chiller-01",
+      kind: "cooling-supply",
       via: [[1.8, 0.9, 0.6]]
     },
     {
-      id: "edge-valve-cooling-to-pump-cooling",
-      from: "valve-cooling-01",
-      to: "pump-cooling-01",
-      kind: "cooling-return",
+      id: "edge-pump-cooling-to-valve-cooling",
+      from: "pump-cooling-01",
+      to: "valve-cooling-01",
+      kind: "cooling-supply",
       via: [[4.8, 0.9, 1.6]]
     },
     {
-      id: "edge-pump-cooling-to-tower",
-      from: "pump-cooling-01",
-      to: "tower-01",
+      id: "edge-tower-to-pump-cooling",
+      from: "tower-01",
+      to: "pump-cooling-01",
       kind: "cooling-supply",
-      via: [[6.3, 0.9, 1.2], [6.3, 0.9, -3.1]]
+      via: [[6.3, 0.9, -3.1], [6.3, 0.9, 1.2]]
     },
     {
-      id: "edge-tower-to-chiller",
-      from: "tower-01",
-      to: "chiller-01",
-      kind: "cooling-supply",
-      via: [[3.0, 0.9, -6.1], [-0.2, 0.9, -3.8], [-0.2, 0.9, -0.8]]
+      id: "edge-chiller-to-tower",
+      from: "chiller-01",
+      to: "tower-01",
+      kind: "cooling-return",
+      via: [[-0.2, 0.9, -0.8], [-0.2, 0.9, -3.8], [3.0, 0.9, -6.1]]
     }
   ]
 };
@@ -287,7 +287,7 @@ function buildDynamicEdges(chain: RuntimeChainKey[]): SystemDiagramTopology["edg
       id: "edge-pump-chilled-to-load",
       from: "pump-chilled-01",
       to: "load-01",
-      kind: "chilled-return",
+      kind: "chilled-supply",
       via: [[-3.6, 0.9, 5.2], [-1.7, 0.9, 5.8]]
     });
     edges.push({
@@ -301,35 +301,35 @@ function buildDynamicEdges(chain: RuntimeChainKey[]): SystemDiagramTopology["edg
 
   if (hasCoolingLeg) {
     edges.push({
-      id: "edge-chiller-to-valve-cooling",
-      from: "chiller-01",
-      to: "valve-cooling-01",
-      kind: "cooling-return",
+      id: "edge-valve-cooling-to-chiller",
+      from: "valve-cooling-01",
+      to: "chiller-01",
+      kind: "cooling-supply",
       via: [[1.8, 0.9, 0.6]]
     });
     edges.push({
-      id: "edge-valve-cooling-to-pump-cooling",
-      from: "valve-cooling-01",
-      to: "pump-cooling-01",
-      kind: "cooling-return",
+      id: "edge-pump-cooling-to-valve-cooling",
+      from: "pump-cooling-01",
+      to: "valve-cooling-01",
+      kind: "cooling-supply",
       via: [[4.8, 0.9, 1.6]]
     });
   }
 
   if (hasCoolingPump && hasCoolingTower) {
     edges.push({
-      id: "edge-pump-cooling-to-tower",
-      from: "pump-cooling-01",
-      to: "tower-01",
+      id: "edge-tower-to-pump-cooling",
+      from: "tower-01",
+      to: "pump-cooling-01",
       kind: "cooling-supply",
-      via: [[6.3, 0.9, 1.2], [6.3, 0.9, -3.1]]
+      via: [[6.3, 0.9, -3.1], [6.3, 0.9, 1.2]]
     });
     edges.push({
-      id: "edge-tower-to-chiller",
-      from: "tower-01",
-      to: "chiller-01",
-      kind: "cooling-supply",
-      via: [[3.0, 0.9, -6.1], [-0.2, 0.9, -3.8], [-0.2, 0.9, -0.8]]
+      id: "edge-chiller-to-tower",
+      from: "chiller-01",
+      to: "tower-01",
+      kind: "cooling-return",
+      via: [[-0.2, 0.9, -0.8], [-0.2, 0.9, -3.8], [3.0, 0.9, -6.1]]
     });
   }
 

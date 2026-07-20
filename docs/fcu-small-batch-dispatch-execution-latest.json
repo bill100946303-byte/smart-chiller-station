@@ -1,0 +1,149 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-17T20:13:14.985Z",
+  "siteId": "126lnoffice",
+  "build": "1",
+  "floor": "1",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "mode": "blocked_before_dispatch",
+  "controlMutation": false,
+  "planFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-small-batch-dispatch-plan-latest.json",
+  "fieldArmFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-arm-check-latest.json",
+  "canaryDispatchFile": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-dispatch-latest.json",
+  "blockingItems": [
+    {
+      "key": "field_arm_not_ready",
+      "message": "现场 arm-check 未通过：field_arm_blocked"
+    },
+    {
+      "key": "confirm_phrase_missing",
+      "message": "必须设置 FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE 才允许真实 BA 写入。"
+    },
+    {
+      "key": "canary_feedback_not_confirmed",
+      "message": "小批量执行前必须先完成首台 Canary 真实下发并反馈确认。expected=BGS01, actual=BGS01, recordStatus=--, mode=blocked_before_canary_dispatch"
+    },
+    {
+      "key": "global_execution_gate",
+      "message": "全局投运闸门未打开：backend_not_readonly"
+    }
+  ],
+  "planSummary": {
+    "total": 29,
+    "ready": 0,
+    "environmentBlocked": 21,
+    "deviceBlocked": 8,
+    "notFound": 0,
+    "deviceReady": 21,
+    "canDispatch": 0,
+    "plannedDevices": 9,
+    "previewReadyDevices": 9
+  },
+  "evidence": {
+    "health": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/healthz",
+      "readOnlyMode": true
+    },
+    "commissioning": {
+      "ok": true,
+      "status": 200,
+      "url": "http://127.0.0.1:8787/bff/v1/sites/126lnoffice/hvac-terminal/fan-coils/commissioning-status?build=1&floor=1",
+      "summary": {
+        "total": 29,
+        "ready": 0,
+        "environmentBlocked": 21,
+        "deviceBlocked": 8,
+        "notFound": 0,
+        "deviceReady": 21,
+        "canDispatch": 0
+      },
+      "executionGate": {
+        "ready": false,
+        "dispatchAllowed": false,
+        "readOnlyMode": true,
+        "subsystemWriteEnabled": true,
+        "boundaryMode": "enforced",
+        "policyMode": "enforced",
+        "adapterConfigured": true,
+        "whitelistCount": 29,
+        "sourceStatus": "demo_data",
+        "conditions": [
+          {
+            "key": "policy_enabled",
+            "label": "FCU策略启用",
+            "ok": true
+          },
+          {
+            "key": "mode_enforced",
+            "label": "控制模式为自动闭环",
+            "ok": true
+          },
+          {
+            "key": "subsystem_write_enabled",
+            "label": "空调末端子系统写总闸",
+            "ok": true
+          },
+          {
+            "key": "dispatch_adapter_configured",
+            "label": "BA写适配器已配置",
+            "ok": true
+          },
+          {
+            "key": "whitelist_not_empty",
+            "label": "单台白名单非空",
+            "ok": true
+          },
+          {
+            "key": "backend_not_readonly",
+            "label": "后端环境允许真实写入",
+            "ok": false
+          }
+        ],
+        "blockedReasons": [
+          "backend_not_readonly"
+        ]
+      }
+    },
+    "fieldArm": {
+      "ok": false,
+      "verdict": "field_arm_blocked",
+      "blockingItems": [
+        {
+          "key": "backend_write_gate",
+          "label": "后端写入总闸",
+          "ok": false,
+          "severity": "P0",
+          "message": "当前 /healthz 显示 readOnlyMode=true。"
+        },
+        {
+          "key": "execution_gate_open",
+          "label": "全局投运闸门",
+          "ok": false,
+          "severity": "P0",
+          "message": "未打开：backend_not_readonly"
+        },
+        {
+          "key": "confirm_phrase_present",
+          "label": "真实写入确认短语",
+          "ok": false,
+          "severity": "P0",
+          "message": "必须设置 FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE。"
+        }
+      ]
+    },
+    "canaryDispatch": {
+      "ok": false,
+      "mode": "blocked_before_canary_dispatch",
+      "canary": {
+        "deviceCode": "BGS01",
+        "deviceName": "办公室01",
+        "zoneTemperatureC": 26,
+        "setpointC": 24
+      },
+      "verification": null
+    }
+  },
+  "devices": []
+}

@@ -1,0 +1,393 @@
+{
+  "ok": false,
+  "generatedAt": "2026-06-18T08:53:08.266Z",
+  "siteId": "126lnoffice",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "mode": "blocked_or_dry_run",
+  "controlMutation": false,
+  "confirm": {
+    "finalRolloutConfirmPresent": false,
+    "smallBatchConfirmPresent": false
+  },
+  "phases": [
+    {
+      "key": "smallBatchPlan",
+      "label": "生成小批量预演执行单",
+      "ok": true,
+      "status": 0,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-small-batch-dispatch-plan-latest.json",
+      "stdout": "FCU_SMALL_BATCH_PLAN ok=true planned=2 previewReady=2 canDispatch=0 dispatch=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-small-batch-dispatch-plan-latest.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-small-batch-dispatch-plan-latest.md",
+      "stderr": ""
+    },
+    {
+      "key": "allDevicePlan",
+      "label": "生成全量分批计划",
+      "ok": true,
+      "status": 0,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-all-device-dispatch-plan-latest.json",
+      "stdout": "FCU_ALL_DEVICE_DISPATCH_PLAN ok=true total=29 immediate=9 staged=12 blocked=8 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-all-device-dispatch-plan-latest.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-all-device-dispatch-plan-latest.md",
+      "stderr": ""
+    },
+    {
+      "key": "goLivePreflight",
+      "label": "上线前预检",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-go-live-preflight-latest.json",
+      "stdout": "FCU_GO_LIVE_PREFLIGHT ok=false verdict=go_live_blocked whitelist=BGS01,BGS02,BGS03,BGS04,BGS05,BGS06,CWS,DHYS,DTT,GCBGQ01,GCBGQ02,GCBGQ03,JDS,LZBGS,QT01,QT02,QTS,SYS,TNFBQ01,TNFBQ02,WSJ01,WSJ02,XZBGS,YFBGQ01,YFBGQ02,YFBGQ03,YFBGQ04,ZHYS,ZZBGS planned=BGS01,LZBGS blockers=2 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-go-live-preflight-latest.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-go-live-preflight-latest.md",
+      "stderr": ""
+    },
+    {
+      "key": "canaryQueue",
+      "label": "生成首台 Canary 队列",
+      "ok": true,
+      "status": 0,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-queue-latest.json",
+      "stdout": "FCU_CANARY_QUEUE ok=true devices=2 first=BGS01 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-queue-latest.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-queue-latest.md",
+      "stderr": ""
+    },
+    {
+      "key": "finalRunbook",
+      "label": "生成最终控制 Runbook",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-runbook-latest.json",
+      "stdout": "FCU_FINAL_CONTROL_RUNBOOK ok=false verdict=final_dispatch_blocked gates=0/8 signoff=0/8 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-runbook-latest.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-runbook-latest.md",
+      "stderr": ""
+    },
+    {
+      "key": "fieldArm",
+      "label": "现场 Arm-Check",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-arm-check-latest.json",
+      "stdout": "FCU_FIELD_ARM_CHECK ok=false verdict=field_arm_blocked first=BGS01 blockers=3 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-arm-check-latest.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-arm-check-latest.md",
+      "stderr": ""
+    },
+    {
+      "key": "canaryPackage",
+      "label": "生成首台 Canary 执行包",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-latest.json",
+      "stdout": "FCU_CANARY_EXECUTION_PACKAGE ok=false verdict=canary_package_ready_with_open_gates canary=BGS01 blockers=6 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-latest.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-latest.md\ncsv=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-execution-package-latest.csv",
+      "stderr": ""
+    },
+    {
+      "key": "baAdapter",
+      "label": "BA 写适配器自检",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-latest.json",
+      "stdout": "FCU_BA_WRITE_ADAPTER_READINESS ok=false verdict=ba_write_adapter_blocked canary=BGS01 blockers=3 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-latest.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-latest.md\ncsv=/Users/billchow/Documents/智慧冷冻站/docs/fcu-ba-write-adapter-readiness-latest.csv",
+      "stderr": ""
+    },
+    {
+      "key": "canaryReadiness",
+      "label": "Canary 总门禁",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-readiness-latest.json",
+      "stdout": "FCU_CANARY_READINESS ok=false verdict=canary_blocked blocked=5 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-readiness-latest.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-readiness-latest.md",
+      "stderr": ""
+    },
+    {
+      "key": "finalGates",
+      "label": "最终控制总门禁",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-gates-latest.json",
+      "stdout": "FCU_FINAL_CONTROL_GATES ok=false passed=0/8 blocked=8 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-gates-latest.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-gates-latest.md",
+      "stderr": ""
+    },
+    {
+      "key": "finalCompletion",
+      "label": "最终控制完成度检查",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-completion-latest.json",
+      "stdout": "FCU_FINAL_CONTROL_COMPLETION ok=false verdict=final_control_incomplete scope=fcu_all_device_final_control first=BGS01 blockers=6 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-completion-latest.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-completion-latest.md",
+      "stderr": ""
+    },
+    {
+      "key": "finalWorklist",
+      "label": "生成最终控制投运清单",
+      "ok": false,
+      "status": 2,
+      "outputPath": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-worklist-latest.json",
+      "stdout": "FCU_FINAL_CONTROL_WORKLIST ok=false verdict=worklist_open p0=10 actions=11 mutation=false\njson=/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-worklist-latest.json\nmd=/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-worklist-latest.md",
+      "stderr": ""
+    }
+  ],
+  "skipped": [
+    {
+      "key": "canaryDispatch",
+      "label": "执行首台 Canary",
+      "reason": "missing FCU_FINAL_CONTROL_ROLLOUT_CONFIRM"
+    },
+    {
+      "key": "smallBatchDispatch",
+      "label": "执行小批量",
+      "reason": "missing FCU_FINAL_CONTROL_ROLLOUT_CONFIRM"
+    },
+    {
+      "key": "allDeviceDispatch",
+      "label": "执行全量波次",
+      "reason": "missing FCU_FINAL_CONTROL_ROLLOUT_CONFIRM"
+    }
+  ],
+  "blockers": [
+    {
+      "key": "final_rollout_confirm_missing",
+      "label": "最终控制总确认短语",
+      "message": "必须设置 FCU_FINAL_CONTROL_ROLLOUT_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE 才允许调用真实 Canary/小批量执行脚本。"
+    },
+    {
+      "key": "small_batch_confirm_missing",
+      "label": "真实 BA 写入确认短语",
+      "message": "必须设置 FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE。"
+    },
+    {
+      "key": "goLivePreflight_failed",
+      "label": "上线前预检",
+      "message": "phase exit=2"
+    },
+    {
+      "key": "fieldArm_failed",
+      "label": "现场 Arm-Check",
+      "message": "phase exit=2"
+    },
+    {
+      "key": "canaryReadiness_failed",
+      "label": "Canary 总门禁",
+      "message": "phase exit=2"
+    },
+    {
+      "key": "finalGates_failed",
+      "label": "最终控制总门禁",
+      "message": "phase exit=2"
+    },
+    {
+      "key": "finalCompletion_failed",
+      "label": "最终控制完成度检查",
+      "message": "phase exit=2"
+    }
+  ],
+  "evidence": {
+    "finalCompletion": {
+      "ok": false,
+      "verdict": "final_control_incomplete",
+      "milestones": {
+        "canary": {
+          "ok": false,
+          "deviceCode": "BGS01",
+          "feedbackStatus": null
+        },
+        "smallBatch": {
+          "ok": false,
+          "devices": 0,
+          "feedbackConfirmed": false
+        },
+        "allDevice": {
+          "ok": false,
+          "targetDevices": 29,
+          "confirmedDevices": 0,
+          "confirmedDeviceCodes": []
+        }
+      },
+      "blockingItems": [
+        {
+          "key": "backend_write_gate",
+          "label": "后端写入总闸",
+          "ok": false,
+          "severity": "P0",
+          "message": "readOnlyMode=true 或无法确认。",
+          "readOnlyMode": true
+        },
+        {
+          "key": "field_arm_ready",
+          "label": "现场 Arm-Check ready",
+          "ok": false,
+          "severity": "P0",
+          "message": "ok=false, verdict=field_arm_blocked"
+        },
+        {
+          "key": "canary_dispatch_confirmed",
+          "label": "首台真实下发完成",
+          "ok": false,
+          "severity": "P0",
+          "message": "ok=false, mode=blocked_before_canary_dispatch, controlMutation=false"
+        },
+        {
+          "key": "canary_feedback_confirmed",
+          "label": "首台反馈确认",
+          "ok": false,
+          "severity": "P0",
+          "message": "verification.recordStatus=--"
+        },
+        {
+          "key": "small_batch_confirmed",
+          "label": "小批量反馈确认",
+          "ok": false,
+          "severity": "P0",
+          "message": "ok=false, mode=blocked_before_dispatch, devices=0, feedbackConfirmed=false"
+        },
+        {
+          "key": "all_device_feedback_confirmed",
+          "label": "全量 FCU 反馈确认",
+          "ok": false,
+          "severity": "P0",
+          "message": "confirmedDevices=0, targetDevices=29"
+        }
+      ]
+    },
+    "finalGates": {
+      "ok": false,
+      "summary": {
+        "gateCount": 8,
+        "passed": 0,
+        "blocked": 8,
+        "qualityP0Devices": 8,
+        "fieldP0Devices": 8,
+        "signoffCompleteRows": 0,
+        "signoffExpectedRows": 8,
+        "canaryReady": false,
+        "finalWorklistOpenActions": 11
+      },
+      "blockers": [
+        {
+          "label": "数据质量 P0",
+          "ok": false,
+          "value": "8 台 P0",
+          "blocker": "仍有通讯/温度/反馈硬阻断设备",
+          "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-quality-remediation-latest.json"
+        },
+        {
+          "label": "全量分批计划",
+          "ok": false,
+          "value": "immediate=9, staged=12, blocked=8",
+          "blocker": "仍有 blocked 或 staged 设备",
+          "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-all-device-dispatch-plan-latest.json"
+        },
+        {
+          "label": "现场执行包",
+          "ok": false,
+          "value": "8 台待处理",
+          "blocker": "现场执行包仍有 P0 设备",
+          "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-execution-pack-latest.json"
+        },
+        {
+          "label": "现场 closeout",
+          "ok": false,
+          "value": "field_remediation_open",
+          "blocker": "现场消缺未关闭",
+          "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-closeout-latest.json"
+        },
+        {
+          "label": "现场签字",
+          "ok": false,
+          "value": "0/8",
+          "blocker": "现场签字未完成",
+          "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-latest.json"
+        },
+        {
+          "label": "Canary readiness",
+          "ok": false,
+          "value": "canary_blocked",
+          "blocker": "Canary 总门禁阻断",
+          "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-canary-readiness-latest.json"
+        },
+        {
+          "label": "最终完成",
+          "ok": false,
+          "value": "final_control_incomplete",
+          "blocker": "首台/小批量/全量反馈未全部闭环",
+          "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-completion-latest.json"
+        },
+        {
+          "label": "最终 worklist",
+          "ok": false,
+          "value": "worklist_open",
+          "blocker": "最终投运清单仍有未完成动作",
+          "evidence": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-worklist-latest.json"
+        }
+      ]
+    },
+    "canaryDispatch": {
+      "ok": false,
+      "mode": "blocked_before_canary_dispatch",
+      "controlMutation": false,
+      "verification": null
+    },
+    "smallBatchExecution": {
+      "ok": false,
+      "mode": "blocked_before_dispatch",
+      "controlMutation": false,
+      "devices": 0
+    },
+    "allDeviceExecution": {
+      "ok": false,
+      "mode": null,
+      "controlMutation": false,
+      "waves": 0
+    },
+    "allDevicePlan": {
+      "ok": true,
+      "summary": {
+        "total": 29,
+        "deviceReady": 9,
+        "immediateReady": 9,
+        "stagedSetpoint": 12,
+        "blocked": 8,
+        "plannedDeviceCount": 21,
+        "canCompleteAllNow": false,
+        "dispatchAllowed": false
+      },
+      "firstCanary": "BGS01"
+    }
+  },
+  "nextActions": [
+    {
+      "priority": "P0",
+      "action": "现场授权最终控制总确认",
+      "command": "export FCU_FINAL_CONTROL_ROLLOUT_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE",
+      "reason": "没有该总确认时编排脚本不会调用真实下发阶段。"
+    },
+    {
+      "priority": "P0",
+      "action": "设置 BA 写入确认短语",
+      "command": "export FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE",
+      "reason": "执行脚本二次确认真实写入。"
+    },
+    {
+      "priority": "P0",
+      "action": "后端写入总闸",
+      "reason": "readOnlyMode=true 或无法确认。"
+    },
+    {
+      "priority": "P0",
+      "action": "现场 Arm-Check ready",
+      "reason": "ok=false, verdict=field_arm_blocked"
+    },
+    {
+      "priority": "P0",
+      "action": "首台真实下发完成",
+      "reason": "ok=false, mode=blocked_before_canary_dispatch, controlMutation=false"
+    },
+    {
+      "priority": "P0",
+      "action": "首台反馈确认",
+      "reason": "verification.recordStatus=--"
+    },
+    {
+      "priority": "P0",
+      "action": "小批量反馈确认",
+      "reason": "ok=false, mode=blocked_before_dispatch, devices=0, feedbackConfirmed=false"
+    },
+    {
+      "priority": "P0",
+      "action": "全量 FCU 反馈确认",
+      "reason": "confirmedDevices=0, targetDevices=29"
+    }
+  ]
+}

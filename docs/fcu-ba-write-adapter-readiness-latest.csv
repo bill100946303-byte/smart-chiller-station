@@ -1,0 +1,12 @@
+key,label,ok,severity,evidence,action
+bff_reachable,BFF 可访问,true,P0,"status=200, ok=true",
+backend_write_gate,后端写入总闸,false,P0,readOnlyMode=true,以 READ_ONLY_MODE=false CHILLER_READ_ONLY_MODE=false 重启 BFF
+policy_enforced,FCU 策略 enforced,true,P0,"enabled=true, mode=enforced",
+subsystem_write_enabled,子系统写总闸,true,P0,"subsystemWriteEnabled=true, boundary=enforced",
+adapter_configured,BA 写适配器已配置,true,P0,dispatchAdapter=legacy-scene-command,
+execution_gate_open,全局执行闸门,false,P0,"dispatchAllowed=false, blocked=site_authorization_window_active/backend_not_readonly",
+whitelist_contains_canary,白名单包含首台 Canary,true,P0,WSJ01 in whitelist=true,
+canary_command_mapping,Canary 写点映射完整,true,P0,"point=设置温度, tag=WSJ01-508-40357, value=25.5",
+canary_snapshot_quality,Canary 当前快照质量,true,P0,"temp=27, commAlarm=false",
+ba_write_confirm,BA 写入确认短语,false,P0,FCU_SMALL_BATCH_CONFIRM=missing,export FCU_SMALL_BATCH_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE
+final_rollout_confirm,最终控制总确认短语,false,P1,FCU_FINAL_CONTROL_ROLLOUT_CONFIRM=missing,export FCU_FINAL_CONTROL_ROLLOUT_CONFIRM=I_UNDERSTAND_REAL_BA_WRITE

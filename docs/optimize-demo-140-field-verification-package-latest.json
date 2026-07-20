@@ -1,0 +1,1539 @@
+{
+  "generatedAt": "2026-06-13T01:34:50.855Z",
+  "siteId": "140",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "finalDecision": "FIELD_VERIFICATION_PACKAGE_READY",
+  "inputs": {
+    "loadKw": 1422,
+    "outdoorTempC": 22.9,
+    "mode": "cooling"
+  },
+  "response": {
+    "ok": true,
+    "status": 200,
+    "url": "http://127.0.0.1:8787/bff/v1/sites/140/optimize",
+    "error": null
+  },
+  "summary": {
+    "ok": true,
+    "finalDecision": "FIELD_VERIFICATION_PACKAGE_READY",
+    "advisorStatus": "partial",
+    "executionMode": "read_only",
+    "matrix": {
+      "basis": "available_runtime_history_and_safety_signals",
+      "scope": "optimize_demo_read_only_extension",
+      "total": 10,
+      "readyNowCount": 4,
+      "directionalCount": 5,
+      "pointGapCount": 1,
+      "controlBoundary": "read_only_or_shadow_only",
+      "boundaryNotes": [
+        "A档可进入 /optimize-demo 作为 V1 只读诊断或 shadow 证据。",
+        "B档只能输出疑似风险、待复核和样本治理建议。",
+        "C档只进入点位改造清单，不能输出正式诊断结论。",
+        "所有项均不新增真实 PLC 下发、自动启停或 enforced 能力。"
+      ],
+      "items": [
+        {
+          "key": "instrumentDataQuality",
+          "title": "仪表数据偏移诊断",
+          "tier": "A",
+          "status": "ready",
+          "currentFeasibility": "can_do_v1",
+          "firstVersionOutput": "实时闭合校验、24h 稳态窗口 COP/功率/温差偏移复核。",
+          "availableData": [
+            "1215 个实时寄存器点",
+            "24h COP/总功率/温差趋势",
+            "冷站总功率、分项功率、COP、冷冻/冷却温差"
+          ],
+          "missingData": [
+            "传感器校准记录",
+            "安装位置台账",
+            "冗余仪表或现场热平衡复核"
+          ],
+          "boundary": "只能提示疑似偏移和复核对象，不判定设备故障，不自动修正测点。",
+          "allowedMode": "read_only",
+          "confidence": "high"
+        },
+        {
+          "key": "chilledHydraulicBalance",
+          "title": "冷冻水水力平衡诊断",
+          "tier": "A/B",
+          "status": "ready",
+          "currentFeasibility": "can_do_v1",
+          "firstVersionOutput": "站级低温差持续性、实时支路流量/压力离散度、旁通分流风险。",
+          "availableData": [
+            "7 个支路线索",
+            "24h 冷冻水温差和总功率趋势",
+            "冷冻总管供回水温度/压差、旁通阀反馈"
+          ],
+          "missingData": [
+            "支路历史趋势",
+            "末端阀位",
+            "末端压差",
+            "代表房间温度"
+          ],
+          "boundary": "可做水力失衡风险提示，不能把实时支路差异外推为全天失衡或末端阀门故障。",
+          "allowedMode": "read_only",
+          "confidence": "medium"
+        },
+        {
+          "key": "lowDeltaTRootCause",
+          "title": "低温差根因诊断",
+          "tier": "A/B",
+          "status": "ready",
+          "currentFeasibility": "can_do_v1",
+          "firstVersionOutput": "持续低温差、大流量小温差、旁通、支路分配和末端安全缺口排序。",
+          "availableData": [
+            "24h 低温差持续性趋势",
+            "运行泵频率反馈",
+            "实时温差、泵频、旁通阀和支路线索"
+          ],
+          "missingData": [
+            "末端阀位/室温/压差",
+            "支路历史趋势",
+            "真实 PLC 降泵保护状态"
+          ],
+          "boundary": "只支持根因排序和 shadow 验证建议，不能自动降泵。",
+          "allowedMode": "read_only",
+          "confidence": "medium"
+        },
+        {
+          "key": "coolingTowerCapability",
+          "title": "冷却塔能力诊断",
+          "tier": "A",
+          "status": "ready",
+          "currentFeasibility": "can_do_v1",
+          "firstVersionOutput": "湿球、冷却水出水、Approach、塔风机/塔流量一致性复核。",
+          "availableData": [
+            "实时湿球",
+            "冷却水温度",
+            "塔风机功率/频率",
+            "塔侧流量/压力线索"
+          ],
+          "missingData": [
+            "塔单元长周期分摊",
+            "填料/布水现场巡检",
+            "厂家最低冷凝器进水温确认"
+          ],
+          "boundary": "只生成 Approach shadow 证据，不承诺自动调塔或突破最低水温保护。",
+          "allowedMode": "shadow_review",
+          "confidence": "medium"
+        },
+        {
+          "key": "chillerCombinationOptimization",
+          "title": "主机组合优化",
+          "tier": "A/B",
+          "status": "partial",
+          "currentFeasibility": "directional_review",
+          "firstVersionOutput": "当前组合、组合容量、组合负荷率、组合 COP/冷站 COP、候选组合样本置信度。",
+          "availableData": [
+            "当前运行组合",
+            "主机总功率",
+            "冷站功率/COP",
+            "组合样本 133 条"
+          ],
+          "missingData": [
+            "组合历史样本",
+            "当前组合连续运行时间",
+            "同工况人工切换验证"
+          ],
+          "boundary": "多机无单台冷冻水流量时只评价组合，不拆分单台主机实时 COP，不自动启停主机。",
+          "allowedMode": "shadow_review",
+          "confidence": "low"
+        },
+        {
+          "key": "chillerHealthDegradation",
+          "title": "主机健康劣化诊断",
+          "tier": "B",
+          "status": "partial",
+          "currentFeasibility": "directional_review",
+          "firstVersionOutput": "同组合/同负荷下冷站 COP 漂移、功率偏高和故障风险提示。",
+          "availableData": [
+            "主机运行状态",
+            "主机功率",
+            "组合 COP/冷站 COP",
+            "告警数量"
+          ],
+          "missingData": [
+            "单台冷冻水流量",
+            "厂家 COP 曲线",
+            "压缩机细码/维护记录"
+          ],
+          "boundary": "只能输出健康风险线索；多机运行时不能做单机实时 COP 排名。",
+          "allowedMode": "read_only",
+          "confidence": "low"
+        },
+        {
+          "key": "pumpEfficiency",
+          "title": "水泵效率诊断",
+          "tier": "B/C",
+          "status": "partial",
+          "currentFeasibility": "directional_review",
+          "firstVersionOutput": "频率/功率/压差异常、疑似偏离高效区提示。",
+          "availableData": [
+            "泵频率反馈",
+            "部分总管压差/流量线索"
+          ],
+          "missingData": [
+            "单泵流量",
+            "泵曲线",
+            "稳定压差口径",
+            "阀位和并联泵分摊"
+          ],
+          "boundary": "不能输出水泵效率百分比或高置信节能结论。",
+          "allowedMode": "read_only",
+          "confidence": "low"
+        },
+        {
+          "key": "valveStiction",
+          "title": "阀门卡滞/执行器诊断",
+          "tier": "B/C",
+          "status": "partial",
+          "currentFeasibility": "directional_review",
+          "firstVersionOutput": "阀位长期饱和、旁通分流和命令/反馈缺口提示。",
+          "availableData": [
+            "阀门/旁通反馈线索",
+            "实时阀类点位关键词"
+          ],
+          "missingData": [
+            "阀门命令值",
+            "阀门反馈值",
+            "控制模式",
+            "动作历史"
+          ],
+          "boundary": "只生成检修线索，不能直接判定阀门卡死。",
+          "allowedMode": "read_only",
+          "confidence": "low"
+        },
+        {
+          "key": "controlOscillation",
+          "title": "控制震荡/频繁启停诊断",
+          "tier": "B",
+          "status": "partial",
+          "currentFeasibility": "directional_review",
+          "firstVersionOutput": "温差锯齿波、总功率 hunting、频率命令/反馈缺口和启停事件缺口。",
+          "availableData": [
+            "24h COP/总功率/温差趋势",
+            "运行状态和频率实时摘要"
+          ],
+          "missingData": [
+            "高频历史",
+            "控制命令历史",
+            "PID 参数",
+            "精确启停事件"
+          ],
+          "boundary": "只能提示震荡风险，不自动改 PID，不自动启停设备。",
+          "allowedMode": "read_only",
+          "confidence": "low"
+        },
+        {
+          "key": "terminalComfortProtection",
+          "title": "末端舒适/缺冷风险诊断",
+          "tier": "C",
+          "status": "unavailable",
+          "currentFeasibility": "point_gap",
+          "firstVersionOutput": "代表末端缺冷风险、降泵前安全闭锁和投诉状态复核。",
+          "availableData": [],
+          "missingData": [
+            "代表房间温度",
+            "末端阀位",
+            "末端压差",
+            "缺冷投诉/工单联动"
+          ],
+          "boundary": "未闭合末端安全前，泵频建议只能 shadow/审阅，不允许 assisted 或 enforced。",
+          "allowedMode": "point_plan",
+          "confidence": "low"
+        }
+      ]
+    },
+    "fieldVerificationChecklist": {
+      "basis": "diagnostic_readiness_missing_data_to_field_tasks",
+      "scope": "optimize_demo_field_verification_only",
+      "total": 7,
+      "p0Count": 4,
+      "p1Count": 3,
+      "controlBoundary": "read_only_point_verification_only",
+      "items": [
+        {
+          "key": "chiller-combination-sampling-plan",
+          "priority": "P0",
+          "title": "制定主机组合样本采集计划",
+          "sourceDiagnosticKey": "chillerCombinationOptimization",
+          "sourceTier": "A/B",
+          "verificationTarget": "CH4+CH5+CH7 等当前组合及候选组合",
+          "requiredEvidence": [
+            "组合连续运行时长",
+            "同负荷/湿球 band",
+            "组合 COP",
+            "冷站 COP",
+            "人工切换记录"
+          ],
+          "reason": "组合样本不足时只能 keep/continue sampling，不能承诺换机节能。",
+          "missingData": [
+            "组合历史样本",
+            "当前组合连续运行时间",
+            "同工况人工切换验证"
+          ],
+          "acceptanceCriteria": "每个候选组合形成 >=30 条低置信可用样本，>=100 条才允许高置信表达。",
+          "boundary": "多机运行无单台冷冻水流量时仍只评价组合，不拆单台 COP，不自动启停主机。",
+          "ownerRole": "节能工程师 / 运行值班员",
+          "allowedMode": "field_review_only"
+        },
+        {
+          "key": "plc-pump-protection-mapping",
+          "priority": "P0",
+          "title": "确认 PLC 泵频保护与回退点",
+          "sourceDiagnosticKey": "lowDeltaTRootCause",
+          "sourceTier": "A/B",
+          "verificationTarget": "冷冻泵频率目标点、回退点、最小流量、频率上下限、斜率限制",
+          "requiredEvidence": [
+            "真实 PLC/SCADA 点名",
+            "回退目标",
+            "本地联锁",
+            "最小流量保护",
+            "频率反馈"
+          ],
+          "reason": "当前低温差根因可排序，但真实降泵必须由 PLC 本地保护兜底。",
+          "missingData": [
+            "末端阀位/室温/压差",
+            "支路历史趋势",
+            "真实 PLC 降泵保护状态"
+          ],
+          "acceptanceCriteria": "approve/rollback 点名、反馈点和 PLC 本地保护均完成映射并通过只读核对。",
+          "boundary": "未完成前只允许 shadow 记录和人工复核，不允许 assisted/enforced。",
+          "ownerRole": "PLC 工程师 / 自控工程师",
+          "allowedMode": "field_review_only"
+        },
+        {
+          "key": "sensor-calibration-installation-ledger",
+          "priority": "P0",
+          "title": "补传感器校准与安装位置台账",
+          "sourceDiagnosticKey": "instrumentDataQuality",
+          "sourceTier": "A",
+          "verificationTarget": "冷量表、总功率表、冷冻/冷却供回水温度、湿球温度",
+          "requiredEvidence": [
+            "点位编号",
+            "安装位置",
+            "量程",
+            "最近校准日期",
+            "校准责任人"
+          ],
+          "reason": "仪表偏移诊断当前只能提示疑似偏移；缺校准和安装位置时不能判定仪表故障。",
+          "missingData": [
+            "传感器校准记录",
+            "安装位置台账",
+            "冗余仪表或现场热平衡复核"
+          ],
+          "acceptanceCriteria": "形成点位-位置-量程-校准日期-责任人台账，并能对应到 BFF 点位 key。",
+          "boundary": "只用于提高诊断置信度，不自动修正测点、不替代现场校验。",
+          "ownerRole": "自控工程师 / 计量校准人员",
+          "allowedMode": "field_review_only"
+        },
+        {
+          "key": "terminal-safety-signal-closure",
+          "priority": "P0",
+          "title": "闭合末端安全信号",
+          "sourceDiagnosticKey": "terminalComfortProtection",
+          "sourceTier": "C",
+          "verificationTarget": "代表房间温度、末端阀位、末端压差、缺冷投诉/工单",
+          "requiredEvidence": [
+            "至少一类末端安全信号可读",
+            "采样周期",
+            "缺冷判定阈值",
+            "与泵频建议的闭锁关系"
+          ],
+          "reason": "末端安全未闭合时，泵频建议只能 shadow/审阅，不能进入 assisted 或 enforced。",
+          "missingData": [
+            "代表房间温度",
+            "末端阀位",
+            "末端压差",
+            "缺冷投诉/工单联动"
+          ],
+          "acceptanceCriteria": "泵降频前可读取末端安全状态，并能明确缺冷时阻断建议。",
+          "boundary": "只作为降泵前置保护证据；未闭合前不允许 assisted/enforced，不生成真实降泵命令。",
+          "ownerRole": "自控工程师 / 运维值班负责人",
+          "allowedMode": "field_review_only"
+        },
+        {
+          "key": "branch-hydraulic-history-window",
+          "priority": "P1",
+          "title": "补支路水力历史趋势",
+          "sourceDiagnosticKey": "chilledHydraulicBalance",
+          "sourceTier": "A/B",
+          "verificationTarget": "支路流量、支路回水压力、支路供回水温度、旁通阀开度",
+          "requiredEvidence": [
+            "24h 支路趋势",
+            "采样周期",
+            "支路与末端区域映射",
+            "异常窗口标记"
+          ],
+          "reason": "当前水力平衡能做站级低温差趋势和实时支路线索，但不能把实时差异外推为全天失衡。",
+          "missingData": [
+            "支路历史趋势",
+            "末端阀位",
+            "末端压差",
+            "代表房间温度"
+          ],
+          "acceptanceCriteria": "支路趋势至少覆盖 24h，并能与站级低温差窗口对齐。",
+          "boundary": "没有末端阀位/室温时，不直接判定末端阀门故障。",
+          "ownerRole": "自控工程师 / 水系统调试工程师",
+          "allowedMode": "field_review_only"
+        },
+        {
+          "key": "control-command-feedback-event-window",
+          "priority": "P1",
+          "title": "补控制命令/反馈与启停事件台账",
+          "sourceDiagnosticKey": "controlOscillation",
+          "sourceTier": "B",
+          "verificationTarget": "供水温设定/反馈、泵塔频率命令/反馈、旁通阀命令/反馈、主机/泵/塔启停事件",
+          "requiredEvidence": [
+            "高频命令/反馈趋势",
+            "PID/死区/斜率/延时参数",
+            "精确启停事件",
+            "最小运行/停机时间"
+          ],
+          "reason": "控制震荡/频繁启停第一版只能从小时级趋势提示风险，缺高频控制数据时不能判定 PID 或启停问题。",
+          "missingData": [
+            "高频历史",
+            "控制命令历史",
+            "PID 参数",
+            "精确启停事件"
+          ],
+          "acceptanceCriteria": "命令、反馈、运行状态、启停事件和参数台账可按同一时间轴对齐。",
+          "boundary": "只用于复核控制震荡风险，不自动改 PID，不自动启停设备。",
+          "ownerRole": "自控工程师 / PLC 工程师",
+          "allowedMode": "field_review_only"
+        },
+        {
+          "key": "tower-field-inspection-ledger",
+          "priority": "P1",
+          "title": "补冷却塔现场巡检和长周期分摊",
+          "sourceDiagnosticKey": "coolingTowerCapability",
+          "sourceTier": "A",
+          "verificationTarget": "塔单元流量、风机频率/功率、阀门状态、填料/布水巡检",
+          "requiredEvidence": [
+            "塔单元长周期趋势",
+            "塔阀开到位",
+            "填料/布水状态",
+            "最低冷凝器进水温确认"
+          ],
+          "reason": "Approach shadow 可做，但塔能力劣化需要长周期分摊和现场状态支撑。",
+          "missingData": [
+            "塔单元长周期分摊",
+            "填料/布水现场巡检",
+            "厂家最低冷凝器进水温确认"
+          ],
+          "acceptanceCriteria": "塔单元趋势和现场巡检记录可支撑单塔能力差异复核。",
+          "boundary": "只作为塔能力诊断证据，不突破厂家/PLC 最低水温保护。",
+          "ownerRole": "运行值班员 / 节能工程师",
+          "allowedMode": "field_review_only"
+        }
+      ]
+    },
+    "engineeringSummary": {
+      "positioning": "140/B25 /optimize-demo 现场复核交付包",
+      "purpose": "把 AI 优化建议的 B/C 档数据缺口转成现场可执行、可验收的点位/资料复核任务。",
+      "diagnosticReadiness": "4 可做 V1 / 5 疑似判断 / 1 补点",
+      "fieldTaskSummary": "4 P0 / 3 P1",
+      "controlBoundary": "read_only_point_verification_only",
+      "handoffDecision": "先完成 P0 复核，再提高 Advisor 置信度；未闭合前不得把 shadow 建议升级为 assisted/enforced。"
+    },
+    "nextActions": [
+      {
+        "step": 1,
+        "title": "先闭合 P0 复核",
+        "detail": "制定主机组合样本采集计划；确认 PLC 泵频保护与回退点；补传感器校准与安装位置台账；闭合末端安全信号",
+        "acceptance": "P0 任务均形成现场证据、责任人和复核日期。"
+      },
+      {
+        "step": 2,
+        "title": "补齐 P1 趋势和巡检证据",
+        "detail": "补支路水力历史趋势；补控制命令/反馈与启停事件台账；补冷却塔现场巡检和长周期分摊",
+        "acceptance": "支路趋势和塔巡检证据能与 24h 运行窗口对齐。"
+      },
+      {
+        "step": 3,
+        "title": "回灌 /optimize-demo 置信度",
+        "detail": "仅把证据用于提高诊断置信度和 shadow 对比质量，不新增真实 PLC 写入链路。",
+        "acceptance": "Advisor 仍保持 read_only/shadow，页面和报告不出现自动启停或 enforced 承诺。"
+      }
+    ],
+    "workbookRows": [
+      {
+        "key": "chiller-combination-sampling-plan",
+        "priority": "P0",
+        "title": "制定主机组合样本采集计划",
+        "ownerRole": "节能工程师 / 运行值班员",
+        "sourceDiagnosticKey": "chillerCombinationOptimization",
+        "sourceTier": "A/B",
+        "verificationTarget": "CH4+CH5+CH7 等当前组合及候选组合",
+        "missingData": [
+          "组合历史样本",
+          "当前组合连续运行时间",
+          "同工况人工切换验证"
+        ],
+        "requiredEvidence": [
+          "组合连续运行时长",
+          "同负荷/湿球 band",
+          "组合 COP",
+          "冷站 COP",
+          "人工切换记录"
+        ],
+        "acceptanceCriteria": "每个候选组合形成 >=30 条低置信可用样本，>=100 条才允许高置信表达。",
+        "boundary": "多机运行无单台冷冻水流量时仍只评价组合，不拆单台 COP，不自动启停主机。",
+        "allowedMode": "field_review_only",
+        "fieldStatus": "待现场复核",
+        "evidenceOwner": "",
+        "evidenceFileOrSystem": "",
+        "verifiedAt": "",
+        "reviewer": "",
+        "reviewResult": ""
+      },
+      {
+        "key": "plc-pump-protection-mapping",
+        "priority": "P0",
+        "title": "确认 PLC 泵频保护与回退点",
+        "ownerRole": "PLC 工程师 / 自控工程师",
+        "sourceDiagnosticKey": "lowDeltaTRootCause",
+        "sourceTier": "A/B",
+        "verificationTarget": "冷冻泵频率目标点、回退点、最小流量、频率上下限、斜率限制",
+        "missingData": [
+          "末端阀位/室温/压差",
+          "支路历史趋势",
+          "真实 PLC 降泵保护状态"
+        ],
+        "requiredEvidence": [
+          "真实 PLC/SCADA 点名",
+          "回退目标",
+          "本地联锁",
+          "最小流量保护",
+          "频率反馈"
+        ],
+        "acceptanceCriteria": "approve/rollback 点名、反馈点和 PLC 本地保护均完成映射并通过只读核对。",
+        "boundary": "未完成前只允许 shadow 记录和人工复核，不允许 assisted/enforced。",
+        "allowedMode": "field_review_only",
+        "fieldStatus": "待现场复核",
+        "evidenceOwner": "",
+        "evidenceFileOrSystem": "",
+        "verifiedAt": "",
+        "reviewer": "",
+        "reviewResult": ""
+      },
+      {
+        "key": "sensor-calibration-installation-ledger",
+        "priority": "P0",
+        "title": "补传感器校准与安装位置台账",
+        "ownerRole": "自控工程师 / 计量校准人员",
+        "sourceDiagnosticKey": "instrumentDataQuality",
+        "sourceTier": "A",
+        "verificationTarget": "冷量表、总功率表、冷冻/冷却供回水温度、湿球温度",
+        "missingData": [
+          "传感器校准记录",
+          "安装位置台账",
+          "冗余仪表或现场热平衡复核"
+        ],
+        "requiredEvidence": [
+          "点位编号",
+          "安装位置",
+          "量程",
+          "最近校准日期",
+          "校准责任人"
+        ],
+        "acceptanceCriteria": "形成点位-位置-量程-校准日期-责任人台账，并能对应到 BFF 点位 key。",
+        "boundary": "只用于提高诊断置信度，不自动修正测点、不替代现场校验。",
+        "allowedMode": "field_review_only",
+        "fieldStatus": "待现场复核",
+        "evidenceOwner": "",
+        "evidenceFileOrSystem": "",
+        "verifiedAt": "",
+        "reviewer": "",
+        "reviewResult": ""
+      },
+      {
+        "key": "terminal-safety-signal-closure",
+        "priority": "P0",
+        "title": "闭合末端安全信号",
+        "ownerRole": "自控工程师 / 运维值班负责人",
+        "sourceDiagnosticKey": "terminalComfortProtection",
+        "sourceTier": "C",
+        "verificationTarget": "代表房间温度、末端阀位、末端压差、缺冷投诉/工单",
+        "missingData": [
+          "代表房间温度",
+          "末端阀位",
+          "末端压差",
+          "缺冷投诉/工单联动"
+        ],
+        "requiredEvidence": [
+          "至少一类末端安全信号可读",
+          "采样周期",
+          "缺冷判定阈值",
+          "与泵频建议的闭锁关系"
+        ],
+        "acceptanceCriteria": "泵降频前可读取末端安全状态，并能明确缺冷时阻断建议。",
+        "boundary": "只作为降泵前置保护证据；未闭合前不允许 assisted/enforced，不生成真实降泵命令。",
+        "allowedMode": "field_review_only",
+        "fieldStatus": "待现场复核",
+        "evidenceOwner": "",
+        "evidenceFileOrSystem": "",
+        "verifiedAt": "",
+        "reviewer": "",
+        "reviewResult": ""
+      },
+      {
+        "key": "branch-hydraulic-history-window",
+        "priority": "P1",
+        "title": "补支路水力历史趋势",
+        "ownerRole": "自控工程师 / 水系统调试工程师",
+        "sourceDiagnosticKey": "chilledHydraulicBalance",
+        "sourceTier": "A/B",
+        "verificationTarget": "支路流量、支路回水压力、支路供回水温度、旁通阀开度",
+        "missingData": [
+          "支路历史趋势",
+          "末端阀位",
+          "末端压差",
+          "代表房间温度"
+        ],
+        "requiredEvidence": [
+          "24h 支路趋势",
+          "采样周期",
+          "支路与末端区域映射",
+          "异常窗口标记"
+        ],
+        "acceptanceCriteria": "支路趋势至少覆盖 24h，并能与站级低温差窗口对齐。",
+        "boundary": "没有末端阀位/室温时，不直接判定末端阀门故障。",
+        "allowedMode": "field_review_only",
+        "fieldStatus": "待现场复核",
+        "evidenceOwner": "",
+        "evidenceFileOrSystem": "",
+        "verifiedAt": "",
+        "reviewer": "",
+        "reviewResult": ""
+      },
+      {
+        "key": "control-command-feedback-event-window",
+        "priority": "P1",
+        "title": "补控制命令/反馈与启停事件台账",
+        "ownerRole": "自控工程师 / PLC 工程师",
+        "sourceDiagnosticKey": "controlOscillation",
+        "sourceTier": "B",
+        "verificationTarget": "供水温设定/反馈、泵塔频率命令/反馈、旁通阀命令/反馈、主机/泵/塔启停事件",
+        "missingData": [
+          "高频历史",
+          "控制命令历史",
+          "PID 参数",
+          "精确启停事件"
+        ],
+        "requiredEvidence": [
+          "高频命令/反馈趋势",
+          "PID/死区/斜率/延时参数",
+          "精确启停事件",
+          "最小运行/停机时间"
+        ],
+        "acceptanceCriteria": "命令、反馈、运行状态、启停事件和参数台账可按同一时间轴对齐。",
+        "boundary": "只用于复核控制震荡风险，不自动改 PID，不自动启停设备。",
+        "allowedMode": "field_review_only",
+        "fieldStatus": "待现场复核",
+        "evidenceOwner": "",
+        "evidenceFileOrSystem": "",
+        "verifiedAt": "",
+        "reviewer": "",
+        "reviewResult": ""
+      },
+      {
+        "key": "tower-field-inspection-ledger",
+        "priority": "P1",
+        "title": "补冷却塔现场巡检和长周期分摊",
+        "ownerRole": "运行值班员 / 节能工程师",
+        "sourceDiagnosticKey": "coolingTowerCapability",
+        "sourceTier": "A",
+        "verificationTarget": "塔单元流量、风机频率/功率、阀门状态、填料/布水巡检",
+        "missingData": [
+          "塔单元长周期分摊",
+          "填料/布水现场巡检",
+          "厂家最低冷凝器进水温确认"
+        ],
+        "requiredEvidence": [
+          "塔单元长周期趋势",
+          "塔阀开到位",
+          "填料/布水状态",
+          "最低冷凝器进水温确认"
+        ],
+        "acceptanceCriteria": "塔单元趋势和现场巡检记录可支撑单塔能力差异复核。",
+        "boundary": "只作为塔能力诊断证据，不突破厂家/PLC 最低水温保护。",
+        "allowedMode": "field_review_only",
+        "fieldStatus": "待现场复核",
+        "evidenceOwner": "",
+        "evidenceFileOrSystem": "",
+        "verifiedAt": "",
+        "reviewer": "",
+        "reviewResult": ""
+      }
+    ],
+    "controlOscillationLedgerTemplate": {
+      "basis": "control_oscillation_field_ledger_template_v1",
+      "scope": "field_review_only",
+      "ownerRole": "自控工程师 / PLC 工程师 / 运行值班负责人",
+      "controlBoundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。",
+      "acceptanceCriteria": [
+        "高频趋势、启停事件和参数台账可按同一时间轴对齐。",
+        "采样周期建议 <= 60 秒；若只能小时级，控制震荡仍只能方向性判断。",
+        "任何 PID、死区、延时或启停参数调整必须由人工审批和 PLC 本地保护兜底。"
+      ],
+      "tables": [
+        {
+          "key": "control_command_feedback_trend",
+          "title": "控制命令/反馈高频趋势",
+          "outputCsv": "docs/optimize-demo-140-control-command-feedback-template-latest.csv",
+          "requiredSampleIntervalSecMax": 60,
+          "columns": [
+            {
+              "key": "timestamp",
+              "label": "采样时间",
+              "required": true,
+              "example": "2026-06-13T10:00:00+08:00"
+            },
+            {
+              "key": "siteId",
+              "label": "站点ID",
+              "required": true,
+              "example": "140"
+            },
+            {
+              "key": "loopKey",
+              "label": "控制回路",
+              "required": true,
+              "example": "chilled_water_delta_t"
+            },
+            {
+              "key": "equipmentType",
+              "label": "设备类型",
+              "required": true,
+              "example": "chilled_pump"
+            },
+            {
+              "key": "equipmentId",
+              "label": "设备ID",
+              "required": true,
+              "example": "CHP4"
+            },
+            {
+              "key": "signalRole",
+              "label": "信号角色",
+              "required": true,
+              "example": "frequency_command"
+            },
+            {
+              "key": "pointCode",
+              "label": "点位编码",
+              "required": true,
+              "example": "B25_AI_CHWP_FREQ_CMD"
+            },
+            {
+              "key": "pointName",
+              "label": "点位名称",
+              "required": true,
+              "example": "冷冻泵频率命令"
+            },
+            {
+              "key": "value",
+              "label": "数值",
+              "required": true,
+              "example": "40.0"
+            },
+            {
+              "key": "unit",
+              "label": "单位",
+              "required": true,
+              "example": "Hz"
+            },
+            {
+              "key": "controlMode",
+              "label": "控制模式",
+              "required": false,
+              "example": "auto"
+            },
+            {
+              "key": "sampleIntervalSec",
+              "label": "采样周期秒",
+              "required": true,
+              "example": "60"
+            },
+            {
+              "key": "qualityFlag",
+              "label": "质量标记",
+              "required": true,
+              "example": "good"
+            },
+            {
+              "key": "sourceSystem",
+              "label": "来源系统",
+              "required": true,
+              "example": "SCADA"
+            },
+            {
+              "key": "remark",
+              "label": "备注",
+              "required": false,
+              "example": "同一时间轴对齐"
+            }
+          ],
+          "fieldRows": [
+            {
+              "tableKey": "control_command_feedback_trend",
+              "order": 1,
+              "fieldKey": "timestamp",
+              "label": "采样时间",
+              "required": true,
+              "example": "2026-06-13T10:00:00+08:00",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_command_feedback_trend",
+              "order": 2,
+              "fieldKey": "siteId",
+              "label": "站点ID",
+              "required": true,
+              "example": "140",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_command_feedback_trend",
+              "order": 3,
+              "fieldKey": "loopKey",
+              "label": "控制回路",
+              "required": true,
+              "example": "chilled_water_delta_t",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_command_feedback_trend",
+              "order": 4,
+              "fieldKey": "equipmentType",
+              "label": "设备类型",
+              "required": true,
+              "example": "chilled_pump",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_command_feedback_trend",
+              "order": 5,
+              "fieldKey": "equipmentId",
+              "label": "设备ID",
+              "required": true,
+              "example": "CHP4",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_command_feedback_trend",
+              "order": 6,
+              "fieldKey": "signalRole",
+              "label": "信号角色",
+              "required": true,
+              "example": "frequency_command",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_command_feedback_trend",
+              "order": 7,
+              "fieldKey": "pointCode",
+              "label": "点位编码",
+              "required": true,
+              "example": "B25_AI_CHWP_FREQ_CMD",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_command_feedback_trend",
+              "order": 8,
+              "fieldKey": "pointName",
+              "label": "点位名称",
+              "required": true,
+              "example": "冷冻泵频率命令",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_command_feedback_trend",
+              "order": 9,
+              "fieldKey": "value",
+              "label": "数值",
+              "required": true,
+              "example": "40.0",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_command_feedback_trend",
+              "order": 10,
+              "fieldKey": "unit",
+              "label": "单位",
+              "required": true,
+              "example": "Hz",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_command_feedback_trend",
+              "order": 11,
+              "fieldKey": "controlMode",
+              "label": "控制模式",
+              "required": false,
+              "example": "auto",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_command_feedback_trend",
+              "order": 12,
+              "fieldKey": "sampleIntervalSec",
+              "label": "采样周期秒",
+              "required": true,
+              "example": "60",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_command_feedback_trend",
+              "order": 13,
+              "fieldKey": "qualityFlag",
+              "label": "质量标记",
+              "required": true,
+              "example": "good",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_command_feedback_trend",
+              "order": 14,
+              "fieldKey": "sourceSystem",
+              "label": "来源系统",
+              "required": true,
+              "example": "SCADA",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_command_feedback_trend",
+              "order": 15,
+              "fieldKey": "remark",
+              "label": "备注",
+              "required": false,
+              "example": "同一时间轴对齐",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            }
+          ],
+          "exampleRows": [
+            {
+              "timestamp": "2026-06-13T10:00:00+08:00",
+              "siteId": "140",
+              "loopKey": "chilled_water_delta_t",
+              "equipmentType": "chilled_pump",
+              "equipmentId": "CHP4",
+              "signalRole": "frequency_command",
+              "pointCode": "B25_AI_CHWP_FREQ_CMD",
+              "pointName": "冷冻泵频率命令",
+              "value": "40.0",
+              "unit": "Hz",
+              "controlMode": "auto",
+              "sampleIntervalSec": "60",
+              "qualityFlag": "good",
+              "sourceSystem": "SCADA",
+              "remark": "与反馈、供回水温度、旁通阀按同一时间轴对齐"
+            },
+            {
+              "timestamp": "2026-06-13T10:00:00+08:00",
+              "siteId": "140",
+              "loopKey": "chilled_water_delta_t",
+              "equipmentType": "chilled_pump",
+              "equipmentId": "CHP4",
+              "signalRole": "frequency_feedback",
+              "pointCode": "B25_CHWP_FREQ_FB",
+              "pointName": "冷冻泵频率反馈",
+              "value": "39.8",
+              "unit": "Hz",
+              "controlMode": "auto",
+              "sampleIntervalSec": "60",
+              "qualityFlag": "good",
+              "sourceSystem": "SCADA",
+              "remark": "用于判断命令/反馈跟随偏差"
+            },
+            {
+              "timestamp": "2026-06-13T10:00:00+08:00",
+              "siteId": "140",
+              "loopKey": "tower_fan_tcws",
+              "equipmentType": "cooling_tower",
+              "equipmentId": "CT1",
+              "signalRole": "frequency_command",
+              "pointCode": "B25_CT_FAN_FREQ_CMD",
+              "pointName": "塔风机频率命令",
+              "value": "30.0",
+              "unit": "Hz",
+              "controlMode": "auto",
+              "sampleIntervalSec": "60",
+              "qualityFlag": "good",
+              "sourceSystem": "SCADA",
+              "remark": "用于判断塔侧 hunting"
+            }
+          ]
+        },
+        {
+          "key": "start_stop_event_ledger",
+          "title": "设备启停事件台账",
+          "outputCsv": "docs/optimize-demo-140-start-stop-event-template-latest.csv",
+          "columns": [
+            {
+              "key": "eventAt",
+              "label": "事件时间",
+              "required": true,
+              "example": "2026-06-13T10:15:00+08:00"
+            },
+            {
+              "key": "siteId",
+              "label": "站点ID",
+              "required": true,
+              "example": "140"
+            },
+            {
+              "key": "equipmentType",
+              "label": "设备类型",
+              "required": true,
+              "example": "chiller"
+            },
+            {
+              "key": "equipmentId",
+              "label": "设备ID",
+              "required": true,
+              "example": "CH7"
+            },
+            {
+              "key": "eventType",
+              "label": "事件类型",
+              "required": true,
+              "example": "start"
+            },
+            {
+              "key": "previousStatus",
+              "label": "前状态",
+              "required": false,
+              "example": "off"
+            },
+            {
+              "key": "nextStatus",
+              "label": "后状态",
+              "required": true,
+              "example": "on"
+            },
+            {
+              "key": "commandSource",
+              "label": "命令来源",
+              "required": false,
+              "example": "operator"
+            },
+            {
+              "key": "reasonCode",
+              "label": "原因码",
+              "required": false,
+              "example": "load_increase"
+            },
+            {
+              "key": "runMinutesBeforeEvent",
+              "label": "事件前运行分钟",
+              "required": false,
+              "example": "180"
+            },
+            {
+              "key": "stopMinutesBeforeEvent",
+              "label": "事件前停机分钟",
+              "required": false,
+              "example": "240"
+            },
+            {
+              "key": "alarmActive",
+              "label": "是否有告警",
+              "required": true,
+              "example": "false"
+            },
+            {
+              "key": "sourceSystem",
+              "label": "来源系统",
+              "required": true,
+              "example": "SCADA"
+            },
+            {
+              "key": "remark",
+              "label": "备注",
+              "required": false,
+              "example": "用于最小运行/停机时间统计"
+            }
+          ],
+          "fieldRows": [
+            {
+              "tableKey": "start_stop_event_ledger",
+              "order": 1,
+              "fieldKey": "eventAt",
+              "label": "事件时间",
+              "required": true,
+              "example": "2026-06-13T10:15:00+08:00",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "start_stop_event_ledger",
+              "order": 2,
+              "fieldKey": "siteId",
+              "label": "站点ID",
+              "required": true,
+              "example": "140",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "start_stop_event_ledger",
+              "order": 3,
+              "fieldKey": "equipmentType",
+              "label": "设备类型",
+              "required": true,
+              "example": "chiller",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "start_stop_event_ledger",
+              "order": 4,
+              "fieldKey": "equipmentId",
+              "label": "设备ID",
+              "required": true,
+              "example": "CH7",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "start_stop_event_ledger",
+              "order": 5,
+              "fieldKey": "eventType",
+              "label": "事件类型",
+              "required": true,
+              "example": "start",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "start_stop_event_ledger",
+              "order": 6,
+              "fieldKey": "previousStatus",
+              "label": "前状态",
+              "required": false,
+              "example": "off",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "start_stop_event_ledger",
+              "order": 7,
+              "fieldKey": "nextStatus",
+              "label": "后状态",
+              "required": true,
+              "example": "on",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "start_stop_event_ledger",
+              "order": 8,
+              "fieldKey": "commandSource",
+              "label": "命令来源",
+              "required": false,
+              "example": "operator",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "start_stop_event_ledger",
+              "order": 9,
+              "fieldKey": "reasonCode",
+              "label": "原因码",
+              "required": false,
+              "example": "load_increase",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "start_stop_event_ledger",
+              "order": 10,
+              "fieldKey": "runMinutesBeforeEvent",
+              "label": "事件前运行分钟",
+              "required": false,
+              "example": "180",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "start_stop_event_ledger",
+              "order": 11,
+              "fieldKey": "stopMinutesBeforeEvent",
+              "label": "事件前停机分钟",
+              "required": false,
+              "example": "240",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "start_stop_event_ledger",
+              "order": 12,
+              "fieldKey": "alarmActive",
+              "label": "是否有告警",
+              "required": true,
+              "example": "false",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "start_stop_event_ledger",
+              "order": 13,
+              "fieldKey": "sourceSystem",
+              "label": "来源系统",
+              "required": true,
+              "example": "SCADA",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "start_stop_event_ledger",
+              "order": 14,
+              "fieldKey": "remark",
+              "label": "备注",
+              "required": false,
+              "example": "用于最小运行/停机时间统计",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            }
+          ],
+          "exampleRows": [
+            {
+              "eventAt": "2026-06-13T10:15:00+08:00",
+              "siteId": "140",
+              "equipmentType": "chiller",
+              "equipmentId": "CH7",
+              "eventType": "start",
+              "previousStatus": "off",
+              "nextStatus": "on",
+              "commandSource": "operator",
+              "reasonCode": "load_increase",
+              "runMinutesBeforeEvent": "",
+              "stopMinutesBeforeEvent": "240",
+              "alarmActive": "false",
+              "sourceSystem": "SCADA",
+              "remark": "用于校验最小停机时间和频繁启停"
+            },
+            {
+              "eventAt": "2026-06-13T11:05:00+08:00",
+              "siteId": "140",
+              "equipmentType": "cooling_tower",
+              "equipmentId": "CT1",
+              "eventType": "stop",
+              "previousStatus": "on",
+              "nextStatus": "off",
+              "commandSource": "auto",
+              "reasonCode": "tcws_below_band",
+              "runMinutesBeforeEvent": "50",
+              "stopMinutesBeforeEvent": "",
+              "alarmActive": "false",
+              "sourceSystem": "SCADA",
+              "remark": "用于校验加减塔延时和防震荡死区"
+            }
+          ]
+        },
+        {
+          "key": "control_parameter_ledger",
+          "title": "PID/死区/延时参数台账",
+          "outputCsv": "docs/optimize-demo-140-control-parameter-template-latest.csv",
+          "columns": [
+            {
+              "key": "effectiveAt",
+              "label": "生效时间",
+              "required": true,
+              "example": "2026-06-13T09:00:00+08:00"
+            },
+            {
+              "key": "siteId",
+              "label": "站点ID",
+              "required": true,
+              "example": "140"
+            },
+            {
+              "key": "loopKey",
+              "label": "控制回路",
+              "required": true,
+              "example": "tower_fan_tcws"
+            },
+            {
+              "key": "equipmentType",
+              "label": "设备类型",
+              "required": false,
+              "example": "cooling_tower"
+            },
+            {
+              "key": "equipmentId",
+              "label": "设备ID",
+              "required": false,
+              "example": "CT1"
+            },
+            {
+              "key": "parameterKey",
+              "label": "参数键",
+              "required": true,
+              "example": "deadband_c"
+            },
+            {
+              "key": "parameterName",
+              "label": "参数名称",
+              "required": true,
+              "example": "冷却水温控制死区"
+            },
+            {
+              "key": "value",
+              "label": "参数值",
+              "required": true,
+              "example": "0.5"
+            },
+            {
+              "key": "unit",
+              "label": "单位",
+              "required": false,
+              "example": "℃"
+            },
+            {
+              "key": "previousValue",
+              "label": "上一值",
+              "required": false,
+              "example": "0.8"
+            },
+            {
+              "key": "rollbackValue",
+              "label": "回退值",
+              "required": false,
+              "example": "0.8"
+            },
+            {
+              "key": "changeTicket",
+              "label": "变更单号",
+              "required": false,
+              "example": "field-review-001"
+            },
+            {
+              "key": "approvedBy",
+              "label": "批准人",
+              "required": false,
+              "example": "现场负责人"
+            },
+            {
+              "key": "sourceSystem",
+              "label": "来源系统",
+              "required": true,
+              "example": "PLC/SCADA"
+            },
+            {
+              "key": "remark",
+              "label": "备注",
+              "required": false,
+              "example": "仅记录参数台账，不自动写入"
+            }
+          ],
+          "fieldRows": [
+            {
+              "tableKey": "control_parameter_ledger",
+              "order": 1,
+              "fieldKey": "effectiveAt",
+              "label": "生效时间",
+              "required": true,
+              "example": "2026-06-13T09:00:00+08:00",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_parameter_ledger",
+              "order": 2,
+              "fieldKey": "siteId",
+              "label": "站点ID",
+              "required": true,
+              "example": "140",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_parameter_ledger",
+              "order": 3,
+              "fieldKey": "loopKey",
+              "label": "控制回路",
+              "required": true,
+              "example": "tower_fan_tcws",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_parameter_ledger",
+              "order": 4,
+              "fieldKey": "equipmentType",
+              "label": "设备类型",
+              "required": false,
+              "example": "cooling_tower",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_parameter_ledger",
+              "order": 5,
+              "fieldKey": "equipmentId",
+              "label": "设备ID",
+              "required": false,
+              "example": "CT1",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_parameter_ledger",
+              "order": 6,
+              "fieldKey": "parameterKey",
+              "label": "参数键",
+              "required": true,
+              "example": "deadband_c",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_parameter_ledger",
+              "order": 7,
+              "fieldKey": "parameterName",
+              "label": "参数名称",
+              "required": true,
+              "example": "冷却水温控制死区",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_parameter_ledger",
+              "order": 8,
+              "fieldKey": "value",
+              "label": "参数值",
+              "required": true,
+              "example": "0.5",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_parameter_ledger",
+              "order": 9,
+              "fieldKey": "unit",
+              "label": "单位",
+              "required": false,
+              "example": "℃",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_parameter_ledger",
+              "order": 10,
+              "fieldKey": "previousValue",
+              "label": "上一值",
+              "required": false,
+              "example": "0.8",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_parameter_ledger",
+              "order": 11,
+              "fieldKey": "rollbackValue",
+              "label": "回退值",
+              "required": false,
+              "example": "0.8",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_parameter_ledger",
+              "order": 12,
+              "fieldKey": "changeTicket",
+              "label": "变更单号",
+              "required": false,
+              "example": "field-review-001",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_parameter_ledger",
+              "order": 13,
+              "fieldKey": "approvedBy",
+              "label": "批准人",
+              "required": false,
+              "example": "现场负责人",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_parameter_ledger",
+              "order": 14,
+              "fieldKey": "sourceSystem",
+              "label": "来源系统",
+              "required": true,
+              "example": "PLC/SCADA",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            },
+            {
+              "tableKey": "control_parameter_ledger",
+              "order": 15,
+              "fieldKey": "remark",
+              "label": "备注",
+              "required": false,
+              "example": "仅记录参数台账，不自动写入",
+              "boundary": "模板只用于补齐控制震荡诊断证据，不自动改 PID，不自动启停设备，不写真实 PLC。"
+            }
+          ],
+          "exampleRows": [
+            {
+              "effectiveAt": "2026-06-13T09:00:00+08:00",
+              "siteId": "140",
+              "loopKey": "chilled_water_delta_t",
+              "equipmentType": "chilled_pump",
+              "equipmentId": "CHP4",
+              "parameterKey": "ramp_limit_hz_per_min",
+              "parameterName": "冷冻泵频率斜率限制",
+              "value": "1",
+              "unit": "Hz/min",
+              "previousValue": "",
+              "rollbackValue": "",
+              "changeTicket": "",
+              "approvedBy": "",
+              "sourceSystem": "PLC",
+              "remark": "只记录参数台账，不自动写 PLC"
+            },
+            {
+              "effectiveAt": "2026-06-13T09:00:00+08:00",
+              "siteId": "140",
+              "loopKey": "tower_fan_tcws",
+              "equipmentType": "cooling_tower",
+              "equipmentId": "CT1",
+              "parameterKey": "deadband_c",
+              "parameterName": "冷却水温控制死区",
+              "value": "0.5",
+              "unit": "℃",
+              "previousValue": "",
+              "rollbackValue": "",
+              "changeTicket": "",
+              "approvedBy": "",
+              "sourceSystem": "PLC",
+              "remark": "用于判断塔风机频率震荡，不自动改 PID"
+            },
+            {
+              "effectiveAt": "2026-06-13T09:00:00+08:00",
+              "siteId": "140",
+              "loopKey": "chiller_staging",
+              "equipmentType": "chiller",
+              "equipmentId": "CH7",
+              "parameterKey": "min_on_minutes",
+              "parameterName": "主机最小运行时间",
+              "value": "30",
+              "unit": "min",
+              "previousValue": "",
+              "rollbackValue": "",
+              "changeTicket": "",
+              "approvedBy": "",
+              "sourceSystem": "PLC",
+              "remark": "用于频繁启停诊断，不自动启停设备"
+            }
+          ]
+        }
+      ]
+    },
+    "requiredBoundaries": [
+      "不创建执行单",
+      "不审批",
+      "不 dispatch",
+      "不写真实 PLC",
+      "不自动启停主机",
+      "不进入 enforced",
+      "不计算多机单台 COP",
+      "不判定设备故障",
+      "不自动改 PID",
+      "不自动启停设备"
+    ],
+    "blockers": [],
+    "warnings": []
+  },
+  "blockers": [],
+  "warnings": [],
+  "reportFiles": {
+    "json": "docs/optimize-demo-140-field-verification-package-latest.json",
+    "markdown": "docs/optimize-demo-140-field-verification-package-latest.md",
+    "html": "docs/optimize-demo-140-field-verification-package-latest.html",
+    "controlTrendCsv": "docs/optimize-demo-140-control-command-feedback-template-latest.csv",
+    "startStopCsv": "docs/optimize-demo-140-start-stop-event-template-latest.csv",
+    "controlParameterCsv": "docs/optimize-demo-140-control-parameter-template-latest.csv"
+  }
+}

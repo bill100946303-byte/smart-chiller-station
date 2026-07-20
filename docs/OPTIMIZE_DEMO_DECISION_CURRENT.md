@@ -1,5 +1,7 @@
 # OPTIMIZE_DEMO_DECISION_CURRENT
 
+> 2026-06-12 更新：本文前半部分描述的是早期 `NOT_IMPLEMENTED` draft 阶段。当前 `/optimize-demo` 已进入 Advisor 演示阶段，`POST /bff/v1/sites/{siteId}/optimize` 在 140/B25 smoke 中返回 `200 / OK`，并展示主机组合、冷却塔接近度、泵温差和运行诊断 Advisor。当前状态以 `docs/OPTIMIZE_DEMO_ADVISOR_STATUS_CURRENT.md` 为准。
+
 ## 1. 当前结论
 
 - `/optimize-demo`：`可演示`

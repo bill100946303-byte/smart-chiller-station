@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "generatedAt": "2026-06-18T11:10:06.950Z",
+  "scope": "fcu_final_control_evidence_consistency",
+  "controlMutation": false,
+  "dispatch": false,
+  "verdict": "evidence_consistent",
+  "summary": {
+    "issueCount": 0,
+    "staleSignoffRows": 1,
+    "signoffCompleteRows": 0,
+    "signoffExpectedRows": 8,
+    "openP0Devices": 8,
+    "finalGatePassed": false,
+    "canaryReady": false
+  },
+  "issues": [],
+  "sourceFiles": {
+    "runbook": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-runbook-latest.json",
+    "worklist": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-final-control-worklist-latest.json",
+    "handoff": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-handoff-pack-latest.json",
+    "signoffClean": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-clean-input-latest.json",
+    "signoff": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-signoff-latest.json",
+    "returnTemplate": "/Users/billchow/Documents/智慧冷冻站/docs/fcu-field-remediation-return-template-latest.json"
+  }
+}

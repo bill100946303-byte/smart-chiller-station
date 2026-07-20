@@ -6,6 +6,7 @@ import {
   buildDeviceAnswer,
   buildRecommendationAnswer,
   buildReliabilityAnswer,
+  buildStrategyAnswer,
   buildStatusAnswer,
   classifyAssistantQuery,
   validateAssistantQueryRequest
@@ -96,6 +97,49 @@ const sampleDeviceList = {
   }
 };
 
+const sampleDigest = {
+  summary: {
+    stage: "await-approval",
+    label: "待审批",
+    headline: "当前已有待审批治理动作",
+    summary: "先处理审批，再推进下一轮优化。",
+    tone: "caution",
+    confidence: "medium"
+  },
+  nextAction: {
+    label: "先处理待审批治理动作",
+    summary: "当前已有 1 条待审批治理动作，应先处理审批结果。",
+    endpoint: "/bff/v1/sites/demo-site/optimize/executions"
+  },
+  blockers: [
+    {
+      domain: "governance",
+      level: "blocked",
+      message: "当前已有 1 条待审批治理动作，应先处理审批结果。"
+    }
+  ],
+  risks: [
+    {
+      domain: "operations",
+      level: "caution",
+      message: "当前仍有 2 条活动告警，建议带着观察边界推进。"
+    }
+  ],
+  signals: [
+    "当前首要建议：检查冷却泵频率。",
+    "当前 AI 参考数据最新时间为 2026-04-13T10:00:00.000Z。"
+  ],
+  freshness: {
+    label: "fresh",
+    latestTimestamp: "2026-04-13T10:00:00.000Z",
+    stale: false
+  },
+  sourceStatus: {
+    overall: "ok",
+    sources: [{ key: "dashboardOverview", ok: true }]
+  }
+};
+
 const staleFreshness = {
   label: "stale",
   latestTimestamp: "2026-03-31T10:00:00.000Z",
@@ -107,6 +151,141 @@ const config = {
   legacyBaseUrl: "http://127.0.0.1:8098",
   staleThresholdHours: 6
 };
+
+function mockLegacyFetch(originalFetch) {
+  const legacyBaseUrl = "http://127.0.0.1:8098/";
+
+  return async (url, init) => {
+    const target = String(url);
+
+    if (!target.startsWith(legacyBaseUrl)) {
+      return originalFetch(url, init);
+    }
+
+    if (target.endsWith("/140/getAllSubsystemInfo")) {
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          msg: "OK",
+          data: []
+        }),
+        {
+          status: 200,
+          headers: {
+            "content-type": "application/json"
+          }
+        }
+      );
+    }
+
+    if (target.endsWith("/zsqy/qsAlarmlog/140/findNewAlarmLog")) {
+      return new Response(
+        JSON.stringify({
+          ok: true,
+          msg: "OK",
+          data: []
+        }),
+        {
+          status: 200,
+          headers: {
+            "content-type": "application/json"
+          }
+        }
+      );
+    }
+
+    if (target.endsWith("/zsqy/drinfo/140/findObject?pageCurrent=1&pageSize=200")) {
+      return new Response(
+        JSON.stringify({
+          code: 200,
+          data: {
+            data: []
+          }
+        }),
+        {
+          status: 200,
+          headers: {
+            "content-type": "application/json"
+          }
+        }
+      );
+    }
+
+    if (target.endsWith("/zsqy/homepage/140/getEquipmentEnergyStatisticsCurve")) {
+      return new Response(
+        JSON.stringify([
+          {
+            time: "2026-04-13 09:00:00",
+            totalPower: 228.4,
+            coldStationCop: 4.6,
+            chilledWaterTemperatureDifference: 4.1,
+            chilledOutWaterTemperatureDifference: 4.8,
+            totalCoolingCapacity: 1056.2,
+            chillerPower: 153.8,
+            chilledPumpPower: 24.3,
+            coolingPumpPower: 19.1,
+            coolingTowerPower: 31.2,
+            thermalUnbalanceRate: 0.12
+          }
+        ]),
+        {
+          status: 200,
+          headers: {
+            "content-type": "application/json"
+          }
+        }
+      );
+    }
+
+    if (target.endsWith("/zsqy/homepage/140/getEnergyStatisticsCurve")) {
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: {
+          "content-type": "application/json"
+        }
+      });
+    }
+
+    if (target.endsWith("/zsqy/homepage/140/getRunParamsCurve")) {
+      return new Response(
+        JSON.stringify([
+          {
+            title: "总功率",
+            curveValueList: {
+              curveValueList: [{ time: "2026-04-13 09:00:00", value: 228.4 }]
+            }
+          },
+          {
+            title: "冷站COP",
+            curveValueList: {
+              curveValueList: [{ time: "2026-04-13 09:00:00", value: 4.6 }]
+            }
+          },
+          {
+            title: "冷冻水温差",
+            curveValueList: {
+              curveValueList: [{ time: "2026-04-13 09:00:00", value: 4.1 }]
+            }
+          },
+          {
+            title: "冷却水温差",
+            curveValueList: {
+              curveValueList: [{ time: "2026-04-13 09:00:00", value: 4.8 }]
+            }
+          }
+        ]),
+        {
+          status: 200,
+          headers: {
+            "content-type": "application/json"
+          }
+        }
+      );
+    }
+
+    throw new Error(`Unexpected URL: ${target}`);
+  };
+}
 
 test("validateAssistantQueryRequest rejects empty text", () => {
   const result = validateAssistantQueryRequest(
@@ -137,8 +316,23 @@ test("classifyAssistantQuery covers new kinds", () => {
   assert.equal(classifyAssistantQuery("如果只检查一项，建议看哪台设备？"), "device");
   assert.equal(classifyAssistantQuery("这条建议是什么意思？"), "recommendation");
   assert.equal(classifyAssistantQuery("哪条异常最值得优先看？"), "anomaly");
+  assert.equal(classifyAssistantQuery("这条优化草案为什么还要等审批？"), "strategy");
   assert.equal(classifyAssistantQuery("帮我开机"), "unsupported");
+  assert.equal(classifyAssistantQuery("请把 setpoint 调到 7.5"), "unsupported");
   assert.equal(classifyAssistantQuery("当前冷站运行状况如何？"), "status");
+});
+
+test("buildStrategyAnswer summarizes digest-driven strategy state", () => {
+  const answer = buildStrategyAnswer("zh", sampleDigest);
+
+  assert.equal(answer.kind, "strategy");
+  assert.match(answer.summary, /待审批/);
+  assert.match(answer.details[0], /阶段：待审批/);
+  assert.match(answer.details[1], /先处理待审批治理动作/);
+  assert.ok(answer.details.some((line) => line.includes("阻塞项")));
+  assert.ok(answer.details.some((line) => line.includes("风险")));
+  assert.ok(answer.nextSteps[0].includes("待审批") || answer.nextSteps[0].includes("审批"));
+  assert.ok(answer.pageHints.includes("优化执行"));
 });
 
 test("buildStatusAnswer returns action-oriented next steps", () => {
@@ -227,4 +421,50 @@ test("buildAssistantQueryResponse returns unsupported answer without upstream ca
 
   assert.equal(response.answer.kind, "unsupported");
   assert.equal(response.answer.citations.length, 0);
+});
+
+test("buildAssistantQueryResponse returns strategy answer from injected digest", async () => {
+  const response = await buildAssistantQueryResponse(
+    config,
+    "demo-site",
+    {
+      locale: "zh",
+      text: "这条优化草案为什么还要等审批？"
+    },
+    {
+      aiDigest: sampleDigest
+    }
+  );
+
+  assert.equal(response.answer.kind, "strategy");
+  assert.match(response.answer.summary, /待审批/);
+  assert.ok(response.answer.citations.some((citation) => citation.sourceKey === "optimizeExecutions"));
+  assert.equal(response.freshness.label, "fresh");
+  assert.equal(response.sourceStatus.overall, "ok");
+});
+
+test("buildAssistantQueryResponse loads live digest context for strategy queries", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = mockLegacyFetch(originalFetch);
+
+  try {
+    const response = await buildAssistantQueryResponse(
+      config,
+      "140",
+      {
+        locale: "zh",
+        text: "当前优化草案下一步是什么？"
+      },
+      {}
+    );
+
+    assert.equal(response.answer.kind, "strategy");
+    assert.notEqual(response.sourceStatus.overall, "failed");
+    assert.notEqual(response.freshness.label, "unknown");
+    assert.ok(response.freshness.latestTimestamp);
+    assert.ok(response.answer.details.some((line) => line.includes("阶段：")));
+    assert.ok(response.answer.citations.some((citation) => citation.sourceKey === "optimizeExecutions"));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

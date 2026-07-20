@@ -1,0 +1,3 @@
+eventAt,siteId,equipmentType,equipmentId,eventType,previousStatus,nextStatus,commandSource,reasonCode,runMinutesBeforeEvent,stopMinutesBeforeEvent,alarmActive,sourceSystem,remark
+2026-06-13T10:15:00+08:00,140,chiller,CH7,start,off,on,operator,load_increase,,240,false,SCADA,ready-smoke 样例，不作为现场证据
+2026-06-13T11:05:00+08:00,140,cooling_tower,CT1,stop,on,off,auto,tcws_below_band,50,,false,SCADA,ready-smoke 样例，不作为现场证据

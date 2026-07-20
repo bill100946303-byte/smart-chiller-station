@@ -1,1497 +1,4607 @@
-import { ExternalLink } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import SectionCard from "../components/common/SectionCard";
-import SourceStatusBanner from "../components/common/SourceStatusBanner";
-import StatusPill from "../components/common/StatusPill";
-import DeviceModelPreview from "../components/device/DeviceModelPreview";
-import SystemDiagram3D from "../components/scene3d/SystemDiagram3D";
-import {
-  buildRuntimeSystemDiagram,
-  buildSystemDiagramFromContract,
-  MAIN_LOOP_SYSTEM_DIAGRAM
-} from "../components/scene3d/systemDiagramMock";
-import { SYSTEM_DIAGRAM_CONTRACT_SAMPLE } from "../components/scene3d/systemDiagramContractSample";
-import type { SystemDiagramTopology as SceneSystemDiagramTopology } from "../components/scene3d/systemDiagramTypes";
-import { getDeviceModelCatalog, type DeviceModelCategory } from "../config/modelRegistry";
+﻿import { CloudSun, Droplets, Maximize2, Minimize2, ThermometerSun } from "lucide-react";
+import { Fragment, type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import PlantOverview3D, {
+  resolvePlantOverviewEquipmentMetrics,
+  type PlantOverviewEquipmentMetric,
+  type PlantOverviewEquipmentSelection
+} from "../components/scene3d/PlantOverview3D";
+import PlantOverview2D from "../components/scene3d/PlantOverview2D";
+import { getPlantOverviewProfile } from "../config/plantOverviewRegistry";
 import { runtimeConfig } from "../config/runtimeConfig";
-import { buildSourceStatusLines, summarizeSourceStatus } from "../i18n/sourceStatusCN";
-import { zhCN } from "../i18n/zhCN";
+import { useShellProjectDisplay } from "../context/ShellProjectDisplayContext";
 import {
-  type DeviceDetailDto,
-  type DeviceListItemDto,
-  type SceneLegacyPointDto,
-  type SceneLegacyTrendDto,
-  type SceneOnlineMonitorDto,
-  type SystemTopologyDto,
-  fetchDeviceDetail,
-  fetchDeviceList,
-  fetchSceneLegacyTrend,
-  fetchSceneOnlineMonitor,
-  fetchSystemDiagram,
-  fetchSystemTopology
+  isAppliedStationRuntimeScope,
+  useStationRuntimeScope
+} from "../context/StationRuntimeScopeContext";
+import { getCurrentLocale, type LocaleCode, zhCN } from "../i18n/zhCN";
+import {
+  getAuthSession,
+  getCurrentProject,
+  resolveAuthProjectDisplayName
+} from "../services/auth";
+import {
+  type DashboardOverviewDto,
+  type RuntimePointSummaryDto,
+  type SceneDeviceAlarmRecordDto,
+  type SceneDeviceInfoItemDto,
+  type SceneDeviceOperationRecordDto,
+  type SceneDeviceParameterItemDto,
+  type SceneDeviceParameterGroupDto,
+  type SceneDeviceParametersDto,
+  type SceneFloorModelItemDto,
+  fetchDashboardOverviewForProject,
+  fetchRuntimePointSummary,
+  fetchSceneDeviceParameters,
+  submitSceneDeviceCommand
 } from "../services/bffClient";
+import {
+  findSceneFloorModelForProject,
+  getCachedSceneFloorModels,
+  preloadSceneFloorModels,
+  resolveSceneDropdownProjectKey
+} from "../services/sceneFloorModelCache";
+import "./SceneControlExtracted.css";
 
 type SceneMode = "2d" | "3d";
-type SceneFloor = "10" | "11";
-type ProbeState = "checking" | "ready" | "failed";
-type DevicePanelState = "loading" | "ready" | "failed";
-type LegacySceneView = "default" | "dialog" | "online" | "video";
-type SceneLegacyDialogState = {
-  date: string;
-  tagname: string;
-  title: string;
-  unit: string;
+type SceneFitMode = "fit" | "native" | "zoom";
+type SceneDeviceDialogTab = "info" | "detail" | "control" | "alarm" | "operation";
+type PlantEquipmentInspectorTab = "overview" | "trend" | "diagnostics" | "asset";
+type SceneNativeViewportMode = SceneMode | "any";
+type SceneNativeViewportPreset = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  maxScale: number;
+};
+type SceneNativeViewportPresetInput = {
+  x: number;
+  y?: number;
+  width: number;
+  height?: number;
+  maxScale: number;
+};
+type SceneNativeViewportRule = {
+  id: string;
+  mode: SceneNativeViewportMode;
+  matches: RegExp[];
+  excludes?: RegExp[];
+  preset: SceneNativeViewportPreset;
+};
+const SCENE_NATIVE_CANVAS_WIDTH = 2500;
+const SCENE_NATIVE_CANVAS_HEIGHT = 920;
+const B25_LOCAL_2D_CANVAS_WIDTH = 1920;
+const B25_LOCAL_2D_CANVAS_HEIGHT = 1080;
+const SCENE_NATIVE_2D_TOP_SAFE_OFFSET_PX = 2;
+const SCENE_NATIVE_2D_BOTTOM_SAFE_OFFSET_PX = 2;
+const SCENE_NATIVE_2D_EFFECTIVE_TOP_Y = 120;
+const SCENE_NATIVE_2D_EFFECTIVE_HEIGHT = 730;
+
+function createSceneNative2dViewport(input: SceneNativeViewportPresetInput): SceneNativeViewportPreset {
+  const y = input.y ?? SCENE_NATIVE_2D_EFFECTIVE_TOP_Y;
+  const height = input.height ?? SCENE_NATIVE_2D_EFFECTIVE_HEIGHT;
+  return {
+    x: input.x,
+    y,
+    width: input.width,
+    height: Math.max(1, Math.min(height, SCENE_NATIVE_CANVAS_HEIGHT - y)),
+    maxScale: input.maxScale
+  };
+}
+
+const SCENE_NATIVE_B25_VIEWPORT: SceneNativeViewportPreset = createSceneNative2dViewport({
+  x: 520,
+  width: 1500,
+  maxScale: 1.12
+});
+const SCENE_NATIVE_B25_LOCAL_2D_VIEWPORT: SceneNativeViewportPreset = {
+  x: 0,
+  y: 0,
+  width: B25_LOCAL_2D_CANVAS_WIDTH,
+  height: B25_LOCAL_2D_CANVAS_HEIGHT,
+  maxScale: 1
+};
+const SCENE_NATIVE_B25_3D_VIEWPORT: SceneNativeViewportPreset = {
+  x: 460,
+  y: 120,
+  width: 1650,
+  height: 720,
+  maxScale: 1.02
+};
+const SCENE_NATIVE_BUILD_2D_VIEWPORT: SceneNativeViewportPreset = createSceneNative2dViewport({
+  x: 670,
+  width: 1120,
+  maxScale: 1.08
+});
+const SCENE_NATIVE_FLOOR_OVERVIEW_VIEWPORT: SceneNativeViewportPreset = createSceneNative2dViewport({
+  x: 620,
+  width: 1250,
+  maxScale: 1
+});
+const SCENE_NATIVE_COMPACT_2D_VIEWPORT: SceneNativeViewportPreset = createSceneNative2dViewport({
+  x: 620,
+  width: 1350,
+  maxScale: 1.05
+});
+const SCENE_NATIVE_GENERIC_3D_VIEWPORT: SceneNativeViewportPreset = {
+  x: 300,
+  y: 80,
+  width: 1900,
+  height: 780,
+  maxScale: 0.98
+};
+const SCENE_NATIVE_WIDE_BLUEPRINT_VIEWPORT: SceneNativeViewportPreset = createSceneNative2dViewport({
+  x: 0,
+  y: 0,
+  width: SCENE_NATIVE_CANVAS_WIDTH,
+  height: SCENE_NATIVE_CANVAS_HEIGHT,
+  maxScale: 1
+});
+const SCENE_NATIVE_SAFE_VIEWPORT: SceneNativeViewportPreset = {
+  x: 0,
+  y: 0,
+  width: SCENE_NATIVE_CANVAS_WIDTH,
+  height: SCENE_NATIVE_CANVAS_HEIGHT,
+  maxScale: 1
 };
 
-function floorSlug(floor: SceneFloor): string {
-  return floor === "10" ? "ten" : "eleven";
-}
-
-function buildSceneUrl(mode: SceneMode, floor: SceneFloor): string {
-  return `${runtimeConfig.sceneBaseUrl}/${mode}/floor/${floorSlug(floor)}/`;
-}
-
-function buildSceneDeviceFloorName(floor: SceneFloor): string {
-  return floor === "10" ? "10楼" : "11楼";
-}
-
-function buildSceneDeviceFloorQuery(floor: SceneFloor): number {
-  return floor === "10" ? 1 : 2;
-}
-
-function parseMode(value: string | null): SceneMode {
-  return value === "3d" ? "3d" : "2d";
-}
-
-function parseFloor(value: string | null): SceneFloor {
-  return value === "11" ? "11" : "10";
-}
-
-function formatDateInput(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function resolveLegacySceneView(searchParams: URLSearchParams): LegacySceneView {
-  const explicit = searchParams.get("legacyView");
-  if (explicit === "dialog" || explicit === "online" || explicit === "video") {
-    return explicit;
-  }
-  return searchParams.get("tagname") ? "dialog" : "default";
-}
-
-function buildSceneLegacyDialogState(searchParams: URLSearchParams): SceneLegacyDialogState {
-  return {
-    date: searchParams.get("date") || formatDateInput(new Date()),
-    tagname: searchParams.get("tagname") || "",
-    title: searchParams.get("name") || searchParams.get("title") || "",
-    unit: searchParams.get("unit") || ""
-  };
-}
-
-function formatSceneMetricValue(value: number | null | undefined, unit: string | null | undefined = null): string {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    return zhCN.common.unknown;
-  }
-  const formatted = new Intl.NumberFormat("zh-CN", {
-    maximumFractionDigits: 2
-  }).format(value);
-  return unit ? `${formatted} ${unit}` : formatted;
-}
-
-function buildSceneChartAxisLabels(points: SceneLegacyPointDto[]): string[] {
-  if (points.length <= 6) {
-    return points.map((item) => item.label || "--");
-  }
-  const step = Math.max(1, Math.ceil((points.length - 1) / 5));
-  return points
-    .map((item, index) => ({ item, index }))
-    .filter(({ index }) => index === 0 || index === points.length - 1 || index % step === 0)
-    .map(({ item }) => item.label || "--");
-}
-
-function downloadSceneCsv(filename: string, headers: string[], rows: Array<Array<string | number | null>>) {
-  const escapeCell = (value: string | number | null) => {
-    const raw = value == null ? "" : String(value);
-    return `"${raw.replace(/"/g, "\"\"")}"`;
-  };
-  const content = [headers, ...rows].map((row) => row.map((cell) => escapeCell(cell)).join(",")).join("\n");
-  const blob = new Blob([`\uFEFF${content}`], { type: "text/csv;charset=utf-8;" });
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  window.URL.revokeObjectURL(url);
-}
-
-function findSystemDiagramNodeByDeviceId(
-  topology: SceneSystemDiagramTopology,
-  deviceId: string | null | undefined
-) {
-  if (!deviceId) {
-    return null;
-  }
-
-  return (
-    topology.nodes.find(
-      (node) => node.primaryDeviceId === deviceId || (node.deviceIds || []).includes(deviceId)
-    ) || null
-  );
-}
-
-function normalizeSceneMessageValue(value: unknown): string | null {
-  if (typeof value !== "string" && typeof value !== "number") {
-    return null;
-  }
-
-  const normalized = String(value).trim();
-  return normalized.length > 0 ? normalized : null;
-}
-
-const LEGACY_SCENE_BRIDGE_ALIASES: Array<{
-  deviceId: string;
-  nodeCandidates: string[];
-  valueCandidates: string[];
-}> = [
+const SCENE_NATIVE_VIEWPORT_RULES: SceneNativeViewportRule[] = [
   {
-    deviceId: "2",
-    nodeCandidates: ["chiller-01", "device-ch-1"],
-    valueCandidates: ["2", "CH001", "CH1", "1号冷机", "1#冷水机"]
+    id: "guanlan-b25-2d",
+    mode: "2d",
+    matches: [/guanlanb25\/2d/i],
+    preset: SCENE_NATIVE_B25_VIEWPORT
   },
   {
-    deviceId: "1",
-    nodeCandidates: ["pump-chilled-01", "device-chp-1"],
-    valueCandidates: ["1", "CHP001", "CHP1", "1号冷冻泵", "1#冷冻泵"]
+    id: "guanlan-b25-3d",
+    mode: "3d",
+    matches: [/guanlanb25(?:[/?#]|$)/i],
+    excludes: [/guanlanb25\/2d/i],
+    preset: SCENE_NATIVE_B25_3D_VIEWPORT
   },
   {
-    deviceId: "5",
-    nodeCandidates: ["pump-cooling-01", "device-cwp-1"],
-    valueCandidates: ["5", "CWP001", "CWP1", "1号冷却泵", "1#冷却泵"]
+    id: "build-2d",
+    mode: "2d",
+    matches: [/\/build\/2d(?:[/?#]|$)/i],
+    preset: SCENE_NATIVE_BUILD_2D_VIEWPORT
   },
   {
-    deviceId: "3",
-    nodeCandidates: ["tower-01", "device-ct-1"],
-    valueCandidates: ["3", "CT001", "CTF1", "冷却塔组", "冷却塔01"]
+    id: "vietnam-blueprint-2d",
+    mode: "2d",
+    matches: [/vietnamgoer\/2d/i],
+    preset: SCENE_NATIVE_WIDE_BLUEPRINT_VIEWPORT
   },
   {
-    deviceId: "4",
-    nodeCandidates: [],
-    valueCandidates: ["4", "PLC001", "联动模式柜", "群控制柜"]
+    id: "floor-overview-2d",
+    mode: "2d",
+    matches: [/\/2d\/floor\//i],
+    preset: SCENE_NATIVE_FLOOR_OVERVIEW_VIEWPORT
+  },
+  {
+    id: "generic-2d",
+    mode: "2d",
+    matches: [/\/2d(?:[/?#]|$)/i, /\/2d\//i],
+    preset: SCENE_NATIVE_COMPACT_2D_VIEWPORT
+  },
+  {
+    id: "generic-3d",
+    mode: "3d",
+    matches: [/\/3d(?:[/?#]|$)/i, /\/3d\//i],
+    preset: SCENE_NATIVE_GENERIC_3D_VIEWPORT
   }
 ];
 
-function collectSceneMessageCandidates(
-  payload: Record<string, unknown>,
-  bucket: string[]
-) {
-  const pushCandidate = (value: string) => {
-    bucket.push(value);
-    if (value.includes("|")) {
-      value
-        .split("|")
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .forEach((item) => bucket.push(item));
-    }
-
-    const normalized = value.toUpperCase();
-    const patterns: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
-      [/^CH0*(\d+)$/, (match) => `CH${match[1]}`],
-      [/^CHP0*(\d+)$/, (match) => `CHP${match[1]}`],
-      [/^CWP0*(\d+)$/, (match) => `CWP${match[1]}`],
-      [/^CT0*(\d+)$/, (match) => `CTF${match[1]}`]
-    ];
-
-    for (const [pattern, resolver] of patterns) {
-      const matched = normalized.match(pattern);
-      if (matched) {
-        bucket.push(resolver(matched));
-      }
-    }
-  };
-
-  const directKeys = ["deviceId", "nodeId", "id", "code", "label", "name", "modelname", "model"];
-  for (const key of directKeys) {
-    const value = normalizeSceneMessageValue(payload[key]);
-    if (!value) {
-      continue;
-    }
-    pushCandidate(value);
+function inferSceneModeFromUrl(sceneUrl: string): SceneMode | null {
+  if (/\/2d(?:[/?#]|$)/i.test(sceneUrl) || /\/2d\//i.test(sceneUrl)) {
+    return "2d";
   }
-
-  const nested = payload.data;
-  if (nested && typeof nested === "object" && !Array.isArray(nested)) {
-    collectSceneMessageCandidates(nested as Record<string, unknown>, bucket);
-  }
-}
-
-function resolveSceneIframeSelection(
-  payload: Record<string, unknown>,
-  sceneDevices: DeviceListItemDto[],
-  topology: SceneSystemDiagramTopology
-) {
-  const bucket: string[] = [];
-  collectSceneMessageCandidates(payload, bucket);
-  const candidates = Array.from(new Set(bucket));
-
-  if (candidates.length === 0) {
-    return { deviceId: null, nodeId: null };
-  }
-
-  const lowerCandidates = candidates.map((item) => item.toLowerCase());
-  const matchedDevice =
-    sceneDevices.find((item) => {
-      const values = [item.deviceId, item.deviceCode, item.deviceName]
-        .filter(Boolean)
-        .map((value) => String(value).trim().toLowerCase());
-      return values.some((value) => lowerCandidates.includes(value));
-    }) || null;
-
-  const matchedNode =
-    topology.nodes.find((item) => {
-      const values = [item.id, item.primaryDeviceId, item.label, item.primaryDeviceLabel]
-        .concat(item.deviceIds || [])
-        .filter(Boolean)
-        .map((value) => String(value).trim().toLowerCase());
-      return values.some((value) => lowerCandidates.includes(value));
-    }) ||
-    findSystemDiagramNodeByDeviceId(topology, matchedDevice?.deviceId) ||
-    null;
-
-  const matchedAlias =
-    LEGACY_SCENE_BRIDGE_ALIASES.find((alias) =>
-      alias.valueCandidates.some((value) => lowerCandidates.includes(value.toLowerCase()))
-    ) || null;
-  const aliasNode =
-    matchedAlias
-      ? topology.nodes.find((item) =>
-          matchedAlias.nodeCandidates.some((value) => value.toLowerCase() === item.id.toLowerCase())
-        ) || findSystemDiagramNodeByDeviceId(topology, matchedAlias.deviceId)
-      : null;
-
-  return {
-    deviceId: matchedDevice?.deviceId || matchedNode?.primaryDeviceId || matchedAlias?.deviceId || null,
-    nodeId: matchedNode?.id || aliasNode?.id || null
-  };
-}
-
-function mapDeviceStatusLabel(value: string | null | undefined): string {
-  if (value === "online") {
-    return "在线";
-  }
-  if (value === "offline") {
-    return "离线";
-  }
-  if (value === "unknown" || !value) {
-    return zhCN.devicePage.statusUnknown;
-  }
-  return value;
-}
-
-function normalizeSceneModelSystemType(
-  detail: DeviceDetailDto["detail"] | null,
-  listItem: DeviceListItemDto | null
-): string {
-  const candidates = [
-    detail?.deviceTypeName,
-    listItem?.usageType,
-    listItem?.deviceName
-  ].filter(Boolean) as string[];
-
-  for (const value of candidates) {
-    const normalized = value.toLowerCase();
-    if (value.includes("冷机") || normalized.includes("chiller")) {
-      return zhCN.devicePage.systemTypeChiller;
-    }
-    if (value.includes("冷冻泵") || normalized.includes("chilled pump")) {
-      return zhCN.devicePage.systemTypeChilledPump;
-    }
-    if (value.includes("冷却泵") || normalized.includes("cooling pump")) {
-      return zhCN.devicePage.systemTypeCoolingPump;
-    }
-    if (value.includes("冷却塔") || normalized.includes("cooling tower")) {
-      return zhCN.devicePage.systemTypeCoolingTower;
-    }
-    if (value.includes("阀")) {
-      return "工业阀门";
-    }
-  }
-
-  return zhCN.devicePage.systemTypeChiller;
-}
-
-function resolveSceneModelCategory(systemType: string) {
-  if (systemType === zhCN.devicePage.systemTypeChiller) {
-    return "chiller";
-  }
-  if (systemType === zhCN.devicePage.systemTypeChilledPump || systemType === zhCN.devicePage.systemTypeCoolingPump) {
-    return "pump";
-  }
-  if (systemType === zhCN.devicePage.systemTypeCoolingTower) {
-    return "cooling-tower";
-  }
-  if (systemType.includes("阀")) {
-    return "valve";
+  if (/\/3d(?:[/?#]|$)/i.test(sceneUrl) || /\/3d\//i.test(sceneUrl)) {
+    return "3d";
   }
   return null;
 }
 
-function SceneLegacyTrendChart({
-  points,
-  title,
-  unit,
-  ariaLabel
-}: {
-  points: SceneLegacyPointDto[];
-  title: string;
-  unit: string | null | undefined;
-  ariaLabel: string;
-}) {
-  const numericValues = points
-    .map((item) => (typeof item.value === "number" && Number.isFinite(item.value) ? item.value : null))
-    .filter((item): item is number => item !== null);
-  const min = numericValues.length > 0 ? Math.min(...numericValues) : 0;
-  const max = numericValues.length > 0 ? Math.max(...numericValues) : 1;
-  const span = max - min || Math.max(Math.abs(max), 1);
-  const toY = (value: number) => 90 - ((value - min) / span) * 76;
-  const axisLabels = buildSceneChartAxisLabels(points);
+function resolveSceneNativeFallbackViewport(sceneMode: SceneMode | null): SceneNativeViewportPreset {
+  if (sceneMode === "2d") {
+    return SCENE_NATIVE_COMPACT_2D_VIEWPORT;
+  }
+  if (sceneMode === "3d") {
+    return SCENE_NATIVE_GENERIC_3D_VIEWPORT;
+  }
+  return SCENE_NATIVE_SAFE_VIEWPORT;
+}
 
-  const segments: string[] = [];
-  let currentSegment: Array<{ x: number; y: number }> = [];
-  points.forEach((point, index) => {
-    if (typeof point.value !== "number" || !Number.isFinite(point.value)) {
-      if (currentSegment.length > 1) {
-        segments.push(`M ${currentSegment.map((item) => `${item.x.toFixed(2)} ${item.y.toFixed(2)}`).join(" L ")}`);
-      }
-      currentSegment = [];
+function resolveSceneNativeViewport(sceneUrl: string, sceneMode?: SceneMode): SceneNativeViewportPreset {
+  const resolvedMode = sceneMode ?? inferSceneModeFromUrl(sceneUrl);
+  const matchedRule = SCENE_NATIVE_VIEWPORT_RULES.find((rule) => {
+    if (rule.mode !== "any" && resolvedMode && rule.mode !== resolvedMode) {
+      return false;
+    }
+    if (rule.excludes?.some((pattern) => pattern.test(sceneUrl))) {
+      return false;
+    }
+    return rule.matches.some((pattern) => pattern.test(sceneUrl));
+  });
+
+  return matchedRule?.preset ?? resolveSceneNativeFallbackViewport(resolvedMode);
+}
+
+const SCENE_EMBED_TEXT: Record<
+  LocaleCode,
+  {
+    modeLabels: Record<SceneMode, string>;
+    wetBulb: string;
+    outdoorHumidity: string;
+    outdoorTemperature: string;
+    loading: string;
+    noRemoteUrl: string;
+    environmentAria: string;
+    modeAria: string;
+    missing2dUrl: string;
+    missing3dUrl: string;
+    fullscreen: string;
+    restore: string;
+  }
+> = {
+  "zh-CN": {
+    modeLabels: {
+      "2d": "2D\u573a\u666f",
+      "3d": "3D\u573a\u666f"
+    },
+    wetBulb: "\u6e7f\u7403\u6e29\u5ea6",
+    outdoorHumidity: "\u5ba4\u5916\u6e7f\u5ea6",
+    outdoorTemperature: "\u5ba4\u5916\u6e29\u5ea6",
+    loading: "\u52a0\u8f7d\u4e2d",
+    noRemoteUrl: "\u672a\u5339\u914d\u5230\u8fdc\u7a0b\u573a\u666f URL",
+    environmentAria: "\u5ba4\u5916\u73af\u5883\u53c2\u6570",
+    modeAria: "\u573a\u666f\u6a21\u5f0f\u5207\u6362",
+    missing2dUrl: "\u5f53\u524d\u9879\u76ee\u6ca1\u6709\u8fd4\u56de 2D \u573a\u666f URL",
+    missing3dUrl: "\u5f53\u524d\u9879\u76ee\u6ca1\u6709\u8fd4\u56de 3D \u573a\u666f URL",
+    fullscreen: "\u5168\u5c4f\u663e\u793a\u5d4c\u5165\u573a\u666f",
+    restore: "\u6062\u590d\u6b63\u5e38\u663e\u793a"
+  },
+  "en-US": {
+    modeLabels: {
+      "2d": "2D Scene",
+      "3d": "3D Scene"
+    },
+    wetBulb: "Wet-bulb Temp",
+    outdoorHumidity: "Outdoor Humidity",
+    outdoorTemperature: "Outdoor Temp",
+    loading: "Loading",
+    noRemoteUrl: "No remote scene URL matched",
+    environmentAria: "Outdoor environment parameters",
+    modeAria: "Scene mode switch",
+    missing2dUrl: "The current project did not return a 2D scene URL",
+    missing3dUrl: "The current project did not return a 3D scene URL",
+    fullscreen: "Fullscreen embedded scene",
+    restore: "Restore normal view"
+  },
+  "vi-VN": {
+    modeLabels: {
+      "2d": "Canh 2D",
+      "3d": "Canh 3D"
+    },
+    wetBulb: "Nhiet do bau uot",
+    outdoorHumidity: "Do am ngoai troi",
+    outdoorTemperature: "Nhiet do ngoai troi",
+    loading: "Dang tai",
+    noRemoteUrl: "Chua khop URL canh tu xa",
+    environmentAria: "Thong so moi truong ngoai troi",
+    modeAria: "Chuyen che do canh",
+    missing2dUrl: "Du an hien tai chua tra ve URL canh 2D",
+    missing3dUrl: "Du an hien tai chua tra ve URL canh 3D",
+    fullscreen: "Toan man hinh canh nhung",
+    restore: "Khoi phuc hien thi binh thuong"
+  }
+};
+
+function getSceneEmbedText(locale: LocaleCode): (typeof SCENE_EMBED_TEXT)[LocaleCode] {
+  return SCENE_EMBED_TEXT[locale] || SCENE_EMBED_TEXT["zh-CN"];
+}
+
+const SCENE_DEVICE_DIALOG_TAB_ORDER: SceneDeviceDialogTab[] = [
+  "info",
+  "detail",
+  "control",
+  "alarm",
+  "operation"
+];
+
+const SCENE_DEVICE_DIALOG_TAB_LABELS: Record<LocaleCode, Record<SceneDeviceDialogTab, string>> = {
+  "zh-CN": {
+    info: "\u8bbe\u5907\u4fe1\u606f",
+    detail: "\u8fd0\u884c\u53c2\u6570",
+    control: "\u63a7\u5236\u8bbe\u5b9a",
+    alarm: "\u544a\u8b66\u8bb0\u5f55",
+    operation: "\u64cd\u4f5c\u8bb0\u5f55"
+  },
+  "en-US": {
+    info: "Device Info",
+    detail: "Runtime Params",
+    control: "Control Settings",
+    alarm: "Alarms",
+    operation: "Operations"
+  },
+  "vi-VN": {
+    info: "Thong tin thiet bi",
+    detail: "Thong so van hanh",
+    control: "Cai dat dieu khien",
+    alarm: "Canh bao",
+    operation: "Thao tac"
+  }
+};
+
+function getSceneDeviceDialogTabs(locale: LocaleCode): Array<{ key: SceneDeviceDialogTab; label: string }> {
+  const labels = SCENE_DEVICE_DIALOG_TAB_LABELS[locale] || SCENE_DEVICE_DIALOG_TAB_LABELS["zh-CN"];
+  return SCENE_DEVICE_DIALOG_TAB_ORDER.map((key) => ({ key, label: labels[key] }));
+}
+
+function getSceneDeviceDialogCloseText(locale: LocaleCode): { close: string; closeAria: string } {
+  return SCENE_DEVICE_DIALOG_CLOSE_TEXT[locale] || SCENE_DEVICE_DIALOG_CLOSE_TEXT["zh-CN"];
+}
+
+const SCENE_DEVICE_DIALOG_TEXT = {
+  title: "\u573a\u666f\u8bbe\u5907",
+  closeAria: "\u5173\u95ed\u8bbe\u5907\u7a97\u53e3",
+  tabsAria: "\u8bbe\u5907\u5f39\u7a97\u6807\u7b7e\u9875",
+  loading: "\u6b63\u5728\u52a0\u8f7d\u8bbe\u5907\u6570\u636e...",
+  detailEmpty: "\u5f53\u524d\u8bbe\u5907\u6682\u65e0\u8fd0\u884c\u53c2\u6570\u3002",
+  controlEmpty: "\u5f53\u524d\u8bbe\u5907\u6682\u65e0\u53ef\u4e0b\u53d1\u63a7\u5236\u70b9\u3002",
+  alarmEmpty: "\u5f53\u524d\u8bbe\u5907\u6682\u65e0\u544a\u8b66\u8bb0\u5f55\u3002",
+  operationEmpty: "\u5f53\u524d\u8bbe\u5907\u6682\u65e0\u64cd\u4f5c\u8bb0\u5f55\u3002"
+};
+
+const SCENE_DEVICE_DIALOG_CLOSE_TEXT: Record<LocaleCode, { close: string; closeAria: string }> = {
+  "zh-CN": {
+    close: "\u5173\u95ed",
+    closeAria: "\u5173\u95ed\u8bbe\u5907\u7a97\u53e3"
+  },
+  "en-US": {
+    close: "Close",
+    closeAria: "Close device dialog"
+  },
+  "vi-VN": {
+    close: "Dong",
+    closeAria: "Dong hop thoai thiet bi"
+  }
+};
+
+const SCENE_DEVICE_RECORD_TEXT: Record<
+  LocaleCode,
+  {
+    operationContent: string;
+    operationResult: string;
+    operationPerson: string;
+    operationTime: string;
+    alarmLevel: string;
+    alarmState: string;
+    alarmContent: string;
+    alarmTime: string;
+    recovered: string;
+    alarming: string;
+    unknown: string;
+  }
+> = {
+  "zh-CN": {
+    operationContent: "\u64cd\u4f5c\u5185\u5bb9",
+    operationResult: "\u4e0b\u53d1/\u6267\u884c\u7ed3\u679c",
+    operationPerson: "\u64cd\u4f5c\u4eba",
+    operationTime: "\u64cd\u4f5c\u65f6\u95f4",
+    alarmLevel: "\u544a\u8b66\u7ea7\u522b",
+    alarmState: "\u72b6\u6001",
+    alarmContent: "\u544a\u8b66\u5185\u5bb9",
+    alarmTime: "\u53d1\u751f\u65f6\u95f4",
+    recovered: "\u5df2\u6062\u590d",
+    alarming: "\u544a\u8b66\u4e2d",
+    unknown: "--"
+  },
+  "en-US": {
+    operationContent: "Operation",
+    operationResult: "Result",
+    operationPerson: "Operator",
+    operationTime: "Time",
+    alarmLevel: "Level",
+    alarmState: "State",
+    alarmContent: "Alarm Content",
+    alarmTime: "Alarm Time",
+    recovered: "Recovered",
+    alarming: "Alarming",
+    unknown: "--"
+  },
+  "vi-VN": {
+    operationContent: "Noi dung thao tac",
+    operationResult: "Ket qua",
+    operationPerson: "Nguoi thao tac",
+    operationTime: "Thoi gian",
+    alarmLevel: "Cap do",
+    alarmState: "Trang thai",
+    alarmContent: "Noi dung canh bao",
+    alarmTime: "Thoi gian canh bao",
+    recovered: "Da khoi phuc",
+    alarming: "Dang canh bao",
+    unknown: "--"
+  }
+};
+
+const SCENE_CONTROL_SUBMIT_LABEL = "\u4e0b\u53d1";
+const SCENE_CONTROL_PENDING_LABEL = "\u4e0b\u53d1\u4e2d";
+const SCENE_NATIVE_FIT_MODE_OPTION = {
+  value: "native" as const,
+  label: "视图复位",
+  title: "恢复初始视图位置和大小"
+};
+const SCENE_IDLE_3D_PREWARM_DELAY_MS = 1800;
+const SCENE_COMFORT_LOADING_MAX_MS = 5200;
+
+type SceneIdleWindow = Window & {
+  requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+  cancelIdleCallback?: (handle: number) => void;
+};
+
+type SceneControlSubmitHandler = (
+  item: SceneDeviceParameterItemDto,
+  value: string,
+  actionKey: string,
+  displayText?: string
+) => void;
+
+type SceneControlPendingCommand = {
+  item: SceneDeviceParameterItemDto;
+  value: string;
+  actionKey: string;
+  displayText: string;
+  currentText: string;
+  controlLabel: string;
+  drTypeId: string;
+  regName: string;
+  tagName: string;
+  intent: "normal" | "caution" | "danger";
+};
+
+type SceneControlCombinedRule = {
+  label: string;
+  members: string[];
+};
+
+type SceneControlCombinedMember = {
+  item: SceneDeviceParameterItemDto;
+  itemIndex: number;
+  memberIndex: number;
+  buttonLabel: string;
+  value: string;
+};
+
+type SceneControlRenderRow =
+  | {
+      type: "item";
+      item: SceneDeviceParameterItemDto;
+      itemKey: string;
+    }
+  | {
+      type: "combined";
+      key: string;
+      label: string;
+      members: SceneControlCombinedMember[];
+    };
+
+type SceneParameterRow = {
+  item: SceneDeviceParameterItemDto;
+  key: string;
+  groupName: string;
+  label: string;
+  valueText: string;
+};
+
+type SceneCompactValue = {
+  key: string;
+  label: string;
+  valueText: string;
+  matched?: boolean;
+};
+
+type SceneCompactSpec = {
+  label: string;
+  patterns: RegExp[];
+};
+
+type SceneMergedOperationRecord = {
+  key: string;
+  details: string;
+  operationPerson: string;
+  date: string;
+  dispatchResult: string;
+  executionResult: string;
+  otherResults: string[];
+};
+
+type SceneDeviceKind = "chiller" | "tower" | "chilledPump" | "coolingPump" | "pump" | "other";
+
+type SceneDeviceFilterContext = {
+  kind: SceneDeviceKind;
+  ordinal: string;
+  tokens: string[];
+};
+
+const SCENE_DEVICE_RECORD_PREVIEW_LIMIT = 16;
+
+const SCENE_CONTROL_COMBINED_RULES: SceneControlCombinedRule[] = [
+  {
+    label: "\u624b\u52a8\u542f\u505c",
+    members: ["\u624b\u52a8\u542f\u52a8", "\u624b\u52a8\u505c\u6b62"]
+  },
+  {
+    label: "\u677f\u6362\u5de5\u827a\u4e00\u952e\u542f\u505c",
+    members: ["\u677f\u6362\u5de5\u827a\u4e00\u952e\u542f\u52a8", "\u677f\u6362\u5de5\u827a\u4e00\u952e\u505c\u6b62"]
+  },
+  {
+    label: "\u677f\u6362\u4e00\u952e\u542f\u505c",
+    members: ["\u677f\u6362\u4e00\u952e\u542f\u52a8", "\u677f\u6362\u4e00\u952e\u505c\u6b62"]
+  },
+  {
+    label: "\u624b\u52a8\u9600\u95e8",
+    members: ["\u624b\u52a8\u5f00\u9600", "\u624b\u52a8\u5173\u9600"]
+  },
+  {
+    label: "\u4e00\u952e\u5f00\u5173",
+    members: ["\u4e00\u952e\u5173\u673a", "\u4e00\u952e\u5f00\u673a"]
+  },
+  {
+    label: "\u4e00\u952e\u542f\u505c",
+    members: ["\u4e00\u952e\u542f\u52a8", "\u4e00\u952e\u505c\u6b62"]
+  },
+  {
+    label: "\u5168\u81ea\u52a8\u542f\u505c",
+    members: ["\u5168\u81ea\u52a8\u542f\u52a8", "\u5168\u81ea\u52a8\u505c\u6b62"]
+  },
+  {
+    label: "\u4f4e\u901f\u542f\u505c",
+    members: ["\u4f4e\u901f\u542f\u52a8", "\u4f4e\u901f\u505c\u6b62"]
+  },
+  {
+    label: "\u9ad8\u901f\u542f\u505c",
+    members: ["\u9ad8\u901f\u542f\u52a8", "\u9ad8\u901f\u505c\u6b62"]
+  },
+  {
+    label: "\u7cfb\u7edf\u63a7\u5236\u6a21\u5f0f",
+    members: ["\u624b\u52a8\u6a21\u5f0f", "\u673a\u7ec4\u6a21\u5f0f", "\u5168\u81ea\u52a8\u6a21\u5f0f"]
+  }
+];
+
+const SCENE_FRAME_FIT_MESSAGES = [
+  { type: "resize" },
+  { type: "scene-resize" },
+  { type: "scene-fit-view" },
+  { type: "scene-point-clear" },
+  { type: "fitToWindow" },
+  { type: "resetCamera" },
+  { type: "resetLabels" },
+  { type: "showAllPoints" },
+  { action: "resize" },
+  { action: "fitToWindow" },
+  { action: "resetCamera" },
+  { action: "pointClear" },
+  { action: "resetLabels" },
+  { action: "showAllPoints" },
+  "resize",
+  "fitToWindow",
+  "resetCamera",
+  "pointClear",
+  "resetLabels",
+  "showAllPoints"
+];
+
+const SCENE_FRAME_FIT_GLOBALS = [
+  "viewer",
+  "sceneViewer",
+  "modelViewer",
+  "threeViewer",
+  "app",
+  "map",
+  "model",
+  "scene"
+];
+
+const SCENE_FRAME_FIT_METHODS = [
+  "resize",
+  "fit",
+  "fitView",
+  "fitToView",
+  "fitToWindow",
+  "fitToScreen",
+  "zoomToFit",
+  "resetCamera",
+  "resetView",
+  "setFitView",
+  "pointClear",
+  "clearPoints",
+  "showAllPoints",
+  "resetLabels",
+  "fitLabels",
+  "makePointsReadable"
+];
+
+type SceneWeather = {
+  outdoorWetBulbC: number | null;
+  outdoorHumidityPct: number | null;
+  outdoorTempC: number | null;
+};
+
+type SceneRuntimeMetricView = {
+  key: string;
+  label: string;
+  value: string;
+  unit?: string;
+  hint: string;
+  tone?: "good" | "info" | "warn" | "danger" | "neutral";
+  primary?: boolean;
+};
+
+type SceneRuntimeContextItem = {
+  label: string;
+  value: string;
+};
+
+type SceneDeviceClick = {
+  drId: string;
+  deviceId: string;
+  deviceName: string;
+  deviceCode: string;
+  modelName: string;
+  deviceType: string;
+  deviceTypeId: string;
+  runningPoint: string;
+  frequencyPoint: string;
+};
+
+const PLANT_EQUIPMENT_INSPECTOR_TABS: Array<{ key: PlantEquipmentInspectorTab; label: string }> = [
+  { key: "overview", label: "运行概况" },
+  { key: "trend", label: "趋势" },
+  { key: "diagnostics", label: "告警诊断" },
+  { key: "asset", label: "设备档案" }
+];
+
+function formatPlantEquipmentMetric(metric: PlantOverviewEquipmentMetric): string {
+  if (!isFiniteSceneNumber(metric.value)) {
+    return "--";
+  }
+  const digits = metric.key === "loadPercent" ? 0 : 1;
+  return `${formatSceneRuntimeNumber(metric.value, digits)} ${metric.unit}`;
+}
+
+function formatPlantMetricEvidence(metric: PlantOverviewEquipmentMetric): string {
+  if (metric.evidenceMode === "live") {
+    return "LIVE";
+  }
+  if (metric.evidenceMode === "shadow") {
+    return "SHADOW · 时效不可证";
+  }
+  if (metric.evidenceMode === "stale") {
+    return "STALE · 证据不完整";
+  }
+  return "UNBOUND · 未绑定";
+}
+
+function normalizeUrl(value: string | null | undefined): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function readSceneAbsoluteUrl(value: string): URL | null {
+  const normalized = normalizeUrl(value);
+  if (!normalized) {
+    return null;
+  }
+  try {
+    return new URL(normalized, window.location.href);
+  } catch {
+    return null;
+  }
+}
+
+function ensureSceneHeadLink(key: string, configure: (link: HTMLLinkElement) => void) {
+  const existing = Array.from(document.head.querySelectorAll<HTMLLinkElement>("link[data-scene-model-hint]"))
+    .some((link) => link.dataset.sceneModelHint === key);
+  if (existing) {
+    return;
+  }
+  const link = document.createElement("link");
+  link.dataset.sceneModelHint = key;
+  configure(link);
+  document.head.appendChild(link);
+}
+
+function ensureSceneModelOriginHints(urls: string[]) {
+  const origins = new Set<string>();
+  urls.forEach((url) => {
+    const parsed = readSceneAbsoluteUrl(url);
+    if (parsed) {
+      origins.add(parsed.origin);
+    }
+  });
+  origins.forEach((origin) => {
+    const parsed = readSceneAbsoluteUrl(origin);
+    if (!parsed) {
       return;
     }
-    const x = points.length <= 1 ? 50 : (index / (points.length - 1)) * 100;
-    currentSegment.push({ x, y: toY(point.value) });
+    ensureSceneHeadLink(`dns-prefetch:${parsed.host}`, (link) => {
+      link.rel = "dns-prefetch";
+      link.href = `//${parsed.host}`;
+    });
+    ensureSceneHeadLink(`preconnect:${parsed.origin}`, (link) => {
+      link.rel = "preconnect";
+      link.href = parsed.origin;
+    });
   });
-  if (currentSegment.length > 1) {
-    segments.push(`M ${currentSegment.map((item) => `${item.x.toFixed(2)} ${item.y.toFixed(2)}`).join(" L ")}`);
+}
+
+function ensureSceneModelDocumentPrefetch(url: string) {
+  const parsed = readSceneAbsoluteUrl(url);
+  if (!parsed) {
+    return;
+  }
+  ensureSceneHeadLink(`prefetch:${parsed.href}`, (link) => {
+    link.rel = "prefetch";
+    link.as = "document";
+    link.href = parsed.href;
+  });
+}
+
+function callSceneFrameFitMethods(target: unknown) {
+  if (!target || (typeof target !== "object" && typeof target !== "function")) {
+    return;
+  }
+  const record = target as Record<string, unknown>;
+  SCENE_FRAME_FIT_METHODS.forEach((method) => {
+    const candidate = record[method];
+    if (typeof candidate === "function") {
+      try {
+        candidate.call(target);
+      } catch {
+        // Remote scene pages differ by renderer; unsupported fit hooks are ignored.
+      }
+    }
+  });
+}
+
+function requestSceneFrameAutoFit(iframe: HTMLIFrameElement | null) {
+  const frameWindow = iframe?.contentWindow;
+  if (!frameWindow) {
+    return;
   }
 
+  SCENE_FRAME_FIT_MESSAGES.forEach((message) => {
+    try {
+      frameWindow.postMessage(message, "*");
+    } catch {
+      // Cross-origin frames may ignore these hints; the iframe itself remains usable.
+    }
+  });
+
+  try {
+    frameWindow.dispatchEvent(new Event("resize"));
+  } catch {
+    // Cross-origin access can be restricted.
+  }
+
+  try {
+    const frameDocument = iframe.contentDocument || frameWindow.document;
+    frameDocument.documentElement.style.width = "100%";
+    frameDocument.documentElement.style.height = "100%";
+    frameDocument.documentElement.style.overflow = "hidden";
+    if (frameDocument.body) {
+      frameDocument.body.style.width = "100%";
+      frameDocument.body.style.height = "100%";
+      frameDocument.body.style.margin = "0";
+      frameDocument.body.style.overflow = "hidden";
+    }
+    frameDocument.querySelectorAll("canvas").forEach((canvas) => {
+      canvas.style.width = "100%";
+      canvas.style.height = "100%";
+    });
+  } catch {
+    // Same-origin styling is best-effort only.
+  }
+
+  try {
+    callSceneFrameFitMethods(frameWindow);
+    const frameRecord = frameWindow as Window & Record<string, unknown>;
+    SCENE_FRAME_FIT_GLOBALS.forEach((key) => callSceneFrameFitMethods(frameRecord[key]));
+  } catch {
+    // Best-effort renderer integration.
+  }
+}
+
+function normalizeLabel(value: string | null | undefined): string {
+  return String(value || "").trim();
+}
+
+function readSceneWeather(overview: DashboardOverviewDto | null): SceneWeather {
+  return {
+    outdoorWetBulbC: overview?.energyCards?.outdoorWetBulbC ?? null,
+    outdoorHumidityPct: overview?.energyCards?.outdoorHumidityPct ?? null,
+    outdoorTempC: overview?.energyCards?.outdoorTempC ?? null
+  };
+}
+
+function formatSceneMetric(value: number | null, unit: string, digits = 1): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return "--";
+  }
+  return `${value.toFixed(digits)}${unit}`;
+}
+
+function isFiniteSceneNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function divideSceneOrNull(numerator: number | null | undefined, denominator: number | null | undefined): number | null {
+  if (!isFiniteSceneNumber(numerator) || !isFiniteSceneNumber(denominator) || denominator === 0) {
+    return null;
+  }
+  return numerator / denominator;
+}
+
+function formatSceneRuntimeNumber(value: number | null | undefined, digits = 1): string {
+  if (!isFiniteSceneNumber(value)) {
+    return "--";
+  }
+  return new Intl.NumberFormat("zh-CN", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits
+  }).format(value);
+}
+
+function formatSceneRuntimeCount(value: number | null | undefined): string {
+  if (!isFiniteSceneNumber(value)) {
+    return "--";
+  }
+  return new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 0 }).format(value);
+}
+
+function formatSceneRuntimePercent(value: number | null | undefined): string {
+  if (!isFiniteSceneNumber(value)) {
+    return "--";
+  }
+  return formatSceneRuntimeNumber(value, value >= 10 ? 0 : 1);
+}
+
+function formatSceneRuntimeTime(value: string | null | undefined): string {
+  if (!value) {
+    return "";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
+function formatSceneRuntimeSourceState(overview: DashboardOverviewDto | null): { label: string; tone: "good" | "warn" | "neutral" } {
+  const freshness = overview?.freshness;
+  const sourceTimestamp = freshness?.latestTimestamp || overview?.generatedAt;
+  const timestamp = formatSceneRuntimeTime(sourceTimestamp);
+  const suffix = timestamp ? ` · ${timestamp}` : "";
+  if (!overview) {
+    return { label: "数据待回传", tone: "neutral" };
+  }
+  if (freshness?.stale || freshness?.label === "stale") {
+    return { label: `数据滞后${suffix}`, tone: "warn" };
+  }
+  if (freshness?.label === "fresh") {
+    return { label: `数据新鲜${suffix}`, tone: "good" };
+  }
+  return { label: `数据时效未确认${suffix}`, tone: "warn" };
+}
+
+function formatSceneStationRuntimeSourceState(
+  summary: RuntimePointSummaryDto | null
+): { label: string; tone: "good" | "warn" | "neutral" } {
+  if (!summary) {
+    return { label: "站房实时摘要待验证", tone: "neutral" };
+  }
+  const timestamp = formatSceneRuntimeTime(summary.generatedAt || summary.pointEvidence?.receivedAt);
+  const suffix = timestamp ? ` · ${timestamp}` : "";
+  if (summary.status === "ready" && (summary.counts?.registerPoints ?? 0) > 0) {
+    return { label: `站房筛选已验证${suffix}`, tone: "good" };
+  }
+  return { label: `站房筛选已验证 · 摘要未就绪${suffix}`, tone: "warn" };
+}
+
+function formatSceneTemperaturePair(first: number | null | undefined, second: number | null | undefined): string {
+  const firstText = formatSceneRuntimeNumber(first, 1);
+  const secondText = formatSceneRuntimeNumber(second, 1);
+  if (firstText === "--" && secondText === "--") {
+    return "--";
+  }
+  return `${firstText}/${secondText}`;
+}
+
+function formatSceneEquipmentCounts(overview: DashboardOverviewDto | null): string {
+  const summary = overview?.deviceSummary;
+  const values = [
+    summary?.chillerCount,
+    summary?.chilledPumpCount,
+    summary?.coolingPumpCount,
+    summary?.coolingTowerCount
+  ];
+  if (!values.some(isFiniteSceneNumber)) {
+    return "--";
+  }
+  return values.map((value) => formatSceneRuntimeCount(value)).join("/");
+}
+
+function formatSceneRuntimeEquipmentCounts(summary: RuntimePointSummaryDto | null): string {
+  const values = [
+    summary?.counts?.chillerCount,
+    summary?.counts?.chilledPumpCount,
+    summary?.counts?.coolingPumpCount,
+    summary?.counts?.coolingTowerCount
+  ];
+  if (!values.some(isFiniteSceneNumber)) {
+    return "--";
+  }
+  return values.map((value) => formatSceneRuntimeCount(value)).join("/");
+}
+
+function sumSceneNumbersOrNull(values: Array<number | null | undefined>): number | null {
+  const validValues = values.filter(isFiniteSceneNumber);
+  if (validValues.length === 0) {
+    return null;
+  }
+  return validValues.reduce((total, value) => total + value, 0);
+}
+
+function parseSceneLoadPercent(value: unknown): number | null {
+  const normalized = readSceneText(value).replace(/,/g, "").replace(/%/g, "");
+  if (!normalized) {
+    return null;
+  }
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+  return Math.max(0, Math.min(100, parsed));
+}
+
+function isSceneGifImage(value: string): boolean {
+  return /\.gif(?:$|[?#])/i.test(value);
+}
+
+function getSceneDeviceInfoGroupByIndex(deviceInfo: SceneDeviceParametersDto["deviceInfo"], index: number) {
+  return (deviceInfo?.layoutGroups || []).find((group) => Number(group.index) === index) || null;
+}
+
+function shouldHideSceneDeviceInfoItem(name: string, value: string): boolean {
+  const normalizedName = normalizeSceneFilterText(name);
+  const normalizedValue = readSceneSafeDisplayText(value);
+  if (/^(drid|deviceid|设备id|设备类型id|drtypeid|drtype|typeid)$/.test(normalizedName)) {
+    return true;
+  }
+  if (normalizedName === "设备类型" && /^\d+$/.test(normalizedValue)) {
+    return true;
+  }
+  if (/^(运行点位|频率点位)$/.test(name) && /^\d+$/.test(normalizedValue)) {
+    return true;
+  }
+  return false;
+}
+
+function formatSceneDeviceInfoLabel(name: string): string {
+  return name
+    .replace(/^正常\/报警$/, "告警状态")
+    .replace(/^设备投用\/禁用$/, "投用状态")
+    .replace(/^远程\/本地$/, "控制位置")
+    .replace(/^频率手动给定$/, "手动频率给定")
+    .replace(/^额定杨程$/, "额定扬程");
+}
+
+function formatSceneEngineeringText(value: string): string {
+  return readSceneSafeDisplayText(value)
+    .replace(/(\d)\s*(?:KW\/h|KWH)\b/gi, "$1 kWh")
+    .replace(/\b(?:KW\/h|KWH)\b/gi, "kWh")
+    .replace(/(\d)\s*KW\b/gi, "$1 kW")
+    .replace(/\bKW\b/gi, "kW")
+    .replace(/(\d)\s*KPA\b/gi, "$1 kPa")
+    .replace(/\bKPA\b/gi, "kPa");
+}
+
+function formatSceneEngineeringUnit(unit: string): string {
+  const normalized = readSceneSafeDisplayText(unit);
+  if (/^(?:KW\/h|KWH)$/i.test(normalized)) {
+    return "kWh";
+  }
+  if (/^KW$/i.test(normalized)) {
+    return "kW";
+  }
+  if (/^KPA$/i.test(normalized)) {
+    return "kPa";
+  }
+  return formatSceneEngineeringText(normalized);
+}
+
+function formatSceneEngineeringNumber(value: string, unit: string): string {
+  const normalizedValue = formatSceneEngineeringText(value);
+  const numericValue = Number(normalizedValue);
+  if (!Number.isFinite(numericValue)) {
+    return normalizedValue;
+  }
+  if (unit === "\u2103" || unit === "kPa" || unit === "kW") {
+    return numericValue.toFixed(1);
+  }
+  return normalizedValue;
+}
+
+function formatSceneDeviceInfoValueParts(value: string, unit: string): {
+  valueText: string;
+  unitText: string;
+  displayText: string;
+} {
+  const unitText = formatSceneEngineeringUnit(unit);
+  const valueText = formatSceneEngineeringNumber(value || "--", unitText);
+  const displayText = unitText && valueText !== "--"
+    ? `${valueText} ${unitText}`
+    : formatSceneEngineeringText(valueText);
+  return {
+    valueText: formatSceneEngineeringText(valueText),
+    unitText,
+    displayText
+  };
+}
+
+function readSceneDeviceInfoNumericValue(value: string): number | null {
+  const normalized = formatSceneEngineeringText(value).replace(/,/g, "");
+  const match = normalized.match(/-?\d+(?:\.\d+)?/);
+  if (!match) {
+    return null;
+  }
+  const numericValue = Number(match[0]);
+  return Number.isFinite(numericValue) ? numericValue : null;
+}
+
+function getSceneDeviceInfoTone(name: string, value: string, unit: string): "good" | "warn" | "danger" | "neutral" {
+  const normalizedText = `${name} ${value} ${unit}`.trim();
+  if (!normalizedText || value === "--") {
+    return "neutral";
+  }
+  if (/报警|故障|异常|无水流|断流|离线|停机/.test(normalizedText)) {
+    return "danger";
+  }
+  if (/本地|禁用|手动|关注|偏高|偏低/.test(normalizedText)) {
+    return "warn";
+  }
+  if (/有水流|正常|投用|远程|在线|运行/.test(normalizedText)) {
+    return "good";
+  }
+
+  const numericValue = readSceneDeviceInfoNumericValue(value);
+  if (numericValue === null) {
+    return "neutral";
+  }
+  if (/冷冻供水温度/.test(name)) {
+    if (numericValue < 3 || numericValue > 15) {
+      return "danger";
+    }
+    return numericValue < 4.5 || numericValue > 12 ? "warn" : "good";
+  }
+  if (/冷冻回水温度/.test(name)) {
+    if (numericValue < 5 || numericValue > 24) {
+      return "danger";
+    }
+    return numericValue < 7 || numericValue > 20 ? "warn" : "good";
+  }
+  if (/冷却.*水温度|冷凝温度/.test(name)) {
+    if (numericValue > 45 || numericValue < 8) {
+      return "danger";
+    }
+    return numericValue > 38 || numericValue < 12 ? "warn" : "good";
+  }
+  if (/蒸发温度/.test(name)) {
+    if (numericValue < -2 || numericValue > 18) {
+      return "danger";
+    }
+    return numericValue < 2 || numericValue > 15 ? "warn" : "good";
+  }
+  if (/压力/.test(name)) {
+    if (numericValue <= 0) {
+      return "danger";
+    }
+    return "good";
+  }
+  return "neutral";
+}
+
+function findSceneDeviceInfoItemValue(items: SceneDeviceInfoItemDto[], pattern: RegExp): string {
+  const matched = items.find((item) => pattern.test(readSceneSafeDisplayText(item.name)));
+  return readSceneSafeDisplayText(matched?.value);
+}
+
+function getSceneDeviceStatusTone(value: string): "good" | "warn" | "danger" | "neutral" {
+  if (/异常|故障|报警|离线|无/.test(value)) {
+    return "danger";
+  }
+  if (/本地|禁用|手动|未知|--/.test(value)) {
+    return "warn";
+  }
+  if (/正常|在线|远程|投用|运行/.test(value)) {
+    return "good";
+  }
+  return "neutral";
+}
+
+function resolveSceneCommunicationStatus(runStatus: string | undefined, hasStatusRows: boolean): string {
+  const normalized = readSceneSafeDisplayText(runStatus);
+  if (/^(?:1|true|online|normal|run|running|\u8fd0\u884c|\u6b63\u5e38|\u5728\u7ebf)$/i.test(normalized)) {
+    return "\u901a\u8baf\u6b63\u5e38";
+  }
+  if (/^(?:0|false|offline|fault|error|stop|\u79bb\u7ebf|\u6545\u969c|\u5f02\u5e38)$/i.test(normalized)) {
+    return "\u901a\u8baf\u5f02\u5e38";
+  }
+  return hasStatusRows ? "\u901a\u8baf\u6b63\u5e38" : "\u901a\u8baf\u672a\u77e5";
+}
+
+function renderSceneDeviceStatusPanel(
+  items: SceneDeviceInfoItemDto[],
+  runStatus: string | undefined,
+  title = "\u8bbe\u5907\u72b6\u6001"
+) {
+  const enableValue = findSceneDeviceInfoItemValue(items, /设备投用|投用|禁用/) || "--";
+  const remoteValue = findSceneDeviceInfoItemValue(items, /远程|本地|控制位置/) || "--";
+  const communicationValue = resolveSceneCommunicationStatus(runStatus, items.length > 0);
+  const badges = [
+    { label: "\u6295\u7528\u72b6\u6001", value: enableValue },
+    { label: "\u63a7\u5236\u4f4d\u7f6e", value: remoteValue },
+    { label: "\u901a\u8baf\u72b6\u6001", value: communicationValue }
+  ];
+
   return (
-    <div className="scene-compat-chart-block">
-      <div className="scene-compat-chart-head">
-        <strong>{title}</strong>
-        <small>{unit || zhCN.sceneControl.compatUnitPending}</small>
+    <>
+      <h4 className="scene-embed-device-info-title" title={title}>{title}</h4>
+      <div className="scene-embed-device-status-badges">
+        {badges.map((badge) => {
+          const tone = getSceneDeviceStatusTone(badge.value);
+          return (
+            <article
+              key={badge.label}
+              className={`scene-embed-device-status-badge is-${tone}`}
+              title={`${badge.label} ${badge.value}`}
+            >
+              <span>{badge.label}</span>
+              <strong>{badge.value}</strong>
+            </article>
+          );
+        })}
       </div>
-      <div className="trend-chart-shell" aria-label={ariaLabel}>
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="trend-lines">
-          {[20, 40, 60, 80].map((line) => (
-            <line key={`scene-grid-${line}`} x1="0" y1={line} x2="100" y2={line} className="trend-grid-line" />
-          ))}
-          {segments.map((segment, index) => (
-            <path
-              key={`scene-segment-${index}`}
-              d={segment}
-              className="trend-line-path"
-              style={{ stroke: "rgba(105, 228, 255, 0.92)" }}
-            />
-          ))}
-          {points.map((point, index) => {
-            if (typeof point.value !== "number" || !Number.isFinite(point.value)) {
-              return null;
-            }
-            const x = points.length <= 1 ? 50 : (index / (points.length - 1)) * 100;
-            return (
-              <circle
-                key={`scene-point-${index}`}
-                cx={x}
-                cy={toY(point.value)}
-                r={1.4}
-                className="trend-line-dot"
-                style={{ fill: "rgba(143, 247, 215, 0.96)" }}
-              >
-                <title>
-                  {point.label || "--"} / {formatSceneMetricValue(point.value, unit)}
-                </title>
-              </circle>
-            );
-          })}
-        </svg>
-        <div className="trend-axis">
-          {axisLabels.map((label, index) => (
-            <small key={`${label}-${index}`}>{label}</small>
-          ))}
-        </div>
+    </>
+  );
+}
+
+function resolveSceneLoadBand(loadPercent: number): {
+  label: string;
+  tone: "good" | "warn" | "danger";
+} {
+  if (loadPercent >= 95) {
+    return { label: "\u9ad8\u8d1f\u8377", tone: "danger" };
+  }
+  if (loadPercent >= 85) {
+    return { label: "\u504f\u9ad8", tone: "warn" };
+  }
+  if (loadPercent < 30) {
+    return { label: "\u4f4e\u8f7d", tone: "warn" };
+  }
+  return { label: "\u7ecf\u6d4e\u533a", tone: "good" };
+}
+
+function renderSceneDeviceInfoList(
+  items: SceneDeviceInfoItemDto[],
+  _emptyText = "\u6682\u65e0\u6570\u636e",
+  title = "",
+  variant: "default" | "basic" = "default"
+) {
+  if (!items.length) {
+    return title ? <h4 className="scene-embed-device-info-title" title={title}>{title}</h4> : null;
+  }
+  return (
+    <>
+      {title ? <h4 className="scene-embed-device-info-title" title={title}>{title}</h4> : null}
+      <div className={`scene-embed-device-info-list is-${variant}`}>
+        {items.map((item, index) => {
+          const rawName = readSceneSafeDisplayText(item.name) || `\u9879\u76ee ${index + 1}`;
+          const rawValue = readSceneSafeDisplayText(item.value) || "--";
+          if (shouldHideSceneDeviceInfoItem(rawName, rawValue)) {
+            return null;
+          }
+          const name = formatSceneDeviceInfoLabel(rawName);
+          const { valueText, unitText, displayText } = formatSceneDeviceInfoValueParts(rawValue, readSceneSafeDisplayText(item.unit));
+          const tone = variant === "basic" ? "neutral" : getSceneDeviceInfoTone(name, valueText, unitText);
+          return (
+            <article
+              key={`${name}-${index}`}
+              className={`scene-embed-device-info-row is-${tone}`}
+              title={`${name} ${displayText}`}
+            >
+              <span title={name}>{name}</span>
+              <strong title={displayText}>{valueText}</strong>
+              {unitText && valueText !== "--" ? <em title={unitText}>{unitText}</em> : null}
+            </article>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function readSceneText(...values: unknown[]): string {
+  for (const value of values) {
+    if (value == null) {
+      continue;
+    }
+    const normalized = String(value).trim();
+    if (normalized) {
+      return normalized;
+    }
+  }
+  return "";
+}
+
+const SCENE_MOJIBAKE_MARKERS = [
+  "\ufffd",
+  "\u9422",
+  "\u9359",
+  "\u509b",
+  "\u669f",
+  "\u6fb6",
+  "\u93c8",
+  "\u558e",
+  "\u9350",
+  "\u8bf2",
+  "\u95b2",
+  "\u69db",
+  "\u7490",
+  "\u59dd",
+  "\u749e"
+];
+
+function scoreSceneDisplayText(value: unknown): number {
+  const text = readSceneText(value);
+  if (!text) {
+    return Number.POSITIVE_INFINITY;
+  }
+  const markerPenalty = SCENE_MOJIBAKE_MARKERS.reduce(
+    (total, marker) => total + (text.includes(marker) ? 100 : 0),
+    0
+  );
+  const replacementPenalty = (text.match(/\ufffd/g) || []).length * 120;
+  const cjkReward = (text.match(/[\u4e00-\u9fff]/g) || []).length * 2;
+  return markerPenalty + replacementPenalty - cjkReward;
+}
+
+function readSceneDisplayText(...values: unknown[]): string {
+  const candidates = values
+    .map((value, index) => ({
+      text: readSceneText(value),
+      score: scoreSceneDisplayText(value) + index * 0.01
+    }))
+    .filter((item) => item.text);
+  if (candidates.length === 0) {
+    return "";
+  }
+  candidates.sort((left, right) => left.score - right.score);
+  return candidates[0].text;
+}
+
+function isSceneLikelyMojibake(value: unknown): boolean {
+  const text = readSceneText(value);
+  if (!text) {
+    return false;
+  }
+  if (SCENE_MOJIBAKE_MARKERS.some((marker) => text.includes(marker))) {
+    return true;
+  }
+  if (/閿焲鏂ゆ嫹|脙|脗|忙|氓|莽|冒|脨/.test(text)) {
+    return /[\u4e00-\u9fff]/.test(text) || text.length > 3;
+  }
+  return scoreSceneDisplayText(text) >= 80;
+}
+
+function readSceneSafeDisplayText(...values: unknown[]): string {
+  const text = readSceneDisplayText(...values);
+  return isSceneLikelyMojibake(text) ? "" : text;
+}
+
+function extractSceneDeviceCode(value: unknown): string {
+  const text = readSceneText(value);
+  if (!text || text === "--" || /^\d+$/.test(text)) {
+    return "";
+  }
+  const matched = text.match(/\b[A-Za-z]{1,10}[-_ ]?\d+[A-Za-z0-9_-]*\b/);
+  if (matched?.[0]) {
+    return matched[0].replace(/\s+/g, "");
+  }
+  if (!/[\u3400-\u9fff]/.test(text) && /[A-Za-z]/.test(text) && /\d/.test(text)) {
+    return text;
+  }
+  return "";
+}
+
+function readSceneDeviceCode(...values: unknown[]): string {
+  for (const value of values) {
+    const code = extractSceneDeviceCode(value);
+    if (code) {
+      return code;
+    }
+  }
+  return "";
+}
+
+function normalizeSceneFilterText(value: unknown): string {
+  return readSceneSafeDisplayText(value)
+    .replace(/\s+/g, "")
+    .replace(/[＃]/g, "#")
+    .toLowerCase();
+}
+
+function addSceneDeviceFilterToken(tokens: Set<string>, value: unknown) {
+  const token = normalizeSceneFilterText(value);
+  if (!token || token === "--" || /^\d+$/.test(token)) {
+    return;
+  }
+  tokens.add(token);
+}
+
+function isSceneControlCabinetText(text: string): boolean {
+  return /联动模式|控制柜|参数设置/.test(text);
+}
+
+function resolveSceneDeviceKind(...values: unknown[]): SceneDeviceKind {
+  const text = normalizeSceneFilterText(values.join(" "));
+  if (isSceneControlCabinetText(text)) {
+    return "other";
+  }
+  if (/冷冻水泵|冷冻泵|chwp/.test(text)) {
+    return "chilledPump";
+  }
+  if (/冷却水泵|冷却泵|cdwp|cwp/.test(text)) {
+    return "coolingPump";
+  }
+  if (/水泵|泵/.test(text)) {
+    return "pump";
+  }
+  if (/冷却塔|ct\d*/.test(text)) {
+    return "tower";
+  }
+  if (/冷水机组|冷机|冰机|主机|(?:^|[^a-z])ch[-_#]?\d+/.test(text)) {
+    return "chiller";
+  }
+  return "other";
+}
+
+function extractSceneDeviceOrdinal(...values: unknown[]): string {
+  for (const value of values) {
+    const text = normalizeSceneFilterText(value);
+    if (!text) {
+      continue;
+    }
+    const patterns = [
+      /(\d+)[#号](?:冷水机组|冷机|冰机|主机|冷却塔|冷冻泵|冷却泵|水泵)?/,
+      /(?:冷水机组|冷机|冰机|主机|冷却塔|冷冻泵|冷却泵|水泵)(\d+)[#号]?/,
+      /(?:chwp|cdwp|cwp|ch|ct)[-_#]?(\d+)/
+    ];
+    for (const pattern of patterns) {
+      const matched = text.match(pattern);
+      if (matched?.[1]) {
+        return matched[1];
+      }
+    }
+  }
+  return "";
+}
+
+function buildSceneDeviceFilterContext(
+  clickedDevice: SceneDeviceClick | null,
+  responseDeviceName?: string
+): SceneDeviceFilterContext | null {
+  if (!clickedDevice) {
+    return null;
+  }
+  const tokens = new Set<string>();
+  [
+    responseDeviceName,
+    clickedDevice.deviceName,
+    clickedDevice.modelName,
+    clickedDevice.deviceCode
+  ].forEach((value) => addSceneDeviceFilterToken(tokens, value));
+
+  const kind = resolveSceneDeviceKind(
+    responseDeviceName,
+    clickedDevice.deviceName,
+    clickedDevice.modelName,
+    clickedDevice.deviceCode,
+    clickedDevice.deviceType
+  );
+  const ordinal = extractSceneDeviceOrdinal(
+    responseDeviceName,
+    clickedDevice.deviceName,
+    clickedDevice.modelName,
+    clickedDevice.deviceCode
+  );
+
+  if (ordinal) {
+    tokens.add(`${ordinal}#`);
+    tokens.add(`${ordinal}号`);
+    if (kind === "chiller") {
+      tokens.add(`${ordinal}#冷水机组`);
+      tokens.add(`${ordinal}#冷机`);
+      tokens.add(`${ordinal}#冰机`);
+      tokens.add(`ch${ordinal}`);
+    }
+    if (kind === "tower") {
+      tokens.add(`冷却塔${ordinal}`);
+      tokens.add(`ct${ordinal}`);
+    }
+    if (kind === "chilledPump") {
+      tokens.add(`冷冻泵${ordinal}`);
+      tokens.add(`冷冻水泵${ordinal}`);
+      tokens.add(`chwp${ordinal}`);
+    }
+    if (kind === "coolingPump") {
+      tokens.add(`冷却泵${ordinal}`);
+      tokens.add(`冷却水泵${ordinal}`);
+      tokens.add(`cwp${ordinal}`);
+      tokens.add(`cdwp${ordinal}`);
+    }
+  }
+
+  return {
+    kind,
+    ordinal,
+    tokens: Array.from(tokens).filter((token) => token.length > 1)
+  };
+}
+
+function textMatchesSceneDevice(text: string, context: SceneDeviceFilterContext | null): boolean {
+  if (!context?.tokens.length) {
+    return false;
+  }
+  const normalized = normalizeSceneFilterText(text);
+  return context.tokens.some((token) => normalized.includes(token));
+}
+
+function getSceneDifferentSameKindDevicePatterns(context: SceneDeviceFilterContext): RegExp[] {
+  if (!context.ordinal) {
+    return [];
+  }
+  if (context.kind === "chiller") {
+    return [
+      /(\d+)[#号](?:冷水机组|冷机|冰机|主机)/g,
+      /(?:冷水机组|冷机|冰机|主机)(\d+)[#号]?/g,
+      /ch[-_#]?(\d+)/g
+    ];
+  }
+  if (context.kind === "tower") {
+    return [/冷却塔(\d+)/g, /(\d+)[#号]冷却塔/g, /ct[-_#]?(\d+)/g];
+  }
+  if (context.kind === "chilledPump") {
+    return [/冷冻水?泵(\d+)/g, /(\d+)[#号]冷冻水?泵/g, /chwp[-_#]?(\d+)/g];
+  }
+  if (context.kind === "coolingPump") {
+    return [/冷却水?泵(\d+)/g, /(\d+)[#号]冷却水?泵/g, /(?:cwp|cdwp)[-_#]?(\d+)/g];
+  }
+  return [];
+}
+
+function textMentionsDifferentSameKindDevice(text: string, context: SceneDeviceFilterContext | null): boolean {
+  if (!context?.ordinal) {
+    return false;
+  }
+  const normalized = normalizeSceneFilterText(text);
+  return getSceneDifferentSameKindDevicePatterns(context).some((pattern) => {
+    pattern.lastIndex = 0;
+    let matched = pattern.exec(normalized);
+    while (matched) {
+      if (matched[1] && matched[1] !== context.ordinal) {
+        return true;
+      }
+      matched = pattern.exec(normalized);
+    }
+    return false;
+  });
+}
+
+function textMentionsAnySceneDevice(text: string): boolean {
+  return /(\d+)[#号](?:冷水机组|冷机|冰机|主机|冷却塔|冷冻水?泵|冷却水?泵|水泵)|(?:冷水机组|冷机|冰机|主机|冷却塔|冷冻水?泵|冷却水?泵|水泵)(\d+)[#号]?|(?:chwp|cdwp|cwp|ch|ct)[-_#]?\d+/i.test(
+    normalizeSceneFilterText(text)
+  );
+}
+
+function textIsSceneDeviceDomainUnrelated(text: string, context: SceneDeviceFilterContext | null): boolean {
+  if (!context || context.kind === "other" || textMatchesSceneDevice(text, context)) {
+    return false;
+  }
+  const normalized = normalizeSceneFilterText(text);
+  const patternsByKind: Record<SceneDeviceKind, RegExp[]> = {
+    chiller: [
+      /冷却塔|ct\d/,
+      /冷冻水?泵|冷却水?泵|水泵|泵参数/,
+      /风机|逼近度|湿球|冷却回水目标|冷却温度下限|冷却负荷率/,
+      /主机负荷阈值|目标台数|台减机|负荷模式|系统模式|加载负荷|减机负荷|负荷加载|负荷减载/
+    ],
+    tower: [
+      /冷水机组|冷机|冰机/,
+      /冷冻水?泵|冷却水?泵|水泵|泵参数/,
+      /机组出水|蒸发温度|冷凝温度|主机电流|主机负荷阈值|台减机/
+    ],
+    chilledPump: [
+      /冷水机组|冷机|冰机|冷却塔|ct\d/,
+      /冷却水?泵/,
+      /逼近度|湿球|风机|蒸发温度|冷凝温度/
+    ],
+    coolingPump: [
+      /冷水机组|冷机|冰机|冷却塔|ct\d/,
+      /冷冻水?泵/,
+      /逼近度|湿球|风机|蒸发温度|冷凝温度/
+    ],
+    pump: [/冷水机组|冷机|冰机|冷却塔|ct\d/, /逼近度|湿球|风机|蒸发温度|冷凝温度/],
+    other: []
+  };
+  return patternsByKind[context.kind].some((pattern) => pattern.test(normalized));
+}
+
+function normalizeSceneDialogTitleCandidate(value: unknown): string {
+  const title = readSceneSafeDisplayText(value);
+  if (!title || /^[-—]+$/.test(title)) {
+    return "";
+  }
+  if (/冰机参数设置|冷机参数设置|冷站参数设置|系统参数设置/.test(title)) {
+    return "联动模式控制柜";
+  }
+  return title;
+}
+
+function hasSceneControlCabinetParameterGroups(groups: SceneDeviceParameterGroupDto[]): boolean {
+  const groupNames = groups
+    .map((group) => readSceneSafeDisplayText(group.groupName))
+    .filter(Boolean);
+  const text = groups
+    .flatMap((group) => [
+      group.groupName,
+      ...(group.items || []).flatMap((item) => [item.label, item.regName, item.tagName])
+    ])
+    .map((value) => readSceneSafeDisplayText(value))
+    .filter(Boolean)
+    .join(" ");
+  return (
+    groupNames.includes("控制参数") &&
+    groupNames.includes("冷机参数") &&
+    groupNames.includes("冷却塔参数") &&
+    /冷却塔\d+手自动|负荷模式|故障复位|冷冻泵频率下限|冷却泵频率下限/.test(text)
+  );
+}
+
+function resolveSceneDialogDeviceTitle(
+  deviceName: string | undefined,
+  clickedDevice: SceneDeviceClick | null,
+  groups: SceneDeviceParameterGroupDto[] = []
+): string {
+  const chineseTitle =
+    normalizeSceneDialogTitleCandidate(clickedDevice?.deviceName) ||
+    normalizeSceneDialogTitleCandidate(clickedDevice?.modelName) ||
+    normalizeSceneDialogTitleCandidate(deviceName) ||
+    (hasSceneControlCabinetParameterGroups(groups) ? "联动模式控制柜" : "") ||
+    "\u8bbe\u5907";
+  if (getCurrentLocale() === "zh-CN") {
+    return chineseTitle;
+  }
+  return (
+    readSceneDeviceCode(clickedDevice?.deviceCode, clickedDevice?.modelName, clickedDevice?.deviceName, deviceName) ||
+    chineseTitle
+  );
+}
+
+function readSceneOrigin(value: string): string {
+  try {
+    return new URL(value).origin;
+  } catch {
+    return "";
+  }
+}
+
+function normalizeSceneDeviceClick(payload: unknown): SceneDeviceClick | null {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return null;
+  }
+  const row = payload as Record<string, unknown>;
+  const drId = readSceneText(row.drid, row.drId, row.drID, row.id, row.deviceId);
+  const deviceId = readSceneText(row.id, row.drid, row.drId, row.deviceId, row.code);
+  const deviceName = readSceneDisplayText(row.nameCn, row.drname, row.deviceName, row.name, row.label);
+  const deviceCode = readSceneDeviceCode(
+    row.modelname,
+    row.modelName,
+    row.deviceCode,
+    row.code,
+    row.nameEn,
+    row.nameEN,
+    row.enName,
+    row.name,
+    row.label,
+    row.drname,
+    row.deviceName
+  );
+  const modelName = readSceneDisplayText(row.modelname, row.modelName, row.model, row.name);
+  const deviceType = readSceneDisplayText(row.type, row.drtypeid, row.drTypeId, row.deviceType);
+  const deviceTypeId = readSceneText(row.drtypeid, row.drTypeId, row.drtypeId, row.deviceTypeId, row.typeId);
+  const runningPoint = readSceneText(row.runningid, row.runningId, row.runningRegId);
+  const frequencyPoint = readSceneText(row.frequencyid, row.frequencyId, row.frequencyRegId);
+
+  if (!deviceId && !deviceName && !modelName) {
+    return null;
+  }
+
+  return {
+    drId: drId || deviceId || "",
+    deviceId: deviceId || "--",
+    deviceName: deviceName || modelName || "--",
+    deviceCode,
+    modelName: modelName || "--",
+    deviceType: deviceType || "--",
+    deviceTypeId: deviceTypeId || deviceType || "--",
+    runningPoint: runningPoint || "--",
+    frequencyPoint: frequencyPoint || "--"
+  };
+}
+
+function getSceneParameterGroupCount(groups: SceneDeviceParameterGroupDto[] | undefined): number {
+  return Array.isArray(groups)
+    ? groups.reduce((total, group) => total + (Array.isArray(group.items) ? group.items.length : 0), 0)
+    : 0;
+}
+
+function formatSceneParameterValue(value: string | undefined, unit: string | undefined, displayValue: string | undefined): string {
+  const normalizedDisplay = readSceneSafeDisplayText(displayValue);
+  if (normalizedDisplay) {
+    return normalizedDisplay;
+  }
+  const normalizedValue = readSceneSafeDisplayText(value) || "--";
+  const normalizedUnit = readSceneSafeDisplayText(unit);
+  return normalizedUnit && normalizedValue !== "--" ? `${normalizedValue} ${normalizedUnit}` : normalizedValue;
+}
+
+function formatSceneParameterDisplayLabel(label: string): string {
+  return formatSceneControlCardLabel(label);
+}
+
+function formatSceneParameterDisplayValue(
+  label: string,
+  value: string | undefined,
+  unit: string | undefined,
+  displayValue: string | undefined
+): string {
+  const valueText = formatSceneParameterValue(value, unit, displayValue);
+  if (/复位/.test(label)) {
+    if (/^(无意义|0)$/.test(valueText)) {
+      return "待复位";
+    }
+    if (/^(生效|1)$/.test(valueText)) {
+      return "复位";
+    }
+  }
+  return valueText;
+}
+
+function collectSceneParameterRows(groups: SceneDeviceParameterGroupDto[]): SceneParameterRow[] {
+  return groups.flatMap((group, groupIndex) => {
+    const groupName = readSceneSafeDisplayText(group.groupName) || "未分组";
+    return (group.items || []).map((item, itemIndex) => {
+      const label = readSceneSafeDisplayText(item.label) || "未命名参数";
+      return {
+        item,
+        key: `${groupName}-${groupIndex}-${item.id || item.tagName || label}-${itemIndex}`,
+        groupName,
+        label,
+        valueText: formatSceneParameterDisplayValue(label, item.value, item.unit, item.displayValue)
+      };
+    });
+  });
+}
+
+function getSceneParameterFilterText(item: SceneDeviceParameterItemDto, groupName: string): string {
+  return [
+    groupName,
+    item.groupName,
+    item.label,
+    item.regName,
+    item.tagName,
+    item.id
+  ].map((value) => readSceneSafeDisplayText(value)).filter(Boolean).join(" ");
+}
+
+function isSceneParameterItemRelatedToDevice(
+  item: SceneDeviceParameterItemDto,
+  groupName: string,
+  context: SceneDeviceFilterContext | null
+): boolean {
+  if (!context) {
+    return true;
+  }
+  const groupMatchesDevice = textMatchesSceneDevice(groupName, context);
+  const itemText = getSceneParameterFilterText(item, groupName);
+  if (textMatchesSceneDevice(itemText, context)) {
+    return true;
+  }
+  if (textMentionsDifferentSameKindDevice(itemText, context)) {
+    return false;
+  }
+  if (!groupMatchesDevice && textIsSceneDeviceDomainUnrelated(groupName, context)) {
+    return false;
+  }
+  return !textIsSceneDeviceDomainUnrelated(itemText, context);
+}
+
+function filterSceneDeviceParameterGroups(
+  groups: SceneDeviceParameterGroupDto[],
+  context: SceneDeviceFilterContext | null
+): SceneDeviceParameterGroupDto[] {
+  if (!context) {
+    return groups;
+  }
+  return groups
+    .map((group) => {
+      const groupName = readSceneSafeDisplayText(group.groupName) || "未分组";
+      const items = (group.items || []).filter((item) => isSceneParameterItemRelatedToDevice(item, groupName, context));
+      return {
+        ...group,
+        items
+      };
+    })
+    .filter((group) => (group.items || []).length > 0);
+}
+
+function shouldHideSceneRuntimeParameterItem(item: SceneDeviceParameterItemDto): boolean {
+  const label = readSceneSafeDisplayText(item.label);
+  return /故障复位|手动启动|手动停止|一键启动|一键停止/.test(label);
+}
+
+function shouldHideSceneCoolingTowerRemainingGroup(groupName: string): boolean {
+  return /冷量参数|电表参数|能效参数/.test(groupName);
+}
+
+function formatSceneParameterGroupDisplayName(groupName: string): string {
+  return groupName.replace(/报警/g, "告警");
+}
+
+function isSceneRecordTextRelatedToDevice(text: string, context: SceneDeviceFilterContext | null): boolean {
+  if (!context) {
+    return true;
+  }
+  if (textMatchesSceneDevice(text, context)) {
+    return true;
+  }
+  if (textMentionsDifferentSameKindDevice(text, context)) {
+    return false;
+  }
+  if (textIsSceneDeviceDomainUnrelated(text, context)) {
+    return false;
+  }
+  return !textMentionsAnySceneDevice(text);
+}
+
+function filterSceneRecordsByDevice<T>(
+  records: T[],
+  context: SceneDeviceFilterContext | null,
+  getRecordText: (record: T) => string
+): T[] {
+  if (!context || records.length === 0) {
+    return records;
+  }
+  const directMatches = records.filter((record) => textMatchesSceneDevice(getRecordText(record), context));
+  if (directMatches.length > 0) {
+    return records.filter((record) => isSceneRecordTextRelatedToDevice(getRecordText(record), context));
+  }
+  const filteredRecords = records.filter((record) => isSceneRecordTextRelatedToDevice(getRecordText(record), context));
+  return filteredRecords.length < records.length ? filteredRecords : records;
+}
+
+function matchSceneParameter(row: SceneParameterRow, patterns: RegExp[]): boolean {
+  return patterns.some((pattern) => pattern.test(row.label));
+}
+
+function findSceneParameterRow(rows: SceneParameterRow[], patterns: RegExp[]): SceneParameterRow | null {
+  return rows.find((row) => matchSceneParameter(row, patterns)) || null;
+}
+
+function createSceneCompactValue(
+  rows: SceneParameterRow[],
+  usedItems: Set<SceneDeviceParameterItemDto>,
+  label: string,
+  patterns: RegExp[],
+  fallbackValue = "--"
+): SceneCompactValue {
+  const row = findSceneParameterRow(rows, patterns);
+  if (row) {
+    usedItems.add(row.item);
+  }
+  return {
+    key: row?.key || label,
+    label,
+    valueText: row?.valueText || fallbackValue,
+    matched: Boolean(row)
+  };
+}
+
+function createSceneCompactValueFromRow(row: SceneParameterRow, usedItems: Set<SceneDeviceParameterItemDto>): SceneCompactValue {
+  usedItems.add(row.item);
+  return {
+    key: row.key,
+    label: formatSceneParameterDisplayLabel(row.label),
+    valueText: row.valueText,
+    matched: true
+  };
+}
+
+function buildSceneCompactSummaryValues(
+  rows: SceneParameterRow[],
+  usedItems: Set<SceneDeviceParameterItemDto>,
+  specs: SceneCompactSpec[],
+  limit: number
+): SceneCompactValue[] {
+  const matched = specs
+    .map((spec) => createSceneCompactValue(rows, usedItems, spec.label, spec.patterns))
+    .filter((item) => item.matched);
+  if (matched.length >= limit) {
+    return matched.slice(0, limit);
+  }
+  const fillers = rows
+    .filter((row) => !usedItems.has(row.item))
+    .slice(0, limit - matched.length)
+    .map((row) => createSceneCompactValueFromRow(row, usedItems));
+  return [...matched, ...fillers];
+}
+
+function renderSceneCompactStat(item: SceneCompactValue) {
+  return (
+    <article key={item.key} title={`${item.label} ${item.valueText}`}>
+      <span>{item.label}</span>
+      <strong>{item.valueText}</strong>
+    </article>
+  );
+}
+
+function renderSceneCompactCell(item: SceneCompactValue) {
+  return (
+    <div key={item.key} className="scene-embed-device-compact-cell" title={`${item.label} ${item.valueText}`}>
+      <span>{item.label}</span>
+      <strong>{item.valueText}</strong>
+    </div>
+  );
+}
+
+function getSceneModeTone(value: string): string {
+  if (/手动|停止|关闭|故障|报警|告警/.test(value)) {
+    return "is-caution";
+  }
+  if (/自动|运行|正常|生效/.test(value)) {
+    return "is-good";
+  }
+  return "";
+}
+
+function hasSceneCoolingTowerDetail(rows: SceneParameterRow[]): boolean {
+  return rows.some((row) =>
+    /冷却塔|逼近度|冷却回水|冷却风机|风机加载|风机减载/.test(row.label)
+  );
+}
+
+function renderSceneGenericCompactDetailGroups(
+  groups: SceneDeviceParameterGroupDto[],
+  rows: SceneParameterRow[],
+  emptyText: string
+) {
+  if (!rows.length) {
+    return <div className="scene-embed-device-state">{emptyText}</div>;
+  }
+
+  const usedItems = new Set<SceneDeviceParameterItemDto>();
+  const summaryItems = buildSceneCompactSummaryValues(
+    rows,
+    usedItems,
+    [
+      { label: "运行状态", patterns: [/运行状态/, /机组状态/, /开关机状态/] },
+      { label: "出水设定", patterns: [/出水温度设定/, /冷冻.*设定/] },
+      { label: "冷冻出水", patterns: [/冷冻水出水温度/, /出水温度/] },
+      { label: "冷冻回水", patterns: [/冷冻水进水温度/, /回水温度/] },
+      { label: "主机负荷", patterns: [/主机负荷/, /机组负荷/, /^负荷$/] },
+      { label: "电流", patterns: [/电流/] },
+      { label: "冷凝温度", patterns: [/冷凝温度/] },
+      { label: "蒸发温度", patterns: [/蒸发温度/] }
+    ],
+    5
+  );
+  const visibleGroups = groups
+    .map((group, groupIndex) => {
+      const groupName = readSceneSafeDisplayText(group.groupName) || "未分组";
+      const items = (group.items || []).filter((item) => !usedItems.has(item) && !shouldHideSceneRuntimeParameterItem(item));
+      return {
+        key: `${groupName}-${groupIndex}`,
+        groupName: formatSceneParameterGroupDisplayName(groupName),
+        items
+      };
+    })
+    .filter((group) => group.items.length > 0);
+
+  return (
+    <div className="scene-embed-device-detail-compact is-generic">
+      <div className="scene-embed-device-compact-summary">
+        {summaryItems.map(renderSceneCompactStat)}
+      </div>
+      <div className="scene-embed-device-compact-details is-primary">
+        {visibleGroups.map((group) => (
+          <details key={group.key}>
+            <summary>
+              <span>{group.groupName}</span>
+              <strong>{group.items.length}项</strong>
+            </summary>
+            <div className="scene-embed-device-compact-grid is-remaining">
+              {group.items.map((item, index) => {
+                const rawLabel = readSceneSafeDisplayText(item.label) || "未命名参数";
+                const label = formatSceneParameterDisplayLabel(rawLabel);
+                const valueText = formatSceneParameterDisplayValue(rawLabel, item.value, item.unit, item.displayValue);
+                return renderSceneCompactCell({
+                  key: `${group.key}-${item.id || item.tagName || label}-${index}`,
+                  label,
+                  valueText
+                });
+              })}
+            </div>
+          </details>
+        ))}
       </div>
     </div>
   );
 }
 
-export default function SceneControlPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [mode, setMode] = useState<SceneMode>(() => parseMode(searchParams.get("mode")));
-  const [floor, setFloor] = useState<SceneFloor>(() => parseFloor(searchParams.get("floor")));
-  const [probeState, setProbeState] = useState<ProbeState>("checking");
-  const [frameLoaded, setFrameLoaded] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [devicePanelState, setDevicePanelState] = useState<DevicePanelState>("loading");
-  const [sceneDevices, setSceneDevices] = useState<DeviceListItemDto[]>([]);
-  const [sceneTopology, setSceneTopology] = useState<SystemTopologyDto | null>(null);
-  const [sceneSystemDiagram, setSceneSystemDiagram] = useState<SceneSystemDiagramTopology | null>(null);
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
-  const [selectedSceneDiagramNodeId, setSelectedSceneDiagramNodeId] = useState<string | null>(null);
-  const [selectedDeviceDetail, setSelectedDeviceDetail] = useState<DeviceDetailDto | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [forcedModelCategory, setForcedModelCategory] = useState<DeviceModelCategory | null>(null);
-  const diagramMode = searchParams.get("diagram") === "contract-sample" ? "contract-sample" : "runtime";
-  const requestedDeviceId = searchParams.get("deviceId");
-  const requestedNodeId = searchParams.get("nodeId");
-  const legacySceneView = resolveLegacySceneView(searchParams);
-  const legacyDialogTagnameParam = searchParams.get("tagname") || "";
-  const legacyDialogTitleParam = searchParams.get("name") || searchParams.get("title") || "";
-  const legacyDialogUnitParam = searchParams.get("unit") || "";
-  const legacyDialogDateParam = searchParams.get("date") || formatDateInput(new Date());
-  const [legacyDialogFilters, setLegacyDialogFilters] = useState<SceneLegacyDialogState>(() =>
-    buildSceneLegacyDialogState(searchParams)
-  );
-  const [legacyDialogQuery, setLegacyDialogQuery] = useState<SceneLegacyDialogState>(() =>
-    buildSceneLegacyDialogState(searchParams)
-  );
-  const [legacyTrendData, setLegacyTrendData] = useState<SceneLegacyTrendDto | null>(null);
-  const [legacyTrendLoading, setLegacyTrendLoading] = useState(false);
-  const [legacyTrendError, setLegacyTrendError] = useState<string | null>(null);
-  const [onlineMonitorData, setOnlineMonitorData] = useState<SceneOnlineMonitorDto | null>(null);
-  const [onlineMonitorLoading, setOnlineMonitorLoading] = useState(false);
-  const [onlineMonitorError, setOnlineMonitorError] = useState<string | null>(null);
+function renderSceneCompactDetailGroups(groups: SceneDeviceParameterGroupDto[], emptyText: string) {
+  const rows = collectSceneParameterRows(groups);
+  if (!rows.length) {
+    return <div className="scene-embed-device-state">{emptyText}</div>;
+  }
+  if (!hasSceneCoolingTowerDetail(rows)) {
+    return renderSceneGenericCompactDetailGroups(groups, rows, emptyText);
+  }
 
-  const sceneUrl = useMemo(() => buildSceneUrl(mode, floor), [mode, floor]);
-  const legacyAssetLabel = mode === "2d" ? zhCN.sceneControl.mode2d : zhCN.sceneControl.mode3d;
-  const warn = probeState !== "ready";
-  const systemDiagramSourceLabel =
-    diagramMode === "contract-sample"
-      ? zhCN.sceneControl.systemDiagramSourceSample
-      : sceneSystemDiagram
-        ? zhCN.sceneControl.systemDiagramSourceContract
-        : sceneTopology || sceneDevices.length > 0
-          ? zhCN.sceneControl.systemDiagramSourceRuntime
-          : zhCN.sceneControl.systemDiagramSourceMock;
-  const systemDiagramTopology = useMemo(
-    () => sceneSystemDiagram || (sceneTopology || sceneDevices.length > 0
-      ? buildRuntimeSystemDiagram(sceneTopology, sceneDevices)
-      : MAIN_LOOP_SYSTEM_DIAGRAM),
-    [sceneDevices, sceneSystemDiagram, sceneTopology]
-  );
-
-  useEffect(() => {
-    const nextMode = parseMode(searchParams.get("mode"));
-    const nextFloor = parseFloor(searchParams.get("floor"));
-    setMode((current) => (current === nextMode ? current : nextMode));
-    setFloor((current) => (current === nextFloor ? current : nextFloor));
-  }, [searchParams]);
-
-  useEffect(() => {
-    const currentMode = searchParams.get("mode");
-    const currentFloor = searchParams.get("floor");
-    const currentDeviceId = searchParams.get("deviceId");
-    const currentNodeId = searchParams.get("nodeId");
-    if (
-      currentMode === mode &&
-      currentFloor === floor &&
-      currentDeviceId === (selectedDeviceId || null) &&
-      currentNodeId === (selectedSceneDiagramNodeId || null)
-    ) {
-      return;
-    }
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set("mode", mode);
-    nextParams.set("floor", floor);
-    if (selectedDeviceId) {
-      nextParams.set("deviceId", selectedDeviceId);
-    } else {
-      nextParams.delete("deviceId");
-    }
-    if (selectedSceneDiagramNodeId) {
-      nextParams.set("nodeId", selectedSceneDiagramNodeId);
-    } else {
-      nextParams.delete("nodeId");
-    }
-    setSearchParams(nextParams, { replace: true });
-  }, [mode, floor, searchParams, selectedDeviceId, selectedSceneDiagramNodeId, setSearchParams]);
-
-  useEffect(() => {
-    if (legacySceneView !== "dialog") {
-      return;
-    }
-    const next = {
-      date: legacyDialogDateParam,
-      tagname: legacyDialogTagnameParam,
-      title: legacyDialogTitleParam,
-      unit: legacyDialogUnitParam
+  const usedItems = new Set<SceneDeviceParameterItemDto>();
+  const summaryItems = [
+    createSceneCompactValue(rows, usedItems, "湿球", [/湿球/]),
+    createSceneCompactValue(rows, usedItems, "当前逼近度", [/当前逼近度/]),
+    createSceneCompactValue(rows, usedItems, "目标逼近度", [/目标逼近度/]),
+    createSceneCompactValue(rows, usedItems, "冷却负荷率", [/冷却负荷率/]),
+    createSceneCompactValue(rows, usedItems, "风机下限", [/冷却风机频率下限/])
+  ];
+  const towerRows = Array.from({ length: 6 }, (_, index) => {
+    const towerNo = index + 1;
+    const mode = createSceneCompactValue(rows, usedItems, `CT${towerNo}模式`, [
+      new RegExp(`冷却塔${towerNo}手自动`)
+    ]);
+    const frequency = createSceneCompactValue(rows, usedItems, `CT${towerNo}频率`, [
+      new RegExp(`冷却塔${towerNo}风机频率手动给定`)
+    ]);
+    return {
+      key: `ct-${towerNo}`,
+      name: `CT${towerNo}`,
+      mode,
+      frequency
     };
-    setLegacyDialogFilters(next);
-    setLegacyDialogQuery(next);
+  });
+  const keySettings = [
+    createSceneCompactValue(rows, usedItems, "蒸发告警", [/蒸发报警设定/]),
+    createSceneCompactValue(rows, usedItems, "冷凝告警", [/冷凝报警设定/]),
+    createSceneCompactValue(rows, usedItems, "回水目标", [/冷却回水目标值/]),
+    createSceneCompactValue(rows, usedItems, "手动设定", [/冷却塔回水温度手动设定值/, /冷却回水手动值/]),
+    createSceneCompactValue(rows, usedItems, "温度下限", [/冷却温度下限/]),
+    createSceneCompactValue(rows, usedItems, "风机上限", [/冷却风机频率上限/]),
+    createSceneCompactValue(rows, usedItems, "最小逼近", [/最小逼近度/]),
+    createSceneCompactValue(rows, usedItems, "最大逼近", [/最大逼近度/])
+  ];
+  const antiOscillation = [
+    createSceneCompactValue(rows, usedItems, "风机加载计时", [/冷却塔风机加载计时/]),
+    createSceneCompactValue(rows, usedItems, "风机减载计时", [/冷却塔风机减载计时/]),
+    createSceneCompactValue(rows, usedItems, "风机加载延时", [/冷却塔风机加载时间设定/]),
+    createSceneCompactValue(rows, usedItems, "风机减载延时", [/冷却塔风机减载时间设定/]),
+    createSceneCompactValue(rows, usedItems, "负荷加载计时", [/负荷模式加载计时/]),
+    createSceneCompactValue(rows, usedItems, "负荷减载计时", [/负荷模式减载计时/])
+  ];
+  const loadThresholds = [
+    createSceneCompactValue(rows, usedItems, "系统模式", [/系统模式/]),
+    createSceneCompactValue(rows, usedItems, "目标台数", [/负荷模式主机运行目标数量/]),
+    createSceneCompactValue(rows, usedItems, "加载负荷", [/^加载负荷$/]),
+    createSceneCompactValue(rows, usedItems, "2台减机", [/2台减机负荷/]),
+    createSceneCompactValue(rows, usedItems, "3台减机", [/3台减机负荷/]),
+    createSceneCompactValue(rows, usedItems, "4台减机", [/4台减机负荷/]),
+    createSceneCompactValue(rows, usedItems, "5台减机", [/5台减机负荷/]),
+    createSceneCompactValue(rows, usedItems, "6台减机", [/6台减机负荷/])
+  ];
+  const pumpSettings = [
+    createSceneCompactValue(rows, usedItems, "冷冻泵下限", [/冷冻泵频率下限/]),
+    createSceneCompactValue(rows, usedItems, "冷冻水ΔT当前", [/冷冻水温差当前值/]),
+    createSceneCompactValue(rows, usedItems, "冷冻水ΔT设定", [/冷冻水温差设定值/]),
+    createSceneCompactValue(rows, usedItems, "冷却泵下限", [/冷却泵频率下限/]),
+    createSceneCompactValue(rows, usedItems, "冷却水ΔT当前", [/冷却水温差当前值/]),
+    createSceneCompactValue(rows, usedItems, "冷却水ΔT设定", [/冷却水温差设定值/])
+  ];
+  const remainingGroups = groups
+    .map((group, groupIndex) => {
+      const groupName = readSceneSafeDisplayText(group.groupName) || "未分组";
+      const items = shouldHideSceneCoolingTowerRemainingGroup(groupName)
+        ? []
+        : (group.items || []).filter((item) => !usedItems.has(item) && !shouldHideSceneRuntimeParameterItem(item));
+      return {
+        key: `${groupName}-${groupIndex}`,
+        groupName: formatSceneParameterGroupDisplayName(groupName),
+        items
+      };
+    })
+    .filter((group) => group.items.length > 0);
+
+  return (
+    <div className="scene-embed-device-detail-compact">
+      <div className="scene-embed-device-compact-summary">
+        {summaryItems.map(renderSceneCompactStat)}
+      </div>
+
+      <div className="scene-embed-device-compact-main">
+        <section className="scene-embed-device-compact-panel is-tower">
+          <h4>冷却塔状态</h4>
+          <div className="scene-embed-device-tower-table">
+            <span>设备</span>
+            <span>模式</span>
+            <span>手动频率</span>
+            {towerRows.map((tower) => (
+              <Fragment key={tower.key}>
+                <strong key={`${tower.key}-name`}>{tower.name}</strong>
+                <em
+                  key={`${tower.key}-mode`}
+                  className={getSceneModeTone(tower.mode.valueText)}
+                  title={tower.mode.valueText}
+                >
+                  {tower.mode.valueText}
+                </em>
+                <b key={`${tower.key}-freq`} title={tower.frequency.valueText}>
+                  {tower.frequency.valueText}
+                </b>
+              </Fragment>
+            ))}
+          </div>
+        </section>
+
+        <section className="scene-embed-device-compact-panel">
+          <h4>关键设定</h4>
+          <div className="scene-embed-device-compact-grid is-key-settings">
+            {keySettings.map(renderSceneCompactCell)}
+          </div>
+        </section>
+      </div>
+
+      <div className="scene-embed-device-compact-wide">
+        <section className="scene-embed-device-compact-panel">
+          <h4>防震荡与延时</h4>
+          <div className="scene-embed-device-compact-grid is-dense">
+            {antiOscillation.map(renderSceneCompactCell)}
+          </div>
+        </section>
+
+        <section className="scene-embed-device-compact-panel">
+          <h4>主机负荷阈值</h4>
+          <div className="scene-embed-device-compact-grid is-load">
+            {loadThresholds.map(renderSceneCompactCell)}
+          </div>
+        </section>
+
+        <section className="scene-embed-device-compact-panel">
+          <h4>泵参数</h4>
+          <div className="scene-embed-device-compact-grid is-dense">
+            {pumpSettings.map(renderSceneCompactCell)}
+          </div>
+        </section>
+      </div>
+
+      <div className="scene-embed-device-compact-details">
+        {remainingGroups.map((group) => (
+          <details key={group.key}>
+            <summary>
+              <span>{group.groupName}</span>
+              <strong>{group.items.length}项</strong>
+            </summary>
+            <div className="scene-embed-device-compact-grid is-remaining">
+              {group.items.map((item, index) => {
+                const rawLabel = readSceneSafeDisplayText(item.label) || "未命名参数";
+                const label = formatSceneParameterDisplayLabel(rawLabel);
+                const valueText = formatSceneParameterDisplayValue(rawLabel, item.value, item.unit, item.displayValue);
+                return renderSceneCompactCell({
+                  key: `${group.key}-${item.id || item.tagName || label}-${index}`,
+                  label,
+                  valueText
+                });
+              })}
+            </div>
+          </details>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function hasSceneParameterTranslation(item: SceneDeviceParameterItemDto): boolean {
+  return Boolean(readSceneText(item.regSub));
+}
+
+function getSceneControlActionKey(item: SceneDeviceParameterItemDto, value: string): string {
+  return `${item.id || item.tagName || item.label || "control"}::${value}`;
+}
+
+function normalizeSceneControlValue(value: unknown): string {
+  const text = readSceneText(value);
+  if (!text) {
+    return "";
+  }
+  const numeric = Number(text);
+  return Number.isFinite(numeric) ? String(numeric) : text;
+}
+
+function getSceneControlOptions(item: SceneDeviceParameterItemDto): Array<{ value: string; text: string }> {
+  return (Array.isArray(item.controlOptions) ? item.controlOptions : [])
+    .map((option) => ({
+      value: readSceneText(option.value),
+      text: readSceneSafeDisplayText(option.text)
+    }))
+    .filter((option) => option.value && option.text);
+}
+
+function getSceneControlRegName(item: SceneDeviceParameterItemDto): string {
+  return readSceneSafeDisplayText(item.regName) || readSceneSafeDisplayText(item.label);
+}
+
+function getSceneControlCurrentText(item: SceneDeviceParameterItemDto): string {
+  const currentValue = normalizeSceneControlValue(item.value);
+  const currentOption = getSceneControlOptions(item).find(
+    (option) => normalizeSceneControlValue(option.value) === currentValue
+  );
+  return currentOption?.text || formatSceneParameterValue(item.value, item.unit, item.displayValue);
+}
+
+function formatSceneControlCardLabel(label: string): string {
+  return label
+    .replace(/冷却塔(\d+)风机频率手动给定/g, "CT$1频率给定")
+    .replace(/冷却塔(\d+)手自动/g, "CT$1手自动")
+    .replace(/冷却风机频率上限/g, "冷却风机上限")
+    .replace(/冷却风机频率下限/g, "冷却风机下限")
+    .replace(/冷却塔回水温度手动设定值/g, "回水手动设定")
+    .replace(/冷却回水手动值/g, "回水手动值")
+    .replace(/冷却温度下限/g, "温度下限")
+    .replace(/冷却塔风机加载时间设定/g, "风机加载时间")
+    .replace(/冷却塔风机减载时间设定/g, "风机减载时间")
+    .replace(/负荷模式加载时间设置/g, "负荷加载时间")
+    .replace(/负荷模式减载时间设置/g, "负荷减载时间")
+    .replace(/冷冻水温差设定值/g, "冷冻水ΔT设定")
+    .replace(/冷却水温差设定值/g, "冷却水ΔT设定")
+    .replace(/冷冻泵频率下限/g, "冷冻泵下限")
+    .replace(/冷却泵频率下限/g, "冷却泵下限")
+    .replace(/蒸发报警设定/g, "蒸发告警")
+    .replace(/冷凝报警设定/g, "冷凝告警")
+    .replace(/蒸发报警/g, "蒸发告警")
+    .replace(/冷凝报警/g, "冷凝告警")
+    .replace(/冷却塔温度手自动/g, "塔温手自动")
+    .replace(/故障复位/g, "故障复位")
+    .replace(/(\d+)台减机负荷/g, "$1台减机");
+}
+
+function formatSceneControlOptionText(controlLabel: string, optionText: string): string {
+  const normalizedControlLabel = readSceneSafeDisplayText(controlLabel);
+  const normalizedOptionText = readSceneSafeDisplayText(optionText);
+  if (/复位/.test(normalizedControlLabel)) {
+    if (normalizedOptionText === "无意义") {
+      return "待复位";
+    }
+    if (normalizedOptionText === "生效") {
+      return "复位";
+    }
+  }
+  return normalizedOptionText || optionText;
+}
+
+function getSceneControlIntentClass(label: string, valueText?: string): "normal" | "caution" | "danger" {
+  const targetText = valueText || "";
+  const actionText = targetText && /停止|停机|关机|禁用|关阀|关闭|启动|开机|开阀|投用|手动|联动|全自动|复位/.test(targetText)
+    ? targetText
+    : `${label} ${targetText}`;
+  if (/停止|停机|关机|禁用|关阀|关闭/.test(actionText)) {
+    return "danger";
+  }
+  if (/启动|开机|开阀|投用|手动|联动|全自动|设定|下发|复位|优先级|模式/.test(actionText)) {
+    return "caution";
+  }
+  return "normal";
+}
+
+function getSceneControlIntentClassName(intent: "normal" | "caution" | "danger"): string {
+  if (intent === "danger") {
+    return "is-danger-action";
+  }
+  if (intent === "caution") {
+    return "is-caution-action";
+  }
+  return "";
+}
+
+function findSceneControlCombinedRule(regName: string): SceneControlCombinedRule | null {
+  return SCENE_CONTROL_COMBINED_RULES.find((rule) => rule.members.includes(regName)) || null;
+}
+
+function getSceneControlCombinedValue(item: SceneDeviceParameterItemDto): string {
+  return getSceneControlOptions(item).find((option) => normalizeSceneControlValue(option.value) === "1")?.value || "";
+}
+
+function buildSceneControlRows(items: SceneDeviceParameterItemDto[], groupKey: string): SceneControlRenderRow[] {
+  const combinedByLabel = new Map<
+    string,
+    {
+      label: string;
+      firstIndex: number;
+      members: SceneControlCombinedMember[];
+    }
+  >();
+  const consumedIndexes = new Set<number>();
+
+  items.forEach((item, itemIndex) => {
+    if (!hasSceneParameterTranslation(item)) {
+      return;
+    }
+    const regName = getSceneControlRegName(item);
+    const rule = findSceneControlCombinedRule(regName);
+    const value = rule ? getSceneControlCombinedValue(item) : "";
+    if (!rule || !value) {
+      return;
+    }
+    const memberIndex = rule.members.indexOf(regName);
+    const existing = combinedByLabel.get(rule.label) || {
+      label: rule.label,
+      firstIndex: itemIndex,
+      members: []
+    };
+    existing.firstIndex = Math.min(existing.firstIndex, itemIndex);
+    existing.members.push({
+      item,
+      itemIndex,
+      memberIndex,
+      buttonLabel: regName,
+      value
+    });
+    combinedByLabel.set(rule.label, existing);
+    consumedIndexes.add(itemIndex);
+  });
+
+  const combinedByFirstIndex = new Map<number, { label: string; members: SceneControlCombinedMember[] }>();
+  Array.from(combinedByLabel.values()).forEach((combined) => {
+    combinedByFirstIndex.set(combined.firstIndex, {
+      label: combined.label,
+      members: combined.members.sort((a, b) => a.memberIndex - b.memberIndex || a.itemIndex - b.itemIndex)
+    });
+  });
+
+  const rows: SceneControlRenderRow[] = [];
+  items.forEach((item, itemIndex) => {
+    const combined = combinedByFirstIndex.get(itemIndex);
+    if (combined) {
+      rows.push({
+        type: "combined",
+        key: `${groupKey}-combined-${combined.label}-${itemIndex}`,
+        label: combined.label,
+        members: combined.members
+      });
+      return;
+    }
+    if (consumedIndexes.has(itemIndex)) {
+      return;
+    }
+    rows.push({
+      type: "item",
+      item,
+      itemKey: `${item.id || item.label || "item"}-${itemIndex}`
+    });
+  });
+  return rows;
+}
+
+function renderSceneControlEditor(
+  item: SceneDeviceParameterItemDto,
+  itemKey: string,
+  onSubmit: SceneControlSubmitHandler,
+  submittingKey: string
+) {
+  const label = readSceneSafeDisplayText(item.label) || "\u672a\u547d\u540d\u53c2\u6570";
+  const displayLabel = formatSceneControlCardLabel(label);
+  const value = readSceneSafeDisplayText(item.value);
+  const unit = readSceneSafeDisplayText(item.unit);
+  const actionKey = getSceneControlActionKey(item, "input");
+  const submitting = submittingKey === actionKey;
+  return (
+    <article key={itemKey} className="is-control-editable">
+      <span title={label}>{displayLabel}</span>
+      <div className="scene-embed-device-control-row">
+        <input defaultValue={value} aria-label={label} />
+        <em title={unit}>{unit}</em>
+        <button
+          type="button"
+          className="is-caution-action"
+          aria-label={SCENE_CONTROL_SUBMIT_LABEL}
+          title={SCENE_CONTROL_SUBMIT_LABEL}
+          disabled={submitting}
+          onClick={(event) => {
+            const input = event.currentTarget.parentElement?.querySelector("input");
+            const nextValue = input?.value ?? "";
+            onSubmit(item, nextValue, actionKey, formatSceneParameterValue(nextValue, unit, undefined));
+          }}
+        >
+          {submitting ? SCENE_CONTROL_PENDING_LABEL : SCENE_CONTROL_SUBMIT_LABEL}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function renderSceneControlCombinedOptions(
+  row: Extract<SceneControlRenderRow, { type: "combined" }>,
+  onSubmit: SceneControlSubmitHandler,
+  submittingKey: string
+) {
+  const displayLabel = formatSceneControlCardLabel(row.label);
+  return (
+    <article key={row.key} className="is-control-options is-control-combined">
+      <span title={row.label}>{displayLabel}</span>
+      <div className="scene-embed-device-control-options">
+        {row.members.map((member) => {
+          const actionKey = getSceneControlActionKey(member.item, member.value);
+          const submitting = submittingKey === actionKey;
+          const isCurrent = normalizeSceneControlValue(member.item.value) === normalizeSceneControlValue(member.value);
+          const intentClassName = getSceneControlIntentClassName(
+            getSceneControlIntentClass(member.buttonLabel, member.buttonLabel)
+          );
+          return (
+            <button
+              key={`${row.key}-${member.item.id || member.buttonLabel}-${member.value}`}
+              type="button"
+              className={[isCurrent ? "is-current" : "", intentClassName].filter(Boolean).join(" ")}
+              disabled={Boolean(submittingKey) && !submitting}
+              title={`${row.label}: ${member.buttonLabel}`}
+              onClick={() => onSubmit(member.item, member.value, actionKey, member.buttonLabel)}
+            >
+              {submitting ? SCENE_CONTROL_PENDING_LABEL : member.buttonLabel}
+            </button>
+          );
+        })}
+      </div>
+    </article>
+  );
+}
+
+function renderSceneControlOptions(
+  item: SceneDeviceParameterItemDto,
+  itemKey: string,
+  onSubmit: SceneControlSubmitHandler,
+  submittingKey: string
+) {
+  const label = readSceneSafeDisplayText(item.label) || "\u672a\u547d\u540d\u53c2\u6570";
+  const displayLabel = formatSceneControlCardLabel(label);
+  const options = getSceneControlOptions(item);
+  if (options.length === 0) {
+    return (
+      <article key={itemKey}>
+        <span title={label}>{displayLabel}</span>
+        <strong title={formatSceneParameterValue(item.value, item.unit, item.displayValue)}>
+          {formatSceneParameterValue(item.value, item.unit, item.displayValue)}
+        </strong>
+      </article>
+    );
+  }
+  return (
+    <article key={itemKey} className="is-control-options">
+      <span title={label}>{displayLabel}</span>
+      <div className="scene-embed-device-control-options">
+        {options.map((option) => {
+          const displayOptionText = formatSceneControlOptionText(label, option.text);
+          const actionKey = getSceneControlActionKey(item, option.value);
+          const submitting = submittingKey === actionKey;
+          const isCurrent = normalizeSceneControlValue(item.value) === normalizeSceneControlValue(option.value);
+          const intentClassName = getSceneControlIntentClassName(getSceneControlIntentClass(label, displayOptionText));
+          return (
+            <button
+              key={`${itemKey}-${option.value}`}
+              type="button"
+              className={[isCurrent ? "is-current" : "", intentClassName].filter(Boolean).join(" ")}
+              disabled={Boolean(submittingKey) && !submitting}
+              title={`${label}: ${displayOptionText}`}
+              onClick={() => onSubmit(item, option.value, actionKey, displayOptionText)}
+            >
+              {submitting ? SCENE_CONTROL_PENDING_LABEL : displayOptionText}
+            </button>
+          );
+        })}
+      </div>
+    </article>
+  );
+}
+
+function getSceneInfoControlPreviewPriority(row: SceneControlRenderRow): number {
+  const label =
+    row.type === "combined"
+      ? row.label
+      : `${getSceneControlRegName(row.item)} ${readSceneSafeDisplayText(row.item.label)}`;
+  if (/手动启停/.test(label)) {
+    return 0;
+  }
+  if (/禁用|投用状态|投用/.test(label)) {
+    return 1;
+  }
+  if (/模式|手自动|联动|全自动/.test(label)) {
+    return 2;
+  }
+  if (/出水温度.*设定|出水温度设定/.test(label)) {
+    return 3;
+  }
+  return 99;
+}
+
+function formatSceneInfoControlPreviewLabel(label: string): string {
+  const text = readSceneSafeDisplayText(label);
+  if (/手动启停/.test(text)) {
+    return "手动启停";
+  }
+  if (/禁用|投用状态|投用/.test(text)) {
+    return "投用状态";
+  }
+  if (/模式|手自动|联动|全自动/.test(text)) {
+    return "运行模式";
+  }
+  if (/出水温度.*设定|出水温度设定/.test(text)) {
+    return "出水温度设定";
+  }
+  return formatSceneControlCardLabel(text);
+}
+
+function getSceneInfoControlPreviewRows(groups: SceneDeviceParameterGroupDto[]): SceneControlRenderRow[] {
+  const rows = groups.flatMap((group, groupIndex) =>
+    buildSceneControlRows(group.items || [], `info-preview-${group.groupName || "group"}-${groupIndex}`)
+  );
+  return rows
+    .map((row, index) => ({ row, index, priority: getSceneInfoControlPreviewPriority(row) }))
+    .filter((entry) => entry.priority < 99)
+    .sort((a, b) => a.priority - b.priority || a.index - b.index)
+    .slice(0, 4)
+    .map((entry) => entry.row);
+}
+
+function renderSceneInfoControlPreview(
+  groups: SceneDeviceParameterGroupDto[],
+  onSubmit: SceneControlSubmitHandler,
+  submittingKey: string,
+  statusText = ""
+) {
+  const rows = getSceneInfoControlPreviewRows(groups);
+  if (!rows.length && !statusText) {
+    return null;
+  }
+  return (
+    <div className="scene-embed-device-info-control-preview">
+      {statusText ? <div className="scene-embed-device-info-control-state">{statusText}</div> : null}
+      <div className="scene-embed-device-info-control-preview-grid">
+        {rows.map((row) => {
+          if (row.type === "combined") {
+            return (
+              <article key={row.key} className="scene-embed-device-info-control-card is-options">
+                <span title={row.label}>{formatSceneInfoControlPreviewLabel(row.label)}</span>
+                <div className="scene-embed-device-info-control-buttons">
+                  {row.members.map((member) => {
+                    const actionKey = getSceneControlActionKey(member.item, member.value);
+                    const submitting = submittingKey === actionKey;
+                    const isCurrent =
+                      normalizeSceneControlValue(member.item.value) === normalizeSceneControlValue(member.value);
+                    const intentClassName = getSceneControlIntentClassName(
+                      getSceneControlIntentClass(member.buttonLabel, member.buttonLabel)
+                    );
+                    return (
+                      <button
+                        key={`${row.key}-${member.item.id || member.buttonLabel}-${member.value}`}
+                        type="button"
+                        className={[isCurrent ? "is-current" : "", intentClassName].filter(Boolean).join(" ")}
+                        disabled={Boolean(submittingKey) && !submitting}
+                        title={`${row.label}: ${member.buttonLabel}`}
+                        onClick={() => onSubmit(member.item, member.value, actionKey, member.buttonLabel)}
+                      >
+                        {submitting ? SCENE_CONTROL_PENDING_LABEL : member.buttonLabel}
+                      </button>
+                    );
+                  })}
+                </div>
+              </article>
+            );
+          }
+
+          const { item, itemKey } = row;
+          const label = getSceneControlRegName(item) || readSceneSafeDisplayText(item.label) || "未命名参数";
+          const displayLabel = formatSceneInfoControlPreviewLabel(label);
+          const options = getSceneControlOptions(item);
+          if (options.length) {
+            return (
+              <article key={itemKey} className="scene-embed-device-info-control-card is-options">
+                <span title={label}>{displayLabel}</span>
+                <div className="scene-embed-device-info-control-buttons">
+                  {options.map((option) => {
+                    const displayOptionText = formatSceneControlOptionText(label, option.text);
+                    const actionKey = getSceneControlActionKey(item, option.value);
+                    const submitting = submittingKey === actionKey;
+                    const isCurrent =
+                      normalizeSceneControlValue(item.value) === normalizeSceneControlValue(option.value);
+                    const intentClassName = getSceneControlIntentClassName(
+                      getSceneControlIntentClass(label, displayOptionText)
+                    );
+                    return (
+                      <button
+                        key={`${itemKey}-${option.value}`}
+                        type="button"
+                        className={[isCurrent ? "is-current" : "", intentClassName].filter(Boolean).join(" ")}
+                        disabled={Boolean(submittingKey) && !submitting}
+                        title={`${label}: ${displayOptionText}`}
+                        onClick={() => onSubmit(item, option.value, actionKey, displayOptionText)}
+                      >
+                        {submitting ? SCENE_CONTROL_PENDING_LABEL : displayOptionText}
+                      </button>
+                    );
+                  })}
+                </div>
+              </article>
+            );
+          }
+
+          const value = readSceneSafeDisplayText(item.value);
+          const unit = readSceneSafeDisplayText(item.unit);
+          const actionKey = getSceneControlActionKey(item, "input");
+          const submitting = submittingKey === actionKey;
+          return (
+            <article key={itemKey} className="scene-embed-device-info-control-card is-editable">
+              <span title={label}>{displayLabel}</span>
+              <div className="scene-embed-device-info-control-input">
+                <input defaultValue={value} aria-label={label} />
+                <em title={unit}>{unit}</em>
+                <button
+                  type="button"
+                  className="is-caution-action"
+                  aria-label={SCENE_CONTROL_SUBMIT_LABEL}
+                  title={SCENE_CONTROL_SUBMIT_LABEL}
+                  disabled={submitting}
+                  onClick={(event) => {
+                    const input = event.currentTarget.parentElement?.querySelector("input");
+                    const nextValue = input?.value ?? "";
+                    onSubmit(item, nextValue, actionKey, formatSceneParameterValue(nextValue, unit, undefined));
+                  }}
+                >
+                  {submitting ? SCENE_CONTROL_PENDING_LABEL : SCENE_CONTROL_SUBMIT_LABEL}
+                </button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function getSceneControlGroupClassName(groupName: string, itemCount: number): string {
+  const name = readSceneSafeDisplayText(groupName);
+  if (/控制参数/.test(name)) {
+    return "is-control-wide is-control-mode";
+  }
+  if (/冷却塔参数/.test(name)) {
+    return "is-control-wide is-control-tower";
+  }
+  if (/系统参数/.test(name)) {
+    return "is-control-wide is-control-system";
+  }
+  if (itemCount >= 6) {
+    return "is-control-wide is-control-extra";
+  }
+  if (/冷机参数|冷冻泵参数|冷却泵参数|水泵参数/.test(name) || itemCount <= 3) {
+    return "is-control-compact";
+  }
+  return "is-control-medium";
+}
+
+function renderSceneDeviceInfoTab(
+  deviceInfo: SceneDeviceParametersDto["deviceInfo"],
+  fallbackRows: Array<{ label: string; value: string }>,
+  loading: boolean,
+  errorText: string,
+  controlContent?: ReactNode
+) {
+  if (loading) {
+    return <div className="scene-embed-device-state">{"\u6b63\u5728\u52a0\u8f7d\u8bbe\u5907\u94ed\u724c\u4fe1\u606f..."}</div>;
+  }
+  if (errorText) {
+    return <div className="scene-embed-device-state is-error">{errorText}</div>;
+  }
+
+  const imageUrl = readSceneText(deviceInfo?.imageUrl);
+  const loadPercent = parseSceneLoadPercent(deviceInfo?.load);
+  const loadText = readSceneSafeDisplayText(deviceInfo?.load);
+  const loadDisplayText = loadText.includes("%") ? loadText : `${loadText}%`;
+  const loadBand = loadPercent !== null ? resolveSceneLoadBand(loadPercent) : null;
+  const leftTopGroup = getSceneDeviceInfoGroupByIndex(deviceInfo, 0);
+  const centerTopGroup = getSceneDeviceInfoGroupByIndex(deviceInfo, 1);
+  const rightTopGroup = getSceneDeviceInfoGroupByIndex(deviceInfo, 2);
+  const leftBottomGroup = getSceneDeviceInfoGroupByIndex(deviceInfo, 3);
+  const leftTopItems = leftTopGroup?.items || [];
+  const centerTopItems = centerTopGroup?.items || [];
+  const rightTopItems = rightTopGroup?.items || [];
+  const leftBottomItems = leftBottomGroup?.items || [];
+  const standingItems = deviceInfo?.standingItems || [];
+  const fallbackItems = fallbackRows.map((item) => ({
+    name: item.label,
+    value: item.value
+  }));
+
+  return (
+    <div className="scene-embed-device-info-board">
+      <section className="scene-embed-device-info-panel is-left-top">
+        {renderSceneDeviceInfoList(
+          leftTopItems.length ? leftTopItems : fallbackItems,
+          "\u6682\u65e0\u6570\u636e",
+          readSceneSafeDisplayText(leftTopGroup?.title)
+        )}
+      </section>
+      <section className="scene-embed-device-info-panel is-center-top">
+        {renderSceneDeviceInfoList(
+          centerTopItems,
+          "\u6682\u65e0\u6570\u636e",
+          readSceneSafeDisplayText(centerTopGroup?.title)
+        )}
+      </section>
+      <section className="scene-embed-device-info-panel is-right-top">
+        {renderSceneDeviceInfoList(
+          rightTopItems,
+          "\u6682\u65e0\u6570\u636e",
+          readSceneSafeDisplayText(rightTopGroup?.title)
+        )}
+      </section>
+      <section className="scene-embed-device-info-panel is-left-bottom">
+        {renderSceneDeviceStatusPanel(
+          leftBottomItems,
+          deviceInfo?.runStatus,
+          readSceneSafeDisplayText(leftBottomGroup?.title) || "\u8bbe\u5907\u72b6\u6001"
+        )}
+      </section>
+      <section className="scene-embed-device-info-image">
+        <div className="scene-embed-device-info-image-stage">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              className={isSceneGifImage(imageUrl) ? "is-gif" : ""}
+              alt={"\u8bbe\u5907\u56fe\u7247"}
+            />
+          ) : (
+            <div className="scene-embed-device-info-image-empty">{"\u6682\u65e0\u8bbe\u5907\u56fe\u7247"}</div>
+          )}
+        </div>
+        {loadPercent !== null ? (
+          <div className={`scene-embed-device-info-load is-${loadBand?.tone || "good"}`}>
+            <div>
+              <span>{"\u673a\u7ec4\u7535\u6d41\u6bd4"}</span>
+              <strong>{loadDisplayText}</strong>
+              {loadBand ? <em>{loadBand.label}</em> : null}
+            </div>
+            <i>
+              <b style={{ width: `${loadPercent}%` }} />
+              <span className="scene-embed-device-info-load-marker is-low" />
+              <span className="scene-embed-device-info-load-marker is-high" />
+            </i>
+            <div className="scene-embed-device-info-load-bands" aria-hidden="true">
+              <span>{"\u4f4e\u8f7d <30%"}</span>
+              <span>{"\u7ecf\u6d4e 30-85%"}</span>
+              <span>{"\u9ad8\u8f7d >85%"}</span>
+            </div>
+          </div>
+        ) : null}
+        {controlContent ? (
+          <section className="scene-embed-device-info-control-dock" aria-label="控制设定">
+            <div className="scene-embed-device-info-control-head">
+              <strong>控制设定</strong>
+              <span>下发需确认</span>
+            </div>
+            {controlContent}
+          </section>
+        ) : null}
+      </section>
+      <section className="scene-embed-device-info-panel is-standing-book">
+        {renderSceneDeviceInfoList(
+          standingItems,
+          "\u6682\u65e0\u94ed\u724c\u660e\u7ec6",
+          standingItems.length ? "\u57fa\u672c\u4fe1\u606f" : "",
+          "basic"
+        )}
+      </section>
+    </div>
+  );
+}
+
+function getSceneDeviceRecordText(): (typeof SCENE_DEVICE_RECORD_TEXT)[LocaleCode] {
+  return SCENE_DEVICE_RECORD_TEXT[getCurrentLocale()] || SCENE_DEVICE_RECORD_TEXT["zh-CN"];
+}
+
+function formatSceneAlarmState(value: string | number | undefined, text = getSceneDeviceRecordText()): string {
+  const normalized = value == null ? "" : String(value).trim();
+  if (normalized === "0") {
+    return text.recovered;
+  }
+  if (normalized === "1") {
+    return text.alarming;
+  }
+  return normalized || text.unknown;
+}
+
+function normalizeSceneOperationResultKind(result: string): "dispatch" | "execution" | "other" {
+  if (/下发/.test(result)) {
+    return "dispatch";
+  }
+  if (/执行/.test(result)) {
+    return "execution";
+  }
+  return "other";
+}
+
+function normalizeSceneOperationMergeKeyText(value: string): string {
+  return readSceneSafeDisplayText(value)
+    .replace(/\s+/g, "")
+    .replace(/[：]/g, ":")
+    .trim();
+}
+
+function mergeSceneDeviceOperationRecords(records: SceneDeviceOperationRecordDto[]): SceneMergedOperationRecord[] {
+  const mergedRecords: SceneMergedOperationRecord[] = [];
+  const recordIndex = new Map<string, SceneMergedOperationRecord>();
+
+  records.forEach((record, index) => {
+    const details = readSceneSafeDisplayText(record.details) || "--";
+    const operationPerson = readSceneSafeDisplayText(record.operationPerson) || "--";
+    const date = readSceneSafeDisplayText(record.date) || "--";
+    const operationResult = readSceneSafeDisplayText(record.operationResult) || "--";
+    const key = `${normalizeSceneOperationMergeKeyText(details)}::${operationPerson}::${date}`;
+    const existing = recordIndex.get(key) || {
+      key: `${record.id || "operation"}-${index}`,
+      details,
+      operationPerson,
+      date,
+      dispatchResult: "",
+      executionResult: "",
+      otherResults: []
+    };
+    const resultKind = normalizeSceneOperationResultKind(operationResult);
+    if (resultKind === "dispatch") {
+      existing.dispatchResult = existing.dispatchResult || operationResult;
+    } else if (resultKind === "execution") {
+      existing.executionResult = existing.executionResult || operationResult;
+    } else if (!existing.otherResults.includes(operationResult)) {
+      existing.otherResults.push(operationResult);
+    }
+    if (!recordIndex.has(key)) {
+      recordIndex.set(key, existing);
+      mergedRecords.push(existing);
+    }
+  });
+
+  return mergedRecords;
+}
+
+function formatSceneMergedOperationResult(record: SceneMergedOperationRecord): string {
+  return [
+    record.dispatchResult ? `下发：${record.dispatchResult}` : "",
+    record.executionResult ? `执行：${record.executionResult}` : "",
+    ...record.otherResults
+  ].filter(Boolean).join(" / ") || "--";
+}
+
+function formatSceneOperationResultBody(result: string, kind: "dispatch" | "execution"): string {
+  const normalized = readSceneSafeDisplayText(result);
+  if (!normalized) {
+    return "--";
+  }
+  if (kind === "dispatch") {
+    return normalized.replace(/^下发[：:\s]*/, "") || normalized;
+  }
+  return normalized.replace(/^执行[：:\s]*/, "") || normalized;
+}
+
+function renderSceneMergedOperationResult(record: SceneMergedOperationRecord) {
+  const resultText = formatSceneMergedOperationResult(record);
+  return (
+    <div className="scene-embed-device-operation-result" title={resultText}>
+      {record.dispatchResult ? <span><em>下发</em>{formatSceneOperationResultBody(record.dispatchResult, "dispatch")}</span> : null}
+      {record.executionResult ? <span><em>执行</em>{formatSceneOperationResultBody(record.executionResult, "execution")}</span> : null}
+      {record.otherResults.map((result) => (
+        <span key={result}>{result}</span>
+      ))}
+      {!record.dispatchResult && !record.executionResult && record.otherResults.length === 0 ? <span>--</span> : null}
+    </div>
+  );
+}
+
+function renderSceneDeviceOperationRecords(
+  records: SceneDeviceOperationRecordDto[],
+  loading: boolean,
+  errorText: string
+) {
+  const text = getSceneDeviceRecordText();
+  if (loading) {
+    return <div className="scene-embed-device-state">{SCENE_DEVICE_DIALOG_TEXT.loading}</div>;
+  }
+  if (errorText) {
+    return <div className="scene-embed-device-state is-error">{errorText}</div>;
+  }
+  if (!records.length) {
+    return <div className="scene-embed-device-state">{SCENE_DEVICE_DIALOG_TEXT.operationEmpty}</div>;
+  }
+  const mergedRecords = mergeSceneDeviceOperationRecords(records);
+  const visibleRecords = mergedRecords.slice(0, SCENE_DEVICE_RECORD_PREVIEW_LIMIT);
+  return (
+    <div className="scene-embed-device-records">
+      {mergedRecords.length > visibleRecords.length ? (
+        <div className="scene-embed-device-record-note">
+          仅展示最近 {visibleRecords.length} 条联动操作记录，已合并同一指令的下发与执行结果；更多历史请到操作记录页检索。
+        </div>
+      ) : null}
+      <table className="scene-embed-device-record-table is-operation">
+        <thead>
+          <tr>
+            <th>{text.operationContent}</th>
+            <th>{text.operationResult}</th>
+            <th>{text.operationPerson}</th>
+            <th>{text.operationTime}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {visibleRecords.map((record) => (
+            <tr key={record.key}>
+              <td title={record.details}>
+                {record.details || text.unknown}
+              </td>
+              <td title={formatSceneMergedOperationResult(record)}>
+                {renderSceneMergedOperationResult(record)}
+              </td>
+              <td title={record.operationPerson}>
+                {record.operationPerson || text.unknown}
+              </td>
+              <td title={record.date}>
+                {record.date || text.unknown}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function renderSceneDeviceAlarmRecords(records: SceneDeviceAlarmRecordDto[], loading: boolean, errorText: string) {
+  const text = getSceneDeviceRecordText();
+  if (loading) {
+    return <div className="scene-embed-device-state">{SCENE_DEVICE_DIALOG_TEXT.loading}</div>;
+  }
+  if (errorText) {
+    return <div className="scene-embed-device-state is-error">{errorText}</div>;
+  }
+  if (!records.length) {
+    return <div className="scene-embed-device-state">{SCENE_DEVICE_DIALOG_TEXT.alarmEmpty}</div>;
+  }
+  const visibleRecords = records.slice(0, SCENE_DEVICE_RECORD_PREVIEW_LIMIT);
+  return (
+    <div className="scene-embed-device-records">
+      {records.length > visibleRecords.length ? (
+        <div className="scene-embed-device-record-note">
+          仅展示最近 {visibleRecords.length} 条告警记录，共 {records.length} 条；更多历史请到告警中心检索。
+        </div>
+      ) : null}
+      <table className="scene-embed-device-record-table is-alarm">
+        <thead>
+          <tr>
+            <th>{text.alarmLevel}</th>
+            <th>{text.alarmState}</th>
+            <th>{text.alarmContent}</th>
+            <th>{text.alarmTime}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {visibleRecords.map((record, index) => {
+            const stateText = formatSceneAlarmState(record.alarmState, text);
+            return (
+              <tr key={record.id || `alarm-${index}`}>
+                <td title={readSceneSafeDisplayText(record.alarmTypeName)}>
+                  {readSceneSafeDisplayText(record.alarmTypeName) || text.unknown}
+                </td>
+                <td
+                  className={
+                    String(record.alarmState).trim() === "0"
+                      ? "is-recovered"
+                      : String(record.alarmState).trim() === "1"
+                        ? "is-alarming"
+                        : ""
+                  }
+                  title={stateText}
+                >
+                  {stateText}
+                </td>
+                <td title={readSceneSafeDisplayText(record.alarmExplain)}>
+                  {readSceneSafeDisplayText(record.alarmExplain) || text.unknown}
+                </td>
+                <td title={readSceneSafeDisplayText(record.time)}>
+                  {readSceneSafeDisplayText(record.time) || text.unknown}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default function SceneControlPage() {
+  const session = getAuthSession();
+  const currentProject = getCurrentProject(session);
+  const stationRuntimeScope = useStationRuntimeScope();
+  const runtimeStationId = stationRuntimeScope.runtimeStationId;
+  const plantOverviewProfile = getPlantOverviewProfile(
+    currentProject?.siteId,
+    currentProject?.siteCode,
+    currentProject?.databaseKey,
+    currentProject?.modelKey,
+    currentProject ? undefined : runtimeConfig.siteId
+  );
+  const shellProjectDisplayName = useShellProjectDisplay();
+  const shellRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const sceneFrameNoticeTimerRef = useRef<number | null>(null);
+  const runtimeHudBeforeFullscreenRef = useRef(true);
+  const previousPlantOverviewActiveRef = useRef(Boolean(plantOverviewProfile));
+  const [mode, setMode] = useState<SceneMode>(() => plantOverviewProfile ? "3d" : "2d");
+  const [fitMode, setFitMode] = useState<SceneFitMode>("native");
+  const [sceneFrameResetKeys, setSceneFrameResetKeys] = useState<Record<SceneMode, number>>({ "2d": 0, "3d": 0 });
+  const [loaded2dSceneUrl, setLoaded2dSceneUrl] = useState("");
+  const [prewarm3dSceneUrl, setPrewarm3dSceneUrl] = useState("");
+  const [prewarmed3dReadyUrl, setPrewarmed3dReadyUrl] = useState("");
+  const [loadedActiveSceneFrameToken, setLoadedActiveSceneFrameToken] = useState("");
+  const [expiredSceneComfortLoadingToken, setExpiredSceneComfortLoadingToken] = useState("");
+  const [nativeFrameViewport, setNativeFrameViewport] = useState({ scale: 1, x: 0, y: 0 });
+  const [items, setItems] = useState<SceneFloorModelItemDto[]>(() => getCachedSceneFloorModels(currentProject?.siteId));
+  const [loading, setLoading] = useState(false);
+  const [errorText, setErrorText] = useState("");
+  const [clickedDevice, setClickedDevice] = useState<SceneDeviceClick | null>(null);
+  const [plantEquipmentSelection, setPlantEquipmentSelection] = useState<PlantOverviewEquipmentSelection | null>(null);
+  const [plantEquipmentInspectorTab, setPlantEquipmentInspectorTab] = useState<PlantEquipmentInspectorTab>("overview");
+  const [deviceDialogTab, setDeviceDialogTab] = useState<SceneDeviceDialogTab>("info");
+  const [deviceParameters, setDeviceParameters] = useState<SceneDeviceParametersDto | null>(null);
+  const [deviceParametersLoading, setDeviceParametersLoading] = useState(false);
+  const [deviceParametersError, setDeviceParametersError] = useState("");
+  const [controlSubmittingKey, setControlSubmittingKey] = useState("");
+  const [controlCommandStatus, setControlCommandStatus] = useState("");
+  const [pendingControlCommand, setPendingControlCommand] = useState<SceneControlPendingCommand | null>(null);
+  const [weather, setWeather] = useState<SceneWeather>({
+    outdoorWetBulbC: null,
+    outdoorHumidityPct: null,
+    outdoorTempC: null
+  });
+  const [stationOverview, setStationOverview] = useState<DashboardOverviewDto | null>(null);
+  const [plantRuntimeSummary, setPlantRuntimeSummary] = useState<RuntimePointSummaryDto | null>(null);
+  const [runtimeHudExpanded, setRuntimeHudExpanded] = useState(true);
+  const [isFrameFullscreen, setIsFrameFullscreen] = useState(false);
+  const [sceneFrameNoticeVisible, setSceneFrameNoticeVisible] = useState(false);
+
+  useEffect(() => {
+    setClickedDevice(null);
+    setPlantEquipmentSelection(null);
+    setPlantEquipmentInspectorTab("overview");
+    setDeviceDialogTab("info");
+    setDeviceParameters(null);
+    setDeviceParametersError("");
+    setControlSubmittingKey("");
+    setControlCommandStatus("");
+    setPendingControlCommand(null);
+    setPlantRuntimeSummary(null);
+  }, [stationRuntimeScope.scopeKey]);
+
+  const fallbackProjectLabel = resolveAuthProjectDisplayName(currentProject, zhCN.appShell.projectPending);
+  const projectLabel = normalizeLabel(shellProjectDisplayName) || fallbackProjectLabel;
+  const dashboardProjectKey = useMemo(
+    () => resolveSceneDropdownProjectKey(currentProject, session),
+    [currentProject, session]
+  );
+  const dashboardProject = useMemo(() => {
+    if (!currentProject) {
+      return null;
+    }
+    return {
+      ...currentProject,
+      modelKey: dashboardProjectKey || currentProject.modelKey
+    };
+  }, [currentProject, dashboardProjectKey]);
+  const activeModel = useMemo(() => findSceneFloorModelForProject(dashboardProject, items), [dashboardProject, items]);
+  const remoteModel2dUrl = normalizeUrl(activeModel?.model2dUrl);
+  const model2dUrl = plantOverviewProfile?.model2dAssetPath || remoteModel2dUrl;
+  const model3dUrl = normalizeUrl(activeModel?.model3dUrl);
+  const localPlantOverviewActive = mode === "3d" && Boolean(plantOverviewProfile);
+  const localPlantOverview2dActive = mode === "2d" && Boolean(plantOverviewProfile);
+  const sceneRenderer = localPlantOverviewActive
+    ? "local-plant-overview"
+    : localPlantOverview2dActive
+      ? "local-plant-overview-2d"
+      : "remote-scene";
+  const activeUrl = mode === "2d" ? model2dUrl : plantOverviewProfile ? "" : model3dUrl;
+  const hasActiveScene = localPlantOverviewActive || Boolean(activeUrl);
+  const activeSceneFrameResetKey = sceneFrameResetKeys[mode];
+  const activeSceneFrameToken = activeUrl ? `${mode}:${activeUrl}:${activeSceneFrameResetKey}` : "";
+  const activeNativeViewport = useMemo(
+    () => localPlantOverview2dActive
+      ? SCENE_NATIVE_B25_LOCAL_2D_VIEWPORT
+      : resolveSceneNativeViewport(activeUrl, mode),
+    [activeUrl, localPlantOverview2dActive, mode]
+  );
+  const activeNativeCanvasWidth = localPlantOverview2dActive
+    ? B25_LOCAL_2D_CANVAS_WIDTH
+    : SCENE_NATIVE_CANVAS_WIDTH;
+  const activeNativeCanvasHeight = localPlantOverview2dActive
+    ? B25_LOCAL_2D_CANVAS_HEIGHT
+    : SCENE_NATIVE_CANVAS_HEIGHT;
+  const inactiveSceneUrl = plantOverviewProfile ? "" : mode === "2d" ? model3dUrl : model2dUrl;
+  const sceneModelUrls = useMemo(
+    () => (plantOverviewProfile ? [model2dUrl] : [model2dUrl, model3dUrl]).filter((url): url is string => Boolean(url)),
+    [model2dUrl, model3dUrl, plantOverviewProfile]
+  );
+  const shouldMount3dPrewarmFrame = Boolean(
+    !plantOverviewProfile &&
+    model3dUrl &&
+    (mode === "3d" || (runtimeConfig.sceneIdle3dPrewarm && prewarm3dSceneUrl === model3dUrl))
+  );
+  const shouldMount2dFrame = Boolean(model2dUrl && mode === "2d");
+  const is3dFrameActive = mode === "3d" && !plantOverviewProfile;
+  const showSceneComfortLoading = Boolean(
+    activeSceneFrameToken &&
+      loadedActiveSceneFrameToken !== activeSceneFrameToken &&
+      expiredSceneComfortLoadingToken !== activeSceneFrameToken
+  );
+  const sceneLocale = getCurrentLocale();
+  const sceneText = getSceneEmbedText(sceneLocale);
+  const activeLabel = localPlantOverviewActive
+    ? runtimeStationId
+      ? `${stationRuntimeScope.stationName || "当前站房"} · 项目级3D模型`
+      : "B25 全站3D"
+    : localPlantOverview2dActive
+      ? plantOverviewProfile?.model2dDisplayName || "B25 全站2D"
+    : sceneText.modeLabels[mode];
+  const deviceFilterContext = buildSceneDeviceFilterContext(clickedDevice, deviceParameters?.deviceName);
+  const detailGroups = filterSceneDeviceParameterGroups(deviceParameters?.groups || [], deviceFilterContext);
+  const controlGroups = filterSceneDeviceParameterGroups(deviceParameters?.controlGroups || [], deviceFilterContext);
+  const alarmRecords = filterSceneRecordsByDevice(
+    deviceParameters?.alarmRecords || [],
+    deviceFilterContext,
+    (record) => [record.alarmTypeName, record.alarmExplain, record.id].map((value) => readSceneSafeDisplayText(value)).join(" ")
+  );
+  const operationRecords = filterSceneRecordsByDevice(
+    deviceParameters?.operationRecords || [],
+    deviceFilterContext,
+    (record) => [record.details, record.id].map((value) => readSceneSafeDisplayText(value)).join(" ")
+  );
+  const showDeviceInfoTab = deviceParameters?.deviceInfo?.visible !== false;
+  const embedControlInInfoTab = showDeviceInfoTab;
+  const isDeviceInfoDialog = deviceDialogTab === "info" && showDeviceInfoTab;
+  const closeText = getSceneDeviceDialogCloseText(sceneLocale);
+  const visibleDeviceDialogTabs = useMemo(
+    () =>
+      getSceneDeviceDialogTabs(sceneLocale).filter((tab) => {
+        if (tab.key === "info") {
+          return showDeviceInfoTab;
+        }
+        if (tab.key === "control") {
+          return !embedControlInInfoTab;
+        }
+        return true;
+      }),
+    [embedControlInInfoTab, sceneLocale, showDeviceInfoTab]
+  );
+  const dialogDeviceTitle = resolveSceneDialogDeviceTitle(
+    deviceParameters?.deviceName,
+    clickedDevice,
+    [...detailGroups, ...controlGroups]
+  );
+  const clickedDeviceRows = clickedDevice
+    ? [
+        { label: "\u8bbe\u5907\u540d\u79f0", value: clickedDevice.deviceName },
+        { label: "\u6a21\u578b\u540d\u79f0", value: clickedDevice.modelName },
+        { label: "\u8bbe\u5907\u7c7b\u578b", value: /^\d+$/.test(readSceneSafeDisplayText(clickedDevice.deviceType)) ? "" : clickedDevice.deviceType }
+      ].filter((item) => readSceneSafeDisplayText(item.value))
+    : [];
+  const stationScopedRuntimeSummary = runtimeStationId
+    && isAppliedStationRuntimeScope(plantRuntimeSummary?.dataScope, stationRuntimeScope)
+    ? plantRuntimeSummary
+    : null;
+  const sceneRuntimeSummary = runtimeStationId ? stationScopedRuntimeSummary : plantRuntimeSummary;
+  const plantEquipmentMetrics = useMemo(
+    () => resolvePlantOverviewEquipmentMetrics(sceneRuntimeSummary, plantEquipmentSelection),
+    [plantEquipmentSelection, sceneRuntimeSummary]
+  );
+  const plantEquipmentInspectorOpen = (localPlantOverviewActive || localPlantOverview2dActive)
+    && Boolean(plantEquipmentSelection);
+  const runtimeSignals = stationScopedRuntimeSummary?.keySignals;
+  const sceneWeather: SceneWeather = runtimeStationId
+    ? {
+        outdoorWetBulbC: runtimeSignals?.weather?.wetBulbC ?? null,
+        outdoorHumidityPct: runtimeSignals?.weather?.humidityPct ?? null,
+        outdoorTempC: runtimeSignals?.weather?.outdoorTempC ?? null
+      }
+    : weather;
+  const environmentItems = [
+    {
+      key: "wet-bulb",
+      label: sceneText.wetBulb,
+      value: formatSceneMetric(sceneWeather.outdoorWetBulbC, "\u00b0C"),
+      icon: <CloudSun size={15} />
+    },
+    {
+      key: "humidity",
+      label: sceneText.outdoorHumidity,
+      value: formatSceneMetric(sceneWeather.outdoorHumidityPct, "%", 0),
+      icon: <Droplets size={15} />
+    },
+    {
+      key: "temperature",
+      label: sceneText.outdoorTemperature,
+      value: formatSceneMetric(sceneWeather.outdoorTempC, "\u00b0C"),
+      icon: <ThermometerSun size={15} />
+    }
+  ];
+  const runtimeSourceState = runtimeStationId
+    ? formatSceneStationRuntimeSourceState(stationScopedRuntimeSummary)
+    : formatSceneRuntimeSourceState(stationOverview);
+  const sceneControlBlocked = Boolean(plantOverviewProfile) || Boolean(runtimeStationId);
+  const energyCards = runtimeStationId ? null : stationOverview?.energyCards;
+  const stationPower = runtimeSignals?.power;
+  const totalPowerKw = runtimeStationId
+    ? sumSceneNumbersOrNull([
+        stationPower?.runningChillerPowerKw,
+        stationPower?.runningChilledPumpPowerKw,
+        stationPower?.runningCoolingPumpPowerKw,
+        stationPower?.runningCoolingTowerPowerKw
+      ])
+    : energyCards?.totalPowerKw ?? null;
+  const totalCoolingCapacity = runtimeStationId ? null : energyCards?.totalCoolingCapacity ?? null;
+  const stationEfficiency = energyCards?.currentCop ?? divideSceneOrNull(totalCoolingCapacity, totalPowerKw);
+  const loadRate = energyCards?.currentLoadRate ?? null;
+  const chillerPowerKw = runtimeStationId
+    ? stationPower?.runningChillerPowerKw ?? null
+    : energyCards?.chillerPowerKw ?? null;
+  const chilledPumpPowerKw = runtimeStationId
+    ? stationPower?.runningChilledPumpPowerKw ?? null
+    : energyCards?.chilledPumpPowerKw ?? null;
+  const coolingPumpPowerKw = runtimeStationId
+    ? stationPower?.runningCoolingPumpPowerKw ?? null
+    : energyCards?.coolingPumpPowerKw ?? null;
+  const coolingTowerPowerKw = runtimeStationId
+    ? stationPower?.runningCoolingTowerPowerKw ?? null
+    : energyCards?.coolingTowerPowerKw ?? null;
+  const auxiliaryPowerKw =
+    (isFiniteSceneNumber(chilledPumpPowerKw) ? chilledPumpPowerKw : 0) +
+    (isFiniteSceneNumber(coolingPumpPowerKw) ? coolingPumpPowerKw : 0) +
+    (isFiniteSceneNumber(coolingTowerPowerKw) ? coolingTowerPowerKw : 0);
+  const hasAuxiliaryPower = [chilledPumpPowerKw, coolingPumpPowerKw, coolingTowerPowerKw].some(isFiniteSceneNumber);
+  const chilledSupplyTemp = runtimeStationId
+    ? runtimeSignals?.chilledWater?.supplyTempC ?? null
+    : energyCards?.chilledSupplyTemp ?? null;
+  const chilledDeltaT = runtimeStationId
+    ? runtimeSignals?.chilledWater?.deltaTC ?? null
+    : energyCards?.chilledDeltaT ?? null;
+  const chilledReturnTemp = runtimeStationId
+    ? runtimeSignals?.chilledWater?.returnTempC ?? null
+    : isFiniteSceneNumber(chilledSupplyTemp) && isFiniteSceneNumber(chilledDeltaT)
+      ? chilledSupplyTemp + chilledDeltaT
+      : null;
+  const coolingReturnTemp = runtimeStationId
+    ? runtimeSignals?.coolingWater?.returnTempC ?? null
+    : energyCards?.coolingReturnTemp ?? null;
+  const coolingDeltaT = runtimeStationId
+    ? runtimeSignals?.coolingWater?.deltaTC ?? null
+    : energyCards?.coolingDeltaT ?? null;
+  const activeAlarmCount = runtimeStationId
+    ? null
+    : stationOverview?.alarmSummary?.total ?? energyCards?.activeAnomalyCount ?? null;
+  const highAlarmCount = runtimeStationId ? null : stationOverview?.alarmSummary?.high ?? null;
+  const alarmRuntimeText =
+    isFiniteSceneNumber(highAlarmCount) && highAlarmCount > 0
+      ? `${formatSceneRuntimeCount(highAlarmCount)}高危`
+      : isFiniteSceneNumber(activeAlarmCount)
+        ? `${formatSceneRuntimeCount(activeAlarmCount)}项`
+        : "--";
+  const alarmRuntimeHint =
+    isFiniteSceneNumber(activeAlarmCount) && isFiniteSceneNumber(highAlarmCount)
+      ? `总告警 ${formatSceneRuntimeCount(activeAlarmCount)} · 高危 ${formatSceneRuntimeCount(highAlarmCount)}`
+      : "等待告警摘要回传";
+  const sceneRuntimeMetrics: SceneRuntimeMetricView[] = [
+    {
+      key: "efficiency",
+      label: "冷站能效",
+      value: formatSceneRuntimeNumber(stationEfficiency, 2),
+      unit: "COP",
+      hint: isFiniteSceneNumber(loadRate) ? `负荷率 ${formatSceneRuntimePercent(loadRate)}%` : "总冷量 / 总功率",
+      tone: isFiniteSceneNumber(stationEfficiency) && stationEfficiency >= 4.15 ? "good" : "neutral",
+      primary: true
+    },
+    {
+      key: "power",
+      label: "总功率",
+      value: formatSceneRuntimeNumber(totalPowerKw, 1),
+      unit: "kW",
+      hint: `主机 ${formatSceneRuntimeNumber(chillerPowerKw, 1)} · 辅机 ${
+        hasAuxiliaryPower ? formatSceneRuntimeNumber(auxiliaryPowerKw, 1) : "--"
+      }`,
+      tone: "info"
+    },
+    {
+      key: "cooling-capacity",
+      label: "总制冷量",
+      value: formatSceneRuntimeNumber(totalCoolingCapacity, 0),
+      unit: "kW",
+      hint: isFiniteSceneNumber(loadRate) ? `当前负荷率 ${formatSceneRuntimePercent(loadRate)}%` : "等待负荷率回传"
+    },
+    {
+      key: "chilled-water",
+      label: "冷冻水",
+      value: formatSceneTemperaturePair(chilledSupplyTemp, chilledReturnTemp),
+      unit: "°C",
+      hint: `供/回 · ΔT ${formatSceneRuntimeNumber(chilledDeltaT, 1)}°C`
+    },
+    {
+      key: "cooling-water",
+      label: "冷却水",
+      value: formatSceneRuntimeNumber(coolingReturnTemp, 1),
+      unit: "°C",
+      hint: `回水 · ΔT ${formatSceneRuntimeNumber(coolingDeltaT, 1)}°C · 湿球 ${formatSceneMetric(sceneWeather.outdoorWetBulbC, "°C")}`,
+      tone: "warn"
+    },
+    {
+      key: "equipment-counts",
+      label: "设备组合",
+      value: runtimeStationId
+        ? formatSceneRuntimeEquipmentCounts(stationScopedRuntimeSummary)
+        : formatSceneEquipmentCounts(stationOverview),
+      hint: "冷机/泵/塔 · 设备数"
+    }
+  ];
+  const sceneRuntimeCompactMetrics: SceneRuntimeMetricView[] = [
+    sceneRuntimeMetrics[0],
+    {
+      key: "compact-load",
+      label: "负荷率",
+      value: formatSceneRuntimePercent(loadRate),
+      unit: "%",
+      hint: `P ${formatSceneRuntimeNumber(totalPowerKw, 1)}kW · C ${formatSceneRuntimeNumber(totalCoolingCapacity, 0)}kW`
+    },
+    {
+      key: "compact-water",
+      label: "关键水温",
+      value: formatSceneTemperaturePair(chilledSupplyTemp, coolingReturnTemp),
+      unit: "°C",
+      hint: "冷冻供水 / 冷却回水"
+    },
+    {
+      key: "compact-alarm",
+      label: "活跃告警",
+      value: alarmRuntimeText,
+      hint: alarmRuntimeHint,
+      tone: isFiniteSceneNumber(highAlarmCount)
+        ? highAlarmCount > 0
+          ? "danger"
+          : "good"
+        : "neutral"
+    }
+  ];
+  const visibleRuntimeMetrics = runtimeHudExpanded ? sceneRuntimeMetrics : sceneRuntimeCompactMetrics;
+  const sceneRuntimeContextItems: SceneRuntimeContextItem[] = [
+    { label: "COP", value: formatSceneRuntimeNumber(stationEfficiency, 2) },
+    { label: "负荷率", value: `${formatSceneRuntimePercent(loadRate)}%` },
+    { label: "告警", value: alarmRuntimeText },
+    { label: "状态", value: runtimeSourceState.label.replace(/^数据/, "") }
+  ];
+
+  useEffect(() => {
+    const wasPlantOverviewActive = previousPlantOverviewActiveRef.current;
+    const plantOverviewActive = Boolean(plantOverviewProfile);
+    if (plantOverviewActive && !wasPlantOverviewActive) {
+      setMode("3d");
+    } else if (!plantOverviewActive && wasPlantOverviewActive && mode === "3d" && !model3dUrl) {
+      setMode("2d");
+    }
+    previousPlantOverviewActiveRef.current = plantOverviewActive;
+  }, [mode, model3dUrl, plantOverviewProfile]);
+
+  useEffect(() => {
+    if (!localPlantOverviewActive && !localPlantOverview2dActive) {
+      setPlantEquipmentSelection(null);
+      setPlantEquipmentInspectorTab("overview");
+      return;
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setPlantEquipmentSelection(null);
+        setPlantEquipmentInspectorTab("overview");
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [localPlantOverview2dActive, localPlantOverviewActive]);
+
+  useEffect(() => {
+    const runtimeSiteId = runtimeStationId
+      ? stationRuntimeScope.runtimeBindingSiteId
+      : dashboardProject?.siteId || currentProject?.siteId || runtimeConfig.siteId;
+    if ((!plantOverviewProfile && !runtimeStationId) || !runtimeSiteId) {
+      setPlantRuntimeSummary(null);
+      return;
+    }
+    const siteId = String(runtimeSiteId);
+    const refreshIntervalMs = 10_000;
+    let active = true;
+    let requestInFlight = false;
+    let refreshTimer: number | null = null;
+    let activeRequestController: AbortController | null = null;
+    setPlantRuntimeSummary(null);
+
+    const scheduleNextRefresh = () => {
+      if (!active) {
+        return;
+      }
+      refreshTimer = window.setTimeout(() => {
+        void refreshRuntimeSummary();
+      }, refreshIntervalMs);
+    };
+    const refreshRuntimeSummary = async () => {
+      if (!active || requestInFlight) {
+        return;
+      }
+      if (document.visibilityState === "hidden") {
+        scheduleNextRefresh();
+        return;
+      }
+      requestInFlight = true;
+      const requestController = new AbortController();
+      activeRequestController = requestController;
+      const requestTimeout = window.setTimeout(() => requestController.abort(), 8_000);
+      try {
+        const summary = await fetchRuntimePointSummary(siteId, {
+          signal: requestController.signal,
+          stationId: runtimeStationId
+        });
+        if (runtimeStationId && !isAppliedStationRuntimeScope(summary.dataScope, stationRuntimeScope)) {
+          throw new Error("Runtime summary did not prove the selected physical-station scope");
+        }
+        if (active) {
+          setPlantRuntimeSummary(summary);
+        }
+      } catch {
+        // Preserve the last evidence envelope. Its observedAt ages into STALE
+        // locally instead of a transport error being mislabeled as UNBOUND.
+      } finally {
+        window.clearTimeout(requestTimeout);
+        if (activeRequestController === requestController) {
+          activeRequestController = null;
+        }
+        requestInFlight = false;
+        scheduleNextRefresh();
+      }
+    };
+    const handleVisibilityChange = () => {
+      if (!active || document.visibilityState !== "visible" || requestInFlight) {
+        return;
+      }
+      if (refreshTimer !== null) {
+        window.clearTimeout(refreshTimer);
+        refreshTimer = null;
+      }
+      void refreshRuntimeSummary();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    void refreshRuntimeSummary();
+    return () => {
+      active = false;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (refreshTimer !== null) {
+        window.clearTimeout(refreshTimer);
+      }
+      activeRequestController?.abort();
+    };
   }, [
-    legacyDialogDateParam,
-    legacyDialogTagnameParam,
-    legacyDialogTitleParam,
-    legacyDialogUnitParam,
-    legacySceneView
+    currentProject?.siteId,
+    dashboardProject?.siteId,
+    plantOverviewProfile,
+    runtimeStationId,
+    stationRuntimeScope.runtimeBindingSiteId,
+    stationRuntimeScope.scopeKey
   ]);
 
   useEffect(() => {
-    let active = true;
-    if (legacySceneView !== "dialog") {
-      setLegacyTrendLoading(false);
-      setLegacyTrendError(null);
-      setLegacyTrendData(null);
-      return () => {
-        active = false;
-      };
-    }
-    if (!legacyDialogQuery.tagname) {
-      setLegacyTrendLoading(false);
-      setLegacyTrendData(null);
-      setLegacyTrendError(zhCN.sceneControl.compatDialogMissingTagname);
-      return () => {
-        active = false;
-      };
-    }
+    setLoaded2dSceneUrl("");
+    setPrewarm3dSceneUrl("");
+    setPrewarmed3dReadyUrl("");
+    setLoadedActiveSceneFrameToken("");
+    setExpiredSceneComfortLoadingToken("");
+  }, [model2dUrl, model3dUrl]);
 
-    setLegacyTrendLoading(true);
-    setLegacyTrendError(null);
-
-    async function loadLegacyTrend() {
-      try {
-        const today = formatDateInput(new Date());
-        const result = await fetchSceneLegacyTrend(runtimeConfig.siteId, {
-          tagname: legacyDialogQuery.tagname,
-          title: legacyDialogQuery.title,
-          unit: legacyDialogQuery.unit,
-          date: legacyDialogQuery.date === today ? null : legacyDialogQuery.date
-        });
-        if (!active) {
-          return;
-        }
-        setLegacyTrendData(result);
-        setLegacyTrendLoading(false);
-      } catch {
-        if (!active) {
-          return;
-        }
-        setLegacyTrendData(null);
-        setLegacyTrendLoading(false);
-        setLegacyTrendError(zhCN.sceneControl.compatDialogLoadFailed);
+  useEffect(() => {
+    if (!activeSceneFrameToken) {
+      setLoadedActiveSceneFrameToken("");
+      return;
+    }
+    setLoadedActiveSceneFrameToken((currentToken) => {
+      if (currentToken === activeSceneFrameToken) {
+        return currentToken;
       }
+      if (mode === "3d" && model3dUrl && prewarmed3dReadyUrl === model3dUrl) {
+        return activeSceneFrameToken;
+      }
+      return "";
+    });
+  }, [activeSceneFrameToken, mode, model3dUrl, prewarmed3dReadyUrl]);
+
+  useEffect(() => {
+    if (!activeSceneFrameToken || loadedActiveSceneFrameToken === activeSceneFrameToken) {
+      setExpiredSceneComfortLoadingToken("");
+      return;
+    }
+    setExpiredSceneComfortLoadingToken((currentToken) => (currentToken === activeSceneFrameToken ? "" : currentToken));
+    const loadingTimer = window.setTimeout(() => {
+      setExpiredSceneComfortLoadingToken(activeSceneFrameToken);
+    }, SCENE_COMFORT_LOADING_MAX_MS);
+    return () => {
+      window.clearTimeout(loadingTimer);
+    };
+  }, [activeSceneFrameToken, loadedActiveSceneFrameToken]);
+
+  useEffect(() => {
+    if (!sceneModelUrls.length) {
+      return;
+    }
+    ensureSceneModelOriginHints(sceneModelUrls);
+  }, [sceneModelUrls]);
+
+  useEffect(() => {
+    if (!activeUrl || !inactiveSceneUrl || inactiveSceneUrl === activeUrl) {
+      return;
+    }
+    const prefetchTimer = window.setTimeout(() => {
+      ensureSceneModelDocumentPrefetch(inactiveSceneUrl);
+    }, 1600);
+    return () => {
+      window.clearTimeout(prefetchTimer);
+    };
+  }, [activeUrl, inactiveSceneUrl]);
+
+  useEffect(() => {
+    if (
+      plantOverviewProfile ||
+      !runtimeConfig.sceneIdle3dPrewarm ||
+      mode !== "2d" ||
+      !model2dUrl ||
+      !model3dUrl ||
+      loaded2dSceneUrl !== model2dUrl ||
+      prewarm3dSceneUrl === model3dUrl
+    ) {
+      return;
     }
 
-    loadLegacyTrend();
+    const idleWindow = window as SceneIdleWindow;
+    let idleHandle: number | null = null;
+    const settleTimer = window.setTimeout(() => {
+      if (typeof idleWindow.requestIdleCallback === "function") {
+        idleHandle = idleWindow.requestIdleCallback(() => {
+          setPrewarm3dSceneUrl(model3dUrl);
+        }, { timeout: 4500 });
+        return;
+      }
+      setPrewarm3dSceneUrl(model3dUrl);
+    }, SCENE_IDLE_3D_PREWARM_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(settleTimer);
+      if (idleHandle !== null && typeof idleWindow.cancelIdleCallback === "function") {
+        idleWindow.cancelIdleCallback(idleHandle);
+      }
+    };
+  }, [loaded2dSceneUrl, mode, model2dUrl, model3dUrl, plantOverviewProfile, prewarm3dSceneUrl]);
+
+  useEffect(() => {
+    if (!currentProject?.siteId) {
+      setItems([]);
+      return;
+    }
+
+    let active = true;
+    setItems(getCachedSceneFloorModels(currentProject.siteId));
+    setLoading(true);
+    setErrorText("");
+    preloadSceneFloorModels(currentProject.siteId)
+      .then((nextItems) => {
+        if (!active) {
+          return;
+        }
+        setItems(nextItems);
+      })
+      .catch(() => {
+        if (!active) {
+          return;
+        }
+        setErrorText("场景地址加载失败，请检查当前项目的场景模型配置。");
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
     return () => {
       active = false;
     };
-  }, [legacyDialogQuery, legacySceneView]);
+  }, [currentProject?.siteId, currentProject?.modelKey, currentProject?.template]);
 
   useEffect(() => {
+    if (runtimeStationId || !dashboardProject?.siteId) {
+      setStationOverview(null);
+      setWeather({
+        outdoorWetBulbC: null,
+        outdoorHumidityPct: null,
+        outdoorTempC: null
+      });
+      return;
+    }
+
     let active = true;
-    if (legacySceneView !== "online") {
-      setOnlineMonitorLoading(false);
-      setOnlineMonitorError(null);
-      setOnlineMonitorData(null);
-      return () => {
-        active = false;
-      };
-    }
-
-    setOnlineMonitorLoading(true);
-    setOnlineMonitorError(null);
-
-    async function loadOnlineMonitor() {
-      try {
-        const result = await fetchSceneOnlineMonitor(runtimeConfig.siteId);
+    fetchDashboardOverviewForProject(dashboardProject)
+      .then((overview) => {
         if (!active) {
           return;
         }
-        setOnlineMonitorData(result);
-        setOnlineMonitorLoading(false);
-      } catch {
-        if (!active) {
-          return;
+        setStationOverview(overview);
+        setWeather(readSceneWeather(overview));
+      })
+      .catch(() => {
+        if (active) {
+          setStationOverview(null);
+          setWeather({
+            outdoorWetBulbC: null,
+            outdoorHumidityPct: null,
+            outdoorTempC: null
+          });
         }
-        setOnlineMonitorData(null);
-        setOnlineMonitorLoading(false);
-        setOnlineMonitorError(zhCN.sceneControl.compatOnlineLoadFailed);
-      }
-    }
+      });
 
-    loadOnlineMonitor();
     return () => {
       active = false;
     };
-  }, [legacySceneView]);
+  }, [
+    dashboardProject?.siteId,
+    dashboardProject?.modelKey,
+    dashboardProject?.databaseKey,
+    dashboardProject?.template,
+    runtimeStationId
+  ]);
 
   useEffect(() => {
-    let active = true;
-    setFrameLoaded(false);
-    setProbeState("checking");
-
-    async function probeScene() {
-      try {
-        await fetch(sceneUrl, { mode: "no-cors", cache: "no-store" });
-        if (!active) {
-          return;
-        }
-        setProbeState("ready");
-      } catch {
-        if (!active) {
-          return;
-        }
-        setProbeState("failed");
-      }
+    const allowedOrigin = readSceneOrigin(activeUrl);
+    if (!allowedOrigin) {
+      return;
     }
 
-    probeScene();
-    return () => {
-      active = false;
-    };
-  }, [sceneUrl, refreshKey]);
-
-  useEffect(() => {
-    const allowedOrigin = new URL(runtimeConfig.sceneBaseUrl).origin;
-
-    const applySceneBridgeSelection = (deviceId: string | null, nodeId: string | null) => {
-      const node = nodeId ? systemDiagramTopology.nodes.find((item) => item.id === nodeId) || null : null;
-      const resolvedDeviceId = deviceId || node?.primaryDeviceId || null;
-
-      if (node) {
-        setSelectedSceneDiagramNodeId(node.id);
-        if (
-          node.category === "chiller" ||
-          node.category === "pump" ||
-          node.category === "cooling-tower" ||
-          node.category === "valve"
-        ) {
-          setForcedModelCategory(node.category);
-        } else {
-          setForcedModelCategory(null);
-        }
-      } else {
-        setSelectedSceneDiagramNodeId(null);
-        setForcedModelCategory(null);
-      }
-
-      if (resolvedDeviceId) {
-        setSelectedDeviceId(resolvedDeviceId);
-      }
-    };
-
-    const handleSceneMessage = (event: MessageEvent) => {
+    function handleSceneMessage(event: MessageEvent) {
       if (event.origin !== allowedOrigin) {
         return;
       }
-      if (!event.data || typeof event.data !== "object" || Array.isArray(event.data)) {
+      if (event.source !== iframeRef.current?.contentWindow) {
         return;
       }
-
-      const selection = resolveSceneIframeSelection(
-        event.data as Record<string, unknown>,
-        sceneDevices,
-        systemDiagramTopology
-      );
-
-      if (!selection.deviceId && !selection.nodeId) {
+      const message = event.data;
+      if (!message || typeof message !== "object" || Array.isArray(message)) {
         return;
       }
-
-      applySceneBridgeSelection(selection.deviceId, selection.nodeId);
-    };
+      const messageRecord = message as Record<string, unknown>;
+      const messageId = readSceneText(messageRecord.id, messageRecord.type, messageRecord.action);
+      if (messageId !== "onClickModelObservable") {
+        return;
+      }
+      const device = normalizeSceneDeviceClick(messageRecord.data);
+      if (device) {
+        setDeviceDialogTab("info");
+        setClickedDevice(device);
+      }
+    }
 
     window.addEventListener("message", handleSceneMessage);
     return () => {
       window.removeEventListener("message", handleSceneMessage);
     };
-  }, [sceneDevices, systemDiagramTopology]);
+  }, [activeUrl]);
 
   useEffect(() => {
-    let active = true;
-    setDevicePanelState("loading");
-    setSelectedDeviceDetail(null);
-    setSceneDevices([]);
-    setSceneSystemDiagram(null);
+    if (!clickedDevice) {
+      setDeviceParameters(null);
+      setDeviceParametersError("");
+      setDeviceParametersLoading(false);
+      setControlSubmittingKey("");
+      setControlCommandStatus("");
+      setPendingControlCommand(null);
+      return;
+    }
+    if (runtimeStationId) {
+      setDeviceParameters(null);
+      setDeviceParametersError("当前站房实例仅开放经过 allowlist 的运行摘要；场景设备详情接口尚未完成 stationId 过滤，本次未读取项目级参数。");
+      setDeviceParametersLoading(false);
+      setControlSubmittingKey("");
+      setControlCommandStatus("");
+      setPendingControlCommand(null);
+      return;
+    }
+    if (!dashboardProject?.siteId || !clickedDevice.drId) {
+      setDeviceParameters(null);
+      setDeviceParametersError("\u5f53\u524d\u8bbe\u5907\u7f3a\u5c11 drId\uff0c\u6682\u65f6\u65e0\u6cd5\u62c9\u53d6\u8be6\u7ec6\u53c2\u6570\u3002");
+      setDeviceParametersLoading(false);
+      return;
+    }
 
-    async function loadSceneDevices() {
-      try {
-        const forcedContractDiagram =
-          diagramMode === "contract-sample" ? buildSystemDiagramFromContract(SYSTEM_DIAGRAM_CONTRACT_SAMPLE) : null;
-        const [deviceResult, topologyResult, diagramResult] = await Promise.allSettled([
-          fetchDeviceList(runtimeConfig.siteId, {
-            page: 1,
-            pageSize: 12,
-            floor: buildSceneDeviceFloorName(floor)
-          }),
-          fetchSystemTopology(runtimeConfig.siteId),
-          fetchSystemDiagram(runtimeConfig.siteId, {
-            layoutMode: "auto",
-            scope: "full"
-          })
-        ]);
+    let active = true;
+    setDeviceParametersLoading(true);
+    setDeviceParametersError("");
+    setControlCommandStatus("");
+    setPendingControlCommand(null);
+    setDeviceParameters(null);
+
+    fetchSceneDeviceParameters(dashboardProject.siteId, clickedDevice.drId)
+      .then((data) => {
         if (!active) {
           return;
         }
-        const items = deviceResult.status === "fulfilled" ? deviceResult.value.items || [] : [];
-        const diagram =
-          forcedContractDiagram ||
-          (diagramResult.status === "fulfilled" ? buildSystemDiagramFromContract(diagramResult.value) : null);
-        setSceneDevices(items);
-        setSceneTopology(topologyResult.status === "fulfilled" ? topologyResult.value : null);
-        setSceneSystemDiagram(diagram);
-        setDevicePanelState(
-          items.length > 0 || topologyResult.status === "fulfilled" || Boolean(diagram) ? "ready" : "failed"
+        setDeviceParameters(data);
+      })
+      .catch((error) => {
+        if (!active) {
+          return;
+        }
+        setDeviceParametersError(
+          error instanceof Error
+            ? error.message
+            : "\u8bbe\u5907\u8be6\u7ec6\u53c2\u6570\u62c9\u53d6\u5931\u8d25"
         );
-      } catch {
-        if (!active) {
-          return;
-        }
-        setSceneTopology(null);
-        setSceneSystemDiagram(null);
-        setDevicePanelState("failed");
-      }
-    }
-
-    loadSceneDevices();
-    return () => {
-      active = false;
-    };
-  }, [diagramMode, floor]);
-
-  useEffect(() => {
-    let active = true;
-    if (!selectedDeviceId) {
-      setSelectedDeviceDetail(null);
-      return;
-    }
-    const deviceId = selectedDeviceId;
-
-    setDetailLoading(true);
-    async function loadDeviceDetail() {
-      try {
-        const detail = await fetchDeviceDetail(runtimeConfig.siteId, deviceId, {
-          build: 1,
-          floor: buildSceneDeviceFloorQuery(floor)
-        });
-        if (!active) {
-          return;
-        }
-        setSelectedDeviceDetail(detail);
-      } catch {
-        if (!active) {
-          return;
-        }
-        setSelectedDeviceDetail(null);
-      } finally {
+      })
+      .finally(() => {
         if (active) {
-          setDetailLoading(false);
+          setDeviceParametersLoading(false);
         }
-      }
-    }
+      });
 
-    loadDeviceDetail();
     return () => {
       active = false;
     };
-  }, [selectedDeviceId, floor]);
-
-  const summary =
-    probeState === "ready"
-      ? frameLoaded
-        ? zhCN.sceneControl.bannerReady
-        : zhCN.sceneControl.bannerLoading
-      : probeState === "checking"
-        ? zhCN.sceneControl.bannerChecking
-        : zhCN.sceneControl.bannerFailed;
-
-  const sceneStateLabel =
-    probeState === "ready"
-      ? zhCN.sceneControl.stateEmbedded
-      : probeState === "checking"
-        ? zhCN.sceneControl.stateChecking
-        : zhCN.sceneControl.stateDegraded;
-
-  const detailLines = [
-    `${zhCN.sceneControl.detailMode}: ${legacyAssetLabel}`,
-    `${zhCN.sceneControl.detailFloor}: ${floor}${zhCN.sceneControl.floorSuffix}`,
-    `${zhCN.sceneControl.detailLegacyRoute}: ${sceneUrl}`,
-    `${zhCN.sceneControl.detailStrategy}: ${zhCN.sceneControl.strategyEmbed}`
-  ];
-
-  const previewTone = probeState === "ready" ? (frameLoaded ? "good" : "neutral") : "warn";
-  const selectedSceneDevice = sceneDevices.find((item) => item.deviceId === selectedDeviceId) || null;
-  const selectedSceneDetail = selectedDeviceDetail?.detail || null;
-  const selectedSceneFloorName = selectedSceneDevice?.floorName || buildSceneDeviceFloorName(floor);
-  const selectedSceneBuildingName = selectedSceneDevice?.buildingName || zhCN.common.unknown;
-  const selectedModelSystemType = normalizeSceneModelSystemType(selectedSceneDetail, selectedSceneDevice);
-  const selectedModelName = selectedSceneDevice?.deviceName || zhCN.sceneControl.modelExperimentFallbackName;
-  const selectedModelCategory = forcedModelCategory || resolveSceneModelCategory(selectedModelSystemType);
-  const modelCatalog = getDeviceModelCatalog();
-  const selectedNodeFromDevice = useMemo(
-    () => findSystemDiagramNodeByDeviceId(systemDiagramTopology, selectedDeviceId),
-    [selectedDeviceId, systemDiagramTopology]
-  );
-  const scenePresets: Array<{ mode: SceneMode; floor: SceneFloor }> = [
-    { mode: "2d", floor: "10" },
-    { mode: "2d", floor: "11" },
-    { mode: "3d", floor: "10" },
-    { mode: "3d", floor: "11" }
-  ];
-  const selectedDiagramNode =
-    systemDiagramTopology.nodes.find((item) => item.id === selectedSceneDiagramNodeId) ||
-    selectedNodeFromDevice ||
-    systemDiagramTopology.nodes[0] ||
-    null;
-  const selectedDiagramDeviceHref =
-    selectedDiagramNode?.primaryDeviceId
-      ? `/devices?floor=${encodeURIComponent(buildSceneDeviceFloorName(floor))}&deviceId=${encodeURIComponent(selectedDiagramNode.primaryDeviceId)}&sceneMode=${encodeURIComponent(mode)}&sceneNodeId=${encodeURIComponent(selectedDiagramNode.id)}`
-      : null;
-  const activeCompatData = legacySceneView === "dialog" ? legacyTrendData : legacySceneView === "online" ? onlineMonitorData : null;
-  const activeCompatPoints = activeCompatData?.points || [];
-  const activeCompatTitle =
-    legacySceneView === "dialog"
-      ? legacyTrendData?.title || legacyDialogQuery.title || zhCN.sceneControl.compatDialogFallbackTitle
-      : legacySceneView === "online"
-        ? onlineMonitorData?.title || zhCN.sceneControl.compatOnlineFallbackTitle
-        : "";
-  const activeCompatUnit =
-    legacySceneView === "dialog"
-      ? legacyTrendData?.unit || legacyDialogQuery.unit || null
-      : legacySceneView === "online"
-        ? onlineMonitorData?.unit || null
-        : null;
-  const activeCompatLoading =
-    legacySceneView === "dialog" ? legacyTrendLoading : legacySceneView === "online" ? onlineMonitorLoading : false;
-  const activeCompatError =
-    legacySceneView === "dialog" ? legacyTrendError : legacySceneView === "online" ? onlineMonitorError : null;
-  const compatSourceSummary = useMemo(
-    () => summarizeSourceStatus([activeCompatData?.sourceStatus]),
-    [activeCompatData?.sourceStatus]
-  );
-  const compatSourceLines = useMemo(
-    () => buildSourceStatusLines([activeCompatData?.sourceStatus]),
-    [activeCompatData?.sourceStatus]
-  );
-  const compatBannerText =
-    legacySceneView === "dialog"
-      ? activeCompatLoading
-        ? zhCN.sceneControl.compatDialogLoading
-        : activeCompatError || zhCN.sceneControl.compatDialogReady
-      : legacySceneView === "online"
-        ? activeCompatLoading
-          ? zhCN.sceneControl.compatOnlineLoading
-          : activeCompatError || zhCN.sceneControl.compatOnlineReady
-        : "";
-  const compatNumericPoints = activeCompatPoints.filter(
-    (item): item is SceneLegacyPointDto & { value: number } =>
-      typeof item.value === "number" && Number.isFinite(item.value)
-  );
-  const compatLatestPoint =
-    compatNumericPoints.length > 0 ? compatNumericPoints[compatNumericPoints.length - 1] : null;
-  const compatMaxPoint =
-    compatNumericPoints.length > 0
-      ? compatNumericPoints.reduce((current, item) => (item.value > current.value ? item : current))
-      : null;
-  const compatMinPoint =
-    compatNumericPoints.length > 0
-      ? compatNumericPoints.reduce((current, item) => (item.value < current.value ? item : current))
-      : null;
+  }, [clickedDevice, dashboardProject?.siteId, runtimeStationId, stationRuntimeScope.scopeKey]);
 
   useEffect(() => {
-    if (devicePanelState !== "ready") {
+    if (clickedDevice && deviceParameters?.deviceInfo?.visible === false && deviceDialogTab === "info") {
+      setDeviceDialogTab("detail");
+    }
+  }, [clickedDevice, deviceDialogTab, deviceParameters?.deviceInfo?.visible]);
+
+  useEffect(() => {
+    if (clickedDevice && embedControlInInfoTab && deviceDialogTab === "control") {
+      setDeviceDialogTab("info");
+    }
+  }, [clickedDevice, deviceDialogTab, embedControlInInfoTab]);
+
+  useEffect(() => {
+    function handleFullscreenChange() {
+      const fullscreen = document.fullscreenElement === shellRef.current;
+      setIsFrameFullscreen(fullscreen);
+      if (!fullscreen) {
+        setRuntimeHudExpanded(runtimeHudBeforeFullscreenRef.current);
+      }
+    }
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+    const mediaQuery = window.matchMedia("(max-width: 760px)");
+    function collapseForCompactViewport(event: MediaQueryList | MediaQueryListEvent) {
+      if (event.matches) {
+        setRuntimeHudExpanded(false);
+      }
+    }
+    collapseForCompactViewport(mediaQuery);
+    mediaQuery.addEventListener("change", collapseForCompactViewport);
+    return () => {
+      mediaQuery.removeEventListener("change", collapseForCompactViewport);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (fitMode !== "native" || !activeUrl) {
+      setNativeFrameViewport({ scale: 1, x: 0, y: 0 });
       return;
     }
 
-    const matchedRequestedNode =
-      (requestedNodeId && systemDiagramTopology.nodes.find((node) => node.id === requestedNodeId)) || null;
-    const matchedRequestedDevice =
-      (requestedDeviceId && sceneDevices.find((item) => item.deviceId === requestedDeviceId)) || null;
-    const preferredNode =
-      matchedRequestedNode ||
-      findSystemDiagramNodeByDeviceId(systemDiagramTopology, matchedRequestedDevice?.deviceId) ||
-      (selectedSceneDiagramNodeId
-        ? systemDiagramTopology.nodes.find((node) => node.id === selectedSceneDiagramNodeId) || null
-        : null) ||
-      findSystemDiagramNodeByDeviceId(systemDiagramTopology, selectedDeviceId) ||
-      systemDiagramTopology.nodes[0] ||
-      null;
-    const preferredDeviceId =
-      matchedRequestedDevice?.deviceId ||
-      preferredNode?.primaryDeviceId ||
-      selectedDeviceId ||
-      sceneDevices[0]?.deviceId ||
-      null;
+    const stage = stageRef.current;
+    if (!stage) {
+      return;
+    }
+    const currentStage = stage;
+    const nativeViewport = activeNativeViewport;
 
-    if (preferredNode?.id && preferredNode.id !== selectedSceneDiagramNodeId) {
-      setSelectedSceneDiagramNodeId(preferredNode.id);
+    function updateNativeFrameScale() {
+      const widthScale = currentStage.clientWidth / nativeViewport.width;
+      const nativeViewportHeight =
+        mode === "2d" && !localPlantOverview2dActive
+          ? Math.max(1, Math.min(activeNativeCanvasHeight, nativeViewport.y + nativeViewport.height) - nativeViewport.y)
+          : nativeViewport.height;
+      const availableStageHeight =
+        mode === "2d" && !localPlantOverview2dActive
+          ? currentStage.clientHeight - SCENE_NATIVE_2D_TOP_SAFE_OFFSET_PX - SCENE_NATIVE_2D_BOTTOM_SAFE_OFFSET_PX
+          : currentStage.clientHeight;
+      const heightScale = Math.max(1, availableStageHeight) / nativeViewportHeight;
+      const scale = Math.max(0.1, Math.min(widthScale, heightScale, nativeViewport.maxScale));
+      const roundedScale = Math.round(scale * 1000) / 1000;
+      const offsetX =
+        (currentStage.clientWidth - nativeViewport.width * roundedScale) / 2 -
+        nativeViewport.x * roundedScale;
+      const offsetY =
+        mode === "2d" && !localPlantOverview2dActive
+          ? SCENE_NATIVE_2D_TOP_SAFE_OFFSET_PX - nativeViewport.y * roundedScale
+          : (currentStage.clientHeight - nativeViewport.height * roundedScale) / 2 -
+            nativeViewport.y * roundedScale;
+      setNativeFrameViewport({
+        scale: roundedScale,
+        x: Math.round(offsetX),
+        y: Math.round(offsetY)
+      });
     }
 
-    if (preferredDeviceId !== selectedDeviceId) {
-      setSelectedDeviceId(preferredDeviceId);
+    updateNativeFrameScale();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateNativeFrameScale);
+      return () => {
+        window.removeEventListener("resize", updateNativeFrameScale);
+      };
     }
 
-    if (preferredNode) {
-      if (
-        preferredNode.category === "chiller" ||
-        preferredNode.category === "pump" ||
-        preferredNode.category === "cooling-tower" ||
-        preferredNode.category === "valve"
-      ) {
-        setForcedModelCategory(preferredNode.category);
-      } else {
-        setForcedModelCategory(null);
-      }
-    }
+    const observer = new ResizeObserver(updateNativeFrameScale);
+    observer.observe(currentStage);
+    return () => {
+      observer.disconnect();
+    };
   }, [
-    devicePanelState,
-    requestedDeviceId,
-    requestedNodeId,
-    sceneDevices,
-    selectedDeviceId,
-    selectedSceneDiagramNodeId,
-    systemDiagramTopology
+    activeNativeCanvasHeight,
+    activeNativeViewport,
+    activeUrl,
+    fitMode,
+    isFrameFullscreen,
+    activeSceneFrameResetKey,
+    localPlantOverview2dActive,
+    mode
   ]);
 
-  const handleSystemDiagramSelect = (nodeId: string) => {
-    const node = systemDiagramTopology.nodes.find((item) => item.id === nodeId);
-    if (!node) {
+  useEffect(() => {
+    if (!activeUrl || fitMode === "native") {
       return;
     }
-    setSelectedSceneDiagramNodeId(node.id);
-    if (node.category === "chiller" || node.category === "pump" || node.category === "cooling-tower" || node.category === "valve") {
-      setForcedModelCategory(node.category);
-    } else {
-      setForcedModelCategory(null);
-    }
-    if (node.primaryDeviceId) {
-      setSelectedDeviceId(node.primaryDeviceId);
-    }
-  };
-
-  const handleSceneDeviceSelect = (deviceId: string | null) => {
-    setSelectedDeviceId(deviceId);
-    const matchedNode = findSystemDiagramNodeByDeviceId(systemDiagramTopology, deviceId);
-    if (matchedNode) {
-      setSelectedSceneDiagramNodeId(matchedNode.id);
-      if (
-        matchedNode.category === "chiller" ||
-        matchedNode.category === "pump" ||
-        matchedNode.category === "cooling-tower" ||
-        matchedNode.category === "valve"
-      ) {
-        setForcedModelCategory(matchedNode.category);
-      }
-    } else {
-      setSelectedSceneDiagramNodeId(null);
-      setForcedModelCategory(null);
-    }
-  };
-
-  const handleLegacyDialogSearch = () => {
-    if (!legacyDialogFilters.tagname) {
-      setLegacyTrendError(zhCN.sceneControl.compatDialogMissingTagname);
-      return;
-    }
-    setLegacyDialogQuery({
-      ...legacyDialogFilters,
-      date: legacyDialogFilters.date || formatDateInput(new Date())
-    });
-  };
-
-  const handleLegacyDialogExport = () => {
-    if (legacySceneView !== "dialog" || compatNumericPoints.length === 0) {
-      return;
-    }
-    const filename = `${activeCompatTitle || zhCN.sceneControl.compatDialogFallbackTitle}-${legacyDialogQuery.date}.csv`;
-    downloadSceneCsv(
-      filename,
-      [zhCN.sceneControl.compatTableTime, activeCompatTitle || zhCN.sceneControl.compatTableValue],
-      compatNumericPoints.map((item) => [item.label || "--", item.value])
+    const timers = [120, 420, 900, 1600].map((delay) =>
+      window.setTimeout(() => requestSceneFrameAutoFit(iframeRef.current), delay)
     );
-  };
+    return () => {
+      timers.forEach((timer) => window.clearTimeout(timer));
+    };
+  }, [activeUrl, fitMode]);
+
+  useEffect(() => {
+    setSceneFrameNoticeVisible(false);
+    if (sceneFrameNoticeTimerRef.current !== null) {
+      window.clearTimeout(sceneFrameNoticeTimerRef.current);
+      sceneFrameNoticeTimerRef.current = null;
+    }
+    if (!activeUrl) {
+      return;
+    }
+    sceneFrameNoticeTimerRef.current = window.setTimeout(() => {
+      setSceneFrameNoticeVisible(true);
+      sceneFrameNoticeTimerRef.current = null;
+    }, 6000);
+    return () => {
+      if (sceneFrameNoticeTimerRef.current !== null) {
+        window.clearTimeout(sceneFrameNoticeTimerRef.current);
+        sceneFrameNoticeTimerRef.current = null;
+      }
+    };
+  }, [activeUrl, fitMode]);
+
+  useEffect(() => {
+    if (!activeUrl || activeUrl !== prewarmed3dReadyUrl) {
+      return;
+    }
+    if (sceneFrameNoticeTimerRef.current !== null) {
+      window.clearTimeout(sceneFrameNoticeTimerRef.current);
+      sceneFrameNoticeTimerRef.current = null;
+    }
+    setSceneFrameNoticeVisible(false);
+  }, [activeUrl, prewarmed3dReadyUrl]);
+
+  useEffect(() => {
+    if (!activeUrl || fitMode === "native") {
+      return;
+    }
+    let resizeTimer = 0;
+    function handleSceneWindowResize() {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => requestSceneFrameAutoFit(iframeRef.current), 180);
+    }
+    window.addEventListener("resize", handleSceneWindowResize);
+    return () => {
+      window.clearTimeout(resizeTimer);
+      window.removeEventListener("resize", handleSceneWindowResize);
+    };
+  }, [activeUrl, fitMode]);
+
+  function handleToggleFullscreen() {
+    const shell = shellRef.current;
+    if (!shell) {
+      return;
+    }
+    if (document.fullscreenElement === shell) {
+      document.exitFullscreen?.();
+      return;
+    }
+    runtimeHudBeforeFullscreenRef.current = runtimeHudExpanded;
+    shell.requestFullscreen?.();
+  }
+
+  function scheduleSceneFrameAutoFit(delays = [80, 320, 760, 1400]) {
+    delays.forEach((delay) => {
+      window.setTimeout(() => requestSceneFrameAutoFit(iframeRef.current), delay);
+    });
+  }
+
+  function handleSceneFrameLoad(frameMode: SceneMode, frameUrl: string) {
+    const frameToken = `${frameMode}:${frameUrl}:${sceneFrameResetKeys[frameMode]}`;
+    if (frameMode === "2d") {
+      setLoaded2dSceneUrl(frameUrl);
+    }
+    if (frameMode === "3d" && frameUrl === prewarm3dSceneUrl) {
+      setPrewarmed3dReadyUrl(frameUrl);
+    }
+    if (frameMode !== mode || frameUrl !== activeUrl) {
+      return;
+    }
+    setLoadedActiveSceneFrameToken(frameToken);
+    if (sceneFrameNoticeTimerRef.current !== null) {
+      window.clearTimeout(sceneFrameNoticeTimerRef.current);
+      sceneFrameNoticeTimerRef.current = null;
+    }
+    setSceneFrameNoticeVisible(false);
+    if (frameMode === "3d") {
+      scheduleSceneFrameAutoFit([80, 260, 620, 1200, 1800]);
+      return;
+    }
+    if (fitMode === "native") {
+      return;
+    }
+    scheduleSceneFrameAutoFit();
+  }
+
+  function handleResetSceneNativeView() {
+    const resetMode = mode;
+    if (sceneFrameNoticeTimerRef.current !== null) {
+      window.clearTimeout(sceneFrameNoticeTimerRef.current);
+      sceneFrameNoticeTimerRef.current = null;
+    }
+    setSceneFrameNoticeVisible(false);
+    setFitMode(SCENE_NATIVE_FIT_MODE_OPTION.value);
+    setNativeFrameViewport({ scale: 1, x: 0, y: 0 });
+    setLoadedActiveSceneFrameToken("");
+    if (resetMode === "3d" && !localPlantOverviewActive) {
+      setPrewarmed3dReadyUrl("");
+      scheduleSceneFrameAutoFit([0, 120, 360]);
+    }
+    setSceneFrameResetKeys((value) => ({
+      ...value,
+      [resetMode]: value[resetMode] + 1
+    }));
+  }
+
+  function handleCloseDeviceDialog() {
+    setClickedDevice(null);
+    setDeviceDialogTab("info");
+    setPendingControlCommand(null);
+  }
+
+  async function handleSubmitSceneControl(
+    item: SceneDeviceParameterItemDto,
+    value: string,
+    actionKey: string,
+    displayText?: string
+  ) {
+    if (sceneControlBlocked) {
+      setControlCommandStatus(runtimeStationId
+        ? "站房实例模式尚未完成场景控制端点的 stationId 过滤，禁止创建 BA/PLC 控制指令。"
+        : "B25 全站模型仅用于身份与运行态展示，禁止创建 BA/PLC 控制指令。");
+      return;
+    }
+    if (!dashboardProject?.siteId || !clickedDevice) {
+      return;
+    }
+    const normalizedValue = readSceneText(value);
+    const drTypeId = readSceneText(item.drTypeId, clickedDevice.deviceTypeId, clickedDevice.deviceType);
+    const regName = readSceneText(item.regName, item.label);
+    const tagName = readSceneText(item.tagName);
+    if (!normalizedValue || !drTypeId || !regName || !tagName) {
+      setControlCommandStatus("\u63a7\u5236\u53c2\u6570\u4e0d\u5b8c\u6574\uff0c\u8bf7\u68c0\u67e5\u63a7\u5236\u70b9\u6620\u5c04\u4e0e\u5199\u5165\u70b9\u4f4d\u3002");
+      return;
+    }
+    const displayValue = readSceneText(displayText, normalizedValue);
+    const controlLabel = formatSceneControlCardLabel(getSceneControlRegName(item) || regName);
+    const currentText = getSceneControlCurrentText(item);
+    const intent = getSceneControlIntentClass(controlLabel || regName, displayValue);
+    setPendingControlCommand({
+      item,
+      value: normalizedValue,
+      actionKey,
+      displayText: displayValue,
+      currentText,
+      controlLabel,
+      drTypeId,
+      regName,
+      tagName,
+      intent
+    });
+  }
+
+  async function handleConfirmSceneControlCommand() {
+    if (sceneControlBlocked) {
+      setPendingControlCommand(null);
+      setControlCommandStatus(runtimeStationId
+        ? "站房实例场景控制尚未完成安全作用域验证，本次指令未下发。"
+        : "B25 只读三维展示不允许下发控制指令，本次指令未下发。");
+      return;
+    }
+    if (!dashboardProject?.siteId || !clickedDevice || !pendingControlCommand) {
+      return;
+    }
+    const command = pendingControlCommand;
+    setControlSubmittingKey(command.actionKey);
+    setControlCommandStatus("");
+    setPendingControlCommand(null);
+    try {
+      const result = await submitSceneDeviceCommand(dashboardProject.siteId, {
+        drId: clickedDevice.drId,
+        drTypeId: command.drTypeId,
+        regName: command.regName,
+        value: command.value,
+        tagName: command.tagName
+      });
+      setControlCommandStatus(result.ok === false ? "\u63a7\u5236\u6307\u4ee4\u5df2\u4e0b\u53d1\uff0c\u4f46\u4e0a\u6e38\u672a\u786e\u8ba4\u6210\u529f\u3002" : "\u63a7\u5236\u6307\u4ee4\u5df2\u4e0b\u53d1\u3002");
+    } catch (error) {
+      setControlCommandStatus(error instanceof Error ? error.message : "\u63a7\u5236\u6307\u4ee4\u4e0b\u53d1\u5931\u8d25");
+    } finally {
+      setControlSubmittingKey("");
+    }
+  }
+
+  function renderParameterGroups(groups: SceneDeviceParameterGroupDto[], emptyText: string, isControl = false) {
+    if (deviceParametersLoading) {
+      return <div className="scene-embed-device-state">{SCENE_DEVICE_DIALOG_TEXT.loading}</div>;
+    }
+    if (deviceParametersError) {
+      return <div className="scene-embed-device-state is-error">{deviceParametersError}</div>;
+    }
+    if (!groups.length || getSceneParameterGroupCount(groups) === 0) {
+      return <div className="scene-embed-device-state">{emptyText}</div>;
+    }
+    return (
+      <div className={`scene-embed-device-parameter-groups${isControl ? " is-control" : ""}`}>
+        {isControl && controlCommandStatus ? (
+          <div className="scene-embed-device-command-state">{controlCommandStatus}</div>
+        ) : null}
+        {groups.map((group, groupIndex) => (
+          <section
+            key={`${group.groupName || "group"}-${groupIndex}`}
+            className={[
+              "scene-embed-device-parameter-group",
+              isControl ? getSceneControlGroupClassName(group.groupName || "", (group.items || []).length) : ""
+            ].filter(Boolean).join(" ")}
+          >
+            <h4>{readSceneSafeDisplayText(group.groupName) || "\u672a\u5206\u7ec4"}</h4>
+            <div className="scene-embed-device-parameter-grid">
+              {(isControl
+                ? buildSceneControlRows(group.items || [], `${group.groupName || "group"}-${groupIndex}`)
+                : (group.items || []).map((item, itemIndex) => ({
+                    type: "item" as const,
+                    item,
+                    itemKey: `${item.id || item.label || "item"}-${itemIndex}`
+                  }))
+              ).map((row) => {
+                if (row.type === "combined") {
+                  return renderSceneControlCombinedOptions(row, handleSubmitSceneControl, controlSubmittingKey);
+                }
+                const { item, itemKey } = row;
+                if (isControl && !hasSceneParameterTranslation(item)) {
+                  return renderSceneControlEditor(item, itemKey, handleSubmitSceneControl, controlSubmittingKey);
+                }
+                if (isControl && hasSceneParameterTranslation(item)) {
+                  return renderSceneControlOptions(item, itemKey, handleSubmitSceneControl, controlSubmittingKey);
+                }
+                return (
+                  <article key={itemKey}>
+                    <span title={readSceneSafeDisplayText(item.label) || "\u672a\u547d\u540d\u53c2\u6570"}>
+                      {readSceneSafeDisplayText(item.label) || "\u672a\u547d\u540d\u53c2\u6570"}
+                    </span>
+                    <strong title={formatSceneParameterValue(item.value, item.unit, item.displayValue)}>
+                      {formatSceneParameterValue(item.value, item.unit, item.displayValue)}
+                    </strong>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+      </div>
+    );
+  }
+
+  const nativeFrameStyle =
+    fitMode === "native" && !localPlantOverviewActive
+      ? ({
+          "--scene-native-scale": nativeFrameViewport.scale,
+          "--scene-native-x": `${nativeFrameViewport.x}px`,
+          "--scene-native-y": `${nativeFrameViewport.y}px`,
+          "--scene-native-width": `${activeNativeCanvasWidth}px`,
+          "--scene-native-height": `${activeNativeCanvasHeight}px`
+        } as CSSProperties)
+      : undefined;
 
   return (
-    <div className="scene-page page-enter">
-      <SourceStatusBanner
-        summary={summary}
-        warn={warn}
-        detailLines={detailLines}
-        detailLinesCompact={detailLines}
-      />
-
-      <section className="scene-page-header">
-        <div>
-          <h2>{zhCN.sceneControl.heading}</h2>
-          <p>{zhCN.sceneControl.subtitle}</p>
-        </div>
-        <div className="scene-header-actions">
-          <button type="button" className="scene-secondary-action" onClick={() => setRefreshKey((value) => value + 1)}>
-            {zhCN.sceneControl.refreshProbe}
-          </button>
-          <a className="scene-open-link" href={sceneUrl} target="_blank" rel="noreferrer">
-            <ExternalLink size={14} />
-            {zhCN.sceneControl.openExternal}
-          </a>
-        </div>
-      </section>
-
-      <div className="scene-summary-grid">
-        <article className="scene-summary-card">
-          <span>{zhCN.sceneControl.summaryMode}</span>
-          <strong>{legacyAssetLabel}</strong>
-          <small>{zhCN.sceneControl.summaryModeHint}</small>
-        </article>
-        <article className="scene-summary-card">
-          <span>{zhCN.sceneControl.summaryFloor}</span>
-          <strong>{floor}{zhCN.sceneControl.floorSuffix}</strong>
-          <small>{zhCN.sceneControl.summaryFloorHint}</small>
-        </article>
-        <article className="scene-summary-card">
-          <span>{zhCN.sceneControl.summaryState}</span>
-          <strong>{sceneStateLabel}</strong>
-          <small>{zhCN.sceneControl.summaryStateHint}</small>
-        </article>
-      </div>
-
-      {legacySceneView === "video" ? (
-        <SectionCard title={zhCN.sceneControl.sectionLegacyVideo}>
-          <div className="scene-compat-empty">
-            <strong>{zhCN.sceneControl.compatVideoTitle}</strong>
-            <p>{zhCN.sceneControl.compatVideoBody}</p>
+    <div className="scene-embed-page page-enter">
+      <h1 className="scene-embed-page-heading">冷冻站工艺总览</h1>
+      <div
+        className={`scene-embed-shell${runtimeHudExpanded ? "" : " is-runtime-collapsed"}${
+          isFrameFullscreen ? " is-frame-fullscreen" : ""
+        }`}
+        data-plant-immersive={localPlantOverviewActive ? (isFrameFullscreen ? "true" : "false") : undefined}
+        ref={shellRef}
+      >
+        <div className="scene-embed-runtimebar" aria-label="冷站运行态">
+          <div className="scene-embed-runtime-grid">
+            {visibleRuntimeMetrics.map((metric) => (
+              <article
+                key={metric.key}
+                className={`scene-embed-runtime-card${metric.primary ? " is-primary" : ""}${
+                  metric.tone ? ` is-${metric.tone}` : ""
+                }`}
+              >
+                <div className="scene-embed-runtime-card-head">
+                  <span>{metric.label}</span>
+                  {metric.unit ? <em>{metric.unit}</em> : null}
+                </div>
+                <strong title={`${metric.value}${metric.unit ? ` ${metric.unit}` : ""}`}>
+                  {metric.value}
+                </strong>
+                <p title={metric.hint}>{metric.hint}</p>
+              </article>
+            ))}
           </div>
-        </SectionCard>
-      ) : legacySceneView !== "default" ? (
-        <SectionCard
-          title={
-            legacySceneView === "dialog"
-              ? zhCN.sceneControl.sectionLegacyTrend
-              : zhCN.sceneControl.sectionOnlineMonitor
-          }
+          <div className="scene-embed-runtime-side">
+            <span className={`scene-embed-runtime-source is-${runtimeSourceState.tone}`}>
+              {runtimeSourceState.label}
+            </span>
+            <span
+              className={`scene-embed-runtime-alarm${
+                isFiniteSceneNumber(highAlarmCount) && highAlarmCount > 0 ? " is-danger" : ""
+              }`}
+              title={alarmRuntimeHint}
+            >
+              告警 {alarmRuntimeText}
+            </span>
+            <button
+              type="button"
+              className="scene-embed-runtime-toggle"
+              onClick={() => setRuntimeHudExpanded((value) => !value)}
+              aria-pressed={!runtimeHudExpanded}
+            >
+              {runtimeHudExpanded ? "收起" : "展开"}
+            </button>
+          </div>
+        </div>
+
+        <div
+          className={`scene-embed-stage is-fit-${fitMode}${plantEquipmentInspectorOpen ? " has-plant-device-inspector" : ""}`}
+          data-scene-mode={mode}
+          data-scene-renderer={sceneRenderer}
+          data-b25-plant-overview-2d={localPlantOverview2dActive ? "physical-scada-2.5d" : undefined}
+          data-plant-device-inspector-open={plantEquipmentInspectorOpen ? "true" : "false"}
+          ref={stageRef}
+          style={nativeFrameStyle}
         >
-          <SourceStatusBanner
-            summary={compatBannerText}
-            warn={Boolean(activeCompatError) || compatSourceSummary.warn}
-            detailLines={compatSourceLines}
-            detailLinesCompact={compatSourceLines}
-          />
-
-          <div className="scene-compat-header">
-            <div>
-              <strong>
-                {legacySceneView === "dialog"
-                  ? zhCN.sceneControl.compatDialogTitle
-                  : zhCN.sceneControl.compatOnlineTitle}
-              </strong>
-              <p>
-                {legacySceneView === "dialog"
-                  ? zhCN.sceneControl.compatDialogBody
-                  : zhCN.sceneControl.compatOnlineBody}
-              </p>
+          {localPlantOverviewActive && plantOverviewProfile ? (
+            <div
+              className="scene-embed-plant-overview"
+              data-b25-plant-overview-entry="true"
+              data-scene-control-scope="read-only-no-ba-plc-write"
+            >
+              <PlantOverview3D
+                key={stationRuntimeScope.scopeKey}
+                profile={plantOverviewProfile}
+                runtimeSummary={sceneRuntimeSummary}
+                runtimeScopeKey={stationRuntimeScope.scopeKey}
+                operationalEvidence={false}
+                resetViewSignal={sceneFrameResetKeys["3d"]}
+                viewportFitSignal={`${isFrameFullscreen ? "immersive" : "embedded"}-${
+                  runtimeHudExpanded ? "expanded" : "collapsed"
+                }-${plantEquipmentInspectorOpen ? "inspector-open" : "inspector-closed"}`}
+                inspectedEquipmentId={plantEquipmentSelection?.equipmentId ?? null}
+                onEquipmentSelectionChange={(selection) => {
+                  setPlantEquipmentSelection(selection);
+                  setPlantEquipmentInspectorTab("overview");
+                }}
+                embedded
+              />
             </div>
-            {legacySceneView === "dialog" ? (
-              <div className="scene-compat-actions">
-                <button type="button" className="scene-secondary-action" onClick={handleLegacyDialogSearch}>
-                  {zhCN.sceneControl.compatSearch}
-                </button>
-                <button
-                  type="button"
-                  className="scene-secondary-action"
-                  onClick={handleLegacyDialogExport}
-                  disabled={compatNumericPoints.length === 0}
-                >
-                  {zhCN.sceneControl.compatExport}
-                </button>
-              </div>
-            ) : null}
-          </div>
-
-          {legacySceneView === "dialog" ? (
-            <div className="scene-compat-filter-grid">
-              <label className="scene-compat-field">
-                <span>{zhCN.sceneControl.compatMetricName}</span>
-                <input value={legacyDialogFilters.title} readOnly />
-              </label>
-              <label className="scene-compat-field">
-                <span>{zhCN.sceneControl.compatTagname}</span>
-                <input value={legacyDialogFilters.tagname} readOnly />
-              </label>
-              <label className="scene-compat-field">
-                <span>{zhCN.sceneControl.compatDate}</span>
-                <input
-                  type="date"
-                  value={legacyDialogFilters.date}
-                  onChange={(event) =>
-                    setLegacyDialogFilters((current) => ({ ...current, date: event.target.value }))
-                  }
+          ) : localPlantOverview2dActive && plantOverviewProfile && model2dUrl ? (
+            <PlantOverview2D
+              key={`${stationRuntimeScope.scopeKey}-${sceneFrameResetKeys["2d"]}`}
+              profile={plantOverviewProfile}
+              runtimeSummary={sceneRuntimeSummary}
+              runtimeScopeKey={stationRuntimeScope.scopeKey}
+              inspectedEquipmentId={plantEquipmentSelection?.equipmentId ?? null}
+              onEquipmentSelectionChange={(selection) => {
+                setPlantEquipmentSelection(selection);
+                setPlantEquipmentInspectorTab("overview");
+              }}
+              onReady={() => handleSceneFrameLoad("2d", model2dUrl)}
+            />
+          ) : activeUrl ? (
+            <Fragment>
+              {shouldMount2dFrame ? (
+                <iframe
+                  ref={iframeRef}
+                  key={`${model2dUrl}-2d-${sceneFrameResetKeys["2d"]}`}
+                  className={`scene-embed-frame is-2d is-fit-${fitMode}`}
+                  data-scene-active="true"
+                  data-scene-mode="2d"
+                  data-b25-plant-overview-2d={localPlantOverview2dActive ? plantOverviewProfile?.model2dPresentation : undefined}
+                  data-plant-2d-evidence={localPlantOverview2dActive ? plantOverviewProfile?.model2dEvidenceMode : undefined}
+                  data-flow-evidence={localPlantOverview2dActive ? "schematic" : undefined}
+                  data-scene-control-scope={localPlantOverview2dActive ? "read-only-no-ba-plc-write" : undefined}
+                  data-scene-reset-key={sceneFrameResetKeys["2d"]}
+                  title={localPlantOverview2dActive
+                    ? plantOverviewProfile?.model2dDisplayName
+                    : `${projectLabel}-${sceneText.modeLabels["2d"]}`}
+                  src={model2dUrl}
+                  scrolling="no"
+                  onLoad={() => handleSceneFrameLoad("2d", model2dUrl)}
+                  allow="fullscreen; autoplay; clipboard-read; clipboard-write; camera; microphone; geolocation"
+                  allowFullScreen
                 />
-              </label>
+              ) : null}
+              {shouldMount3dPrewarmFrame ? (
+                <iframe
+                  ref={is3dFrameActive ? iframeRef : null}
+                  key={`${model3dUrl}-3d-${sceneFrameResetKeys["3d"]}`}
+                  className={`scene-embed-frame is-3d is-fit-${fitMode}${is3dFrameActive ? "" : " is-prewarm"}`}
+                  data-scene-active={is3dFrameActive ? "true" : "false"}
+                  data-scene-mode="3d"
+                  data-scene-prewarm={is3dFrameActive ? undefined : "true"}
+                  data-scene-prewarm-ready={prewarmed3dReadyUrl === model3dUrl ? "true" : undefined}
+                  data-scene-reset-key={sceneFrameResetKeys["3d"]}
+                  title={`${projectLabel}-${is3dFrameActive ? sceneText.modeLabels["3d"] : "3D场景预热"}`}
+                  src={model3dUrl}
+                  scrolling="no"
+                  tabIndex={is3dFrameActive ? undefined : -1}
+                  aria-hidden={is3dFrameActive ? undefined : true}
+                  onLoad={() => handleSceneFrameLoad("3d", model3dUrl)}
+                  allow="fullscreen; autoplay; clipboard-read; clipboard-write; camera; microphone; geolocation"
+                  allowFullScreen
+                />
+              ) : null}
+            </Fragment>
+          ) : (
+            <div className="scene-embed-empty">
+              <strong>{loading ? "\u6b63\u5728\u52a0\u8f7d\u573a\u666f\u5730\u5740..." : "\u5f53\u524d\u9879\u76ee\u6682\u672a\u5339\u914d\u5230\u573a\u666f\u5730\u5740"}</strong>
+              <p>
+                {errorText ||
+                  `已按当前项目匹配场景模型数据，当前项目：${projectLabel}。`}
+              </p>
+              <small>
+                {dashboardProject?.modelKey
+                  ? `当前项目模型：${dashboardProject.modelKey}`
+                  : `\u5f53\u524d\u9ed8\u8ba4\u9879\u76ee\u7f16\u53f7\uff1a${runtimeConfig.siteId}`}
+              </small>
+            </div>
+          )}
+          {activeUrl && showSceneComfortLoading ? (
+            <div className="scene-embed-loading-layer" role="status" aria-live="polite">
+              <div className="scene-embed-loading-card">
+                <span className="scene-embed-loading-mark" aria-hidden="true" />
+                <strong>{activeLabel}加载中</strong>
+                <span>正在准备场景模型与运行点位</span>
+                <div className="scene-embed-loading-meter" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                </div>
+              </div>
+            </div>
+          ) : null}
+          {activeUrl && sceneFrameNoticeVisible ? (
+            <div className="scene-embed-frame-status" aria-live="polite">
+              <strong>场景服务未确认</strong>
+              <span>场景加载未完成，请核对 2D/3D 场景服务</span>
             </div>
           ) : null}
 
-          {activeCompatLoading ? (
-            <p className="empty-hint">{zhCN.sceneControl.compatLoading}</p>
-          ) : activeCompatError ? (
-            <p className="empty-hint">{activeCompatError}</p>
-          ) : compatNumericPoints.length === 0 ? (
-            <p className="empty-hint">
-              {legacySceneView === "online"
-                ? zhCN.sceneControl.compatOnlineEmpty
-                : zhCN.sceneControl.compatEmpty}
-            </p>
-          ) : (
-            <div className="scene-compat-grid">
-              <div className="scene-compat-main">
-                <div className="detail-grid">
-                  <article>
-                    <label>{zhCN.sceneControl.compatSummaryLatest}</label>
-                    <strong>{formatSceneMetricValue(compatLatestPoint?.value, activeCompatUnit)}</strong>
-                    <small className="scene-compat-card-hint">{compatLatestPoint?.label || zhCN.common.unknown}</small>
-                  </article>
-                  <article>
-                    <label>{zhCN.sceneControl.compatSummaryPeak}</label>
-                    <strong>{formatSceneMetricValue(compatMaxPoint?.value, activeCompatUnit)}</strong>
-                    <small className="scene-compat-card-hint">{compatMaxPoint?.label || zhCN.common.unknown}</small>
-                  </article>
-                  <article>
-                    <label>{zhCN.sceneControl.compatSummaryLowest}</label>
-                    <strong>{formatSceneMetricValue(compatMinPoint?.value, activeCompatUnit)}</strong>
-                    <small className="scene-compat-card-hint">{compatMinPoint?.label || zhCN.common.unknown}</small>
-                  </article>
-                  <article>
-                    <label>{zhCN.sceneControl.compatSummaryPoints}</label>
-                    <strong>{compatNumericPoints.length}</strong>
-                    <small className="scene-compat-card-hint">{zhCN.sceneControl.compatSummaryPointsHint}</small>
-                  </article>
+          {plantEquipmentInspectorOpen && plantEquipmentSelection ? (
+            <aside
+              className="scene-embed-plant-device-inspector"
+              aria-label={`${plantEquipmentSelection.equipmentId}设备只读检查器`}
+              data-plant-device-inspector="docked-read-only-v1"
+              data-plant-device-inspector-width-px="360"
+              data-plant-device-inspector-modal="false"
+              data-plant-device-inspector-control-tabs="0"
+              data-control-boundary="read-only-no-ba-plc-write"
+            >
+              <header className="scene-embed-plant-device-inspector-head">
+                <div>
+                  <span>{plantEquipmentSelection.groupLabel}</span>
+                  <strong>{plantEquipmentSelection.equipmentId}</strong>
+                  <small>{plantEquipmentSelection.runtimeId} · 设备 #{plantEquipmentSelection.deviceId}</small>
                 </div>
-
-                <SceneLegacyTrendChart
-                  points={activeCompatPoints}
-                  title={activeCompatTitle}
-                  unit={activeCompatUnit}
-                  ariaLabel={
-                    legacySceneView === "dialog"
-                      ? zhCN.sceneControl.compatDialogChartAria
-                      : zhCN.sceneControl.compatOnlineChartAria
-                  }
-                />
-              </div>
-
-              <aside className="scene-compat-side">
-                <div className="scene-compat-meta">
-                  <article>
-                    <label>{zhCN.sceneControl.compatDataTitle}</label>
-                    <strong>{activeCompatTitle || zhCN.common.unknown}</strong>
-                  </article>
-                  <article>
-                    <label>{zhCN.sceneControl.compatDataUnit}</label>
-                    <strong>{activeCompatUnit || zhCN.sceneControl.compatUnitPending}</strong>
-                  </article>
-                  <article>
-                    <label>{zhCN.sceneControl.compatDataSource}</label>
-                    <strong>
-                      {legacySceneView === "dialog"
-                        ? zhCN.sceneControl.compatDataSourceDialog
-                        : zhCN.sceneControl.compatDataSourceOnline}
-                    </strong>
-                  </article>
+                <div className={`scene-embed-plant-device-state is-${plantEquipmentSelection.state} is-${plantEquipmentSelection.evidenceMode}`}>
+                  <b>{plantEquipmentSelection.stateLabel}</b>
+                  <small>{plantEquipmentSelection.evidenceMode === "live"
+                    ? "LIVE"
+                    : plantEquipmentSelection.evidenceMode === "shadow"
+                      ? "SHADOW · 时效不可证"
+                      : plantEquipmentSelection.evidenceMode === "stale"
+                        ? "STALE"
+                        : "UNBOUND"}</small>
                 </div>
-
-                {legacySceneView === "dialog" ? (
-                  <div className="scene-compat-table-shell">
-                    <table>
-                      <thead>
-                        <tr>
-                          <th>{zhCN.sceneControl.compatTableTime}</th>
-                          <th>{activeCompatTitle || zhCN.sceneControl.compatTableValue}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {compatNumericPoints.slice().reverse().map((item, index) => (
-                          <tr key={`${item.label || "scene-row"}-${index}`}>
-                            <td>{item.label || "--"}</td>
-                            <td>{formatSceneMetricValue(item.value, activeCompatUnit)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="scene-compat-note">
-                    <strong>{zhCN.sceneControl.compatOnlineNoteTitle}</strong>
-                    <p>{zhCN.sceneControl.compatOnlineNoteBody}</p>
-                  </div>
-                )}
-              </aside>
-            </div>
-          )}
-        </SectionCard>
-      ) : null}
-
-      <div className="scene-layout">
-        <SectionCard title={zhCN.sceneControl.sectionControls}>
-          <div className="scene-controls">
-            <div className="scene-toggle-group">
-              <span>{zhCN.sceneControl.controlMode}</span>
-              <div className="scene-toggle-row">
                 <button
                   type="button"
-                  className={mode === "2d" ? "active" : ""}
-                  onClick={() => setMode("2d")}
+                  className="scene-embed-plant-device-inspector-close"
+                  onClick={() => {
+                    setPlantEquipmentSelection(null);
+                    setPlantEquipmentInspectorTab("overview");
+                  }}
+                  aria-label="关闭设备检查器"
                 >
-                  {zhCN.sceneControl.mode2d}
+                  ×
                 </button>
-                <button
-                  type="button"
-                  className={mode === "3d" ? "active" : ""}
-                  onClick={() => setMode("3d")}
-                >
-                  {zhCN.sceneControl.mode3d}
-                </button>
-              </div>
-            </div>
+              </header>
 
-            <div className="scene-toggle-group">
-              <span>{zhCN.sceneControl.controlFloor}</span>
-              <div className="scene-toggle-row">
-                <button
+              <nav className="scene-embed-plant-device-inspector-tabs" role="tablist" aria-label="设备检查器标签页">
+                {PLANT_EQUIPMENT_INSPECTOR_TABS.map((tab) => <button
                   type="button"
-                  className={floor === "10" ? "active" : ""}
-                  onClick={() => setFloor("10")}
+                  key={tab.key}
+                  role="tab"
+                  aria-selected={plantEquipmentInspectorTab === tab.key}
+                  className={plantEquipmentInspectorTab === tab.key ? "active" : ""}
+                  onClick={() => setPlantEquipmentInspectorTab(tab.key)}
                 >
-                  10{zhCN.sceneControl.floorSuffix}
-                </button>
-                <button
-                  type="button"
-                  className={floor === "11" ? "active" : ""}
-                  onClick={() => setFloor("11")}
-                >
-                  11{zhCN.sceneControl.floorSuffix}
-                </button>
-              </div>
-            </div>
+                  {tab.label}
+                </button>)}
+              </nav>
 
-            <div className="scene-notes">
-              <article>
-                <label>{zhCN.sceneControl.noteEmbed}</label>
-                <strong>{zhCN.sceneControl.noteEmbedValue}</strong>
-              </article>
-              <article>
-                <label>{zhCN.sceneControl.noteEngine}</label>
-                <strong>{zhCN.sceneControl.noteEngineValue}</strong>
-              </article>
-              <article>
-                <label>{zhCN.sceneControl.noteScope}</label>
-                <strong>{zhCN.sceneControl.noteScopeValue}</strong>
-              </article>
-            </div>
-
-            <div className="scene-toggle-group">
-              <span>{zhCN.sceneControl.sectionQuickAccess}</span>
-              <div className="scene-preset-grid">
-                {scenePresets.map((preset) => {
-                  const active = preset.mode === mode && preset.floor === floor;
-                  const label = `${preset.mode === "2d" ? zhCN.sceneControl.mode2d : zhCN.sceneControl.mode3d} · ${preset.floor}${zhCN.sceneControl.floorSuffix}`;
-                  return (
-                    <button
-                      key={`${preset.mode}-${preset.floor}`}
-                      type="button"
-                      className={active ? "active" : ""}
-                      onClick={() => {
-                        setMode(preset.mode);
-                        setFloor(preset.floor);
-                      }}
+              <div className="scene-embed-plant-device-inspector-body">
+                {plantEquipmentInspectorTab === "overview" ? <>
+                  <section className="scene-embed-plant-device-kpis" aria-label="设备关键运行参数">
+                    <article className={`is-state is-${plantEquipmentSelection.state}`}>
+                      <span>设备状态</span>
+                      <strong>{plantEquipmentSelection.stateLabel}</strong>
+                      <small>{plantEquipmentSelection.evidenceMode === "shadow" ? "SHADOW · 时效不可证" : plantEquipmentSelection.evidenceMode.toUpperCase()}</small>
+                    </article>
+                    {plantEquipmentMetrics.map((metric) => <article
+                      key={metric.key}
+                      className={`is-${metric.evidenceMode}`}
+                      data-device-metric-key={metric.key}
+                      data-device-metric-evidence={metric.evidenceMode}
                     >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+                      <span>{metric.label}</span>
+                      <strong>{formatPlantEquipmentMetric(metric)}</strong>
+                      <small>{formatPlantMetricEvidence(metric)}</small>
+                    </article>)}
+                    <article className="is-unbound">
+                      <span>状态持续</span>
+                      <strong>--</strong>
+                      <small>无权威 changedAt</small>
+                    </article>
+                  </section>
+                  <section className="scene-embed-plant-device-evidence">
+                    <strong>证据边界</strong>
+                    <p>设备状态与参数仅按精确 deviceId + tagName 读取；不使用同组设备、全站汇总或模糊名称回填。</p>
+                    <dl>
+                      <div><dt>状态依据</dt><dd>{plantEquipmentSelection.reason}</dd></div>
+                      <div><dt>observedAt</dt><dd>{plantEquipmentMetrics.find((metric) => metric.observedAt)?.observedAt || "-- · 时效不可证"}</dd></div>
+                    </dl>
+                  </section>
+                </> : null}
 
-            <div className="scene-toggle-group">
-              <span>{zhCN.sceneControl.sectionLinkedDevices}</span>
-              {devicePanelState === "failed" ? (
-                <div className="scene-device-panel scene-device-panel-empty">
-                  <strong>{zhCN.sceneControl.linkedDevicesFailed}</strong>
-                  <p>{zhCN.sceneControl.linkedDevicesFailedHint}</p>
-                </div>
-              ) : devicePanelState === "loading" ? (
-                <div className="scene-device-panel scene-device-panel-empty">
-                  <strong>{zhCN.sceneControl.linkedDevicesLoading}</strong>
-                </div>
-              ) : (
-                <div className="scene-device-panel">
-                  <div className="scene-device-list">
-                    {sceneDevices.map((item, index) => {
-                      const active = item.deviceId === selectedDeviceId;
-                      return (
-                        <button
-                          key={item.deviceId || `${item.deviceCode || "scene-device"}-${index + 1}`}
-                          type="button"
-                          className={active ? "scene-device-button active" : "scene-device-button"}
-                          onClick={() => handleSceneDeviceSelect(item.deviceId || null)}
-                        >
-                          <strong>{item.deviceName || zhCN.common.unknown}</strong>
-                          <small>{item.deviceCode || zhCN.common.unknown}</small>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="scene-device-detail">
-                    {selectedSceneDevice ? (
-                      <>
-                        <div className="scene-device-detail-header">
-                          <strong>{selectedSceneDevice.deviceName || zhCN.common.unknown}</strong>
-                          <StatusPill
-                            label={detailLoading ? zhCN.sceneControl.stateChecking : mapDeviceStatusLabel(selectedSceneDevice.status)}
-                            tone={detailLoading ? "neutral" : "good"}
-                          />
-                        </div>
-                        <p>{selectedSceneDevice.deviceCode || zhCN.common.unknown}</p>
-                        <dl>
-                          <div>
-                            <dt>{zhCN.devicePage.detailType}</dt>
-                            <dd>{selectedSceneDetail?.deviceTypeName || selectedSceneDevice.usageType || zhCN.common.unknown}</dd>
-                          </div>
-                          <div>
-                            <dt>{zhCN.devicePage.detailFloor}</dt>
-                            <dd>{selectedSceneFloorName}</dd>
-                          </div>
-                          <div>
-                            <dt>{zhCN.devicePage.detailBuilding}</dt>
-                            <dd>{selectedSceneBuildingName}</dd>
-                          </div>
-                          <div>
-                            <dt>{zhCN.devicePage.detailStatus}</dt>
-                            <dd>{selectedSceneDetail?.runStatusText || zhCN.devicePage.detailValuePending}</dd>
-                          </div>
-                          <div>
-                            <dt>{zhCN.devicePage.detailAlarmStatus}</dt>
-                            <dd>{selectedSceneDetail?.alarmStatusText || zhCN.devicePage.detailValuePending}</dd>
-                          </div>
-                          <div>
-                            <dt>{zhCN.devicePage.detailLastReport}</dt>
-                            <dd>{selectedSceneDetail?.latestUpdateAt || selectedSceneDevice.lastReportAt || zhCN.common.timeUnknown}</dd>
-                          </div>
-                        </dl>
-                        {selectedSceneDevice.deviceId ? (
-                          <Link
-                            className="scene-open-link scene-device-link"
-                            to={`/devices?floor=${encodeURIComponent(buildSceneDeviceFloorName(floor))}&deviceId=${encodeURIComponent(selectedSceneDevice.deviceId)}&sceneMode=${encodeURIComponent(mode)}${selectedSceneDiagramNodeId ? `&sceneNodeId=${encodeURIComponent(selectedSceneDiagramNodeId)}` : ""}`}
-                          >
-                            {zhCN.sceneControl.openInDevicePage}
-                          </Link>
-                        ) : null}
-                      </>
-                    ) : (
-                      <div className="scene-device-panel-empty">
-                        <strong>{zhCN.sceneControl.linkedDevicesEmpty}</strong>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </SectionCard>
+                {plantEquipmentInspectorTab === "trend" ? <section className="scene-embed-plant-device-empty-tab">
+                  <strong>历史趋势未绑定</strong>
+                  <p>需接入带 stationId、deviceId、tagName 与权威 observedAt 的历史点位接口后才能展示，当前不使用站级曲线替代。</p>
+                </section> : null}
 
-        <SectionCard
-          title={zhCN.sceneControl.sectionPreview}
-          action={<StatusPill label={sceneStateLabel} tone={previewTone} />}
-        >
-          <div className="scene-preview-grid">
-            <div className="scene-preview-main">
-              <div className="scene-preview">
-                {probeState === "failed" ? (
-                  <div className="scene-fallback">
-                    <strong>{zhCN.sceneControl.previewUnavailableTitle}</strong>
-                    <p>{zhCN.sceneControl.previewUnavailableBody}</p>
-                    <small>{sceneUrl}</small>
-                  </div>
-                ) : (
-                  <iframe
-                    key={`${sceneUrl}-${refreshKey}`}
-                    title={`scene-${mode}-${floor}`}
-                    src={sceneUrl}
-                    onLoad={() => setFrameLoaded(true)}
-                  />
-                )}
-              </div>
-            </div>
+                {plantEquipmentInspectorTab === "diagnostics" ? <section className="scene-embed-plant-device-diagnostics">
+                  <div><span>当前状态</span><strong>{plantEquipmentSelection.stateLabel}</strong></div>
+                  <div><span>告警记录</span><strong>-- · 未绑定</strong></div>
+                  <div><span>诊断结论</span><strong>-- · 未绑定</strong></div>
+                  <p>通信缺失、坏质量和时效不可证不会被推断为设备故障。</p>
+                </section> : null}
 
-            <aside className="scene-model-lab">
-              <div className="scene-model-lab-copy">
-                <span>{zhCN.sceneControl.modelExperimentEyebrow}</span>
-                <strong>{zhCN.sceneControl.modelExperimentTitleReady}</strong>
-                <p>{zhCN.sceneControl.modelExperimentBodyReady}</p>
+                {plantEquipmentInspectorTab === "asset" ? <section className="scene-embed-plant-device-asset">
+                  <dl>
+                    <div><dt>模型设备</dt><dd>{plantEquipmentSelection.equipmentId}</dd></div>
+                    <div><dt>运行身份</dt><dd>{plantEquipmentSelection.runtimeId}</dd></div>
+                    <div><dt>设备ID</dt><dd>{plantEquipmentSelection.deviceId}</dd></div>
+                    <div><dt>设备类型</dt><dd>{plantEquipmentSelection.groupLabel}</dd></div>
+                    <div><dt>模型资产</dt><dd>{plantOverviewProfile?.assetId || "--"}</dd></div>
+                    <div><dt>控制权限</dt><dd>只读 · 禁止 BA/PLC 写入</dd></div>
+                  </dl>
+                </section> : null}
               </div>
 
-              <div className="device-model-switch">
-                <div className="device-model-switch-header">
-                  <strong>{zhCN.sceneControl.modelSwitchTitle}</strong>
-                  <small>{zhCN.sceneControl.modelSwitchHint}</small>
-                </div>
-                <div className="device-model-switch-row">
-                  {modelCatalog.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className={forcedModelCategory === item.category ? "device-model-switch-button active" : "device-model-switch-button"}
-                      onClick={() => setForcedModelCategory(item.category)}
-                    >
-                      {item.displayName}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="scene-model-catalog">
-                {modelCatalog.map((item) => {
-                  const active = item.category === selectedModelCategory;
-                  const tone = item.intakeStatus === "ready" ? "good" : "neutral";
-                  return (
-                    <div key={item.id} className={active ? "scene-model-chip active" : "scene-model-chip"}>
-                      <strong>{item.displayName}</strong>
-                      <StatusPill
-                        label={item.intakeStatus === "ready" ? zhCN.sceneControl.modelCatalogReady : zhCN.sceneControl.modelCatalogPlanned}
-                        tone={tone}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-
-              <DeviceModelPreview
-                deviceName={selectedModelName}
-                systemType={selectedModelSystemType}
-                forcedCategory={forcedModelCategory}
-              />
-
-              <SystemDiagram3D
-                topology={systemDiagramTopology}
-                selectedNodeId={selectedSceneDiagramNodeId}
-                onNodeSelect={(node) => handleSystemDiagramSelect(node.id)}
-                devicePageHref={selectedDiagramDeviceHref}
-              />
-
-              <div className="scene-system-diagram-source">
-                <span>{zhCN.sceneControl.systemDiagramSourceLabel}</span>
-                <strong>{systemDiagramSourceLabel}</strong>
-              </div>
-
-              <div className="scene-model-lab-note">
-                <strong>{zhCN.sceneControl.modelExperimentNoteTitle}</strong>
-                <p>{zhCN.sceneControl.modelExperimentNoteBody}</p>
-              </div>
+              <footer className="scene-embed-plant-device-inspector-foot">
+                <span>只读检查器</span>
+                <strong>无启停、复位、频率设定入口</strong>
+              </footer>
             </aside>
+          ) : null}
+        </div>
+
+        {clickedDevice && !localPlantOverviewActive && !localPlantOverview2dActive ? (
+          <div className="scene-embed-device-dialog-backdrop" role="presentation">
+            <section
+              className={`scene-embed-device-dialog${isDeviceInfoDialog ? " is-device-info-dialog" : ""}`}
+              role="dialog"
+              aria-modal="true"
+              aria-live="polite"
+            >
+              <div className="scene-embed-device-dialog-head">
+                <div className="scene-embed-device-dialog-title">
+                  <strong>
+                    {dialogDeviceTitle}
+                  </strong>
+                </div>
+                <div className="scene-embed-device-tabs" role="tablist" aria-label={SCENE_DEVICE_DIALOG_TEXT.tabsAria}>
+                  {visibleDeviceDialogTabs.map((tab) => {
+                    const badgeCount =
+                      tab.key === "alarm"
+                        ? alarmRecords.length
+                        : tab.key === "operation"
+                          ? operationRecords.length
+                          : null;
+                    const badgeText = badgeCount !== null && badgeCount > 99 ? "99+" : String(badgeCount ?? "");
+                    return (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        role="tab"
+                        aria-selected={deviceDialogTab === tab.key}
+                        className={deviceDialogTab === tab.key ? "active" : ""}
+                        onClick={() => setDeviceDialogTab(tab.key)}
+                      >
+                        <span>{tab.label}</span>
+                        {badgeCount !== null ? <em>{badgeText}</em> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  className="scene-embed-device-close"
+                  onClick={handleCloseDeviceDialog}
+                  aria-label={closeText.closeAria}
+                >
+                  {closeText.close}
+                </button>
+              </div>
+
+              <div
+                className={`scene-embed-device-dialog-body${isDeviceInfoDialog ? " is-device-info" : ""}`}
+              >
+                {isDeviceInfoDialog ? (
+                  renderSceneDeviceInfoTab(
+                    deviceParameters?.deviceInfo,
+                    clickedDeviceRows,
+                    deviceParametersLoading,
+                    deviceParametersError,
+                    embedControlInInfoTab
+                      ? renderSceneInfoControlPreview(
+                          controlGroups,
+                          handleSubmitSceneControl,
+                          controlSubmittingKey,
+                          controlCommandStatus
+                        )
+                      : null
+                  )
+                ) : null}
+
+                {deviceDialogTab === "detail"
+                  ? deviceParametersLoading
+                    ? <div className="scene-embed-device-state">{SCENE_DEVICE_DIALOG_TEXT.loading}</div>
+                    : deviceParametersError
+                      ? <div className="scene-embed-device-state is-error">{deviceParametersError}</div>
+                      : renderSceneCompactDetailGroups(detailGroups, SCENE_DEVICE_DIALOG_TEXT.detailEmpty)
+                  : null}
+
+                {deviceDialogTab === "control"
+                  ? renderParameterGroups(controlGroups, SCENE_DEVICE_DIALOG_TEXT.controlEmpty, true)
+                  : null}
+
+                {deviceDialogTab === "alarm"
+                  ? renderSceneDeviceAlarmRecords(alarmRecords, deviceParametersLoading, deviceParametersError)
+                  : null}
+
+                {deviceDialogTab === "operation"
+                  ? renderSceneDeviceOperationRecords(operationRecords, deviceParametersLoading, deviceParametersError)
+                  : null}
+              </div>
+
+              {pendingControlCommand ? (
+                <div className="scene-embed-device-confirm-layer" role="presentation">
+                  <section
+                    className={`scene-embed-device-confirm is-${pendingControlCommand.intent}`}
+                    role="alertdialog"
+                    aria-modal="true"
+                  >
+                    <span>{"控制指令下发确认"}</span>
+                    <strong title={dialogDeviceTitle}>{dialogDeviceTitle}</strong>
+                    <div className="scene-embed-device-confirm-grid">
+                      <p>
+                        <em>{"控制点"}</em>
+                        <b title={pendingControlCommand.controlLabel}>{pendingControlCommand.controlLabel}</b>
+                      </p>
+                      <p>
+                        <em>{"当前值"}</em>
+                        <b>{pendingControlCommand.currentText || "--"}</b>
+                      </p>
+                      <p>
+                        <em>{"目标值"}</em>
+                        <b>{pendingControlCommand.displayText}</b>
+                      </p>
+                      <p>
+                        <em>{"设备编号"}</em>
+                        <b>{clickedDevice?.drId || clickedDevice?.deviceId || "--"}</b>
+                      </p>
+                      <p>
+                        <em>{"目标点位"}</em>
+                        <b title={pendingControlCommand.tagName}>{pendingControlCommand.tagName}</b>
+                      </p>
+                      <p>
+                        <em>{"操作人"}</em>
+                        <b>{session?.username || "unknown"}</b>
+                      </p>
+                    </div>
+                    <div className="scene-embed-device-confirm-runtime">
+                      {sceneRuntimeContextItems.map((item) => (
+                        <p key={item.label}>
+                          <em>{item.label}</em>
+                          <b>{item.value}</b>
+                        </p>
+                      ))}
+                    </div>
+                    <div className="scene-embed-device-confirm-route">
+                      <em>{"执行链路"}</em>
+                      <span>{"人工确认 / 权限校验 / 上位机下发 / PLC执行"}</span>
+                    </div>
+                    <div className="scene-embed-device-confirm-warning">
+                      {"本操作将写入现场控制点。下发前请确认本地/远程状态、联动权限、检修挂牌和甲方授权。"}
+                    </div>
+                    <div className="scene-embed-device-confirm-actions">
+                      <button type="button" onClick={() => setPendingControlCommand(null)}>
+                        {"\u53d6\u6d88"}
+                      </button>
+                      <button
+                        type="button"
+                        className="is-primary"
+                        onClick={handleConfirmSceneControlCommand}
+                        disabled={sceneControlBlocked}
+                        title={sceneControlBlocked ? "当前场景作用域只读，禁止下发" : "确认下发"}
+                      >
+                        {sceneControlBlocked ? "作用域只读" : "确认下发"}
+                      </button>
+                    </div>
+                  </section>
+                </div>
+              ) : null}
+
+            </section>
           </div>
-        </SectionCard>
+        ) : null}
+
+        <div className="scene-embed-switchbar">
+          <div className="scene-embed-current">
+            <strong>{projectLabel}</strong>
+            <span>{hasActiveScene || loading ? `${activeLabel}${localPlantOverviewActive || localPlantOverview2dActive ? " · 只读展示" : ""}${runtimeStationId ? " · 运行摘要按站房筛选" : ""}${loading ? ` \u00b7 ${sceneText.loading}` : ""}` : sceneText.noRemoteUrl}</span>
+          </div>
+          <div className="scene-embed-environment" aria-label={sceneText.environmentAria}>
+            {environmentItems.map((item) => (
+              <span key={item.key} className="scene-embed-environment-pill" title={`${item.label}\uff1a${item.value}`}>
+                {item.icon}
+                <em>{item.label}</em>
+                <strong>{item.value}</strong>
+              </span>
+            ))}
+          </div>
+          <div className="scene-embed-toolbar">
+            <div className="scene-embed-actions" role="tablist" aria-label={sceneText.modeAria}>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === "2d"}
+                className={mode === "2d" ? "active" : ""}
+                onClick={() => setMode("2d")}
+                disabled={!model2dUrl}
+                title={model2dUrl || sceneText.missing2dUrl}
+              >
+                {sceneText.modeLabels["2d"]}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === "3d"}
+                className={mode === "3d" ? "active" : ""}
+                onClick={() => setMode("3d")}
+                disabled={!plantOverviewProfile && !model3dUrl}
+                title={plantOverviewProfile?.displayName || model3dUrl || sceneText.missing3dUrl}
+              >
+                {sceneText.modeLabels["3d"]}
+              </button>
+            </div>
+            <div className="scene-embed-fit-actions" aria-label="场景视口适配">
+              <button
+                type="button"
+                className={!localPlantOverviewActive && fitMode === SCENE_NATIVE_FIT_MODE_OPTION.value ? "active" : ""}
+                onClick={handleResetSceneNativeView}
+                title={SCENE_NATIVE_FIT_MODE_OPTION.title}
+              >
+                {SCENE_NATIVE_FIT_MODE_OPTION.label}
+              </button>
+            </div>
+            <button
+              type="button"
+              className="scene-embed-fullscreen-button"
+              onClick={handleToggleFullscreen}
+              disabled={!hasActiveScene}
+              aria-label={isFrameFullscreen ? sceneText.restore : sceneText.fullscreen}
+              title={isFrameFullscreen ? sceneText.restore : sceneText.fullscreen}
+            >
+              {isFrameFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

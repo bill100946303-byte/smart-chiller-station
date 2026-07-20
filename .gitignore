@@ -3,11 +3,37 @@
 # macOS finder metadata
 .DS_Store
 
+# interpreter and editor-generated noise
+__pycache__/
+*.py[cod]
+.~*
+
+# package/build artifacts
+node_modules/
+dist/
+*.tsbuildinfo
+
+# local tool caches accidentally created inside the repo
+.npm/
+.playwright-mcp/
+Library/
+
 # local runtime artifacts
 .playwright-cli/
+.logs/
 logs/coldSite-service-*.log
 scripts/nginx.scene.local*.log
 scripts/nginx.scene.local.pid
+tmp/
+output/
+outputs/
+dashboard-current-page-text.json
+optimize-demo-diagnostic-showcase.png
+docs/field-data/optimize-demo-140-field-collection-package-*/
+docs/fcu-field-remediation-signoff-input-latest-backup-*.csv
+
+# local ad-hoc backup copies
+apps/*备份/
 
 # oversized local model bundles (keep source assets under versioned paths)
 apps/chiller-shell-v1/public/models/pump/904190.zip

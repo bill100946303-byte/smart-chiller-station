@@ -1,0 +1,77 @@
+{
+  "generatedAt": "2026-06-12T03:34:21.557Z",
+  "siteId": "140",
+  "dbFile": "/Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/.local/admin.sqlite",
+  "conclusion": "GO_REAL_DISPATCH_MAPPING",
+  "dispatchMode": "shadow",
+  "realDispatchReady": true,
+  "shadowAllowedWithoutMapping": true,
+  "usesLegacyDointerfaces": true,
+  "doimplementsRequiresTranslator": false,
+  "operations": {
+    "approve": {
+      "operation": "approve",
+      "status": "ready",
+      "endpoint": "/zsqy/qstag/{siteId}/doimplements",
+      "strategy": "device-reg-command",
+      "requiredContext": [
+        "userId",
+        "appId",
+        "drTypeId",
+        "drId",
+        "tagName"
+      ],
+      "commandTemplate": "{deviceName}|{targetTcwsC}|{tagName}",
+      "commandCount": 1,
+      "commands": [
+        {
+          "drTypeId": "77",
+          "drId": "46",
+          "tagName": "SY-1-509-41413",
+          "valueSource": "targetTcwsC",
+          "valueTransform": "round1",
+          "drTypeName": "系统控制",
+          "drName": "冰机参数设置"
+        }
+      ],
+      "blockers": [],
+      "warnings": []
+    },
+    "rollback": {
+      "operation": "rollback",
+      "status": "ready",
+      "endpoint": "/zsqy/qstag/{siteId}/doimplements",
+      "strategy": "device-reg-command",
+      "requiredContext": [
+        "userId",
+        "appId",
+        "drTypeId",
+        "drId",
+        "tagName"
+      ],
+      "commandTemplate": "{deviceName}|{rollbackTarget.targetTcwsC}|{tagName}",
+      "commandCount": 1,
+      "commands": [
+        {
+          "drTypeId": "77",
+          "drId": "46",
+          "tagName": "SY-1-509-41413",
+          "valueSource": "rollbackTarget.targetTcwsC",
+          "valueTransform": "round1",
+          "drTypeName": "系统控制",
+          "drName": "冰机参数设置"
+        }
+      ],
+      "blockers": [],
+      "warnings": []
+    }
+  },
+  "blockers": [],
+  "warnings": [
+    "endpoint 指向 legacy doimplements；dispatch 服务会按 controlTargets.commands 顺序翻译并下发 GET 命令，仍需现场确认回执语义。"
+  ],
+  "nextActions": [
+    "先在 shadow/assisted 中验证 endpoint 回执语义，不直接打开 enforced。",
+    "确认 PLC 侧最小/最大值、单步限幅、死区、告警闭锁和回退逻辑已上线。"
+  ]
+}

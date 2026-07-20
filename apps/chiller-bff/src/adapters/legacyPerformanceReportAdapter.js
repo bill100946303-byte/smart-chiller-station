@@ -91,6 +91,16 @@ function toNullableNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function coerceArray(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  if (value == null || value === "") {
+    return [];
+  }
+  return [value];
+}
+
 function formatFallbackAxisLabel(index, total) {
   if (total === 10) {
     return `${pad(index + 8)}h`;
@@ -101,7 +111,7 @@ function formatFallbackAxisLabel(index, total) {
 function normalizePoint(item, index, total) {
   return {
     label: asTrimmedString(
-      item?.label ?? item?.name ?? item?.time ?? item?.hour ?? item?.x ?? item?.dateTime,
+      item?.label ?? item?.name ?? item?.time ?? item?.hour ?? item?.x ?? item?.dataTime ?? item?.dateTime,
       formatFallbackAxisLabel(index, total)
     ),
     value: toNullableNumber(item?.value ?? item?.y ?? item?.data)
@@ -109,12 +119,10 @@ function normalizePoint(item, index, total) {
 }
 
 function normalizeSeries(reportItem, reportIndex) {
-  const detailRows = Array.isArray(reportItem?.chillerPerformanceDetailReportVO)
-    ? reportItem.chillerPerformanceDetailReportVO
-    : [];
+  const detailRows = coerceArray(reportItem?.chillerPerformanceDetailReportVO);
 
   return detailRows.map((detailItem, detailIndex) => {
-    const rawPoints = Array.isArray(detailItem?.perHourDatas) ? detailItem.perHourDatas : [];
+    const rawPoints = coerceArray(detailItem?.perHourDatas);
     const points = rawPoints.map((point, pointIndex) => normalizePoint(point, pointIndex, rawPoints.length));
     const tagNameDescribe = asTrimmedString(reportItem?.tagNameDescribe, `series-${reportIndex + 1}`);
     const dataTime = asTrimmedString(detailItem?.dataTime, "");
@@ -165,20 +173,17 @@ export async function loadPerformanceReport(baseUrl, siteId, options = {}) {
     metric: asTrimmedString(options.metric, "systemEfficiency"),
     startTime: normalizeDateTimeInput(options.startTime, "start"),
     endTime: normalizeDateTimeInput(options.endTime, "end"),
-    language: asTrimmedString(options.language, ""),
-    unit: asTrimmedString(options.unit, ""),
-    modelKey: asTrimmedString(options.modelKey, ""),
-    template: asTrimmedString(options.template, "")
+    language: asTrimmedString(options.language, "zh"),
+    unit: asTrimmedString(options.unit, "KW"),
+    modelKey: asTrimmedString(options.modelKey, siteId),
+    template: asTrimmedString(options.template, "1")
   };
   const endpoint = buildPerformanceReportEndpoint(siteId, normalizedOptions);
   const fetchedAt = new Date().toISOString();
   const response = await fetchLegacyJson(baseUrl, endpoint);
   const payload = response.ok && response.payload && typeof response.payload === "object" ? response.payload : null;
-  const rows = Array.isArray(payload?.data?.chillerPerformanceReportVO)
-    ? payload.data.chillerPerformanceReportVO
-    : Array.isArray(payload?.chillerPerformanceReportVO)
-      ? payload.chillerPerformanceReportVO
-      : [];
+  const rows = coerceArray(payload?.data?.chillerPerformanceReportVO ?? payload?.chillerPerformanceReportVO)
+    .filter((item) => item && typeof item === "object");
 
   const summaries = rows.map(normalizeSummary);
   const series = rows.flatMap(normalizeSeries);

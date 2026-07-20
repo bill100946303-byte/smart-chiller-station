@@ -1,0 +1,7021 @@
+{
+  "generatedAt": "2026-07-19T12:55:05.283Z",
+  "status": "PASS",
+  "contract": "blender-port-anchor-v1",
+  "tolerancePx": 1,
+  "renderReport": "output/blender/2d-physical-assets/scada-component-render-report.json",
+  "renderReportSha256": "8060fb77d34b076af235bb2602a9964ced16f73d2c3bd8d39a92b71fbde5a799",
+  "counts": {
+    "processPorts": 132,
+    "systemAnchors": 122,
+    "flowEdges": 122,
+    "declaredCrossovers": 20
+  },
+  "manifoldLayout": "stacked-same-x-separated",
+  "processPortAnchors": [
+    {
+      "id": "DISTRIBUTOR__PORT_DISTRIBUTOR_MAIN_IN",
+      "instanceId": "DISTRIBUTOR",
+      "assetName": "manifold",
+      "sourcePortId": "PORT_DISTRIBUTOR_MAIN_IN",
+      "semanticRole": "distributor_main_inlet",
+      "x": 1471,
+      "y": 155,
+      "sourcePositionM": [
+        -1.52,
+        -0.38,
+        0.68
+      ],
+      "sourceNormal": "-X",
+      "nominalDiameterMm": 300,
+      "renderAnchorUv": null,
+      "anchorMode": "vertical-installed-main-top"
+    },
+    {
+      "id": "COLLECTOR__PORT_COLLECTOR_MAIN_OUT",
+      "instanceId": "COLLECTOR",
+      "assetName": "manifold",
+      "sourcePortId": "PORT_COLLECTOR_MAIN_OUT",
+      "semanticRole": "collector_main_outlet",
+      "x": 1471,
+      "y": 1005,
+      "sourcePositionM": [
+        1.52,
+        0.38,
+        0.68
+      ],
+      "sourceNormal": "+X",
+      "nominalDiameterMm": 300,
+      "renderAnchorUv": null,
+      "anchorMode": "vertical-installed-main-bottom"
+    },
+    {
+      "id": "CT01__PORT_CW_IN",
+      "instanceId": "CT01",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 123,
+      "y": 220,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT01__PORT_CW_OUT",
+      "instanceId": "CT01",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 187,
+      "y": 220,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT02__PORT_CW_IN",
+      "instanceId": "CT02",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 203,
+      "y": 220,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT02__PORT_CW_OUT",
+      "instanceId": "CT02",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 267,
+      "y": 220,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT03__PORT_CW_IN",
+      "instanceId": "CT03",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 283,
+      "y": 220,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT03__PORT_CW_OUT",
+      "instanceId": "CT03",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 347,
+      "y": 220,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT04__PORT_CW_IN",
+      "instanceId": "CT04",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 363,
+      "y": 220,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT04__PORT_CW_OUT",
+      "instanceId": "CT04",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 427,
+      "y": 220,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT05__PORT_CW_IN",
+      "instanceId": "CT05",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 443,
+      "y": 220,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT05__PORT_CW_OUT",
+      "instanceId": "CT05",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 507,
+      "y": 220,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT06__PORT_CW_IN",
+      "instanceId": "CT06",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 523,
+      "y": 220,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT06__PORT_CW_OUT",
+      "instanceId": "CT06",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 587,
+      "y": 220,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT07__PORT_CW_IN",
+      "instanceId": "CT07",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 123,
+      "y": 365,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT07__PORT_CW_OUT",
+      "instanceId": "CT07",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 187,
+      "y": 365,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT08__PORT_CW_IN",
+      "instanceId": "CT08",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 203,
+      "y": 365,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT08__PORT_CW_OUT",
+      "instanceId": "CT08",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 267,
+      "y": 365,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT09__PORT_CW_IN",
+      "instanceId": "CT09",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 283,
+      "y": 365,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT09__PORT_CW_OUT",
+      "instanceId": "CT09",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 347,
+      "y": 365,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT10__PORT_CW_IN",
+      "instanceId": "CT10",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 363,
+      "y": 365,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT10__PORT_CW_OUT",
+      "instanceId": "CT10",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 427,
+      "y": 365,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT11__PORT_CW_IN",
+      "instanceId": "CT11",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 443,
+      "y": 365,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT11__PORT_CW_OUT",
+      "instanceId": "CT11",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 507,
+      "y": 365,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT12__PORT_CW_IN",
+      "instanceId": "CT12",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 523,
+      "y": 365,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT12__PORT_CW_OUT",
+      "instanceId": "CT12",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 587,
+      "y": 365,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT13__PORT_CW_IN",
+      "instanceId": "CT13",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 123,
+      "y": 510,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT13__PORT_CW_OUT",
+      "instanceId": "CT13",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 187,
+      "y": 510,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT14__PORT_CW_IN",
+      "instanceId": "CT14",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 203,
+      "y": 510,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT14__PORT_CW_OUT",
+      "instanceId": "CT14",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 267,
+      "y": 510,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT15__PORT_CW_IN",
+      "instanceId": "CT15",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 283,
+      "y": 510,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT15__PORT_CW_OUT",
+      "instanceId": "CT15",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 347,
+      "y": 510,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT16__PORT_CW_IN",
+      "instanceId": "CT16",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 363,
+      "y": 510,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT16__PORT_CW_OUT",
+      "instanceId": "CT16",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 427,
+      "y": 510,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT17__PORT_CW_IN",
+      "instanceId": "CT17",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 443,
+      "y": 510,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT17__PORT_CW_OUT",
+      "instanceId": "CT17",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 507,
+      "y": 510,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT18__PORT_CW_IN",
+      "instanceId": "CT18",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 523,
+      "y": 510,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT18__PORT_CW_OUT",
+      "instanceId": "CT18",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 587,
+      "y": 510,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT19__PORT_CW_IN",
+      "instanceId": "CT19",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 123,
+      "y": 655,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT19__PORT_CW_OUT",
+      "instanceId": "CT19",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 187,
+      "y": 655,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT20__PORT_CW_IN",
+      "instanceId": "CT20",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 203,
+      "y": 655,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT20__PORT_CW_OUT",
+      "instanceId": "CT20",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 267,
+      "y": 655,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT21__PORT_CW_IN",
+      "instanceId": "CT21",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 283,
+      "y": 655,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT21__PORT_CW_OUT",
+      "instanceId": "CT21",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 347,
+      "y": 655,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT22__PORT_CW_IN",
+      "instanceId": "CT22",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 363,
+      "y": 655,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT22__PORT_CW_OUT",
+      "instanceId": "CT22",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 427,
+      "y": 655,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT23__PORT_CW_IN",
+      "instanceId": "CT23",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 443,
+      "y": 655,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT23__PORT_CW_OUT",
+      "instanceId": "CT23",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 507,
+      "y": 655,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT24__PORT_CW_IN",
+      "instanceId": "CT24",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 523,
+      "y": 655,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT24__PORT_CW_OUT",
+      "instanceId": "CT24",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 587,
+      "y": 655,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT25__PORT_CW_IN",
+      "instanceId": "CT25",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 123,
+      "y": 800,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT25__PORT_CW_OUT",
+      "instanceId": "CT25",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 187,
+      "y": 800,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT26__PORT_CW_IN",
+      "instanceId": "CT26",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 203,
+      "y": 800,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT26__PORT_CW_OUT",
+      "instanceId": "CT26",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 267,
+      "y": 800,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT27__PORT_CW_IN",
+      "instanceId": "CT27",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 283,
+      "y": 800,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT27__PORT_CW_OUT",
+      "instanceId": "CT27",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 347,
+      "y": 800,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT28__PORT_CW_IN",
+      "instanceId": "CT28",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 363,
+      "y": 800,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT28__PORT_CW_OUT",
+      "instanceId": "CT28",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 427,
+      "y": 800,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT29__PORT_CW_IN",
+      "instanceId": "CT29",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 443,
+      "y": 800,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT29__PORT_CW_OUT",
+      "instanceId": "CT29",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 507,
+      "y": 800,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT30__PORT_CW_IN",
+      "instanceId": "CT30",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 523,
+      "y": 800,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT30__PORT_CW_OUT",
+      "instanceId": "CT30",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 587,
+      "y": 800,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT31__PORT_CW_IN",
+      "instanceId": "CT31",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 243,
+      "y": 945,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT31__PORT_CW_OUT",
+      "instanceId": "CT31",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 307,
+      "y": 945,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT32__PORT_CW_IN",
+      "instanceId": "CT32",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 323,
+      "y": 945,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT32__PORT_CW_OUT",
+      "instanceId": "CT32",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 387,
+      "y": 945,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CT33__PORT_CW_IN",
+      "instanceId": "CT33",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "hot_condenser_water_return",
+      "x": 403,
+      "y": 945,
+      "sourcePositionM": [
+        0,
+        -1.3,
+        2.86
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 200,
+      "renderAnchorUv": [
+        0.391882,
+        0.393017
+      ],
+      "anchorMode": "projected-role-to-group-return"
+    },
+    {
+      "id": "CT33__PORT_CW_OUT",
+      "instanceId": "CT33",
+      "assetName": "tower",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "cooled_condenser_water_supply",
+      "x": 467,
+      "y": 945,
+      "sourcePositionM": [
+        1.22,
+        -1.3,
+        0.31
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.51161,
+        0.937349
+      ],
+      "anchorMode": "projected-role-to-group-supply"
+    },
+    {
+      "id": "CWP1__PORT_SUCTION_IN",
+      "instanceId": "CWP1",
+      "assetName": "pump",
+      "sourcePortId": "PORT_SUCTION_IN",
+      "semanticRole": "pump_suction_in",
+      "x": 665,
+      "y": 181,
+      "sourcePositionM": [
+        1.38,
+        -1.125,
+        0.96
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 500,
+      "renderAnchorUv": [
+        0.535905,
+        0.639762
+      ],
+      "anchorMode": "installed-rz-minus90-left"
+    },
+    {
+      "id": "CWP1__PORT_DISCHARGE_OUT",
+      "instanceId": "CWP1",
+      "assetName": "pump",
+      "sourcePortId": "PORT_DISCHARGE_OUT",
+      "semanticRole": "pump_discharge_out",
+      "x": 835,
+      "y": 181,
+      "sourcePositionM": [
+        1.38,
+        1.125,
+        0.96
+      ],
+      "sourceNormal": "+Y",
+      "nominalDiameterMm": 350,
+      "renderAnchorUv": [
+        0.686204,
+        0.524102
+      ],
+      "anchorMode": "installed-rz-minus90-right"
+    },
+    {
+      "id": "CH1__PORT_CW_IN",
+      "instanceId": "CH1",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "condenser_water_in",
+      "x": 890,
+      "y": 172,
+      "sourcePositionM": [
+        -2.4,
+        0.25,
+        0.8
+      ],
+      "sourceNormal": "-X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.200638,
+        0.499758
+      ],
+      "anchorMode": "semantic-left-pair-lower-y-order"
+    },
+    {
+      "id": "CH1__PORT_CW_OUT",
+      "instanceId": "CH1",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "condenser_water_out",
+      "x": 890,
+      "y": 209,
+      "sourcePositionM": [
+        -2.4,
+        0.71,
+        0.8
+      ],
+      "sourceNormal": "-X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.209416,
+        0.453171
+      ],
+      "anchorMode": "semantic-left-pair-higher-y-order"
+    },
+    {
+      "id": "CH1__PORT_CHW_OUT",
+      "instanceId": "CH1",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CHW_OUT",
+      "semanticRole": "chilled_water_out",
+      "x": 1110,
+      "y": 172,
+      "sourcePositionM": [
+        2.4,
+        -0.18,
+        0.83
+      ],
+      "sourceNormal": "+X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.803075,
+        0.610867
+      ],
+      "anchorMode": "semantic-right-pair-higher-y-order"
+    },
+    {
+      "id": "CH1__PORT_CHW_IN",
+      "instanceId": "CH1",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CHW_IN",
+      "semanticRole": "chilled_water_in",
+      "x": 1110,
+      "y": 209,
+      "sourcePositionM": [
+        2.4,
+        -0.68,
+        0.83
+      ],
+      "sourceNormal": "+X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.793534,
+        0.661505
+      ],
+      "anchorMode": "semantic-right-pair-lower-y-order"
+    },
+    {
+      "id": "CHWP1__PORT_SUCTION_IN",
+      "instanceId": "CHWP1",
+      "assetName": "pump",
+      "sourcePortId": "PORT_SUCTION_IN",
+      "semanticRole": "pump_suction_in",
+      "x": 1140,
+      "y": 181,
+      "sourcePositionM": [
+        1.38,
+        -1.125,
+        0.96
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 500,
+      "renderAnchorUv": [
+        0.535905,
+        0.639762
+      ],
+      "anchorMode": "installed-rz-minus90-left"
+    },
+    {
+      "id": "CHWP1__PORT_DISCHARGE_OUT",
+      "instanceId": "CHWP1",
+      "assetName": "pump",
+      "sourcePortId": "PORT_DISCHARGE_OUT",
+      "semanticRole": "pump_discharge_out",
+      "x": 1310,
+      "y": 181,
+      "sourcePositionM": [
+        1.38,
+        1.125,
+        0.96
+      ],
+      "sourceNormal": "+Y",
+      "nominalDiameterMm": 350,
+      "renderAnchorUv": [
+        0.686204,
+        0.524102
+      ],
+      "anchorMode": "installed-rz-minus90-right"
+    },
+    {
+      "id": "CWP2__PORT_SUCTION_IN",
+      "instanceId": "CWP2",
+      "assetName": "pump",
+      "sourcePortId": "PORT_SUCTION_IN",
+      "semanticRole": "pump_suction_in",
+      "x": 665,
+      "y": 305,
+      "sourcePositionM": [
+        1.38,
+        -1.125,
+        0.96
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 500,
+      "renderAnchorUv": [
+        0.535905,
+        0.639762
+      ],
+      "anchorMode": "installed-rz-minus90-left"
+    },
+    {
+      "id": "CWP2__PORT_DISCHARGE_OUT",
+      "instanceId": "CWP2",
+      "assetName": "pump",
+      "sourcePortId": "PORT_DISCHARGE_OUT",
+      "semanticRole": "pump_discharge_out",
+      "x": 835,
+      "y": 305,
+      "sourcePositionM": [
+        1.38,
+        1.125,
+        0.96
+      ],
+      "sourceNormal": "+Y",
+      "nominalDiameterMm": 350,
+      "renderAnchorUv": [
+        0.686204,
+        0.524102
+      ],
+      "anchorMode": "installed-rz-minus90-right"
+    },
+    {
+      "id": "CH2__PORT_CW_IN",
+      "instanceId": "CH2",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "condenser_water_in",
+      "x": 890,
+      "y": 296,
+      "sourcePositionM": [
+        -2.4,
+        0.25,
+        0.8
+      ],
+      "sourceNormal": "-X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.200638,
+        0.499758
+      ],
+      "anchorMode": "semantic-left-pair-lower-y-order"
+    },
+    {
+      "id": "CH2__PORT_CW_OUT",
+      "instanceId": "CH2",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "condenser_water_out",
+      "x": 890,
+      "y": 333,
+      "sourcePositionM": [
+        -2.4,
+        0.71,
+        0.8
+      ],
+      "sourceNormal": "-X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.209416,
+        0.453171
+      ],
+      "anchorMode": "semantic-left-pair-higher-y-order"
+    },
+    {
+      "id": "CH2__PORT_CHW_OUT",
+      "instanceId": "CH2",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CHW_OUT",
+      "semanticRole": "chilled_water_out",
+      "x": 1110,
+      "y": 296,
+      "sourcePositionM": [
+        2.4,
+        -0.18,
+        0.83
+      ],
+      "sourceNormal": "+X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.803075,
+        0.610867
+      ],
+      "anchorMode": "semantic-right-pair-higher-y-order"
+    },
+    {
+      "id": "CH2__PORT_CHW_IN",
+      "instanceId": "CH2",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CHW_IN",
+      "semanticRole": "chilled_water_in",
+      "x": 1110,
+      "y": 333,
+      "sourcePositionM": [
+        2.4,
+        -0.68,
+        0.83
+      ],
+      "sourceNormal": "+X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.793534,
+        0.661505
+      ],
+      "anchorMode": "semantic-right-pair-lower-y-order"
+    },
+    {
+      "id": "CHWP2__PORT_SUCTION_IN",
+      "instanceId": "CHWP2",
+      "assetName": "pump",
+      "sourcePortId": "PORT_SUCTION_IN",
+      "semanticRole": "pump_suction_in",
+      "x": 1140,
+      "y": 305,
+      "sourcePositionM": [
+        1.38,
+        -1.125,
+        0.96
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 500,
+      "renderAnchorUv": [
+        0.535905,
+        0.639762
+      ],
+      "anchorMode": "installed-rz-minus90-left"
+    },
+    {
+      "id": "CHWP2__PORT_DISCHARGE_OUT",
+      "instanceId": "CHWP2",
+      "assetName": "pump",
+      "sourcePortId": "PORT_DISCHARGE_OUT",
+      "semanticRole": "pump_discharge_out",
+      "x": 1310,
+      "y": 305,
+      "sourcePositionM": [
+        1.38,
+        1.125,
+        0.96
+      ],
+      "sourceNormal": "+Y",
+      "nominalDiameterMm": 350,
+      "renderAnchorUv": [
+        0.686204,
+        0.524102
+      ],
+      "anchorMode": "installed-rz-minus90-right"
+    },
+    {
+      "id": "CWP3__PORT_SUCTION_IN",
+      "instanceId": "CWP3",
+      "assetName": "pump",
+      "sourcePortId": "PORT_SUCTION_IN",
+      "semanticRole": "pump_suction_in",
+      "x": 665,
+      "y": 429,
+      "sourcePositionM": [
+        1.38,
+        -1.125,
+        0.96
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 500,
+      "renderAnchorUv": [
+        0.535905,
+        0.639762
+      ],
+      "anchorMode": "installed-rz-minus90-left"
+    },
+    {
+      "id": "CWP3__PORT_DISCHARGE_OUT",
+      "instanceId": "CWP3",
+      "assetName": "pump",
+      "sourcePortId": "PORT_DISCHARGE_OUT",
+      "semanticRole": "pump_discharge_out",
+      "x": 835,
+      "y": 429,
+      "sourcePositionM": [
+        1.38,
+        1.125,
+        0.96
+      ],
+      "sourceNormal": "+Y",
+      "nominalDiameterMm": 350,
+      "renderAnchorUv": [
+        0.686204,
+        0.524102
+      ],
+      "anchorMode": "installed-rz-minus90-right"
+    },
+    {
+      "id": "CH3__PORT_CW_IN",
+      "instanceId": "CH3",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "condenser_water_in",
+      "x": 890,
+      "y": 420,
+      "sourcePositionM": [
+        -2.4,
+        0.25,
+        0.8
+      ],
+      "sourceNormal": "-X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.200638,
+        0.499758
+      ],
+      "anchorMode": "semantic-left-pair-lower-y-order"
+    },
+    {
+      "id": "CH3__PORT_CW_OUT",
+      "instanceId": "CH3",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "condenser_water_out",
+      "x": 890,
+      "y": 457,
+      "sourcePositionM": [
+        -2.4,
+        0.71,
+        0.8
+      ],
+      "sourceNormal": "-X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.209416,
+        0.453171
+      ],
+      "anchorMode": "semantic-left-pair-higher-y-order"
+    },
+    {
+      "id": "CH3__PORT_CHW_OUT",
+      "instanceId": "CH3",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CHW_OUT",
+      "semanticRole": "chilled_water_out",
+      "x": 1110,
+      "y": 420,
+      "sourcePositionM": [
+        2.4,
+        -0.18,
+        0.83
+      ],
+      "sourceNormal": "+X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.803075,
+        0.610867
+      ],
+      "anchorMode": "semantic-right-pair-higher-y-order"
+    },
+    {
+      "id": "CH3__PORT_CHW_IN",
+      "instanceId": "CH3",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CHW_IN",
+      "semanticRole": "chilled_water_in",
+      "x": 1110,
+      "y": 457,
+      "sourcePositionM": [
+        2.4,
+        -0.68,
+        0.83
+      ],
+      "sourceNormal": "+X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.793534,
+        0.661505
+      ],
+      "anchorMode": "semantic-right-pair-lower-y-order"
+    },
+    {
+      "id": "CHWP3__PORT_SUCTION_IN",
+      "instanceId": "CHWP3",
+      "assetName": "pump",
+      "sourcePortId": "PORT_SUCTION_IN",
+      "semanticRole": "pump_suction_in",
+      "x": 1140,
+      "y": 429,
+      "sourcePositionM": [
+        1.38,
+        -1.125,
+        0.96
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 500,
+      "renderAnchorUv": [
+        0.535905,
+        0.639762
+      ],
+      "anchorMode": "installed-rz-minus90-left"
+    },
+    {
+      "id": "CHWP3__PORT_DISCHARGE_OUT",
+      "instanceId": "CHWP3",
+      "assetName": "pump",
+      "sourcePortId": "PORT_DISCHARGE_OUT",
+      "semanticRole": "pump_discharge_out",
+      "x": 1310,
+      "y": 429,
+      "sourcePositionM": [
+        1.38,
+        1.125,
+        0.96
+      ],
+      "sourceNormal": "+Y",
+      "nominalDiameterMm": 350,
+      "renderAnchorUv": [
+        0.686204,
+        0.524102
+      ],
+      "anchorMode": "installed-rz-minus90-right"
+    },
+    {
+      "id": "CWP4__PORT_SUCTION_IN",
+      "instanceId": "CWP4",
+      "assetName": "pump",
+      "sourcePortId": "PORT_SUCTION_IN",
+      "semanticRole": "pump_suction_in",
+      "x": 665,
+      "y": 553,
+      "sourcePositionM": [
+        1.38,
+        -1.125,
+        0.96
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 500,
+      "renderAnchorUv": [
+        0.535905,
+        0.639762
+      ],
+      "anchorMode": "installed-rz-minus90-left"
+    },
+    {
+      "id": "CWP4__PORT_DISCHARGE_OUT",
+      "instanceId": "CWP4",
+      "assetName": "pump",
+      "sourcePortId": "PORT_DISCHARGE_OUT",
+      "semanticRole": "pump_discharge_out",
+      "x": 835,
+      "y": 553,
+      "sourcePositionM": [
+        1.38,
+        1.125,
+        0.96
+      ],
+      "sourceNormal": "+Y",
+      "nominalDiameterMm": 350,
+      "renderAnchorUv": [
+        0.686204,
+        0.524102
+      ],
+      "anchorMode": "installed-rz-minus90-right"
+    },
+    {
+      "id": "CH4__PORT_CW_IN",
+      "instanceId": "CH4",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "condenser_water_in",
+      "x": 890,
+      "y": 544,
+      "sourcePositionM": [
+        -2.4,
+        0.25,
+        0.8
+      ],
+      "sourceNormal": "-X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.200638,
+        0.499758
+      ],
+      "anchorMode": "semantic-left-pair-lower-y-order"
+    },
+    {
+      "id": "CH4__PORT_CW_OUT",
+      "instanceId": "CH4",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "condenser_water_out",
+      "x": 890,
+      "y": 581,
+      "sourcePositionM": [
+        -2.4,
+        0.71,
+        0.8
+      ],
+      "sourceNormal": "-X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.209416,
+        0.453171
+      ],
+      "anchorMode": "semantic-left-pair-higher-y-order"
+    },
+    {
+      "id": "CH4__PORT_CHW_OUT",
+      "instanceId": "CH4",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CHW_OUT",
+      "semanticRole": "chilled_water_out",
+      "x": 1110,
+      "y": 544,
+      "sourcePositionM": [
+        2.4,
+        -0.18,
+        0.83
+      ],
+      "sourceNormal": "+X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.803075,
+        0.610867
+      ],
+      "anchorMode": "semantic-right-pair-higher-y-order"
+    },
+    {
+      "id": "CH4__PORT_CHW_IN",
+      "instanceId": "CH4",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CHW_IN",
+      "semanticRole": "chilled_water_in",
+      "x": 1110,
+      "y": 581,
+      "sourcePositionM": [
+        2.4,
+        -0.68,
+        0.83
+      ],
+      "sourceNormal": "+X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.793534,
+        0.661505
+      ],
+      "anchorMode": "semantic-right-pair-lower-y-order"
+    },
+    {
+      "id": "CHWP4__PORT_SUCTION_IN",
+      "instanceId": "CHWP4",
+      "assetName": "pump",
+      "sourcePortId": "PORT_SUCTION_IN",
+      "semanticRole": "pump_suction_in",
+      "x": 1140,
+      "y": 553,
+      "sourcePositionM": [
+        1.38,
+        -1.125,
+        0.96
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 500,
+      "renderAnchorUv": [
+        0.535905,
+        0.639762
+      ],
+      "anchorMode": "installed-rz-minus90-left"
+    },
+    {
+      "id": "CHWP4__PORT_DISCHARGE_OUT",
+      "instanceId": "CHWP4",
+      "assetName": "pump",
+      "sourcePortId": "PORT_DISCHARGE_OUT",
+      "semanticRole": "pump_discharge_out",
+      "x": 1310,
+      "y": 553,
+      "sourcePositionM": [
+        1.38,
+        1.125,
+        0.96
+      ],
+      "sourceNormal": "+Y",
+      "nominalDiameterMm": 350,
+      "renderAnchorUv": [
+        0.686204,
+        0.524102
+      ],
+      "anchorMode": "installed-rz-minus90-right"
+    },
+    {
+      "id": "CWP5__PORT_SUCTION_IN",
+      "instanceId": "CWP5",
+      "assetName": "pump",
+      "sourcePortId": "PORT_SUCTION_IN",
+      "semanticRole": "pump_suction_in",
+      "x": 665,
+      "y": 677,
+      "sourcePositionM": [
+        1.38,
+        -1.125,
+        0.96
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 500,
+      "renderAnchorUv": [
+        0.535905,
+        0.639762
+      ],
+      "anchorMode": "installed-rz-minus90-left"
+    },
+    {
+      "id": "CWP5__PORT_DISCHARGE_OUT",
+      "instanceId": "CWP5",
+      "assetName": "pump",
+      "sourcePortId": "PORT_DISCHARGE_OUT",
+      "semanticRole": "pump_discharge_out",
+      "x": 835,
+      "y": 677,
+      "sourcePositionM": [
+        1.38,
+        1.125,
+        0.96
+      ],
+      "sourceNormal": "+Y",
+      "nominalDiameterMm": 350,
+      "renderAnchorUv": [
+        0.686204,
+        0.524102
+      ],
+      "anchorMode": "installed-rz-minus90-right"
+    },
+    {
+      "id": "CH5__PORT_CW_IN",
+      "instanceId": "CH5",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "condenser_water_in",
+      "x": 890,
+      "y": 668,
+      "sourcePositionM": [
+        -2.4,
+        0.25,
+        0.8
+      ],
+      "sourceNormal": "-X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.200638,
+        0.499758
+      ],
+      "anchorMode": "semantic-left-pair-lower-y-order"
+    },
+    {
+      "id": "CH5__PORT_CW_OUT",
+      "instanceId": "CH5",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "condenser_water_out",
+      "x": 890,
+      "y": 705,
+      "sourcePositionM": [
+        -2.4,
+        0.71,
+        0.8
+      ],
+      "sourceNormal": "-X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.209416,
+        0.453171
+      ],
+      "anchorMode": "semantic-left-pair-higher-y-order"
+    },
+    {
+      "id": "CH5__PORT_CHW_OUT",
+      "instanceId": "CH5",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CHW_OUT",
+      "semanticRole": "chilled_water_out",
+      "x": 1110,
+      "y": 668,
+      "sourcePositionM": [
+        2.4,
+        -0.18,
+        0.83
+      ],
+      "sourceNormal": "+X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.803075,
+        0.610867
+      ],
+      "anchorMode": "semantic-right-pair-higher-y-order"
+    },
+    {
+      "id": "CH5__PORT_CHW_IN",
+      "instanceId": "CH5",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CHW_IN",
+      "semanticRole": "chilled_water_in",
+      "x": 1110,
+      "y": 705,
+      "sourcePositionM": [
+        2.4,
+        -0.68,
+        0.83
+      ],
+      "sourceNormal": "+X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.793534,
+        0.661505
+      ],
+      "anchorMode": "semantic-right-pair-lower-y-order"
+    },
+    {
+      "id": "CHWP5__PORT_SUCTION_IN",
+      "instanceId": "CHWP5",
+      "assetName": "pump",
+      "sourcePortId": "PORT_SUCTION_IN",
+      "semanticRole": "pump_suction_in",
+      "x": 1140,
+      "y": 677,
+      "sourcePositionM": [
+        1.38,
+        -1.125,
+        0.96
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 500,
+      "renderAnchorUv": [
+        0.535905,
+        0.639762
+      ],
+      "anchorMode": "installed-rz-minus90-left"
+    },
+    {
+      "id": "CHWP5__PORT_DISCHARGE_OUT",
+      "instanceId": "CHWP5",
+      "assetName": "pump",
+      "sourcePortId": "PORT_DISCHARGE_OUT",
+      "semanticRole": "pump_discharge_out",
+      "x": 1310,
+      "y": 677,
+      "sourcePositionM": [
+        1.38,
+        1.125,
+        0.96
+      ],
+      "sourceNormal": "+Y",
+      "nominalDiameterMm": 350,
+      "renderAnchorUv": [
+        0.686204,
+        0.524102
+      ],
+      "anchorMode": "installed-rz-minus90-right"
+    },
+    {
+      "id": "CWP6__PORT_SUCTION_IN",
+      "instanceId": "CWP6",
+      "assetName": "pump",
+      "sourcePortId": "PORT_SUCTION_IN",
+      "semanticRole": "pump_suction_in",
+      "x": 665,
+      "y": 801,
+      "sourcePositionM": [
+        1.38,
+        -1.125,
+        0.96
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 500,
+      "renderAnchorUv": [
+        0.535905,
+        0.639762
+      ],
+      "anchorMode": "installed-rz-minus90-left"
+    },
+    {
+      "id": "CWP6__PORT_DISCHARGE_OUT",
+      "instanceId": "CWP6",
+      "assetName": "pump",
+      "sourcePortId": "PORT_DISCHARGE_OUT",
+      "semanticRole": "pump_discharge_out",
+      "x": 835,
+      "y": 801,
+      "sourcePositionM": [
+        1.38,
+        1.125,
+        0.96
+      ],
+      "sourceNormal": "+Y",
+      "nominalDiameterMm": 350,
+      "renderAnchorUv": [
+        0.686204,
+        0.524102
+      ],
+      "anchorMode": "installed-rz-minus90-right"
+    },
+    {
+      "id": "CH6__PORT_CW_IN",
+      "instanceId": "CH6",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "condenser_water_in",
+      "x": 890,
+      "y": 792,
+      "sourcePositionM": [
+        -2.4,
+        0.25,
+        0.8
+      ],
+      "sourceNormal": "-X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.200638,
+        0.499758
+      ],
+      "anchorMode": "semantic-left-pair-lower-y-order"
+    },
+    {
+      "id": "CH6__PORT_CW_OUT",
+      "instanceId": "CH6",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "condenser_water_out",
+      "x": 890,
+      "y": 829,
+      "sourcePositionM": [
+        -2.4,
+        0.71,
+        0.8
+      ],
+      "sourceNormal": "-X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.209416,
+        0.453171
+      ],
+      "anchorMode": "semantic-left-pair-higher-y-order"
+    },
+    {
+      "id": "CH6__PORT_CHW_OUT",
+      "instanceId": "CH6",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CHW_OUT",
+      "semanticRole": "chilled_water_out",
+      "x": 1110,
+      "y": 792,
+      "sourcePositionM": [
+        2.4,
+        -0.18,
+        0.83
+      ],
+      "sourceNormal": "+X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.803075,
+        0.610867
+      ],
+      "anchorMode": "semantic-right-pair-higher-y-order"
+    },
+    {
+      "id": "CH6__PORT_CHW_IN",
+      "instanceId": "CH6",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CHW_IN",
+      "semanticRole": "chilled_water_in",
+      "x": 1110,
+      "y": 829,
+      "sourcePositionM": [
+        2.4,
+        -0.68,
+        0.83
+      ],
+      "sourceNormal": "+X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.793534,
+        0.661505
+      ],
+      "anchorMode": "semantic-right-pair-lower-y-order"
+    },
+    {
+      "id": "CHWP6__PORT_SUCTION_IN",
+      "instanceId": "CHWP6",
+      "assetName": "pump",
+      "sourcePortId": "PORT_SUCTION_IN",
+      "semanticRole": "pump_suction_in",
+      "x": 1140,
+      "y": 801,
+      "sourcePositionM": [
+        1.38,
+        -1.125,
+        0.96
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 500,
+      "renderAnchorUv": [
+        0.535905,
+        0.639762
+      ],
+      "anchorMode": "installed-rz-minus90-left"
+    },
+    {
+      "id": "CHWP6__PORT_DISCHARGE_OUT",
+      "instanceId": "CHWP6",
+      "assetName": "pump",
+      "sourcePortId": "PORT_DISCHARGE_OUT",
+      "semanticRole": "pump_discharge_out",
+      "x": 1310,
+      "y": 801,
+      "sourcePositionM": [
+        1.38,
+        1.125,
+        0.96
+      ],
+      "sourceNormal": "+Y",
+      "nominalDiameterMm": 350,
+      "renderAnchorUv": [
+        0.686204,
+        0.524102
+      ],
+      "anchorMode": "installed-rz-minus90-right"
+    },
+    {
+      "id": "CWP7__PORT_SUCTION_IN",
+      "instanceId": "CWP7",
+      "assetName": "pump",
+      "sourcePortId": "PORT_SUCTION_IN",
+      "semanticRole": "pump_suction_in",
+      "x": 665,
+      "y": 925,
+      "sourcePositionM": [
+        1.38,
+        -1.125,
+        0.96
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 500,
+      "renderAnchorUv": [
+        0.535905,
+        0.639762
+      ],
+      "anchorMode": "installed-rz-minus90-left"
+    },
+    {
+      "id": "CWP7__PORT_DISCHARGE_OUT",
+      "instanceId": "CWP7",
+      "assetName": "pump",
+      "sourcePortId": "PORT_DISCHARGE_OUT",
+      "semanticRole": "pump_discharge_out",
+      "x": 835,
+      "y": 925,
+      "sourcePositionM": [
+        1.38,
+        1.125,
+        0.96
+      ],
+      "sourceNormal": "+Y",
+      "nominalDiameterMm": 350,
+      "renderAnchorUv": [
+        0.686204,
+        0.524102
+      ],
+      "anchorMode": "installed-rz-minus90-right"
+    },
+    {
+      "id": "CH7__PORT_CW_IN",
+      "instanceId": "CH7",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CW_IN",
+      "semanticRole": "condenser_water_in",
+      "x": 890,
+      "y": 916,
+      "sourcePositionM": [
+        -2.4,
+        0.25,
+        0.8
+      ],
+      "sourceNormal": "-X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.200638,
+        0.499758
+      ],
+      "anchorMode": "semantic-left-pair-lower-y-order"
+    },
+    {
+      "id": "CH7__PORT_CW_OUT",
+      "instanceId": "CH7",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CW_OUT",
+      "semanticRole": "condenser_water_out",
+      "x": 890,
+      "y": 953,
+      "sourcePositionM": [
+        -2.4,
+        0.71,
+        0.8
+      ],
+      "sourceNormal": "-X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.209416,
+        0.453171
+      ],
+      "anchorMode": "semantic-left-pair-higher-y-order"
+    },
+    {
+      "id": "CH7__PORT_CHW_OUT",
+      "instanceId": "CH7",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CHW_OUT",
+      "semanticRole": "chilled_water_out",
+      "x": 1110,
+      "y": 916,
+      "sourcePositionM": [
+        2.4,
+        -0.18,
+        0.83
+      ],
+      "sourceNormal": "+X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.803075,
+        0.610867
+      ],
+      "anchorMode": "semantic-right-pair-higher-y-order"
+    },
+    {
+      "id": "CH7__PORT_CHW_IN",
+      "instanceId": "CH7",
+      "assetName": "chiller",
+      "sourcePortId": "PORT_CHW_IN",
+      "semanticRole": "chilled_water_in",
+      "x": 1110,
+      "y": 953,
+      "sourcePositionM": [
+        2.4,
+        -0.68,
+        0.83
+      ],
+      "sourceNormal": "+X",
+      "nominalDiameterMm": 250,
+      "renderAnchorUv": [
+        0.793534,
+        0.661505
+      ],
+      "anchorMode": "semantic-right-pair-lower-y-order"
+    },
+    {
+      "id": "CHWP7__PORT_SUCTION_IN",
+      "instanceId": "CHWP7",
+      "assetName": "pump",
+      "sourcePortId": "PORT_SUCTION_IN",
+      "semanticRole": "pump_suction_in",
+      "x": 1140,
+      "y": 925,
+      "sourcePositionM": [
+        1.38,
+        -1.125,
+        0.96
+      ],
+      "sourceNormal": "-Y",
+      "nominalDiameterMm": 500,
+      "renderAnchorUv": [
+        0.535905,
+        0.639762
+      ],
+      "anchorMode": "installed-rz-minus90-left"
+    },
+    {
+      "id": "CHWP7__PORT_DISCHARGE_OUT",
+      "instanceId": "CHWP7",
+      "assetName": "pump",
+      "sourcePortId": "PORT_DISCHARGE_OUT",
+      "semanticRole": "pump_discharge_out",
+      "x": 1310,
+      "y": 925,
+      "sourcePositionM": [
+        1.38,
+        1.125,
+        0.96
+      ],
+      "sourceNormal": "+Y",
+      "nominalDiameterMm": 350,
+      "renderAnchorUv": [
+        0.686204,
+        0.524102
+      ],
+      "anchorMode": "installed-rz-minus90-right"
+    },
+    {
+      "id": "DISTRIBUTOR__PORT_DISTRIBUTOR_BRANCH_01",
+      "instanceId": "DISTRIBUTOR",
+      "assetName": "manifold",
+      "sourcePortId": "PORT_DISTRIBUTOR_BRANCH_01",
+      "semanticRole": "distributor_branch_01",
+      "x": 1500,
+      "y": 195,
+      "sourcePositionM": [
+        -0.9,
+        -0.38,
+        1.133
+      ],
+      "sourceNormal": "+Z",
+      "nominalDiameterMm": 100,
+      "renderAnchorUv": null,
+      "anchorMode": "vertical-installed-branch-top-to-bottom"
+    },
+    {
+      "id": "COLLECTOR__PORT_COLLECTOR_BRANCH_01",
+      "instanceId": "COLLECTOR",
+      "assetName": "manifold",
+      "sourcePortId": "PORT_COLLECTOR_BRANCH_01",
+      "semanticRole": "collector_branch_01",
+      "x": 1500,
+      "y": 870,
+      "sourcePositionM": [
+        -0.9,
+        0.38,
+        1.133
+      ],
+      "sourceNormal": "+Z",
+      "nominalDiameterMm": 100,
+      "renderAnchorUv": null,
+      "anchorMode": "vertical-installed-branch-top-to-bottom"
+    },
+    {
+      "id": "DISTRIBUTOR__PORT_DISTRIBUTOR_BRANCH_02",
+      "instanceId": "DISTRIBUTOR",
+      "assetName": "manifold",
+      "sourcePortId": "PORT_DISTRIBUTOR_BRANCH_02",
+      "semanticRole": "distributor_branch_02",
+      "x": 1500,
+      "y": 245,
+      "sourcePositionM": [
+        -0.3,
+        -0.38,
+        1.133
+      ],
+      "sourceNormal": "+Z",
+      "nominalDiameterMm": 100,
+      "renderAnchorUv": null,
+      "anchorMode": "vertical-installed-branch-top-to-bottom"
+    },
+    {
+      "id": "COLLECTOR__PORT_COLLECTOR_BRANCH_02",
+      "instanceId": "COLLECTOR",
+      "assetName": "manifold",
+      "sourcePortId": "PORT_COLLECTOR_BRANCH_02",
+      "semanticRole": "collector_branch_02",
+      "x": 1500,
+      "y": 910,
+      "sourcePositionM": [
+        -0.3,
+        0.38,
+        1.133
+      ],
+      "sourceNormal": "+Z",
+      "nominalDiameterMm": 100,
+      "renderAnchorUv": null,
+      "anchorMode": "vertical-installed-branch-top-to-bottom"
+    },
+    {
+      "id": "DISTRIBUTOR__PORT_DISTRIBUTOR_BRANCH_03",
+      "instanceId": "DISTRIBUTOR",
+      "assetName": "manifold",
+      "sourcePortId": "PORT_DISTRIBUTOR_BRANCH_03",
+      "semanticRole": "distributor_branch_03",
+      "x": 1500,
+      "y": 295,
+      "sourcePositionM": [
+        0.3,
+        -0.38,
+        1.133
+      ],
+      "sourceNormal": "+Z",
+      "nominalDiameterMm": 100,
+      "renderAnchorUv": null,
+      "anchorMode": "vertical-installed-branch-top-to-bottom"
+    },
+    {
+      "id": "COLLECTOR__PORT_COLLECTOR_BRANCH_03",
+      "instanceId": "COLLECTOR",
+      "assetName": "manifold",
+      "sourcePortId": "PORT_COLLECTOR_BRANCH_03",
+      "semanticRole": "collector_branch_03",
+      "x": 1500,
+      "y": 950,
+      "sourcePositionM": [
+        0.3,
+        0.38,
+        1.133
+      ],
+      "sourceNormal": "+Z",
+      "nominalDiameterMm": 100,
+      "renderAnchorUv": null,
+      "anchorMode": "vertical-installed-branch-top-to-bottom"
+    },
+    {
+      "id": "DISTRIBUTOR__PORT_DISTRIBUTOR_BRANCH_04",
+      "instanceId": "DISTRIBUTOR",
+      "assetName": "manifold",
+      "sourcePortId": "PORT_DISTRIBUTOR_BRANCH_04",
+      "semanticRole": "distributor_branch_04",
+      "x": 1500,
+      "y": 345,
+      "sourcePositionM": [
+        0.9,
+        -0.38,
+        1.133
+      ],
+      "sourceNormal": "+Z",
+      "nominalDiameterMm": 100,
+      "renderAnchorUv": null,
+      "anchorMode": "vertical-installed-branch-top-to-bottom"
+    },
+    {
+      "id": "COLLECTOR__PORT_COLLECTOR_BRANCH_04",
+      "instanceId": "COLLECTOR",
+      "assetName": "manifold",
+      "sourcePortId": "PORT_COLLECTOR_BRANCH_04",
+      "semanticRole": "collector_branch_04",
+      "x": 1500,
+      "y": 990,
+      "sourcePositionM": [
+        0.9,
+        0.38,
+        1.133
+      ],
+      "sourceNormal": "+Z",
+      "nominalDiameterMm": 100,
+      "renderAnchorUv": null,
+      "anchorMode": "vertical-installed-branch-top-to-bottom"
+    }
+  ],
+  "systemAnchors": [
+    {
+      "id": "CWS_HEADER_TOP",
+      "x": 625,
+      "y": 125,
+      "role": "cooling-supply-header-top"
+    },
+    {
+      "id": "CWS_HEADER_BOTTOM",
+      "x": 625,
+      "y": 970,
+      "role": "cooling-supply-header-bottom"
+    },
+    {
+      "id": "CWR_HEADER_TOP",
+      "x": 650,
+      "y": 125,
+      "role": "cooling-return-header-top"
+    },
+    {
+      "id": "CWR_HEADER_BOTTOM",
+      "x": 650,
+      "y": 970,
+      "role": "cooling-return-header-bottom"
+    },
+    {
+      "id": "CHWS_HEADER_TOP",
+      "x": 1360,
+      "y": 125,
+      "role": "chilled-supply-header-top"
+    },
+    {
+      "id": "CHWS_HEADER_BOTTOM",
+      "x": 1360,
+      "y": 970,
+      "role": "chilled-supply-header-bottom"
+    },
+    {
+      "id": "CHWR_HEADER_TOP",
+      "x": 1405,
+      "y": 125,
+      "role": "chilled-return-header-top"
+    },
+    {
+      "id": "CHWR_HEADER_BOTTOM",
+      "x": 1405,
+      "y": 970,
+      "role": "chilled-return-header-bottom"
+    },
+    {
+      "id": "CTG01__CWS_HEADER",
+      "x": 625,
+      "y": 275,
+      "role": "cooling-supply-group-header"
+    },
+    {
+      "id": "CTG01__CWR_HEADER",
+      "x": 650,
+      "y": 257,
+      "role": "cooling-return-group-header"
+    },
+    {
+      "id": "CT01__CWR_TAP",
+      "x": 123,
+      "y": 257,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT01__CWS_TAP",
+      "x": 187,
+      "y": 275,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT02__CWR_TAP",
+      "x": 203,
+      "y": 257,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT02__CWS_TAP",
+      "x": 267,
+      "y": 275,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT03__CWR_TAP",
+      "x": 283,
+      "y": 257,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT03__CWS_TAP",
+      "x": 347,
+      "y": 275,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT04__CWR_TAP",
+      "x": 363,
+      "y": 257,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT04__CWS_TAP",
+      "x": 427,
+      "y": 275,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT05__CWR_TAP",
+      "x": 443,
+      "y": 257,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT05__CWS_TAP",
+      "x": 507,
+      "y": 275,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT06__CWR_TAP",
+      "x": 523,
+      "y": 257,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT06__CWS_TAP",
+      "x": 587,
+      "y": 275,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CTG02__CWS_HEADER",
+      "x": 625,
+      "y": 420,
+      "role": "cooling-supply-group-header"
+    },
+    {
+      "id": "CTG02__CWR_HEADER",
+      "x": 650,
+      "y": 402,
+      "role": "cooling-return-group-header"
+    },
+    {
+      "id": "CT07__CWR_TAP",
+      "x": 123,
+      "y": 402,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT07__CWS_TAP",
+      "x": 187,
+      "y": 420,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT08__CWR_TAP",
+      "x": 203,
+      "y": 402,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT08__CWS_TAP",
+      "x": 267,
+      "y": 420,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT09__CWR_TAP",
+      "x": 283,
+      "y": 402,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT09__CWS_TAP",
+      "x": 347,
+      "y": 420,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT10__CWR_TAP",
+      "x": 363,
+      "y": 402,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT10__CWS_TAP",
+      "x": 427,
+      "y": 420,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT11__CWR_TAP",
+      "x": 443,
+      "y": 402,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT11__CWS_TAP",
+      "x": 507,
+      "y": 420,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT12__CWR_TAP",
+      "x": 523,
+      "y": 402,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT12__CWS_TAP",
+      "x": 587,
+      "y": 420,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CTG03__CWS_HEADER",
+      "x": 625,
+      "y": 565,
+      "role": "cooling-supply-group-header"
+    },
+    {
+      "id": "CTG03__CWR_HEADER",
+      "x": 650,
+      "y": 547,
+      "role": "cooling-return-group-header"
+    },
+    {
+      "id": "CT13__CWR_TAP",
+      "x": 123,
+      "y": 547,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT13__CWS_TAP",
+      "x": 187,
+      "y": 565,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT14__CWR_TAP",
+      "x": 203,
+      "y": 547,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT14__CWS_TAP",
+      "x": 267,
+      "y": 565,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT15__CWR_TAP",
+      "x": 283,
+      "y": 547,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT15__CWS_TAP",
+      "x": 347,
+      "y": 565,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT16__CWR_TAP",
+      "x": 363,
+      "y": 547,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT16__CWS_TAP",
+      "x": 427,
+      "y": 565,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT17__CWR_TAP",
+      "x": 443,
+      "y": 547,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT17__CWS_TAP",
+      "x": 507,
+      "y": 565,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT18__CWR_TAP",
+      "x": 523,
+      "y": 547,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT18__CWS_TAP",
+      "x": 587,
+      "y": 565,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CTG04__CWS_HEADER",
+      "x": 625,
+      "y": 710,
+      "role": "cooling-supply-group-header"
+    },
+    {
+      "id": "CTG04__CWR_HEADER",
+      "x": 650,
+      "y": 692,
+      "role": "cooling-return-group-header"
+    },
+    {
+      "id": "CT19__CWR_TAP",
+      "x": 123,
+      "y": 692,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT19__CWS_TAP",
+      "x": 187,
+      "y": 710,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT20__CWR_TAP",
+      "x": 203,
+      "y": 692,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT20__CWS_TAP",
+      "x": 267,
+      "y": 710,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT21__CWR_TAP",
+      "x": 283,
+      "y": 692,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT21__CWS_TAP",
+      "x": 347,
+      "y": 710,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT22__CWR_TAP",
+      "x": 363,
+      "y": 692,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT22__CWS_TAP",
+      "x": 427,
+      "y": 710,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT23__CWR_TAP",
+      "x": 443,
+      "y": 692,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT23__CWS_TAP",
+      "x": 507,
+      "y": 710,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT24__CWR_TAP",
+      "x": 523,
+      "y": 692,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT24__CWS_TAP",
+      "x": 587,
+      "y": 710,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CTG05__CWS_HEADER",
+      "x": 625,
+      "y": 855,
+      "role": "cooling-supply-group-header"
+    },
+    {
+      "id": "CTG05__CWR_HEADER",
+      "x": 650,
+      "y": 837,
+      "role": "cooling-return-group-header"
+    },
+    {
+      "id": "CT25__CWR_TAP",
+      "x": 123,
+      "y": 837,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT25__CWS_TAP",
+      "x": 187,
+      "y": 855,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT26__CWR_TAP",
+      "x": 203,
+      "y": 837,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT26__CWS_TAP",
+      "x": 267,
+      "y": 855,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT27__CWR_TAP",
+      "x": 283,
+      "y": 837,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT27__CWS_TAP",
+      "x": 347,
+      "y": 855,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT28__CWR_TAP",
+      "x": 363,
+      "y": 837,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT28__CWS_TAP",
+      "x": 427,
+      "y": 855,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT29__CWR_TAP",
+      "x": 443,
+      "y": 837,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT29__CWS_TAP",
+      "x": 507,
+      "y": 855,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT30__CWR_TAP",
+      "x": 523,
+      "y": 837,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT30__CWS_TAP",
+      "x": 587,
+      "y": 855,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CTG06__CWS_HEADER",
+      "x": 625,
+      "y": 1000,
+      "role": "cooling-supply-group-header"
+    },
+    {
+      "id": "CTG06__CWR_HEADER",
+      "x": 650,
+      "y": 982,
+      "role": "cooling-return-group-header"
+    },
+    {
+      "id": "CT31__CWR_TAP",
+      "x": 243,
+      "y": 982,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT31__CWS_TAP",
+      "x": 307,
+      "y": 1000,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT32__CWR_TAP",
+      "x": 323,
+      "y": 982,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT32__CWS_TAP",
+      "x": 387,
+      "y": 1000,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CT33__CWR_TAP",
+      "x": 403,
+      "y": 982,
+      "role": "cooling-return-branch-tap"
+    },
+    {
+      "id": "CT33__CWS_TAP",
+      "x": 467,
+      "y": 1000,
+      "role": "cooling-supply-branch-tap"
+    },
+    {
+      "id": "CWP1__CWS_HEADER_TAP",
+      "x": 625,
+      "y": 181,
+      "role": "cooling-supply-header-tap"
+    },
+    {
+      "id": "CH1__CWR_HEADER_TAP",
+      "x": 650,
+      "y": 224,
+      "role": "cooling-return-header-tap"
+    },
+    {
+      "id": "CHWP1__CHWS_HEADER_TAP",
+      "x": 1360,
+      "y": 181,
+      "role": "chilled-supply-header-tap"
+    },
+    {
+      "id": "CH1__CHWR_HEADER_TAP",
+      "x": 1405,
+      "y": 224,
+      "role": "chilled-return-header-tap"
+    },
+    {
+      "id": "CWP2__CWS_HEADER_TAP",
+      "x": 625,
+      "y": 305,
+      "role": "cooling-supply-header-tap"
+    },
+    {
+      "id": "CH2__CWR_HEADER_TAP",
+      "x": 650,
+      "y": 348,
+      "role": "cooling-return-header-tap"
+    },
+    {
+      "id": "CHWP2__CHWS_HEADER_TAP",
+      "x": 1360,
+      "y": 305,
+      "role": "chilled-supply-header-tap"
+    },
+    {
+      "id": "CH2__CHWR_HEADER_TAP",
+      "x": 1405,
+      "y": 348,
+      "role": "chilled-return-header-tap"
+    },
+    {
+      "id": "CWP3__CWS_HEADER_TAP",
+      "x": 625,
+      "y": 429,
+      "role": "cooling-supply-header-tap"
+    },
+    {
+      "id": "CH3__CWR_HEADER_TAP",
+      "x": 650,
+      "y": 472,
+      "role": "cooling-return-header-tap"
+    },
+    {
+      "id": "CHWP3__CHWS_HEADER_TAP",
+      "x": 1360,
+      "y": 429,
+      "role": "chilled-supply-header-tap"
+    },
+    {
+      "id": "CH3__CHWR_HEADER_TAP",
+      "x": 1405,
+      "y": 472,
+      "role": "chilled-return-header-tap"
+    },
+    {
+      "id": "CWP4__CWS_HEADER_TAP",
+      "x": 625,
+      "y": 553,
+      "role": "cooling-supply-header-tap"
+    },
+    {
+      "id": "CH4__CWR_HEADER_TAP",
+      "x": 650,
+      "y": 596,
+      "role": "cooling-return-header-tap"
+    },
+    {
+      "id": "CHWP4__CHWS_HEADER_TAP",
+      "x": 1360,
+      "y": 553,
+      "role": "chilled-supply-header-tap"
+    },
+    {
+      "id": "CH4__CHWR_HEADER_TAP",
+      "x": 1405,
+      "y": 596,
+      "role": "chilled-return-header-tap"
+    },
+    {
+      "id": "CWP5__CWS_HEADER_TAP",
+      "x": 625,
+      "y": 677,
+      "role": "cooling-supply-header-tap"
+    },
+    {
+      "id": "CH5__CWR_HEADER_TAP",
+      "x": 650,
+      "y": 720,
+      "role": "cooling-return-header-tap"
+    },
+    {
+      "id": "CHWP5__CHWS_HEADER_TAP",
+      "x": 1360,
+      "y": 677,
+      "role": "chilled-supply-header-tap"
+    },
+    {
+      "id": "CH5__CHWR_HEADER_TAP",
+      "x": 1405,
+      "y": 720,
+      "role": "chilled-return-header-tap"
+    },
+    {
+      "id": "CWP6__CWS_HEADER_TAP",
+      "x": 625,
+      "y": 801,
+      "role": "cooling-supply-header-tap"
+    },
+    {
+      "id": "CH6__CWR_HEADER_TAP",
+      "x": 650,
+      "y": 844,
+      "role": "cooling-return-header-tap"
+    },
+    {
+      "id": "CHWP6__CHWS_HEADER_TAP",
+      "x": 1360,
+      "y": 801,
+      "role": "chilled-supply-header-tap"
+    },
+    {
+      "id": "CH6__CHWR_HEADER_TAP",
+      "x": 1405,
+      "y": 844,
+      "role": "chilled-return-header-tap"
+    },
+    {
+      "id": "CWP7__CWS_HEADER_TAP",
+      "x": 625,
+      "y": 925,
+      "role": "cooling-supply-header-tap"
+    },
+    {
+      "id": "CH7__CWR_HEADER_TAP",
+      "x": 650,
+      "y": 968,
+      "role": "cooling-return-header-tap"
+    },
+    {
+      "id": "CHWP7__CHWS_HEADER_TAP",
+      "x": 1360,
+      "y": 925,
+      "role": "chilled-supply-header-tap"
+    },
+    {
+      "id": "CH7__CHWR_HEADER_TAP",
+      "x": 1405,
+      "y": 968,
+      "role": "chilled-return-header-tap"
+    },
+    {
+      "id": "LOAD-01__SUPPLY_IN",
+      "x": 1580,
+      "y": 206,
+      "role": "load-chilled-supply-in"
+    },
+    {
+      "id": "LOAD-01__RETURN_OUT",
+      "x": 1730,
+      "y": 234,
+      "role": "load-chilled-return-out"
+    },
+    {
+      "id": "LOAD-02__SUPPLY_IN",
+      "x": 1580,
+      "y": 386,
+      "role": "load-chilled-supply-in"
+    },
+    {
+      "id": "LOAD-02__RETURN_OUT",
+      "x": 1730,
+      "y": 414,
+      "role": "load-chilled-return-out"
+    },
+    {
+      "id": "LOAD-03__SUPPLY_IN",
+      "x": 1580,
+      "y": 566,
+      "role": "load-chilled-supply-in"
+    },
+    {
+      "id": "LOAD-03__RETURN_OUT",
+      "x": 1730,
+      "y": 594,
+      "role": "load-chilled-return-out"
+    },
+    {
+      "id": "LOAD-04__SUPPLY_IN",
+      "x": 1580,
+      "y": 746,
+      "role": "load-chilled-supply-in"
+    },
+    {
+      "id": "LOAD-04__RETURN_OUT",
+      "x": 1730,
+      "y": 774,
+      "role": "load-chilled-return-out"
+    }
+  ],
+  "flowEdges": [
+    {
+      "id": "CWS_HEADER",
+      "startAnchor": "CWS_HEADER_BOTTOM",
+      "endAnchor": "CWS_HEADER_TOP",
+      "start": [
+        625,
+        970
+      ],
+      "end": [
+        625,
+        125
+      ],
+      "circuit": "cooling-supply-header",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          625,
+          970
+        ],
+        [
+          625,
+          125
+        ]
+      ]
+    },
+    {
+      "id": "CWR_HEADER",
+      "startAnchor": "CWR_HEADER_TOP",
+      "endAnchor": "CWR_HEADER_BOTTOM",
+      "start": [
+        650,
+        125
+      ],
+      "end": [
+        650,
+        970
+      ],
+      "circuit": "cooling-return-header",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          650,
+          125
+        ],
+        [
+          650,
+          970
+        ]
+      ]
+    },
+    {
+      "id": "CHWS_HEADER",
+      "startAnchor": "CHWS_HEADER_BOTTOM",
+      "endAnchor": "CHWS_HEADER_TOP",
+      "start": [
+        1360,
+        970
+      ],
+      "end": [
+        1360,
+        125
+      ],
+      "circuit": "chilled-supply-header",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1360,
+          970
+        ],
+        [
+          1360,
+          125
+        ]
+      ]
+    },
+    {
+      "id": "CHWR_HEADER",
+      "startAnchor": "CHWR_HEADER_BOTTOM",
+      "endAnchor": "CHWR_HEADER_TOP",
+      "start": [
+        1405,
+        970
+      ],
+      "end": [
+        1405,
+        125
+      ],
+      "circuit": "chilled-return-header",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1405,
+          970
+        ],
+        [
+          1405,
+          125
+        ]
+      ]
+    },
+    {
+      "id": "CT01__CWR_TO_IN",
+      "startAnchor": "CT01__CWR_TAP",
+      "endAnchor": "CT01__PORT_CW_IN",
+      "start": [
+        123,
+        257
+      ],
+      "end": [
+        123,
+        220
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          123,
+          257
+        ],
+        [
+          123,
+          220
+        ]
+      ]
+    },
+    {
+      "id": "CT01__OUT_TO_CWS",
+      "startAnchor": "CT01__PORT_CW_OUT",
+      "endAnchor": "CT01__CWS_TAP",
+      "start": [
+        187,
+        220
+      ],
+      "end": [
+        187,
+        275
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          187,
+          220
+        ],
+        [
+          187,
+          275
+        ]
+      ]
+    },
+    {
+      "id": "CT02__CWR_TO_IN",
+      "startAnchor": "CT02__CWR_TAP",
+      "endAnchor": "CT02__PORT_CW_IN",
+      "start": [
+        203,
+        257
+      ],
+      "end": [
+        203,
+        220
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          203,
+          257
+        ],
+        [
+          203,
+          220
+        ]
+      ]
+    },
+    {
+      "id": "CT02__OUT_TO_CWS",
+      "startAnchor": "CT02__PORT_CW_OUT",
+      "endAnchor": "CT02__CWS_TAP",
+      "start": [
+        267,
+        220
+      ],
+      "end": [
+        267,
+        275
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          267,
+          220
+        ],
+        [
+          267,
+          275
+        ]
+      ]
+    },
+    {
+      "id": "CT03__CWR_TO_IN",
+      "startAnchor": "CT03__CWR_TAP",
+      "endAnchor": "CT03__PORT_CW_IN",
+      "start": [
+        283,
+        257
+      ],
+      "end": [
+        283,
+        220
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          283,
+          257
+        ],
+        [
+          283,
+          220
+        ]
+      ]
+    },
+    {
+      "id": "CT03__OUT_TO_CWS",
+      "startAnchor": "CT03__PORT_CW_OUT",
+      "endAnchor": "CT03__CWS_TAP",
+      "start": [
+        347,
+        220
+      ],
+      "end": [
+        347,
+        275
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          347,
+          220
+        ],
+        [
+          347,
+          275
+        ]
+      ]
+    },
+    {
+      "id": "CT04__CWR_TO_IN",
+      "startAnchor": "CT04__CWR_TAP",
+      "endAnchor": "CT04__PORT_CW_IN",
+      "start": [
+        363,
+        257
+      ],
+      "end": [
+        363,
+        220
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          363,
+          257
+        ],
+        [
+          363,
+          220
+        ]
+      ]
+    },
+    {
+      "id": "CT04__OUT_TO_CWS",
+      "startAnchor": "CT04__PORT_CW_OUT",
+      "endAnchor": "CT04__CWS_TAP",
+      "start": [
+        427,
+        220
+      ],
+      "end": [
+        427,
+        275
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          427,
+          220
+        ],
+        [
+          427,
+          275
+        ]
+      ]
+    },
+    {
+      "id": "CT05__CWR_TO_IN",
+      "startAnchor": "CT05__CWR_TAP",
+      "endAnchor": "CT05__PORT_CW_IN",
+      "start": [
+        443,
+        257
+      ],
+      "end": [
+        443,
+        220
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          443,
+          257
+        ],
+        [
+          443,
+          220
+        ]
+      ]
+    },
+    {
+      "id": "CT05__OUT_TO_CWS",
+      "startAnchor": "CT05__PORT_CW_OUT",
+      "endAnchor": "CT05__CWS_TAP",
+      "start": [
+        507,
+        220
+      ],
+      "end": [
+        507,
+        275
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          507,
+          220
+        ],
+        [
+          507,
+          275
+        ]
+      ]
+    },
+    {
+      "id": "CT06__CWR_TO_IN",
+      "startAnchor": "CT06__CWR_TAP",
+      "endAnchor": "CT06__PORT_CW_IN",
+      "start": [
+        523,
+        257
+      ],
+      "end": [
+        523,
+        220
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          523,
+          257
+        ],
+        [
+          523,
+          220
+        ]
+      ]
+    },
+    {
+      "id": "CT06__OUT_TO_CWS",
+      "startAnchor": "CT06__PORT_CW_OUT",
+      "endAnchor": "CT06__CWS_TAP",
+      "start": [
+        587,
+        220
+      ],
+      "end": [
+        587,
+        275
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          587,
+          220
+        ],
+        [
+          587,
+          275
+        ]
+      ]
+    },
+    {
+      "id": "CT07__CWR_TO_IN",
+      "startAnchor": "CT07__CWR_TAP",
+      "endAnchor": "CT07__PORT_CW_IN",
+      "start": [
+        123,
+        402
+      ],
+      "end": [
+        123,
+        365
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          123,
+          402
+        ],
+        [
+          123,
+          365
+        ]
+      ]
+    },
+    {
+      "id": "CT07__OUT_TO_CWS",
+      "startAnchor": "CT07__PORT_CW_OUT",
+      "endAnchor": "CT07__CWS_TAP",
+      "start": [
+        187,
+        365
+      ],
+      "end": [
+        187,
+        420
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          187,
+          365
+        ],
+        [
+          187,
+          420
+        ]
+      ]
+    },
+    {
+      "id": "CT08__CWR_TO_IN",
+      "startAnchor": "CT08__CWR_TAP",
+      "endAnchor": "CT08__PORT_CW_IN",
+      "start": [
+        203,
+        402
+      ],
+      "end": [
+        203,
+        365
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          203,
+          402
+        ],
+        [
+          203,
+          365
+        ]
+      ]
+    },
+    {
+      "id": "CT08__OUT_TO_CWS",
+      "startAnchor": "CT08__PORT_CW_OUT",
+      "endAnchor": "CT08__CWS_TAP",
+      "start": [
+        267,
+        365
+      ],
+      "end": [
+        267,
+        420
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          267,
+          365
+        ],
+        [
+          267,
+          420
+        ]
+      ]
+    },
+    {
+      "id": "CT09__CWR_TO_IN",
+      "startAnchor": "CT09__CWR_TAP",
+      "endAnchor": "CT09__PORT_CW_IN",
+      "start": [
+        283,
+        402
+      ],
+      "end": [
+        283,
+        365
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          283,
+          402
+        ],
+        [
+          283,
+          365
+        ]
+      ]
+    },
+    {
+      "id": "CT09__OUT_TO_CWS",
+      "startAnchor": "CT09__PORT_CW_OUT",
+      "endAnchor": "CT09__CWS_TAP",
+      "start": [
+        347,
+        365
+      ],
+      "end": [
+        347,
+        420
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          347,
+          365
+        ],
+        [
+          347,
+          420
+        ]
+      ]
+    },
+    {
+      "id": "CT10__CWR_TO_IN",
+      "startAnchor": "CT10__CWR_TAP",
+      "endAnchor": "CT10__PORT_CW_IN",
+      "start": [
+        363,
+        402
+      ],
+      "end": [
+        363,
+        365
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          363,
+          402
+        ],
+        [
+          363,
+          365
+        ]
+      ]
+    },
+    {
+      "id": "CT10__OUT_TO_CWS",
+      "startAnchor": "CT10__PORT_CW_OUT",
+      "endAnchor": "CT10__CWS_TAP",
+      "start": [
+        427,
+        365
+      ],
+      "end": [
+        427,
+        420
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          427,
+          365
+        ],
+        [
+          427,
+          420
+        ]
+      ]
+    },
+    {
+      "id": "CT11__CWR_TO_IN",
+      "startAnchor": "CT11__CWR_TAP",
+      "endAnchor": "CT11__PORT_CW_IN",
+      "start": [
+        443,
+        402
+      ],
+      "end": [
+        443,
+        365
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          443,
+          402
+        ],
+        [
+          443,
+          365
+        ]
+      ]
+    },
+    {
+      "id": "CT11__OUT_TO_CWS",
+      "startAnchor": "CT11__PORT_CW_OUT",
+      "endAnchor": "CT11__CWS_TAP",
+      "start": [
+        507,
+        365
+      ],
+      "end": [
+        507,
+        420
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          507,
+          365
+        ],
+        [
+          507,
+          420
+        ]
+      ]
+    },
+    {
+      "id": "CT12__CWR_TO_IN",
+      "startAnchor": "CT12__CWR_TAP",
+      "endAnchor": "CT12__PORT_CW_IN",
+      "start": [
+        523,
+        402
+      ],
+      "end": [
+        523,
+        365
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          523,
+          402
+        ],
+        [
+          523,
+          365
+        ]
+      ]
+    },
+    {
+      "id": "CT12__OUT_TO_CWS",
+      "startAnchor": "CT12__PORT_CW_OUT",
+      "endAnchor": "CT12__CWS_TAP",
+      "start": [
+        587,
+        365
+      ],
+      "end": [
+        587,
+        420
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          587,
+          365
+        ],
+        [
+          587,
+          420
+        ]
+      ]
+    },
+    {
+      "id": "CT13__CWR_TO_IN",
+      "startAnchor": "CT13__CWR_TAP",
+      "endAnchor": "CT13__PORT_CW_IN",
+      "start": [
+        123,
+        547
+      ],
+      "end": [
+        123,
+        510
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          123,
+          547
+        ],
+        [
+          123,
+          510
+        ]
+      ]
+    },
+    {
+      "id": "CT13__OUT_TO_CWS",
+      "startAnchor": "CT13__PORT_CW_OUT",
+      "endAnchor": "CT13__CWS_TAP",
+      "start": [
+        187,
+        510
+      ],
+      "end": [
+        187,
+        565
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          187,
+          510
+        ],
+        [
+          187,
+          565
+        ]
+      ]
+    },
+    {
+      "id": "CT14__CWR_TO_IN",
+      "startAnchor": "CT14__CWR_TAP",
+      "endAnchor": "CT14__PORT_CW_IN",
+      "start": [
+        203,
+        547
+      ],
+      "end": [
+        203,
+        510
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          203,
+          547
+        ],
+        [
+          203,
+          510
+        ]
+      ]
+    },
+    {
+      "id": "CT14__OUT_TO_CWS",
+      "startAnchor": "CT14__PORT_CW_OUT",
+      "endAnchor": "CT14__CWS_TAP",
+      "start": [
+        267,
+        510
+      ],
+      "end": [
+        267,
+        565
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          267,
+          510
+        ],
+        [
+          267,
+          565
+        ]
+      ]
+    },
+    {
+      "id": "CT15__CWR_TO_IN",
+      "startAnchor": "CT15__CWR_TAP",
+      "endAnchor": "CT15__PORT_CW_IN",
+      "start": [
+        283,
+        547
+      ],
+      "end": [
+        283,
+        510
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          283,
+          547
+        ],
+        [
+          283,
+          510
+        ]
+      ]
+    },
+    {
+      "id": "CT15__OUT_TO_CWS",
+      "startAnchor": "CT15__PORT_CW_OUT",
+      "endAnchor": "CT15__CWS_TAP",
+      "start": [
+        347,
+        510
+      ],
+      "end": [
+        347,
+        565
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          347,
+          510
+        ],
+        [
+          347,
+          565
+        ]
+      ]
+    },
+    {
+      "id": "CT16__CWR_TO_IN",
+      "startAnchor": "CT16__CWR_TAP",
+      "endAnchor": "CT16__PORT_CW_IN",
+      "start": [
+        363,
+        547
+      ],
+      "end": [
+        363,
+        510
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          363,
+          547
+        ],
+        [
+          363,
+          510
+        ]
+      ]
+    },
+    {
+      "id": "CT16__OUT_TO_CWS",
+      "startAnchor": "CT16__PORT_CW_OUT",
+      "endAnchor": "CT16__CWS_TAP",
+      "start": [
+        427,
+        510
+      ],
+      "end": [
+        427,
+        565
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          427,
+          510
+        ],
+        [
+          427,
+          565
+        ]
+      ]
+    },
+    {
+      "id": "CT17__CWR_TO_IN",
+      "startAnchor": "CT17__CWR_TAP",
+      "endAnchor": "CT17__PORT_CW_IN",
+      "start": [
+        443,
+        547
+      ],
+      "end": [
+        443,
+        510
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          443,
+          547
+        ],
+        [
+          443,
+          510
+        ]
+      ]
+    },
+    {
+      "id": "CT17__OUT_TO_CWS",
+      "startAnchor": "CT17__PORT_CW_OUT",
+      "endAnchor": "CT17__CWS_TAP",
+      "start": [
+        507,
+        510
+      ],
+      "end": [
+        507,
+        565
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          507,
+          510
+        ],
+        [
+          507,
+          565
+        ]
+      ]
+    },
+    {
+      "id": "CT18__CWR_TO_IN",
+      "startAnchor": "CT18__CWR_TAP",
+      "endAnchor": "CT18__PORT_CW_IN",
+      "start": [
+        523,
+        547
+      ],
+      "end": [
+        523,
+        510
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          523,
+          547
+        ],
+        [
+          523,
+          510
+        ]
+      ]
+    },
+    {
+      "id": "CT18__OUT_TO_CWS",
+      "startAnchor": "CT18__PORT_CW_OUT",
+      "endAnchor": "CT18__CWS_TAP",
+      "start": [
+        587,
+        510
+      ],
+      "end": [
+        587,
+        565
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          587,
+          510
+        ],
+        [
+          587,
+          565
+        ]
+      ]
+    },
+    {
+      "id": "CT19__CWR_TO_IN",
+      "startAnchor": "CT19__CWR_TAP",
+      "endAnchor": "CT19__PORT_CW_IN",
+      "start": [
+        123,
+        692
+      ],
+      "end": [
+        123,
+        655
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          123,
+          692
+        ],
+        [
+          123,
+          655
+        ]
+      ]
+    },
+    {
+      "id": "CT19__OUT_TO_CWS",
+      "startAnchor": "CT19__PORT_CW_OUT",
+      "endAnchor": "CT19__CWS_TAP",
+      "start": [
+        187,
+        655
+      ],
+      "end": [
+        187,
+        710
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          187,
+          655
+        ],
+        [
+          187,
+          710
+        ]
+      ]
+    },
+    {
+      "id": "CT20__CWR_TO_IN",
+      "startAnchor": "CT20__CWR_TAP",
+      "endAnchor": "CT20__PORT_CW_IN",
+      "start": [
+        203,
+        692
+      ],
+      "end": [
+        203,
+        655
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          203,
+          692
+        ],
+        [
+          203,
+          655
+        ]
+      ]
+    },
+    {
+      "id": "CT20__OUT_TO_CWS",
+      "startAnchor": "CT20__PORT_CW_OUT",
+      "endAnchor": "CT20__CWS_TAP",
+      "start": [
+        267,
+        655
+      ],
+      "end": [
+        267,
+        710
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          267,
+          655
+        ],
+        [
+          267,
+          710
+        ]
+      ]
+    },
+    {
+      "id": "CT21__CWR_TO_IN",
+      "startAnchor": "CT21__CWR_TAP",
+      "endAnchor": "CT21__PORT_CW_IN",
+      "start": [
+        283,
+        692
+      ],
+      "end": [
+        283,
+        655
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          283,
+          692
+        ],
+        [
+          283,
+          655
+        ]
+      ]
+    },
+    {
+      "id": "CT21__OUT_TO_CWS",
+      "startAnchor": "CT21__PORT_CW_OUT",
+      "endAnchor": "CT21__CWS_TAP",
+      "start": [
+        347,
+        655
+      ],
+      "end": [
+        347,
+        710
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          347,
+          655
+        ],
+        [
+          347,
+          710
+        ]
+      ]
+    },
+    {
+      "id": "CT22__CWR_TO_IN",
+      "startAnchor": "CT22__CWR_TAP",
+      "endAnchor": "CT22__PORT_CW_IN",
+      "start": [
+        363,
+        692
+      ],
+      "end": [
+        363,
+        655
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          363,
+          692
+        ],
+        [
+          363,
+          655
+        ]
+      ]
+    },
+    {
+      "id": "CT22__OUT_TO_CWS",
+      "startAnchor": "CT22__PORT_CW_OUT",
+      "endAnchor": "CT22__CWS_TAP",
+      "start": [
+        427,
+        655
+      ],
+      "end": [
+        427,
+        710
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          427,
+          655
+        ],
+        [
+          427,
+          710
+        ]
+      ]
+    },
+    {
+      "id": "CT23__CWR_TO_IN",
+      "startAnchor": "CT23__CWR_TAP",
+      "endAnchor": "CT23__PORT_CW_IN",
+      "start": [
+        443,
+        692
+      ],
+      "end": [
+        443,
+        655
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          443,
+          692
+        ],
+        [
+          443,
+          655
+        ]
+      ]
+    },
+    {
+      "id": "CT23__OUT_TO_CWS",
+      "startAnchor": "CT23__PORT_CW_OUT",
+      "endAnchor": "CT23__CWS_TAP",
+      "start": [
+        507,
+        655
+      ],
+      "end": [
+        507,
+        710
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          507,
+          655
+        ],
+        [
+          507,
+          710
+        ]
+      ]
+    },
+    {
+      "id": "CT24__CWR_TO_IN",
+      "startAnchor": "CT24__CWR_TAP",
+      "endAnchor": "CT24__PORT_CW_IN",
+      "start": [
+        523,
+        692
+      ],
+      "end": [
+        523,
+        655
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          523,
+          692
+        ],
+        [
+          523,
+          655
+        ]
+      ]
+    },
+    {
+      "id": "CT24__OUT_TO_CWS",
+      "startAnchor": "CT24__PORT_CW_OUT",
+      "endAnchor": "CT24__CWS_TAP",
+      "start": [
+        587,
+        655
+      ],
+      "end": [
+        587,
+        710
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          587,
+          655
+        ],
+        [
+          587,
+          710
+        ]
+      ]
+    },
+    {
+      "id": "CT25__CWR_TO_IN",
+      "startAnchor": "CT25__CWR_TAP",
+      "endAnchor": "CT25__PORT_CW_IN",
+      "start": [
+        123,
+        837
+      ],
+      "end": [
+        123,
+        800
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          123,
+          837
+        ],
+        [
+          123,
+          800
+        ]
+      ]
+    },
+    {
+      "id": "CT25__OUT_TO_CWS",
+      "startAnchor": "CT25__PORT_CW_OUT",
+      "endAnchor": "CT25__CWS_TAP",
+      "start": [
+        187,
+        800
+      ],
+      "end": [
+        187,
+        855
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          187,
+          800
+        ],
+        [
+          187,
+          855
+        ]
+      ]
+    },
+    {
+      "id": "CT26__CWR_TO_IN",
+      "startAnchor": "CT26__CWR_TAP",
+      "endAnchor": "CT26__PORT_CW_IN",
+      "start": [
+        203,
+        837
+      ],
+      "end": [
+        203,
+        800
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          203,
+          837
+        ],
+        [
+          203,
+          800
+        ]
+      ]
+    },
+    {
+      "id": "CT26__OUT_TO_CWS",
+      "startAnchor": "CT26__PORT_CW_OUT",
+      "endAnchor": "CT26__CWS_TAP",
+      "start": [
+        267,
+        800
+      ],
+      "end": [
+        267,
+        855
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          267,
+          800
+        ],
+        [
+          267,
+          855
+        ]
+      ]
+    },
+    {
+      "id": "CT27__CWR_TO_IN",
+      "startAnchor": "CT27__CWR_TAP",
+      "endAnchor": "CT27__PORT_CW_IN",
+      "start": [
+        283,
+        837
+      ],
+      "end": [
+        283,
+        800
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          283,
+          837
+        ],
+        [
+          283,
+          800
+        ]
+      ]
+    },
+    {
+      "id": "CT27__OUT_TO_CWS",
+      "startAnchor": "CT27__PORT_CW_OUT",
+      "endAnchor": "CT27__CWS_TAP",
+      "start": [
+        347,
+        800
+      ],
+      "end": [
+        347,
+        855
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          347,
+          800
+        ],
+        [
+          347,
+          855
+        ]
+      ]
+    },
+    {
+      "id": "CT28__CWR_TO_IN",
+      "startAnchor": "CT28__CWR_TAP",
+      "endAnchor": "CT28__PORT_CW_IN",
+      "start": [
+        363,
+        837
+      ],
+      "end": [
+        363,
+        800
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          363,
+          837
+        ],
+        [
+          363,
+          800
+        ]
+      ]
+    },
+    {
+      "id": "CT28__OUT_TO_CWS",
+      "startAnchor": "CT28__PORT_CW_OUT",
+      "endAnchor": "CT28__CWS_TAP",
+      "start": [
+        427,
+        800
+      ],
+      "end": [
+        427,
+        855
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          427,
+          800
+        ],
+        [
+          427,
+          855
+        ]
+      ]
+    },
+    {
+      "id": "CT29__CWR_TO_IN",
+      "startAnchor": "CT29__CWR_TAP",
+      "endAnchor": "CT29__PORT_CW_IN",
+      "start": [
+        443,
+        837
+      ],
+      "end": [
+        443,
+        800
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          443,
+          837
+        ],
+        [
+          443,
+          800
+        ]
+      ]
+    },
+    {
+      "id": "CT29__OUT_TO_CWS",
+      "startAnchor": "CT29__PORT_CW_OUT",
+      "endAnchor": "CT29__CWS_TAP",
+      "start": [
+        507,
+        800
+      ],
+      "end": [
+        507,
+        855
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          507,
+          800
+        ],
+        [
+          507,
+          855
+        ]
+      ]
+    },
+    {
+      "id": "CT30__CWR_TO_IN",
+      "startAnchor": "CT30__CWR_TAP",
+      "endAnchor": "CT30__PORT_CW_IN",
+      "start": [
+        523,
+        837
+      ],
+      "end": [
+        523,
+        800
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          523,
+          837
+        ],
+        [
+          523,
+          800
+        ]
+      ]
+    },
+    {
+      "id": "CT30__OUT_TO_CWS",
+      "startAnchor": "CT30__PORT_CW_OUT",
+      "endAnchor": "CT30__CWS_TAP",
+      "start": [
+        587,
+        800
+      ],
+      "end": [
+        587,
+        855
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          587,
+          800
+        ],
+        [
+          587,
+          855
+        ]
+      ]
+    },
+    {
+      "id": "CT31__CWR_TO_IN",
+      "startAnchor": "CT31__CWR_TAP",
+      "endAnchor": "CT31__PORT_CW_IN",
+      "start": [
+        243,
+        982
+      ],
+      "end": [
+        243,
+        945
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          243,
+          982
+        ],
+        [
+          243,
+          945
+        ]
+      ]
+    },
+    {
+      "id": "CT31__OUT_TO_CWS",
+      "startAnchor": "CT31__PORT_CW_OUT",
+      "endAnchor": "CT31__CWS_TAP",
+      "start": [
+        307,
+        945
+      ],
+      "end": [
+        307,
+        1000
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          307,
+          945
+        ],
+        [
+          307,
+          1000
+        ]
+      ]
+    },
+    {
+      "id": "CT32__CWR_TO_IN",
+      "startAnchor": "CT32__CWR_TAP",
+      "endAnchor": "CT32__PORT_CW_IN",
+      "start": [
+        323,
+        982
+      ],
+      "end": [
+        323,
+        945
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          323,
+          982
+        ],
+        [
+          323,
+          945
+        ]
+      ]
+    },
+    {
+      "id": "CT32__OUT_TO_CWS",
+      "startAnchor": "CT32__PORT_CW_OUT",
+      "endAnchor": "CT32__CWS_TAP",
+      "start": [
+        387,
+        945
+      ],
+      "end": [
+        387,
+        1000
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          387,
+          945
+        ],
+        [
+          387,
+          1000
+        ]
+      ]
+    },
+    {
+      "id": "CT33__CWR_TO_IN",
+      "startAnchor": "CT33__CWR_TAP",
+      "endAnchor": "CT33__PORT_CW_IN",
+      "start": [
+        403,
+        982
+      ],
+      "end": [
+        403,
+        945
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          403,
+          982
+        ],
+        [
+          403,
+          945
+        ]
+      ]
+    },
+    {
+      "id": "CT33__OUT_TO_CWS",
+      "startAnchor": "CT33__PORT_CW_OUT",
+      "endAnchor": "CT33__CWS_TAP",
+      "start": [
+        467,
+        945
+      ],
+      "end": [
+        467,
+        1000
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          467,
+          945
+        ],
+        [
+          467,
+          1000
+        ]
+      ]
+    },
+    {
+      "id": "CWP1__CWS_TO_SUCTION",
+      "startAnchor": "CWP1__CWS_HEADER_TAP",
+      "endAnchor": "CWP1__PORT_SUCTION_IN",
+      "start": [
+        625,
+        181
+      ],
+      "end": [
+        665,
+        181
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          625,
+          181
+        ],
+        [
+          665,
+          181
+        ]
+      ]
+    },
+    {
+      "id": "CWP1__DISCHARGE_TO_CH1__CW_IN",
+      "startAnchor": "CWP1__PORT_DISCHARGE_OUT",
+      "endAnchor": "CH1__PORT_CW_IN",
+      "start": [
+        835,
+        181
+      ],
+      "end": [
+        890,
+        172
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          835,
+          181
+        ],
+        [
+          865,
+          181
+        ],
+        [
+          890,
+          172
+        ]
+      ]
+    },
+    {
+      "id": "CH1__CW_OUT_TO_CWR",
+      "startAnchor": "CH1__PORT_CW_OUT",
+      "endAnchor": "CH1__CWR_HEADER_TAP",
+      "start": [
+        890,
+        209
+      ],
+      "end": [
+        650,
+        224
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          890,
+          209
+        ],
+        [
+          870,
+          224
+        ],
+        [
+          650,
+          224
+        ]
+      ]
+    },
+    {
+      "id": "CH1__CHW_OUT_TO_CHWP1__SUCTION",
+      "startAnchor": "CH1__PORT_CHW_OUT",
+      "endAnchor": "CHWP1__PORT_SUCTION_IN",
+      "start": [
+        1110,
+        172
+      ],
+      "end": [
+        1140,
+        181
+      ],
+      "circuit": "chilled-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1110,
+          172
+        ],
+        [
+          1125,
+          181
+        ],
+        [
+          1140,
+          181
+        ]
+      ]
+    },
+    {
+      "id": "CHWP1__DISCHARGE_TO_CHWS",
+      "startAnchor": "CHWP1__PORT_DISCHARGE_OUT",
+      "endAnchor": "CHWP1__CHWS_HEADER_TAP",
+      "start": [
+        1310,
+        181
+      ],
+      "end": [
+        1360,
+        181
+      ],
+      "circuit": "chilled-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1310,
+          181
+        ],
+        [
+          1360,
+          181
+        ]
+      ]
+    },
+    {
+      "id": "CH1__CHWR_TO_CHW_IN",
+      "startAnchor": "CH1__CHWR_HEADER_TAP",
+      "endAnchor": "CH1__PORT_CHW_IN",
+      "start": [
+        1405,
+        224
+      ],
+      "end": [
+        1110,
+        209
+      ],
+      "circuit": "chilled-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1405,
+          224
+        ],
+        [
+          1125,
+          224
+        ],
+        [
+          1110,
+          209
+        ]
+      ]
+    },
+    {
+      "id": "CWP2__CWS_TO_SUCTION",
+      "startAnchor": "CWP2__CWS_HEADER_TAP",
+      "endAnchor": "CWP2__PORT_SUCTION_IN",
+      "start": [
+        625,
+        305
+      ],
+      "end": [
+        665,
+        305
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          625,
+          305
+        ],
+        [
+          665,
+          305
+        ]
+      ]
+    },
+    {
+      "id": "CWP2__DISCHARGE_TO_CH2__CW_IN",
+      "startAnchor": "CWP2__PORT_DISCHARGE_OUT",
+      "endAnchor": "CH2__PORT_CW_IN",
+      "start": [
+        835,
+        305
+      ],
+      "end": [
+        890,
+        296
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          835,
+          305
+        ],
+        [
+          865,
+          305
+        ],
+        [
+          890,
+          296
+        ]
+      ]
+    },
+    {
+      "id": "CH2__CW_OUT_TO_CWR",
+      "startAnchor": "CH2__PORT_CW_OUT",
+      "endAnchor": "CH2__CWR_HEADER_TAP",
+      "start": [
+        890,
+        333
+      ],
+      "end": [
+        650,
+        348
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          890,
+          333
+        ],
+        [
+          870,
+          348
+        ],
+        [
+          650,
+          348
+        ]
+      ]
+    },
+    {
+      "id": "CH2__CHW_OUT_TO_CHWP2__SUCTION",
+      "startAnchor": "CH2__PORT_CHW_OUT",
+      "endAnchor": "CHWP2__PORT_SUCTION_IN",
+      "start": [
+        1110,
+        296
+      ],
+      "end": [
+        1140,
+        305
+      ],
+      "circuit": "chilled-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1110,
+          296
+        ],
+        [
+          1125,
+          305
+        ],
+        [
+          1140,
+          305
+        ]
+      ]
+    },
+    {
+      "id": "CHWP2__DISCHARGE_TO_CHWS",
+      "startAnchor": "CHWP2__PORT_DISCHARGE_OUT",
+      "endAnchor": "CHWP2__CHWS_HEADER_TAP",
+      "start": [
+        1310,
+        305
+      ],
+      "end": [
+        1360,
+        305
+      ],
+      "circuit": "chilled-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1310,
+          305
+        ],
+        [
+          1360,
+          305
+        ]
+      ]
+    },
+    {
+      "id": "CH2__CHWR_TO_CHW_IN",
+      "startAnchor": "CH2__CHWR_HEADER_TAP",
+      "endAnchor": "CH2__PORT_CHW_IN",
+      "start": [
+        1405,
+        348
+      ],
+      "end": [
+        1110,
+        333
+      ],
+      "circuit": "chilled-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1405,
+          348
+        ],
+        [
+          1125,
+          348
+        ],
+        [
+          1110,
+          333
+        ]
+      ]
+    },
+    {
+      "id": "CWP3__CWS_TO_SUCTION",
+      "startAnchor": "CWP3__CWS_HEADER_TAP",
+      "endAnchor": "CWP3__PORT_SUCTION_IN",
+      "start": [
+        625,
+        429
+      ],
+      "end": [
+        665,
+        429
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          625,
+          429
+        ],
+        [
+          665,
+          429
+        ]
+      ]
+    },
+    {
+      "id": "CWP3__DISCHARGE_TO_CH3__CW_IN",
+      "startAnchor": "CWP3__PORT_DISCHARGE_OUT",
+      "endAnchor": "CH3__PORT_CW_IN",
+      "start": [
+        835,
+        429
+      ],
+      "end": [
+        890,
+        420
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          835,
+          429
+        ],
+        [
+          865,
+          429
+        ],
+        [
+          890,
+          420
+        ]
+      ]
+    },
+    {
+      "id": "CH3__CW_OUT_TO_CWR",
+      "startAnchor": "CH3__PORT_CW_OUT",
+      "endAnchor": "CH3__CWR_HEADER_TAP",
+      "start": [
+        890,
+        457
+      ],
+      "end": [
+        650,
+        472
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          890,
+          457
+        ],
+        [
+          870,
+          472
+        ],
+        [
+          650,
+          472
+        ]
+      ]
+    },
+    {
+      "id": "CH3__CHW_OUT_TO_CHWP3__SUCTION",
+      "startAnchor": "CH3__PORT_CHW_OUT",
+      "endAnchor": "CHWP3__PORT_SUCTION_IN",
+      "start": [
+        1110,
+        420
+      ],
+      "end": [
+        1140,
+        429
+      ],
+      "circuit": "chilled-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1110,
+          420
+        ],
+        [
+          1125,
+          429
+        ],
+        [
+          1140,
+          429
+        ]
+      ]
+    },
+    {
+      "id": "CHWP3__DISCHARGE_TO_CHWS",
+      "startAnchor": "CHWP3__PORT_DISCHARGE_OUT",
+      "endAnchor": "CHWP3__CHWS_HEADER_TAP",
+      "start": [
+        1310,
+        429
+      ],
+      "end": [
+        1360,
+        429
+      ],
+      "circuit": "chilled-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1310,
+          429
+        ],
+        [
+          1360,
+          429
+        ]
+      ]
+    },
+    {
+      "id": "CH3__CHWR_TO_CHW_IN",
+      "startAnchor": "CH3__CHWR_HEADER_TAP",
+      "endAnchor": "CH3__PORT_CHW_IN",
+      "start": [
+        1405,
+        472
+      ],
+      "end": [
+        1110,
+        457
+      ],
+      "circuit": "chilled-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1405,
+          472
+        ],
+        [
+          1125,
+          472
+        ],
+        [
+          1110,
+          457
+        ]
+      ]
+    },
+    {
+      "id": "CWP4__CWS_TO_SUCTION",
+      "startAnchor": "CWP4__CWS_HEADER_TAP",
+      "endAnchor": "CWP4__PORT_SUCTION_IN",
+      "start": [
+        625,
+        553
+      ],
+      "end": [
+        665,
+        553
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          625,
+          553
+        ],
+        [
+          665,
+          553
+        ]
+      ]
+    },
+    {
+      "id": "CWP4__DISCHARGE_TO_CH4__CW_IN",
+      "startAnchor": "CWP4__PORT_DISCHARGE_OUT",
+      "endAnchor": "CH4__PORT_CW_IN",
+      "start": [
+        835,
+        553
+      ],
+      "end": [
+        890,
+        544
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          835,
+          553
+        ],
+        [
+          865,
+          553
+        ],
+        [
+          890,
+          544
+        ]
+      ]
+    },
+    {
+      "id": "CH4__CW_OUT_TO_CWR",
+      "startAnchor": "CH4__PORT_CW_OUT",
+      "endAnchor": "CH4__CWR_HEADER_TAP",
+      "start": [
+        890,
+        581
+      ],
+      "end": [
+        650,
+        596
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          890,
+          581
+        ],
+        [
+          870,
+          596
+        ],
+        [
+          650,
+          596
+        ]
+      ]
+    },
+    {
+      "id": "CH4__CHW_OUT_TO_CHWP4__SUCTION",
+      "startAnchor": "CH4__PORT_CHW_OUT",
+      "endAnchor": "CHWP4__PORT_SUCTION_IN",
+      "start": [
+        1110,
+        544
+      ],
+      "end": [
+        1140,
+        553
+      ],
+      "circuit": "chilled-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1110,
+          544
+        ],
+        [
+          1125,
+          553
+        ],
+        [
+          1140,
+          553
+        ]
+      ]
+    },
+    {
+      "id": "CHWP4__DISCHARGE_TO_CHWS",
+      "startAnchor": "CHWP4__PORT_DISCHARGE_OUT",
+      "endAnchor": "CHWP4__CHWS_HEADER_TAP",
+      "start": [
+        1310,
+        553
+      ],
+      "end": [
+        1360,
+        553
+      ],
+      "circuit": "chilled-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1310,
+          553
+        ],
+        [
+          1360,
+          553
+        ]
+      ]
+    },
+    {
+      "id": "CH4__CHWR_TO_CHW_IN",
+      "startAnchor": "CH4__CHWR_HEADER_TAP",
+      "endAnchor": "CH4__PORT_CHW_IN",
+      "start": [
+        1405,
+        596
+      ],
+      "end": [
+        1110,
+        581
+      ],
+      "circuit": "chilled-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1405,
+          596
+        ],
+        [
+          1125,
+          596
+        ],
+        [
+          1110,
+          581
+        ]
+      ]
+    },
+    {
+      "id": "CWP5__CWS_TO_SUCTION",
+      "startAnchor": "CWP5__CWS_HEADER_TAP",
+      "endAnchor": "CWP5__PORT_SUCTION_IN",
+      "start": [
+        625,
+        677
+      ],
+      "end": [
+        665,
+        677
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          625,
+          677
+        ],
+        [
+          665,
+          677
+        ]
+      ]
+    },
+    {
+      "id": "CWP5__DISCHARGE_TO_CH5__CW_IN",
+      "startAnchor": "CWP5__PORT_DISCHARGE_OUT",
+      "endAnchor": "CH5__PORT_CW_IN",
+      "start": [
+        835,
+        677
+      ],
+      "end": [
+        890,
+        668
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          835,
+          677
+        ],
+        [
+          865,
+          677
+        ],
+        [
+          890,
+          668
+        ]
+      ]
+    },
+    {
+      "id": "CH5__CW_OUT_TO_CWR",
+      "startAnchor": "CH5__PORT_CW_OUT",
+      "endAnchor": "CH5__CWR_HEADER_TAP",
+      "start": [
+        890,
+        705
+      ],
+      "end": [
+        650,
+        720
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          890,
+          705
+        ],
+        [
+          870,
+          720
+        ],
+        [
+          650,
+          720
+        ]
+      ]
+    },
+    {
+      "id": "CH5__CHW_OUT_TO_CHWP5__SUCTION",
+      "startAnchor": "CH5__PORT_CHW_OUT",
+      "endAnchor": "CHWP5__PORT_SUCTION_IN",
+      "start": [
+        1110,
+        668
+      ],
+      "end": [
+        1140,
+        677
+      ],
+      "circuit": "chilled-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1110,
+          668
+        ],
+        [
+          1125,
+          677
+        ],
+        [
+          1140,
+          677
+        ]
+      ]
+    },
+    {
+      "id": "CHWP5__DISCHARGE_TO_CHWS",
+      "startAnchor": "CHWP5__PORT_DISCHARGE_OUT",
+      "endAnchor": "CHWP5__CHWS_HEADER_TAP",
+      "start": [
+        1310,
+        677
+      ],
+      "end": [
+        1360,
+        677
+      ],
+      "circuit": "chilled-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1310,
+          677
+        ],
+        [
+          1360,
+          677
+        ]
+      ]
+    },
+    {
+      "id": "CH5__CHWR_TO_CHW_IN",
+      "startAnchor": "CH5__CHWR_HEADER_TAP",
+      "endAnchor": "CH5__PORT_CHW_IN",
+      "start": [
+        1405,
+        720
+      ],
+      "end": [
+        1110,
+        705
+      ],
+      "circuit": "chilled-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1405,
+          720
+        ],
+        [
+          1125,
+          720
+        ],
+        [
+          1110,
+          705
+        ]
+      ]
+    },
+    {
+      "id": "CWP6__CWS_TO_SUCTION",
+      "startAnchor": "CWP6__CWS_HEADER_TAP",
+      "endAnchor": "CWP6__PORT_SUCTION_IN",
+      "start": [
+        625,
+        801
+      ],
+      "end": [
+        665,
+        801
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          625,
+          801
+        ],
+        [
+          665,
+          801
+        ]
+      ]
+    },
+    {
+      "id": "CWP6__DISCHARGE_TO_CH6__CW_IN",
+      "startAnchor": "CWP6__PORT_DISCHARGE_OUT",
+      "endAnchor": "CH6__PORT_CW_IN",
+      "start": [
+        835,
+        801
+      ],
+      "end": [
+        890,
+        792
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          835,
+          801
+        ],
+        [
+          865,
+          801
+        ],
+        [
+          890,
+          792
+        ]
+      ]
+    },
+    {
+      "id": "CH6__CW_OUT_TO_CWR",
+      "startAnchor": "CH6__PORT_CW_OUT",
+      "endAnchor": "CH6__CWR_HEADER_TAP",
+      "start": [
+        890,
+        829
+      ],
+      "end": [
+        650,
+        844
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          890,
+          829
+        ],
+        [
+          870,
+          844
+        ],
+        [
+          650,
+          844
+        ]
+      ]
+    },
+    {
+      "id": "CH6__CHW_OUT_TO_CHWP6__SUCTION",
+      "startAnchor": "CH6__PORT_CHW_OUT",
+      "endAnchor": "CHWP6__PORT_SUCTION_IN",
+      "start": [
+        1110,
+        792
+      ],
+      "end": [
+        1140,
+        801
+      ],
+      "circuit": "chilled-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1110,
+          792
+        ],
+        [
+          1125,
+          801
+        ],
+        [
+          1140,
+          801
+        ]
+      ]
+    },
+    {
+      "id": "CHWP6__DISCHARGE_TO_CHWS",
+      "startAnchor": "CHWP6__PORT_DISCHARGE_OUT",
+      "endAnchor": "CHWP6__CHWS_HEADER_TAP",
+      "start": [
+        1310,
+        801
+      ],
+      "end": [
+        1360,
+        801
+      ],
+      "circuit": "chilled-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1310,
+          801
+        ],
+        [
+          1360,
+          801
+        ]
+      ]
+    },
+    {
+      "id": "CH6__CHWR_TO_CHW_IN",
+      "startAnchor": "CH6__CHWR_HEADER_TAP",
+      "endAnchor": "CH6__PORT_CHW_IN",
+      "start": [
+        1405,
+        844
+      ],
+      "end": [
+        1110,
+        829
+      ],
+      "circuit": "chilled-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1405,
+          844
+        ],
+        [
+          1125,
+          844
+        ],
+        [
+          1110,
+          829
+        ]
+      ]
+    },
+    {
+      "id": "CWP7__CWS_TO_SUCTION",
+      "startAnchor": "CWP7__CWS_HEADER_TAP",
+      "endAnchor": "CWP7__PORT_SUCTION_IN",
+      "start": [
+        625,
+        925
+      ],
+      "end": [
+        665,
+        925
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          625,
+          925
+        ],
+        [
+          665,
+          925
+        ]
+      ]
+    },
+    {
+      "id": "CWP7__DISCHARGE_TO_CH7__CW_IN",
+      "startAnchor": "CWP7__PORT_DISCHARGE_OUT",
+      "endAnchor": "CH7__PORT_CW_IN",
+      "start": [
+        835,
+        925
+      ],
+      "end": [
+        890,
+        916
+      ],
+      "circuit": "cooling-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          835,
+          925
+        ],
+        [
+          865,
+          925
+        ],
+        [
+          890,
+          916
+        ]
+      ]
+    },
+    {
+      "id": "CH7__CW_OUT_TO_CWR",
+      "startAnchor": "CH7__PORT_CW_OUT",
+      "endAnchor": "CH7__CWR_HEADER_TAP",
+      "start": [
+        890,
+        953
+      ],
+      "end": [
+        650,
+        968
+      ],
+      "circuit": "cooling-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          890,
+          953
+        ],
+        [
+          870,
+          968
+        ],
+        [
+          650,
+          968
+        ]
+      ]
+    },
+    {
+      "id": "CH7__CHW_OUT_TO_CHWP7__SUCTION",
+      "startAnchor": "CH7__PORT_CHW_OUT",
+      "endAnchor": "CHWP7__PORT_SUCTION_IN",
+      "start": [
+        1110,
+        916
+      ],
+      "end": [
+        1140,
+        925
+      ],
+      "circuit": "chilled-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1110,
+          916
+        ],
+        [
+          1125,
+          925
+        ],
+        [
+          1140,
+          925
+        ]
+      ]
+    },
+    {
+      "id": "CHWP7__DISCHARGE_TO_CHWS",
+      "startAnchor": "CHWP7__PORT_DISCHARGE_OUT",
+      "endAnchor": "CHWP7__CHWS_HEADER_TAP",
+      "start": [
+        1310,
+        925
+      ],
+      "end": [
+        1360,
+        925
+      ],
+      "circuit": "chilled-supply",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1310,
+          925
+        ],
+        [
+          1360,
+          925
+        ]
+      ]
+    },
+    {
+      "id": "CH7__CHWR_TO_CHW_IN",
+      "startAnchor": "CH7__CHWR_HEADER_TAP",
+      "endAnchor": "CH7__PORT_CHW_IN",
+      "start": [
+        1405,
+        968
+      ],
+      "end": [
+        1110,
+        953
+      ],
+      "circuit": "chilled-return",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1405,
+          968
+        ],
+        [
+          1125,
+          968
+        ],
+        [
+          1110,
+          953
+        ]
+      ]
+    },
+    {
+      "id": "CHWS_TO_DISTRIBUTOR_MAIN",
+      "startAnchor": "CHWS_HEADER_TOP",
+      "endAnchor": "DISTRIBUTOR__PORT_DISTRIBUTOR_MAIN_IN",
+      "start": [
+        1360,
+        125
+      ],
+      "end": [
+        1471,
+        155
+      ],
+      "circuit": "chilled-supply-main",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1360,
+          125
+        ],
+        [
+          1360,
+          112
+        ],
+        [
+          1471,
+          112
+        ],
+        [
+          1471,
+          155
+        ]
+      ]
+    },
+    {
+      "id": "COLLECTOR_MAIN_TO_CHWR",
+      "startAnchor": "COLLECTOR__PORT_COLLECTOR_MAIN_OUT",
+      "endAnchor": "CHWR_HEADER_BOTTOM",
+      "start": [
+        1471,
+        1005
+      ],
+      "end": [
+        1405,
+        970
+      ],
+      "circuit": "chilled-return-main",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1471,
+          1005
+        ],
+        [
+          1471,
+          1010
+        ],
+        [
+          1405,
+          1010
+        ],
+        [
+          1405,
+          970
+        ]
+      ]
+    },
+    {
+      "id": "DISTRIBUTOR_01_TO_LOAD-01",
+      "startAnchor": "DISTRIBUTOR__PORT_DISTRIBUTOR_BRANCH_01",
+      "endAnchor": "LOAD-01__SUPPLY_IN",
+      "start": [
+        1500,
+        195
+      ],
+      "end": [
+        1580,
+        206
+      ],
+      "circuit": "chilled-supply-load",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1500,
+          195
+        ],
+        [
+          1560,
+          195
+        ],
+        [
+          1560,
+          206
+        ],
+        [
+          1580,
+          206
+        ]
+      ]
+    },
+    {
+      "id": "LOAD-01_TO_COLLECTOR_01",
+      "startAnchor": "LOAD-01__RETURN_OUT",
+      "endAnchor": "COLLECTOR__PORT_COLLECTOR_BRANCH_01",
+      "start": [
+        1730,
+        234
+      ],
+      "end": [
+        1500,
+        870
+      ],
+      "circuit": "chilled-return-load",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1730,
+          234
+        ],
+        [
+          1760,
+          234
+        ],
+        [
+          1760,
+          870
+        ],
+        [
+          1500,
+          870
+        ]
+      ]
+    },
+    {
+      "id": "DISTRIBUTOR_02_TO_LOAD-02",
+      "startAnchor": "DISTRIBUTOR__PORT_DISTRIBUTOR_BRANCH_02",
+      "endAnchor": "LOAD-02__SUPPLY_IN",
+      "start": [
+        1500,
+        245
+      ],
+      "end": [
+        1580,
+        386
+      ],
+      "circuit": "chilled-supply-load",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1500,
+          245
+        ],
+        [
+          1545,
+          245
+        ],
+        [
+          1545,
+          386
+        ],
+        [
+          1580,
+          386
+        ]
+      ]
+    },
+    {
+      "id": "LOAD-02_TO_COLLECTOR_02",
+      "startAnchor": "LOAD-02__RETURN_OUT",
+      "endAnchor": "COLLECTOR__PORT_COLLECTOR_BRANCH_02",
+      "start": [
+        1730,
+        414
+      ],
+      "end": [
+        1500,
+        910
+      ],
+      "circuit": "chilled-return-load",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1730,
+          414
+        ],
+        [
+          1800,
+          414
+        ],
+        [
+          1800,
+          910
+        ],
+        [
+          1500,
+          910
+        ]
+      ]
+    },
+    {
+      "id": "DISTRIBUTOR_03_TO_LOAD-03",
+      "startAnchor": "DISTRIBUTOR__PORT_DISTRIBUTOR_BRANCH_03",
+      "endAnchor": "LOAD-03__SUPPLY_IN",
+      "start": [
+        1500,
+        295
+      ],
+      "end": [
+        1580,
+        566
+      ],
+      "circuit": "chilled-supply-load",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1500,
+          295
+        ],
+        [
+          1530,
+          295
+        ],
+        [
+          1530,
+          566
+        ],
+        [
+          1580,
+          566
+        ]
+      ]
+    },
+    {
+      "id": "LOAD-03_TO_COLLECTOR_03",
+      "startAnchor": "LOAD-03__RETURN_OUT",
+      "endAnchor": "COLLECTOR__PORT_COLLECTOR_BRANCH_03",
+      "start": [
+        1730,
+        594
+      ],
+      "end": [
+        1500,
+        950
+      ],
+      "circuit": "chilled-return-load",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1730,
+          594
+        ],
+        [
+          1840,
+          594
+        ],
+        [
+          1840,
+          950
+        ],
+        [
+          1500,
+          950
+        ]
+      ]
+    },
+    {
+      "id": "DISTRIBUTOR_04_TO_LOAD-04",
+      "startAnchor": "DISTRIBUTOR__PORT_DISTRIBUTOR_BRANCH_04",
+      "endAnchor": "LOAD-04__SUPPLY_IN",
+      "start": [
+        1500,
+        345
+      ],
+      "end": [
+        1580,
+        746
+      ],
+      "circuit": "chilled-supply-load",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1500,
+          345
+        ],
+        [
+          1515,
+          345
+        ],
+        [
+          1515,
+          746
+        ],
+        [
+          1580,
+          746
+        ]
+      ]
+    },
+    {
+      "id": "LOAD-04_TO_COLLECTOR_04",
+      "startAnchor": "LOAD-04__RETURN_OUT",
+      "endAnchor": "COLLECTOR__PORT_COLLECTOR_BRANCH_04",
+      "start": [
+        1730,
+        774
+      ],
+      "end": [
+        1500,
+        990
+      ],
+      "circuit": "chilled-return-load",
+      "evidenceState": "UNBOUND",
+      "direction": "start-to-end",
+      "path": [
+        [
+          1730,
+          774
+        ],
+        [
+          1880,
+          774
+        ],
+        [
+          1880,
+          990
+        ],
+        [
+          1500,
+          990
+        ]
+      ]
+    }
+  ],
+  "declaredCrossovers": [
+    {
+      "id": "CWP1__CWS_OVER_CWR",
+      "x": 650,
+      "y": 181,
+      "overEdgeId": "CWP1__CWS_TO_SUCTION",
+      "underEdgeId": "CWR_HEADER",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "CH1__CHWR_OVER_CHWS",
+      "x": 1360,
+      "y": 224,
+      "overEdgeId": "CH1__CHWR_TO_CHW_IN",
+      "underEdgeId": "CHWS_HEADER",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "CWP2__CWS_OVER_CWR",
+      "x": 650,
+      "y": 305,
+      "overEdgeId": "CWP2__CWS_TO_SUCTION",
+      "underEdgeId": "CWR_HEADER",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "CH2__CHWR_OVER_CHWS",
+      "x": 1360,
+      "y": 348,
+      "overEdgeId": "CH2__CHWR_TO_CHW_IN",
+      "underEdgeId": "CHWS_HEADER",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "CWP3__CWS_OVER_CWR",
+      "x": 650,
+      "y": 429,
+      "overEdgeId": "CWP3__CWS_TO_SUCTION",
+      "underEdgeId": "CWR_HEADER",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "CH3__CHWR_OVER_CHWS",
+      "x": 1360,
+      "y": 472,
+      "overEdgeId": "CH3__CHWR_TO_CHW_IN",
+      "underEdgeId": "CHWS_HEADER",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "CWP4__CWS_OVER_CWR",
+      "x": 650,
+      "y": 553,
+      "overEdgeId": "CWP4__CWS_TO_SUCTION",
+      "underEdgeId": "CWR_HEADER",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "CH4__CHWR_OVER_CHWS",
+      "x": 1360,
+      "y": 596,
+      "overEdgeId": "CH4__CHWR_TO_CHW_IN",
+      "underEdgeId": "CHWS_HEADER",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "CWP5__CWS_OVER_CWR",
+      "x": 650,
+      "y": 677,
+      "overEdgeId": "CWP5__CWS_TO_SUCTION",
+      "underEdgeId": "CWR_HEADER",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "CH5__CHWR_OVER_CHWS",
+      "x": 1360,
+      "y": 720,
+      "overEdgeId": "CH5__CHWR_TO_CHW_IN",
+      "underEdgeId": "CHWS_HEADER",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "CWP6__CWS_OVER_CWR",
+      "x": 650,
+      "y": 801,
+      "overEdgeId": "CWP6__CWS_TO_SUCTION",
+      "underEdgeId": "CWR_HEADER",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "CH6__CHWR_OVER_CHWS",
+      "x": 1360,
+      "y": 844,
+      "overEdgeId": "CH6__CHWR_TO_CHW_IN",
+      "underEdgeId": "CHWS_HEADER",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "CWP7__CWS_OVER_CWR",
+      "x": 650,
+      "y": 925,
+      "overEdgeId": "CWP7__CWS_TO_SUCTION",
+      "underEdgeId": "CWR_HEADER",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "CH7__CHWR_OVER_CHWS",
+      "x": 1360,
+      "y": 968,
+      "overEdgeId": "CH7__CHWR_TO_CHW_IN",
+      "underEdgeId": "CHWS_HEADER",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "LOAD-02__RETURN_OVER_LOAD_01",
+      "x": 1760,
+      "y": 414,
+      "overEdgeId": "LOAD-02_TO_COLLECTOR_02",
+      "underEdgeId": "LOAD-01_TO_COLLECTOR_01",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "LOAD-03__RETURN_OVER_LOAD_01",
+      "x": 1760,
+      "y": 594,
+      "overEdgeId": "LOAD-03_TO_COLLECTOR_03",
+      "underEdgeId": "LOAD-01_TO_COLLECTOR_01",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "LOAD-03__RETURN_OVER_LOAD_02",
+      "x": 1800,
+      "y": 594,
+      "overEdgeId": "LOAD-03_TO_COLLECTOR_03",
+      "underEdgeId": "LOAD-02_TO_COLLECTOR_02",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "LOAD-04__RETURN_OVER_LOAD_01",
+      "x": 1760,
+      "y": 774,
+      "overEdgeId": "LOAD-04_TO_COLLECTOR_04",
+      "underEdgeId": "LOAD-01_TO_COLLECTOR_01",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "LOAD-04__RETURN_OVER_LOAD_02",
+      "x": 1800,
+      "y": 774,
+      "overEdgeId": "LOAD-04_TO_COLLECTOR_04",
+      "underEdgeId": "LOAD-02_TO_COLLECTOR_02",
+      "type": "non-connecting-bridge"
+    },
+    {
+      "id": "LOAD-04__RETURN_OVER_LOAD_03",
+      "x": 1840,
+      "y": 774,
+      "overEdgeId": "LOAD-04_TO_COLLECTOR_04",
+      "underEdgeId": "LOAD-03_TO_COLLECTOR_03",
+      "type": "non-connecting-bridge"
+    }
+  ]
+}

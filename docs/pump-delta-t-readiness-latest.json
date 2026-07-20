@@ -1,0 +1,237 @@
+{
+  "generatedAt": "2026-06-16T05:25:05.526Z",
+  "siteId": "140",
+  "bffBaseUrl": "http://127.0.0.1:8787",
+  "dbFile": "/Users/billchow/Documents/智慧冷冻站/apps/chiller-bff/.local/admin.sqlite",
+  "finalDecision": "GO_SHADOW_ONLY",
+  "shadowReadinessStatus": "GO",
+  "assistedReadinessStatus": "BLOCKED",
+  "dispatchMode": "shadow",
+  "rawDispatchMode": "shadow",
+  "requestInputs": {
+    "loadKw": 1422,
+    "outdoorTempC": 22.9,
+    "mode": "cooling"
+  },
+  "advisor": {
+    "requestOk": true,
+    "httpStatus": 200,
+    "status": "ready",
+    "executionReady": true,
+    "dispatchReady": true,
+    "executionMode": "shadow",
+    "dispatchMode": "shadow",
+    "reason": "低温差条件成立，已生成运行泵频率小步长降频建议。",
+    "outputTargets": {
+      "chilledPumpFreqTrimHz": -1,
+      "coolingPumpFreqTrimHz": 0,
+      "rollbackTrimHz": 0,
+      "trimRangeHz": {
+        "min": -5,
+        "max": 3
+      },
+      "maxStepHz": 1,
+      "ttlSeconds": 300,
+      "holdMinutes": 5,
+      "rollbackLockoutMinutes": 15
+    },
+    "current": {
+      "chilledDeltaT": 4.4,
+      "coolingDeltaT": 4.7,
+      "chilledPumpPowerKw": 148.2,
+      "coolingPumpPowerKw": 102.4,
+      "chillerPowerKw": 1630.2,
+      "totalPowerKw": 1940.3,
+      "systemCop": 6.6,
+      "chilledSupplyTemp": null,
+      "coolingReturnTemp": null,
+      "outdoorWetBulbC": 22.9,
+      "currentApproachC": null
+    },
+    "blockers": [],
+    "warnings": [
+      "当前草案仍存在部分降级或缺测信号，建议先稳住风险后再评审优化空间。",
+      "当前 BFF 未接入末端阀位、关键压差或室温；shadow 可评审，assisted 前必须由 PLC 提供等效保护状态。",
+      "当前 BFF 未接入泵实际频率；执行前必须由 PLC 完成频率上下限、斜率和最小流量保护。",
+      "assisted 前必须确认 PLC 本地限幅、斜率、最小流量和联锁保护。"
+    ],
+    "execution": {
+      "approvalRequired": true,
+      "allowedToCreateExecution": true,
+      "allowedToDispatch": true,
+      "dispatchMode": "shadow",
+      "controlPointMapped": true,
+      "rollbackMapped": true,
+      "terminalSafetyReady": false,
+      "plcProtectionReady": false,
+      "pumpFrequencyFeedbackReady": false,
+      "assistedDispatchReady": false,
+      "targetPoints": [
+        "B25_AI_ChwpFreqTrim_Hz",
+        "B25_AI_CwpFreqTrim_Hz"
+      ],
+      "enforcedAllowed": false
+    }
+  },
+  "executions": {
+    "total": 7,
+    "latest": {
+      "executionId": "opx-140-1781587399499-51v72r",
+      "status": "pending_approval",
+      "createdAt": "2026-06-16T05:23:19.499Z",
+      "updatedAt": "2026-06-16T05:23:19.499Z",
+      "approvedAt": null,
+      "approvedBy": null,
+      "type": "pump-delta-t",
+      "targetChwpFreqTrimHz": -1,
+      "targetCwpFreqTrimHz": 0,
+      "ttlSeconds": 900,
+      "holdMinutes": 5,
+      "rollbackLockoutMinutes": 15,
+      "targetPoints": {
+        "chilledPump": "B25_AI_ChwpFreqTrim_Hz",
+        "coolingPump": "B25_AI_CwpFreqTrim_Hz"
+      },
+      "rollbackTarget": {
+        "mode": "zero-trim",
+        "targetTcwsC": null,
+        "targetApproachC": null,
+        "reason": "取消 shadow 建议时回退到 0Hz 修正量。",
+        "targetChwpFreqTrimHz": 0,
+        "targetCwpFreqTrimHz": 0
+      },
+      "actions": [
+        "只生成 shadow 待审单，不写 PLC",
+        "冷冻泵频率建议 -1Hz，冷却泵保持 0Hz",
+        "人工复核末端压差、旁通阀和最不利末端后再审批"
+      ],
+      "timeline": [
+        "created"
+      ]
+    },
+    "items": [
+      {
+        "executionId": "opx-140-1781587399499-51v72r",
+        "status": "pending_approval",
+        "updatedAt": "2026-06-16T05:23:19.499Z",
+        "targetChwpFreqTrimHz": -1,
+        "targetCwpFreqTrimHz": 0
+      },
+      {
+        "executionId": "opx-140-1781576075710-ny5tog",
+        "status": "approved",
+        "updatedAt": "2026-06-16T02:14:37.638Z",
+        "targetChwpFreqTrimHz": -1,
+        "targetCwpFreqTrimHz": 0
+      },
+      {
+        "executionId": "opx-140-1781576074690-b2l38j",
+        "status": "pending_approval",
+        "updatedAt": "2026-06-16T02:14:34.690Z",
+        "targetChwpFreqTrimHz": -1,
+        "targetCwpFreqTrimHz": 0
+      },
+      {
+        "executionId": "opx-140-1781411291186-79ujq9",
+        "status": "approved",
+        "updatedAt": "2026-06-15T03:25:26.028Z",
+        "targetChwpFreqTrimHz": -1,
+        "targetCwpFreqTrimHz": 0
+      },
+      {
+        "executionId": "opx-140-1781414920788-6uk0tm",
+        "status": "approved",
+        "updatedAt": "2026-06-14T05:28:42.900Z",
+        "targetChwpFreqTrimHz": -1,
+        "targetCwpFreqTrimHz": 0
+      }
+    ]
+  },
+  "mapping": {
+    "approve": {
+      "operation": "approve",
+      "status": "ready",
+      "endpoint": null,
+      "strategy": "json-command",
+      "commandTemplate": "{B25_AI_ChwpFreqTrim_Hz}|{B25_AI_CwpFreqTrim_Hz}",
+      "commandCount": 2,
+      "hasChwpPoint": true,
+      "hasCwpPoint": true,
+      "commands": [
+        {
+          "tagName": null,
+          "chwpTagName": "B25_AI_ChwpFreqTrim_Hz",
+          "cwpTagName": null,
+          "chilledPumpTrimPoint": null,
+          "coolingPumpTrimPoint": null,
+          "valueSource": "targetChwpFreqTrimHz",
+          "valueTransform": "round1"
+        },
+        {
+          "tagName": null,
+          "chwpTagName": null,
+          "cwpTagName": "B25_AI_CwpFreqTrim_Hz",
+          "chilledPumpTrimPoint": null,
+          "coolingPumpTrimPoint": null,
+          "valueSource": "targetCwpFreqTrimHz",
+          "valueTransform": "round1"
+        }
+      ],
+      "blockers": [],
+      "warnings": []
+    },
+    "rollback": {
+      "operation": "rollback",
+      "status": "ready",
+      "endpoint": null,
+      "strategy": "json-command",
+      "commandTemplate": "{B25_AI_ChwpFreqTrim_Hz}|{B25_AI_CwpFreqTrim_Hz}",
+      "commandCount": 2,
+      "hasChwpPoint": true,
+      "hasCwpPoint": true,
+      "commands": [
+        {
+          "tagName": null,
+          "chwpTagName": "B25_AI_ChwpFreqTrim_Hz",
+          "cwpTagName": null,
+          "chilledPumpTrimPoint": null,
+          "coolingPumpTrimPoint": null,
+          "valueSource": "rollbackTarget.targetChwpFreqTrimHz",
+          "valueTransform": "round1"
+        },
+        {
+          "tagName": null,
+          "chwpTagName": null,
+          "cwpTagName": "B25_AI_CwpFreqTrim_Hz",
+          "chilledPumpTrimPoint": null,
+          "coolingPumpTrimPoint": null,
+          "valueSource": "rollbackTarget.targetCwpFreqTrimHz",
+          "valueTransform": "round1"
+        }
+      ],
+      "blockers": [],
+      "warnings": []
+    }
+  },
+  "runtimePumpConfigPresent": false,
+  "runtimeFeatureFlags": {
+    "pumpDeltaTDispatchMode": null,
+    "pumpDeltaTDispatchEndpoint": null,
+    "pumpDeltaTDispatchApproveEndpoint": null,
+    "pumpDeltaTDispatchRollbackEndpoint": null
+  },
+  "blockers": [
+    "assisted 前缺 approve/rollback 点位映射或 dispatchMode 未配置为 assisted。"
+  ],
+  "warnings": [
+    "当前草案仍存在部分降级或缺测信号，建议先稳住风险后再评审优化空间。",
+    "当前 BFF 未接入末端阀位、关键压差或室温；shadow 可评审，assisted 前必须由 PLC 提供等效保护状态。",
+    "当前 BFF 未接入泵实际频率；执行前必须由 PLC 完成频率上下限、斜率和最小流量保护。",
+    "assisted 前必须确认 PLC 本地限幅、斜率、最小流量和联锁保护。"
+  ],
+  "nextActions": [
+    "补 AI_ChwpFreqTrim_Hz / AI_CwpFreqTrim_Hz 到 PLC/SCADA 的 approve 点位映射。",
+    "补 rollback 到 0Hz 或最近稳定值的回退映射。",
+    "由 PLC 或 BFF 接入末端压差/阀位/室温、泵实际频率和最小流量保护状态，再评估 assisted。"
+  ]
+}

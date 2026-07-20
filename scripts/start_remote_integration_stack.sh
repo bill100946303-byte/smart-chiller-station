@@ -24,7 +24,7 @@ export LEGACY_BASE_URL="${LEGACY_BASE_URL:-https://www.ssge.com.cn:8098}"
 export BFF_PORT="${BFF_PORT:-${DEFAULT_BFF_PORT}}"
 export FRONTEND_PORT="${FRONTEND_PORT:-${DEFAULT_FRONTEND_PORT}}"
 export BFF_APP_BASE_URL="${BFF_APP_BASE_URL:-http://127.0.0.1:${BFF_PORT}}"
-export BFF_LAUNCH_LABEL="${BFF_LAUNCH_LABEL:-com.billchow.chiller.bff.remote.integration}"
+export BFF_LAUNCH_LABEL="${BFF_LAUNCH_LABEL:-com.billchow.chiller.bff.remote-integration.${BFF_PORT}}"
 export SHELL_LAUNCH_LABEL_PREFIX="${SHELL_LAUNCH_LABEL_PREFIX:-com.billchow.chiller.shell.remote.integration}"
 export FRONTEND_FALLBACK_PORTS="${FRONTEND_FALLBACK_PORTS:-3004 3005 3006 3007}"
 
