@@ -1,7 +1,7 @@
 {
   "version": "v1",
   "purpose": "approved digital-twin equipment models",
-  "status": "latest_chiller_pump_cooling_tower_plc_cabinet_solenoid_valve_pressure_gauge_temperature_gauge_supply_return_manifold_cooling_water_automatic_dosing_skid_pressurization_water_makeup_skid_plant_overview_latest_v2",
+  "status": "latest_chiller_pump_cooling_tower_plc_cabinet_solenoid_valve_pressure_gauge_temperature_gauge_supply_return_manifold_cooling_water_automatic_dosing_skid_pressurization_water_makeup_skid_differential_pressure_transmitter_plant_overview_latest_v2",
   "items": [
     {
       "id": "chiller-main",
@@ -102,6 +102,16 @@
       "sourceUrl": "",
       "license": "内部通用模型",
       "notes": "无品牌标识；立式隔膜定压罐、双立式多级补水泵（一用一备）、PLC/HMI、压力表、压力变送器和低水位保护，含4个工艺口、2个电缆口、36个只读运行绑定节点及2条泵轴动画轨道；独立资产，尚未接入当前B25总览"
+    },
+    {
+      "id": "differential-pressure-transmitter",
+      "category": "differential-pressure-transmitter",
+      "targetPath": "/models/differential-pressure-transmitter/differential-pressure-transmitter-wet-wet-generic-v1.glb",
+      "displayName": "湿式压差变送器",
+      "sourceLabel": "Blender生成",
+      "sourceUrl": "",
+      "license": "内部通用模型",
+      "notes": "无品牌标识；通用湿-湿压差变送器，含H/L双过程口、1个M20电缆口、本地显示屏、不锈钢安装支架及16个只读运行绑定节点；无内嵌机械动画；独立资产，尚未接入当前B25总览"
     },
     {
       "id": "plant-overview-latest-v2",

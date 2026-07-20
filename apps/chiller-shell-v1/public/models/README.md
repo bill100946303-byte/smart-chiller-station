@@ -14,9 +14,10 @@
 - `supply-return-manifold/`
 - `cooling-water-dosing-skid/`
 - `pressurization-water-makeup-skid/`
+- `differential-pressure-transmitter/`
 - `plant-overview/`
 
-仓库保留十一个经回导验证的最终模型条目：
+仓库保留十二个经回导验证的最终模型条目，对应十二个权威源 Blend：
 
 - `chiller/chiller-centrifugal-generic-v1.glb`
 - `cooling-tower/cooling-tower-crossflow-generic-v1.glb`
@@ -28,12 +29,15 @@
 - `supply-return-manifold/supply-return-manifold-four-branch-generic-v1.glb`
 - `cooling-water-dosing-skid/cooling-water-automatic-dosing-skid-generic-v1.glb`
 - `pressurization-water-makeup-skid/pressurization-water-makeup-skid-generic-v1.glb`
+- `differential-pressure-transmitter/differential-pressure-transmitter-wet-wet-generic-v1.glb`
 - `plant-overview/chilled-water-plant-overview-latest-v2.glb`
 
 机房总览另提供两个同源轻量化层级，不属于旧模型或状态副本：
 
 - `plant-overview/lod/chilled-water-plant-overview-latest-v2-lod1.glb`：中景，建议 25–60m
 - `plant-overview/lod/chilled-water-plant-overview-latest-v2-lod2.glb`：远景，建议 60m 以外
+
+因此 Public 模型目录共有十四个 GLB：十二个清单主目标，加上总览的 LOD1 和 LOD2。
 
 模型路径以 `model-manifest-v1.json` 为唯一清单，不再保留旧版、状态副本或原始商用模型包。
 

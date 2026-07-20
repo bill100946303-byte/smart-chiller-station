@@ -100,6 +100,7 @@ SOURCE_BLEND_PATHS = (
     "apps/chiller-shell-v1/public/models/supply-return-manifold/source/blender/supply-return-manifold-four-branch-generic-v1.blend",
     "apps/chiller-shell-v1/public/models/cooling-water-dosing-skid/source/blender/cooling-water-automatic-dosing-skid-generic-v1.blend",
     "apps/chiller-shell-v1/public/models/pressurization-water-makeup-skid/source/blender/pressurization-water-makeup-skid-generic-v1.blend",
+    "apps/chiller-shell-v1/public/models/differential-pressure-transmitter/source/blender/differential-pressure-transmitter-wet-wet-generic-v1.blend",
 )
 SCRIPT_PATHS = {
     "generate": "output/blender/generate_chilled_water_plant_overview_latest_v2.py",
@@ -114,6 +115,9 @@ SCRIPT_PATHS = {
     "validate_dosing_skid": "output/blender/validate_cooling_water_automatic_dosing_skid_generic_v1.py",
     "generate_water_makeup_skid": "output/blender/generate_pressurization_water_makeup_skid_generic_v1.py",
     "validate_water_makeup_skid": "output/blender/validate_pressurization_water_makeup_skid_generic_v1.py",
+    "generate_dp_transmitter": "output/blender/generate_differential_pressure_transmitter_generic_v1.py",
+    "validate_dp_transmitter": "output/blender/validate_differential_pressure_transmitter_generic_v1.py",
+    "render_dp_transmitter": "output/blender/render_differential_pressure_transmitter_inspection_views.py",
 }
 OVERVIEW_BLEND = (
     "apps/chiller-shell-v1/public/models/plant-overview/source/blender/"
@@ -136,6 +140,12 @@ REPORT_PATHS = {
     "dosing_skid_reimport": "output/blender/cooling-water-automatic-dosing-skid-generic-v1-reimport-report.json",
     "water_makeup_generation": "output/blender/pressurization-water-makeup-skid-generic-v1-report.json",
     "water_makeup_reimport": "output/blender/pressurization-water-makeup-skid-generic-v1-reimport-report.json",
+    "dp_transmitter_generation": "output/blender/differential-pressure-transmitter-wet-wet-generic-v1-report.json",
+    "dp_transmitter_reimport": "output/blender/differential-pressure-transmitter-wet-wet-generic-v1-reimport-report.json",
+    "dp_transmitter_inspection": (
+        "output/blender/differential-pressure-transmitter-wet-wet-generic-v1-inspection/"
+        "inspection-render-report.json"
+    ),
 }
 STAGE_REPORT_LABELS = {
     "generate_overview": "source_generation",
@@ -151,6 +161,9 @@ STAGE_REPORT_LABELS = {
     "validate_dosing_skid": "dosing_skid_reimport",
     "generate_water_makeup_skid": "water_makeup_generation",
     "validate_water_makeup_skid": "water_makeup_reimport",
+    "generate_dp_transmitter": "dp_transmitter_generation",
+    "validate_dp_transmitter": "dp_transmitter_reimport",
+    "render_dp_transmitter": "dp_transmitter_inspection",
 }
 GIF_PATH = "output/blender/chilled-water-plant-overview-latest-v2-orbit.gif"
 B25_BINDING_PATH = (
@@ -287,6 +300,30 @@ def stage_commands(
             "--python",
             str(workspace / SCRIPT_PATHS["validate_water_makeup_skid"]),
         ],
+        "generate_dp_transmitter": [
+            blender,
+            "--background",
+            "--python",
+            str(workspace / SCRIPT_PATHS["generate_dp_transmitter"]),
+        ],
+        "validate_dp_transmitter": [
+            blender,
+            "--background",
+            "--python",
+            str(workspace / SCRIPT_PATHS["validate_dp_transmitter"]),
+        ],
+        "render_dp_transmitter": [
+            blender,
+            str(
+                workspace
+                / "apps/chiller-shell-v1/public/models/"
+                "differential-pressure-transmitter/source/blender/"
+                "differential-pressure-transmitter-wet-wet-generic-v1.blend"
+            ),
+            "--background",
+            "--python",
+            str(workspace / SCRIPT_PATHS["render_dp_transmitter"]),
+        ],
         "generate_overview": [
             blender,
             "--background",
@@ -371,6 +408,9 @@ def stage_commands(
             "validate_dosing_skid",
             "generate_water_makeup_skid",
             "validate_water_makeup_skid",
+            "generate_dp_transmitter",
+            "validate_dp_transmitter",
+            "render_dp_transmitter",
             "generate_overview",
             "validate_glb_reimport",
             "generate_lod1",
@@ -386,12 +426,14 @@ def stage_commands(
         order = (
             "validate_dosing_skid",
             "validate_water_makeup_skid",
+            "validate_dp_transmitter",
             "validate_glb_reimport",
             "validate_2d",
             "final_audit",
         )
     else:
         order = (
+            "render_dp_transmitter",
             "render_orbit",
             "assemble_gif",
             "render_2d_components",
@@ -793,6 +835,83 @@ def verify_water_makeup_skid_report(
     }
 
 
+def verify_dp_transmitter_report(
+    report: dict[str, Any], label: str
+) -> dict[str, Any]:
+    expected_counts = {
+        "differential_pressure_transmitters": 1,
+        "sensor_capsules": 1,
+        "electronics_housings": 1,
+        "local_displays": 1,
+        "mounting_brackets": 1,
+        "mounting_slot_through_holes": 4,
+        "female_process_connection_recesses": 2,
+        "fixed_blind_plugs": 1,
+        "fluid_ports": 2,
+        "high_pressure_ports": 1,
+        "low_pressure_ports": 1,
+        "cable_ports": 1,
+        "port_surface_checks": 3,
+        "port_axis_checks": 3,
+        "embedded_animation_effects": 0,
+        "embedded_animation_tracks": 0,
+        "prohibited_external_components": 0,
+    }
+    actual_counts = {key: int(report.get(key, -1)) for key in expected_counts}
+    dimensions = [float(value) for value in report.get("dimensions_m", [])]
+    if (
+        report.get("status") != "PASS"
+        or actual_counts != expected_counts
+        or int(report.get("runtime_bindings", -1)) != 16
+        or float(report.get("port_surface_max_gap_m", 999.0)) > 0.005
+        or float(report.get("port_axis_max_angle_deg", 999.0)) > 2.0
+        or abs(float(report.get("hl_center_spacing_m", -1.0)) - 0.054) > 0.0005
+        or float(report.get("hl_center_spacing_error_m", 999.0)) > 0.0005
+        or float(report.get("hl_same_elevation_max_error_m", 999.0)) > 0.0005
+        or report.get("embedded_animation_effect_counts") != {}
+        or report.get("runtime_evidence_default") != "UNBOUND"
+        or report.get("brand_marks") != "none"
+        or report.get("plant_overview_integration")
+        != "standalone_asset_not_installed_in_current_overview"
+        or report.get("control_boundary")
+        != "read_only_digital_twin_no_BA_or_PLC_write"
+        or not 30_000 <= int(report.get("triangles_evaluated", -1)) <= 80_000
+        or not 0 < int(report.get("glb_bytes", -1)) <= 3 * 1024 * 1024
+        or len(dimensions) != 3
+        or not 0.24 <= dimensions[0] <= 0.30
+        or not 0.14 <= dimensions[1] <= 0.18
+        or not 0.27 <= dimensions[2] <= 0.33
+        or len(str(report.get("glb_sha256", ""))) != 64
+        or len(str(report.get("blend_sha256", ""))) != 64
+    ):
+        raise RuntimeError(
+            f"{label} differential-pressure transmitter contract failed: "
+            f"counts={actual_counts}, report={report}"
+        )
+    return {
+        "status": "PASS",
+        "asset": report["asset"],
+        "dimensions_m": report["dimensions_m"],
+        "triangles": int(report["triangles_evaluated"]),
+        "glb_bytes": int(report["glb_bytes"]),
+        "glb_sha256": report["glb_sha256"],
+        "blend_sha256": report["blend_sha256"],
+        "runtime_bindings": int(report["runtime_bindings"]),
+        "counts": actual_counts,
+        "port_surface_max_gap_m": float(report["port_surface_max_gap_m"]),
+        "port_axis_max_angle_deg": float(report["port_axis_max_angle_deg"]),
+        "hl_center_spacing_m": float(report["hl_center_spacing_m"]),
+        "hl_center_spacing_error_m": float(report["hl_center_spacing_error_m"]),
+        "hl_same_elevation_max_error_m": float(
+            report["hl_same_elevation_max_error_m"]
+        ),
+        "animation_effect_counts": report["embedded_animation_effect_counts"],
+        "plant_overview_integration": report["plant_overview_integration"],
+        "control_boundary": report["control_boundary"],
+        "brand_marks": report["brand_marks"],
+    }
+
+
 def verify_truth(
     workspace: Path, mode: str, ffprobe: str, run_started_epoch: float
 ) -> dict[str, Any]:
@@ -804,18 +923,24 @@ def verify_truth(
             "component_2d_render", "png_2d_provenance", "plant_2d_validation",
             "dosing_skid_generation", "dosing_skid_reimport",
             "water_makeup_generation", "water_makeup_reimport", "final_audit",
+            "dp_transmitter_generation", "dp_transmitter_reimport",
+            "dp_transmitter_inspection",
         ),
         "render-only": (
-            "orbit_render", "component_2d_render", "png_2d_provenance", "plant_2d_validation",
+            "orbit_render", "component_2d_render", "png_2d_provenance",
+            "plant_2d_validation", "dp_transmitter_inspection",
         ),
     }[mode]
     fresh_reports = {
         "full": set(required_reports),
         "validate-only": {
             "glb_reimport", "plant_2d_validation", "dosing_skid_reimport",
-            "water_makeup_reimport", "final_audit",
+            "water_makeup_reimport", "dp_transmitter_reimport", "final_audit",
         },
-        "render-only": {"orbit_render", "component_2d_render", "png_2d_provenance", "plant_2d_validation"},
+        "render-only": {
+            "orbit_render", "component_2d_render", "png_2d_provenance",
+            "plant_2d_validation", "dp_transmitter_inspection",
+        },
     }[mode]
     for label in required_reports:
         path = workspace / REPORT_PATHS[label]
@@ -866,6 +991,31 @@ def verify_truth(
         truth["pressurization_water_makeup_skid"] = {
             "source": makeup_source,
             "reimport": makeup_reimport,
+        }
+        dp_source = verify_dp_transmitter_report(
+            load_json(workspace / REPORT_PATHS["dp_transmitter_generation"]),
+            "source",
+        )
+        dp_reimport = verify_dp_transmitter_report(
+            load_json(workspace / REPORT_PATHS["dp_transmitter_reimport"]),
+            "reimport",
+        )
+        for key in (
+            "asset", "dimensions_m", "triangles", "glb_bytes",
+            "glb_sha256", "blend_sha256", "runtime_bindings", "counts",
+            "port_surface_max_gap_m", "port_axis_max_angle_deg",
+            "hl_center_spacing_m", "hl_center_spacing_error_m",
+            "hl_same_elevation_max_error_m", "animation_effect_counts",
+        ):
+            if dp_source.get(key) != dp_reimport.get(key):
+                raise RuntimeError(
+                    f"Differential-pressure source/reimport mismatch for {key}: "
+                    f"source={dp_source.get(key)!r}, "
+                    f"reimport={dp_reimport.get(key)!r}"
+                )
+        truth["differential_pressure_transmitter"] = {
+            "source": dp_source,
+            "reimport": dp_reimport,
         }
         truth["lod"] = {"LOD0": verify_lod_budget("LOD0", reimport)}
         for label in ("lod1", "lod2"):
@@ -989,6 +1139,21 @@ def verify_truth(
         ),
         "water_makeup_skid_preview": (
             "output/blender/pressurization-water-makeup-skid-generic-v1-preview.png"
+        ),
+        "dp_transmitter_blend": (
+            "apps/chiller-shell-v1/public/models/differential-pressure-transmitter/"
+            "source/blender/differential-pressure-transmitter-wet-wet-generic-v1.blend"
+        ),
+        "dp_transmitter_glb": (
+            "apps/chiller-shell-v1/public/models/differential-pressure-transmitter/"
+            "differential-pressure-transmitter-wet-wet-generic-v1.glb"
+        ),
+        "dp_transmitter_preview": (
+            "output/blender/differential-pressure-transmitter-wet-wet-generic-v1-preview.png"
+        ),
+        "dp_transmitter_front_lower": (
+            "output/blender/differential-pressure-transmitter-wet-wet-generic-v1-inspection/"
+            "front_lower.png"
         ),
     }
     truth["artifact_sizes_bytes"] = {
